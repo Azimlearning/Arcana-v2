@@ -1,0 +1,74 @@
+# Arcana v2: Python project.
+#
+# Lives at the repo root, not api/pyproject.toml, so that `api` is an importable top-level package
+# and the documented commands (`uv run uvicorn api.main:app`, `uv run ruff check api`) work from
+# the root. Same layout as v1 (v1 ADR-005). `eval/` imports `api/` retrieval, so it shares this env.
+
+[project]
+name = "arcana-v2"
+version = "0.0.0"
+description = "Arcana v2: graph-grounded learning workspace (FYP)."
+requires-python = ">=3.13,<3.14"
+license = { text = "Proprietary" }
+authors = [{ name = "Fakhrul Azim Bin Ahmed Mardzukie" }]
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.5",
+    "httpx>=0.27",
+    "python-multipart>=0.0.12",
+    "structlog>=24.4",
+    "networkx>=3.3",
+    "numpy>=2.0",
+    "rank-bm25>=0.2.2",
+    "pymupdf>=1.24",
+    "langgraph>=1.0",
+    "sqlalchemy>=2.0",
+    "anthropic>=1.11.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "respx>=0.21",
+    "ruff>=0.7",
+    "pyright>=1.1.385",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["api*", "eval*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+extend-exclude = [".claude", "packages", "web", "node_modules", "refdocs"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "B", "UP", "RUF", "ASYNC"]
+ignore = ["E501"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.pyright]
+pythonVersion = "3.13"
+include = ["api", "eval"]
+exclude = ["**/__pycache__", "**/node_modules", ".claude", "eval/corpus"]
+typeCheckingMode = "basic"
+useLibraryCodeForTypes = true
+reportMissingTypeStubs = false
+
+[tool.pytest.ini_options]
+testpaths = ["api"]
+python_files = ["test_*.py"]
+asyncio_mode = "auto"
+addopts = "-ra --strict-markers"
+# `eval` shadows a Python builtin; keep pytest from scanning it as a rootdir package.
+norecursedirs = ["eval"]

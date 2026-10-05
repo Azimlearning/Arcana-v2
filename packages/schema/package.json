@@ -1,0 +1,29 @@
+{
+  "name": "@arcana/schema",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Wire types for Arcana v2. TypeScript is the source of truth; codegen emits Pydantic models.",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc --noEmit -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint src codegen",
+    "test": "vitest run --passWithNoTests",
+    "codegen": "tsx codegen/to_python.ts",
+    "codegen:check": "tsx codegen/to_python.ts --check"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "eslint": "^9.0.0",
+    "ts-morph": "^28.0.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "typescript-eslint": "^8.0.0",
+    "vitest": "^5.0.0"
+  }
+}

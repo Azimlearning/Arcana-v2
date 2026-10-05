@@ -193,7 +193,7 @@ under the same id.
 |---|---|---|
 | D-01 | Ground-up rebuild; v1 is reference only; copied files carry provenance | Azim wants a fresh perspective; v1's shape was built for a different emphasis |
 | D-02 | GraphRAG core; agentic AI and GenUI as the two pillars; trained models as tools | Azim's framing; matches the MCAIT paper's argument |
-| D-03 | Stack: FastAPI + LangGraph (Python 3.12, uv), Next.js + React + Tailwind (pnpm), schema-first codegen, current versions | Same proven shape as v1 and Synapse, without starting dated |
+| D-03 | Stack: FastAPI + LangGraph (Python 3.13 per D-18, uv), Next.js + React + Tailwind (pnpm), schema-first codegen, current versions | Same proven shape as v1 and Synapse, without starting dated |
 | D-04 | Single user, no auth, local-first | Azim: no study or public use |
 | D-05 | A small roster of advanced agents with super tools; count is not a target | Azim: fewer, deeper, more useful |
 | D-06 | Evaluation is automated only: benchmark, audit, mutation suite; no user study | Azim; the reviewers' gap is empirical retrieval evidence |
@@ -207,6 +207,10 @@ under the same id.
 | D-14 | Embeddings stay `text-embedding-3-large` (3,072-dim) | Continuity with v1 and the paper's protocol |
 | D-15 | Eval metrics: non-LLM context recall/precision and Recall@10 / nDCG@10 primary after gold annotation; paired Wilcoxon; RAGAS faithfulness secondary; RAGAS used as a library | Avoids confounding retrieval with generation, as the paper itself argued |
 | D-16 | Synapse and v1 code is ported by copying with provenance headers; no submodules, no shared package for now | Different storage stacks; solo work; submodules are costly |
+| D-17 | Local vector store is exact cosine over a numpy matrix in one `.npz`; no vector-database library | P0 spike: exact and fast at this scale, no dependency, keeps index error out of the ablation (resolves Q-02) |
+| D-18 | Python 3.13 | Whole dependency set installs and imports; v1's `<3.13` pin had no recorded reason (resolves Q-03) |
+| D-19 | Generated wire models are strict and forbid extras; five block statuses; `BlockMeta.error`; upsert by block id | `schema-guardian` found lax coercion accepting `"1"` for an int; fail closed means no coercion |
+| D-20 | Graph retrieval scoring is frozen before gold annotation: deterministic entity resolution, evidence-based tie-break, version-stamped results | `retrieval-auditor`: hash-order ties would make the graph arm noise; free constants invite test-set tuning |
 
 ---
 
@@ -218,13 +222,13 @@ anything load-bearing is built on it.
 | ID | Question | Owner / when |
 |---|---|---|
 | Q-01 | The monthly LLM spend cap, in USD | Azim, before the first paid run in P0 |
-| Q-02 | ASSUMED: a local vector store exists that suits 3,072-dim vectors on Windows without a server. Which one? | P0 spike task |
-| Q-03 | ASSUMED: Python 3.12 rather than 3.13 (v1 pinned `<3.13`; the reason was not recorded) | P0 task 1: check the dependency set on 3.13 |
+| Q-02 | RESOLVED 2026-10-05 by D-17: exact numpy store in one `.npz` | n/a |
+| Q-03 | RESOLVED 2026-10-05 by D-18: Python 3.13 | n/a |
 | Q-04 | ASSUMED: the agent roster in §3.1 | P1 plan |
 | Q-05 | ASSUMED: v2 reuses v1's 20 pre-registered questions and 16-paper corpus manifest for continuity | P0 eval task; confirm with Azim before gold annotation |
 | Q-06 | ASSUMED: the VerifiedLab tier targets STEM content in the user's corpus, with the physics contract covering the checkable subset | P4 plan |
 | Q-07 | Where to deploy, if anywhere | Later (D-13) |
-| Q-08 | ASSUMED: Tailwind's current major version and the current LangGraph API are read from their docs at install, not recalled | P0 task 1 |
+| Q-08 | RESOLVED 2026-10-05: Tailwind v4 and LangGraph 1.x were read from current docs (tasks 1 and 8); v1's usage differs and was not copied | n/a |
 
 ---
 

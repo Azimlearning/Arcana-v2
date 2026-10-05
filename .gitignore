@@ -23,6 +23,14 @@ scratch/
 # Claude per-machine settings
 .claude/settings.local.json
 
+# Browser-automation scratch (Playwright MCP snapshots and console logs)
+.playwright-mcp/
+
+# Written and re-written by `next dev` (Next 16 agent guidance). Third-party instruction text, so it is
+# not committed unless the owner decides to adopt it.
+web/AGENTS.md
+web/CLAUDE.md
+
 # Node / TypeScript
 node_modules/
 dist/

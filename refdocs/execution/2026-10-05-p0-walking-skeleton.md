@@ -7,8 +7,12 @@
 ## Before starting
 
 - Read `CLAUDE.md` and walk `.claude/memory/preflight.md`.
-- Toolchain present: Node 24, pnpm 9.12, uv (checked 2026-10-05). Python 3.13 is the system Python; uv can install 3.12.
+- Toolchain present: Node 24.11, uv 0.11. The machine has pnpm 10.12; `packageManager: pnpm@9.12.3` in the root `package.json` makes it fetch and run 9.12.3, so every `pnpm` command reports 9.12.3 (checked 2026-10-05; this doc previously said 9.12 was installed). Python 3.13 is used (D-18); 3.12 was never needed.
 - No API keys are needed until task 10. Tasks 1 to 9 run on fakes.
+
+## Status (2026-10-05, first P0 session)
+
+Tasks 1 to 9 are done: each Verify ran and passed on fakes (`ARCANA_LLM_MODE=fake`, `ARCANA_EMBED_MODE=fake`). No paid call was made. Tasks 10 and 11 are not started: task 10 waits for Azim's spend cap (Q-01), task 11 waits for confirmation of Q-05. Per-task deviations are marked **Reality** below.
 - Q-01 (spend cap) must be answered by Azim before task 10.
 - v1 is at `../Arcana/` (read-only reference). Do not edit it.
 
@@ -25,6 +29,8 @@
 
 **Verify:** `pnpm install` succeeds; `uv sync` succeeds; `uv run python -c "import fastapi, langgraph, networkx"` prints nothing and exits 0; each root script runs (an empty suite passing is fine here).
 
+**Reality:** `pyproject.toml` is at the repo root, not `api/pyproject.toml`, so `api` is an importable top-level package and the documented commands (`uv run uvicorn api.main:app`, `uv run ruff check api`) work from the root; same layout as v1. Python 3.13 (ADR D-18). Versions chosen: Next 16.3, React 19.3, Tailwind 4.3 (`@tailwindcss/postcss`, no config file), Vitest 5, Zustand 5, TypeScript 5.9 (not 7: Next's tooling is not validated against it), ESLint 9 flat config (`next lint` was removed in Next 16), FastAPI 0.142, LangGraph 1.2, anthropic 1.11. An empty pytest exits 5, so a toolchain smoke test (`api/tests/test_smoke.py`) was added.
+
 ## Task 2: Wire schema and codegen
 
 **Files:** `packages/schema/src/blocks.ts`, `packages/schema/src/api.ts`, `packages/schema/codegen/to_python.ts`, `api/genui/generated.py`.
@@ -35,6 +41,8 @@
 
 **Verify:** `pnpm codegen:check` exits 0. Then change one field name in `blocks.ts` without regenerating: `pnpm codegen:check` exits non-zero. Revert.
 
+**Reality (ADR D-19):** `BlockStatus` has five values, adding `ready`. `BlockMeta` gained `error: ErrorEnvelope | null` (non-null iff status is `error`). Source files are `blocks.ts`, `payloads.ts`, `api.ts`, `errors.ts`. `CitedSummaryData` has no `summary` string (the answer is its segments). `api.ts` also defines the SSE `StreamEvent` union. Generated models are strict and forbid unknown fields; the codegen was ported from v1 with three changes (strict config, CRLF-safe `--check`, `@int` tag). `schema-guardian` reviewed after tasks 2 and 8; its findings are in the changelog.
+
 ## Task 3: Core and settings
 
 **Files:** `api/core/settings.py`, `api/core/logging.py`, `api/core/errors.py`, `api/core/budget.py`, tests.
@@ -44,6 +52,8 @@
 3. `ARCANA_LLM_MODE=fake|live` and `ARCANA_EMBED_MODE=fake|live` select fakes for tests.
 
 **Verify:** `uv run pytest api/core` passes, including a test that startup with `ARCANA_LLM_MODE=live` and no `ANTHROPIC_API_KEY` raises an error whose message names that variable.
+
+**Reality:** `load_settings()` raises one `ConfigError` listing every missing variable and pointing at `env_setup.md`. No new environment variable was added: the per-turn token budget is a `TokenBudget` constructor default, and the CORS origins are a constant in `api/main.py` (local dev only, D-13).
 
 ## Task 4: LLM seam with fallback, ledger and cap
 
@@ -56,6 +66,8 @@
 
 **Verify:** `uv run pytest api/llm` passes: fake primary raising → fallback used; a ledger row per call; a call over the cap refused before the provider is invoked.
 
+**Reality:** The ledger is `api/llm/ledger.py` with its own `spend_ledger` table in the shared SQLite file; it is not part of `DocStore` (task 5 therefore has `documents`, `chunks`, `turns` only). `reserve()` then `settle()` guards against concurrent calls overshooting the cap; failed attempts are recorded at $0 with status `failed`. A refusal from the model (`stop_reason: refusal`) counts as a provider failure so the fallback runs. Embeddings (task 6) use the same ledger. Providers were written against the anthropic 1.x SDK reference and OpenRouter's chat-completions docs, and tested with constructed SDK errors and `respx`; no real call was made. Prices are first-party Anthropic rates; OpenRouter ids and the embedding price are `ASSUMED:` (DECISIONS items 4 and 5).
+
 ## Task 5: Storage abstractions and the vector-store spike
 
 **Files:** `api/stores/{graph_store,vector_store,doc_store}.py`, `api/stores/local/*.py`, tests, `refdocs/changelog/DECISIONS.md`.
@@ -67,6 +79,8 @@
 
 **Verify:** `uv run pytest api/stores` passes, including a persistence test: write, close, reopen, read back the same graph and vectors. The ADR exists in DECISIONS.md and Q-02 is removed from the ASSUMED list.
 
+**Reality:** The spike (`scripts/vector_store_spike.py`, seven candidates) chose an exact numpy store (ADR D-17). The `VectorStore` ABC gained `ids()` (corpus parity checks). `Node` gained `chunk_ids` (every chunk that mentions the entity), added after the retrieval audit: edges alone only reach chunks that contain a relation, which would have handicapped the graph arm. `GraphStore.delete_document(doc_id, chunk_ids)` takes the chunk ids explicitly so the abstraction does not depend on the chunk-id format. `api/stores/preflight.py` (`check_corpus_parity`) was added: chunk ids, vector ids and graph references must agree before any benchmark.
+
 ## Task 6: Ingestion
 
 **Files:** `api/ingestion/{parse,chunk,embed,extract,pipeline}.py`, a small fixture PDF in `api/tests/fixtures/`, tests.
@@ -76,6 +90,8 @@
 3. Write chunks, vectors and graph in one pass; each edge records its chunk id.
 
 **Verify:** `uv run pytest api/ingestion` passes: the fixture PDF yields the expected chunk count, every chunk has a vector, the graph has nodes, and every edge's chunk id resolves to a stored chunk.
+
+**Reality:** Files are `parse`, `chunk`, `embed`, `extract`, `pipeline` plus `types` and `fakes`. The fixture is `api/tests/fixtures/hybrid_retrieval.pdf` (3 pages, 4 chunks), regenerated by `make_fixture_pdf.py`. Extraction is genuinely schema-free (v1 restricted entity types and relation names); a malformed model reply costs that chunk its graph contribution only, but a provider outage or spend-cap refusal fails the ingestion and removes everything stored for the document, including on cancellation. A re-ingest of the same bytes replaces the document. The ported v1 chunker starts some chunks mid-word; kept unchanged for comparability with the pilot (D-14, D-15).
 
 ## Task 7: Hybrid retrieval
 
@@ -88,6 +104,8 @@
 
 **Verify:** `uv run pytest api/retrieval` passes: one test per arm (dense, sparse, graph, flat, hybrid) shows only the enabled signals contribute; a raising retriever still returns fused results; RRF ordering matches a hand-computed example.
 
+**Reality (ADR D-20):** Query entity resolution uses no LLM call (v1's graph retriever made one per query). Added `arms.py` (the five arms, pinned as literals in a test), `protocol.py` (`protocol_stamp()`, written into every results file), and `RetrievalResult` carrying per-signal rankings, failed signals, the resolution report and latency. `retrieval-auditor` reviewed after this task; its fixes (evidence-based tie-breaks, exact-only coverage reporting, acronym matching, one query word claimed by one approximate node, signal-name validation, ulp-safe ordering) are in. Its harness requirements are now listed under task 11.
+
 ## Task 8: One agent, one block, streamed
 
 **Files:** `api/agents/state.py`, `api/agents/research.py`, `api/agents/graph.py`, `api/genui/{validate,stream}.py`, `api/routes/{chat,ingest}.py`, `api/main.py`, tests.
@@ -99,6 +117,8 @@
 
 **Verify:** `uv run pytest api` passes, including: a malformed block is rejected with its field path; a chat request on fakes yields an SSE stream whose block validates against the schema. `uv run uvicorn api.main:app` starts and `GET /health` returns 200.
 
+**Reality:** The terminal step is `api/agents/compose.py`, the P0 stub of the Composer. Research returns a `CitedSummary` payload; only `compose.py` may import `api.genui.builders` (a test enforces it). `run_turn` re-validates every block from plain data before it is streamed, so a block built around the validator cannot leave; a failed turn still ends with a same-id error block, then the error event, then `done`. The validator (`api/genui/validate.py`) also checks that `docTitle` and `page` match the store, that quotes are verbatim and not trivial, and rejects orphan citations. A model reply that is unusable or ungrounded is `provider_unavailable` (retryable), not `validation_failed`. Every error leaves as an `ErrorEnvelope`, including 404 and 405; a 500 carries CORS headers; bodies are bounded. Added `container.py`, `fakes.py`, `agents/fakes.py`. History is accepted but unused (single-turn Research). `schema-guardian` reviewed after this task. Verified by pytest and by running uvicorn and exercising it with curl.
+
 ## Task 9: Web skeleton
 
 **Files:** `web/app/*`, `web/lib/stream.ts`, `web/components/genui/{registry,CitedSummary,BlockStates}.tsx`, tests.
@@ -108,6 +128,8 @@
 3. Registry typed so an unregistered block type fails the type check; `CitedSummary` implements empty, loading, partial and error.
 
 **Verify:** `pnpm -r test` and `pnpm -r typecheck` pass. With the API running on fakes, `pnpm --filter web dev`, upload the fixture PDF, ask a question: a `CitedSummary` renders with a citation. Kill the API mid-stream: the error state renders.
+
+**Reality:** Files are `lib/stream.ts`, `lib/api.ts`, `lib/store.ts`, `components/genui/{registry,CitedSummary,BlockStates}.tsx`, `app/{Workspace,page}.tsx`. v1's stream consumer parsed named SSE events; v2's server sends only `data:` lines, so the framing was rewritten (the fetch plus ReadableStream approach is kept). The client guarantees one terminal callback per turn: `done`, or an error (including a stream that closes without `done`). `Registry<B>` is typed over the block union and a `@ts-expect-error` test proves an incomplete registry fails to compile; an unregistered block type at runtime renders an error state. The Verify was run in a real browser (Playwright): upload, ask, a cited answer rendered; then the API was replaced by a stand-in that resets the TCP connection after the loading block (error state rendered, nothing left spinning), and finally with no API at all (error state rendered). Screenshots are in `refdocs/evidence/`. The dev-server console showed only a favicon 404.
 
 ## Task 10: Real providers behind the cap
 
@@ -129,12 +151,23 @@ Requires Q-01 answered and keys in `.env` (see `refdocs/guides/env_setup.md`).
 
 **Verify:** `uv run python eval/run_ablation.py --questions q-cross-01,q-single-01 --arms all` writes a JSON with five arms × two questions, each with the four metrics, the hit rate and latency.
 
+**Requirements added by the task 7 retrieval audit (ADR D-20).** The harness must:
+- treat any `result.failed` as an invalid question run, never as zero recall, and record `failed` per question;
+- cache the query embedding per question so the dense, flat and hybrid arms see identical vectors (also saves paid calls);
+- record per question and arm: ranking length, latency, `resolution_hit_rate`, the exact-only hit rate, `n_exact`, `n_approx` and whether the graph ranking was empty; report the fraction of questions with an empty graph ranking, and stop (treat it as a resolution defect, not a finding) if it exceeds about 30 percent;
+- run `check_corpus_parity` before the run and refuse to run if it returns any problem;
+- write `protocol_stamp()`, the extraction model and corpus and store hashes into the results JSON, and never re-ingest between arms (extraction has no seed, so the ingested graph is a fixed artefact);
+- report each arm's ranking length beside Recall@10, because dense always returns ten while sparse and graph can return fewer;
+- annotate gold passages as text, not chunk ids (chunk ids change if parsing changes), and tune nothing on the pre-registered questions.
+
 ---
 
 ## Wrap-up (do not skip)
 
-- [ ] `refdocs/STATUS.md`: phase table updated, verification ledger updated with what was actually run
-- [ ] `refdocs/changelog/CHANGELOG.md`: session entry added
-- [ ] `refdocs/changelog/DECISIONS.md`: ADRs for Q-02 and Q-03, any resolved `ASSUMED:`
-- [ ] Write the file-structure doc now that a tree exists (STATUS known gap)
-- [ ] This doc updated to match what actually happened
+The DECISIONS and file-structure items are ticked as of the first P0 session; the STATUS, CHANGELOG and this-doc items stay open until tasks 10 and 11 are done.
+
+- [ ] `refdocs/STATUS.md`: phase table updated, verification ledger updated with what was actually run (updated 2026-10-05 for tasks 1 to 9; finish after tasks 10 and 11)
+- [ ] `refdocs/changelog/CHANGELOG.md`: session entry added (2026-10-05 entry written; add one per further session)
+- [x] `refdocs/changelog/DECISIONS.md`: ADRs for Q-02 and Q-03 (D-17, D-18), plus D-19 and D-20, resolved `ASSUMED:` items removed
+- [x] Write the file-structure doc now that a tree exists (`refdocs/guides/file_structure.md`)
+- [ ] This doc updated to match what actually happened (tasks 1 to 9 done; add tasks 10 and 11 when they run)

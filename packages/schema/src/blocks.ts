@@ -1,0 +1,48 @@
+// UIBlock: the typed payload an agent emits and a component renders. The wire carries data only.
+//
+// Adding a variant is a fixed sequence (preflight 5):
+//   1. Add its *Data interface to payloads.ts and a variant interface here.
+//   2. Add the variant to the UIBlock union below.
+//   3. `pnpm codegen`, then `pnpm codegen:check` must pass.
+//   4. Server validator handles it; web registry gets an entry and a component with all four states.
+//   5. Write the component's structural precondition down (constraint 7).
+
+import type { ErrorEnvelope } from "./errors";
+import type { CitedSummaryData } from "./payloads";
+
+export type Panel = "sources" | "chat" | "studio";
+
+/**
+ * Lifecycle of a block on the wire. `empty`, `loading`, `partial`, `error` are the states every
+ * component must render; `ready` is a complete block (the execution doc names only the four
+ * render states, but a finished block needs a status too).
+ *
+ * Branch on `meta.status`, never on whether the arrays are empty. The server guarantees:
+ *   - `empty`, `loading`, `error`: `data` has no segments and no citations (a placeholder), and
+ *     `meta.error` is non-null if and only if the status is `error`;
+ *   - `ready`: at least one segment, every segment cites at least one citation of this block, every
+ *     citation resolves to a stored chunk, and `docTitle`, `page` and `quote` match that chunk;
+ *   - `partial` (not emitted in P0): whatever is present is grounded the same way, but it may be short.
+ * `empty` means nothing was found or the model declined: render "nothing found", not a failure.
+ */
+export type BlockStatus = "empty" | "loading" | "partial" | "ready" | "error";
+
+export interface BlockMeta {
+  panel: Panel;
+  /** @int */
+  order: number;
+  status: BlockStatus;
+  /** Why the block failed. Non-null if and only if status is "error". */
+  error: ErrorEnvelope | null;
+}
+
+export interface CitedSummary {
+  type: "CitedSummary";
+  /** Non-empty. Stable across updates: a later block with the same id replaces this one. */
+  id: string;
+  meta: BlockMeta;
+  data: CitedSummaryData;
+}
+
+// Codegen emits a discriminated union (Field(discriminator='type')) once there are 2+ variants.
+export type UIBlock = CitedSummary;

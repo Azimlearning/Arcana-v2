@@ -1,0 +1,24 @@
+"""Deterministic stand-in for the research LLM (ARCANA_LLM_MODE=fake). Costs nothing.
+
+Reads the numbered passages out of the prompt and answers with one cited segment per leading
+passage, quoting that passage's first sentence. It does not understand the question; it exists so
+the whole path (retrieval, citation mapping, validation, streaming, rendering) runs without a key.
+"""
+
+import json
+import re
+
+from api.llm.types import LLMRequest
+
+_PASSAGE = re.compile(r"^\[(\d+)\] \([^)]*\)\n(.*?)(?=^\[\d+\] \(|\Z)", re.M | re.S)
+_SENTENCE = re.compile(r"(?<=[.!?])\s+")
+_WS = re.compile(r"\s+")
+MAX_SEGMENTS = 2
+
+
+def fake_research_responder(request: LLMRequest) -> str:
+    segments = []
+    for number, body in _PASSAGE.findall(request.prompt)[:MAX_SEGMENTS]:
+        first = _SENTENCE.split(_WS.sub(" ", body).strip())[0][:160]
+        segments.append({"text": f"The document states: {first}", "cites": [int(number)]})
+    return json.dumps({"segments": segments})

@@ -1,0 +1,2 @@
+# Generated file is compared byte-for-byte by `pnpm codegen:check`; keep LF on every checkout.
+api/genui/generated.py text eol=lf

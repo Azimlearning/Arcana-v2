@@ -28,4 +28,4 @@ If reality diverges from the doc mid-build, **edit the doc** and note it in the 
 
 | File | Companion plan | Status |
 |---|---|---|
-| [2026-10-05-p0-walking-skeleton.md](2026-10-05-p0-walking-skeleton.md) | [../plans/2026-10-05-p0-walking-skeleton.md](../plans/2026-10-05-p0-walking-skeleton.md) | Not started |
+| [2026-10-05-p0-walking-skeleton.md](2026-10-05-p0-walking-skeleton.md) | [../plans/2026-10-05-p0-walking-skeleton.md](../plans/2026-10-05-p0-walking-skeleton.md) | In progress (tasks 1 to 9 done on fakes; 10 and 11 not started) |

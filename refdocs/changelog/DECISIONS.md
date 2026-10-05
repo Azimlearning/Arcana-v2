@@ -180,6 +180,107 @@ shared package for now.
 **Why.** The two projects use different storage stacks and evolve on different schedules; solo work
 makes submodules costly. Revisit if the lifecycle code stabilises in both projects.
 
+## D-17: Exact numpy vector store (2026-10-05, resolves Q-02)
+
+**Decision.** The local `VectorStore` implementation is exact cosine search over a normalised
+float32 numpy matrix, persisted as one `.npz` file (written to a temp file, then atomically
+replaced). No vector-database library.
+
+**Why.** Spike: `scripts/vector_store_spike.py`, 2,000 random 3,072-dim vectors, 20 cosine top-10
+queries, recall measured against exact brute force, then close, reopen from disk and re-query.
+Windows 10, Python 3.13.14, one run each, 2026-10-05.
+
+| Candidate | Installs | Insert 2k | 20 queries (warm) | Recall@10 | On disk |
+|---|---|---|---|---|---|
+| numpy (exact) | yes, no extra dependency | 0.16 s | 0.035 s | 1.00 | 24.6 MB |
+| faiss-cpu (flat) | yes | 0.11 s | 0.034 s | 1.00 | 24.6 MB |
+| lancedb | yes | 0.27 s | 1.20 s | 1.00 | 24.6 MB |
+| sqlite-vec | yes (extension loads) | 8.12 s | 1.23 s | 1.00 | 25.3 MB |
+| chromadb | yes (80 packages) | 3.38 s | 0.11 s | 0.745 | 38.2 MB |
+| usearch | yes | 5.29 s | 0.05 s | 0.665 | 12.6 MB |
+| hnswlib | no: no Windows 3.13 wheel, needs MSVC Build Tools | n/a | n/a | n/a | n/a |
+
+At this project's scale (one user, a corpus of low thousands of chunks, tens of thousands at most)
+exact search is milliseconds, so an index buys nothing. Exactness also keeps approximate-index
+error out of the graph-vs-flat comparison (D-15): a gap between arms cannot be an index artefact.
+
+**Trade-off.** The whole matrix lives in memory (about 12 KB per chunk: 10k chunks is 123 MB, 50k
+is 614 MB) and every query scans it; `save()` rewrites the file. Past roughly 50k chunks, swap an
+indexed store in behind `VectorStore`. The approximate stores' recall is from random vectors, which
+is a worst case for them (real embeddings cluster); that was not measured, because it does not
+change the choice.
+
+**Rejected.** faiss-cpu: equally exact and fast, but a dependency for no gain at this size, and
+delete-by-id needs an ID map. lancedb and sqlite-vec: exact but 30 to 35 times slower per query.
+chromadb and usearch: approximate. hnswlib: does not install here.
+
+## D-18: Python 3.13 (2026-10-05, resolves Q-03)
+
+**Decision.** Python 3.13 (3.13.14), pinned in `.python-version` and `requires-python = ">=3.13,<3.14"`.
+
+**Why.** The whole P0 dependency set installs and imports on 3.13: FastAPI 0.142, LangGraph 1.2.12,
+NetworkX 3.7, PyMuPDF 1.28, rank-bm25, SQLAlchemy 2.1, structlog, anthropic 1.11, numpy 2.5. The
+smoke test (`api/tests/test_smoke.py`) imports each. v1's `<3.13` pin had no recorded reason, and no
+incompatibility turned up in v2's set.
+
+**Rejected.** 3.12, the `ASSUMED:` value: nothing failed that would justify the older version.
+
+## D-19: Wire models fail closed; block lifecycle (2026-10-05)
+
+**Decision.**
+- Every generated Pydantic model is `extra='forbid'`, `strict=True`, `allow_inf_nan=False`.
+- `BlockStatus` has five values: `empty`, `loading`, `partial`, `ready`, `error`. The execution doc
+  named four (the render states); a finished block needs a status too.
+- `BlockMeta.error` carries an `ErrorEnvelope` and is non-null if and only if status is `error`.
+- A block event whose `id` was already seen replaces that block (upsert by id). There is no patch type.
+- `CitedSummaryData` has no `summary` string: the answer is its ordered `segments`.
+- Rules the schema cannot express are the server validator's job (task 8): every `citationIds`
+  entry exists in `citations`; every `chunkId` and `docId` resolves in the DocStore; a `ready` block
+  has at least one citation and every segment cites at least one.
+
+**Why.** The first review by `schema-guardian` found, and a test reproduced, that `extra='forbid'`
+alone still coerced `"1"`, `True` and `1.0` into an `int` field, so a model-produced block could
+reach the client with a different type than declared. Strict mode closes that. Two sources of the
+answer text (`summary` and segments) could drift, so one was dropped.
+
+**Rejected.** A codegen `@minItems` tag for non-empty arrays: `empty`, `loading` and `error` blocks
+legitimately carry empty arrays, so the rule is status-dependent and belongs in the validator.
+
+## D-20: Graph-retrieval scoring is frozen before gold annotation (2026-10-05)
+
+**Decision.** The graph signal's scoring rules are fixed now and stamped into every results file
+(`api/retrieval/protocol.py`, `GRAPH_SCORING_VERSION = "p0-2"`):
+- Entity resolution is deterministic and uses no LLM at query time: exact longest-n-gram slug match
+  (also matching with separators removed, so "graphrag" finds `graph_rag`), then approximate
+  token-containment matching on the words left over: at least half of a node's tokens, at most three
+  nodes, each query word claimed by at most one. Exact weighs 1.0, approximate 0.6.
+- A chunk scores the entity weight if it mentions the entity or a relation touching it was extracted
+  from it, and half that if it only mentions a 1-hop neighbour. Scores add across entities.
+- Ties break by edge support (relations touching the query entities extracted from the chunk), then
+  by document order. Never by chunk id (a hash: pseudo-random) and never by the dense or sparse scores
+  (that would couple the signals).
+- Changing any weight, constant, stopword or tie-break needs a declared amendment and a version bump;
+  results from different stamps are never pooled. Tuning, if any, uses a separate dev set, never the
+  pre-registered questions.
+
+**Why.** The first `retrieval-auditor` review found the graph arm would return an arbitrary ten of
+many tied chunks and feed those ranks into RRF as if they meant something, which would make
+hybrid-minus-flat partly noise and the likeliest source of a null result. It also found that the
+scoring constants were free parameters that could be tuned on the test questions.
+
+**Trade-off.** Document order favours early chunks (abstracts, introductions). That bias is explicit,
+deterministic and interpretable, which an arbitrary hash order is not. Entity specificity weighting
+(down-weighting entities that appear everywhere) was considered and left out: it adds a parameter, and
+the freeze is cheaper to defend with fewer of them.
+
+**Open for the harness (task 11).** A failed signal must invalidate a question run, never score as
+zero recall; the query embedding is cached per question so every arm sees identical vectors; resolution
+rate (overall and exact-only), per-arm ranking length and the empty-graph fraction are recorded; the
+benchmark is gated on the empty-graph fraction (above about 30 percent means a resolution defect, not a
+finding about graphs); `check_corpus_parity` must return no problems before a run. Extraction is not
+reproducible (no seed), so the ingested graph is treated as a fixed artefact: hashed, never re-ingested
+between arms.
+
 ---
 
 ## Working assumptions (`ASSUMED:`)
@@ -187,9 +288,10 @@ makes submodules costly. Revisit if the lifecycle code stabilises in both projec
 Not decisions; guesses made to keep moving. Each one must be confirmed or killed before anything
 load-bearing is built on it. When one is resolved, delete it here and write a real ADR above.
 
-1. **ASSUMED:** a local vector store exists that handles 3,072-dim vectors on Windows without a server (Q-02). Resolve in the P0 spike.
-2. **ASSUMED:** Python 3.12, not 3.13, because v1 pinned `<3.13` for a reason it did not record (Q-03). Resolve in P0 task 1.
-3. **ASSUMED:** the agent roster in PRD §3.1 (Q-04). Resolve in the P1 plan.
-4. **ASSUMED:** v2 reuses v1's 20 pre-registered questions and 16-paper corpus manifest (Q-05). Confirm with Azim before gold annotation.
-5. **ASSUMED:** the VerifiedLab tier targets STEM content in the user's corpus; the physics contract covers its checkable subset (Q-06). Resolve in the P4 plan.
-6. **ASSUMED:** current Tailwind and LangGraph APIs differ from v1's; read their docs at install rather than copying v1 usage (Q-08).
+1. **ASSUMED:** the agent roster in PRD §3.1 (Q-04). Resolve in the P1 plan.
+2. **ASSUMED:** v2 reuses v1's 20 pre-registered questions and 16-paper corpus manifest (Q-05). Confirm with Azim before gold annotation (before P0 task 11).
+3. **ASSUMED:** the VerifiedLab tier targets STEM content in the user's corpus; the physics contract covers its checkable subset (Q-06). Resolve in the P4 plan.
+4. **ASSUMED:** OpenRouter model ids follow its dotted naming (`anthropic/claude-sonnet-5.5`, `-opus-5.5`, `-haiku-4.5`). Its public model list did not show the sonnet and haiku entries on 2026-10-05. Confirm in P0 task 10.
+5. **ASSUMED:** `text-embedding-3-large` costs $0.13 per million tokens (`api/llm/pricing.py`). The OpenAI reference page does not state a price. Confirm against the pricing page before the first live embedding run (P0 task 10); the cap check depends on it.
+
+Resolved this session and removed from this list: Q-02 (D-17), Q-03 (D-18), Q-08 (Tailwind v4 and LangGraph 1.x read from current docs at install: `@tailwindcss/postcss` with `@import "tailwindcss"` and no config file; `StateGraph(State, context_schema=...)`, `runtime: Runtime[Context]` in nodes, `graph.ainvoke(..., context=...)`).
