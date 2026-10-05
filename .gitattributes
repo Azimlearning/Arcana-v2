@@ -1,2 +1,8 @@
 # Generated file is compared byte-for-byte by `pnpm codegen:check`; keep LF on every checkout.
 api/genui/generated.py text eol=lf
+
+# Frozen, hash-pinned evaluation assets (D-21, constraint 9): store and check out the exact bytes, no
+# line-ending conversion, so the pinned SHA-256 holds on every platform.
+eval/questions.yaml -text
+eval/corpus/MANIFEST.json -text
+eval/gold/*.yaml -text
