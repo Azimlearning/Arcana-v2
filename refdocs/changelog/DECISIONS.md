@@ -98,7 +98,7 @@ enforced in code, and every call is written to a spend ledger.
 **Why.** Azim's choice. v1's full benchmark died when a provider quota ran out (HTTP 402); a cap
 that is checked before calls fail is better than one discovered after.
 
-**Open.** The cap value (Q-01).
+**Resolved (2026-10-06, D-21).** The cap starts at $5 per month (Q-01).
 
 ## D-09: Local storage behind abstractions (2026-10-05)
 
@@ -281,6 +281,31 @@ finding about graphs); `check_corpus_parity` must return no problems before a ru
 reproducible (no seed), so the ingested graph is treated as a fixed artefact: hashed, never re-ingested
 between arms.
 
+## D-21: v1's question set and corpus reused unchanged; monthly cap $5 (2026-10-06, resolves Q-05 and Q-01)
+
+**Decision.** The eval harness uses v1's 20 pre-registered questions (12 cross-document, 4
+single-document, 4 contradiction; pre-registered 9 Jun 2026) and its 16-paper manifest, copied
+byte-identical with provenance (`eval/questions.yaml`, `eval/corpus/MANIFEST.json`). A test pins their
+SHA-256; changing either is a declared amendment with its own ADR (constraint 9). The monthly LLM cap
+starts at `LLM_MONTHLY_CAP_USD=5`; raising it is a settings change recorded in the changelog.
+
+**Why.** Azim's choices on 2026-10-06. Reuse keeps v2's numbers comparable with the published pilot and
+keeps the pre-registration intact. $5 covers one-document smoke runs and the P0 live check; a full
+16-paper ingestion with per-chunk extraction will need it raised first, and the ledger refuses a call
+that would exceed it before sending.
+
+**Finding: q-single-01 cannot be answered from the corpus.** It asks "What is Reciprocal Rank Fusion
+(RRF)...", registered as a self-contained single-document control. Searching all 16 PDFs (text with
+hyphenation joined): "RRF" 0 occurrences, "rank fusion" 0, "reciprocal" 2, both defining the Mean
+Reciprocal Rank metric in 2401.15391 p3. No gold passage can exist. It was NOT edited. Its gold file is
+`status: unanswerable`; its retrieval metrics are `None` (never 0) and it is excluded from every
+aggregate. **Open for Azim before the P1 benchmark:** amend it (replace the question, or add a paper that
+defines RRF) or keep it deliberately as a "should find nothing" grounding test. Either is an amendment.
+
+**Smoke gold.** The gold for q-cross-01 and q-single-02 was written by the assistant to demonstrate the
+format and exercise the runner, from passages read in the papers, and is labelled "NOT the benchmark
+gold". The benchmark gold is annotated by hand in P1 before any benchmark arm is run.
+
 ---
 
 ## Working assumptions (`ASSUMED:`)
@@ -289,9 +314,8 @@ Not decisions; guesses made to keep moving. Each one must be confirmed or killed
 load-bearing is built on it. When one is resolved, delete it here and write a real ADR above.
 
 1. **ASSUMED:** the agent roster in PRD §3.1 (Q-04). Resolve in the P1 plan.
-2. **ASSUMED:** v2 reuses v1's 20 pre-registered questions and 16-paper corpus manifest (Q-05). Confirm with Azim before gold annotation (before P0 task 11).
-3. **ASSUMED:** the VerifiedLab tier targets STEM content in the user's corpus; the physics contract covers its checkable subset (Q-06). Resolve in the P4 plan.
-4. **ASSUMED:** OpenRouter model ids follow its dotted naming (`anthropic/claude-sonnet-5.5`, `-opus-5.5`, `-haiku-4.5`). Its public model list did not show the sonnet and haiku entries on 2026-10-05. Confirm in P0 task 10.
-5. **ASSUMED:** `text-embedding-3-large` costs $0.13 per million tokens (`api/llm/pricing.py`). The OpenAI reference page does not state a price. Confirm against the pricing page before the first live embedding run (P0 task 10); the cap check depends on it.
+2. **ASSUMED:** the VerifiedLab tier targets STEM content in the user's corpus; the physics contract covers its checkable subset (Q-06). Resolve in the P4 plan.
+3. **ASSUMED:** OpenRouter model ids follow its dotted naming (`anthropic/claude-sonnet-5.5`, `-opus-5.5`, `-haiku-4.5`). Its public model list did not show the sonnet and haiku entries on 2026-10-05. Confirm in P0 task 10.
+4. **ASSUMED:** `text-embedding-3-large` costs $0.13 per million tokens (`api/llm/pricing.py`). The OpenAI reference page does not state a price. Confirm against the pricing page before the first live embedding run (P0 task 10); the cap check depends on it.
 
-Resolved this session and removed from this list: Q-02 (D-17), Q-03 (D-18), Q-08 (Tailwind v4 and LangGraph 1.x read from current docs at install: `@tailwindcss/postcss` with `@import "tailwindcss"` and no config file; `StateGraph(State, context_schema=...)`, `runtime: Runtime[Context]` in nodes, `graph.ainvoke(..., context=...)`).
+Resolved and removed from this list: Q-02 (D-17), Q-03 (D-18), Q-05 and Q-01 (D-21), Q-08 (Tailwind v4 and LangGraph 1.x read from current docs at install: `@tailwindcss/postcss` with `@import "tailwindcss"` and no config file; `StateGraph(State, context_schema=...)`, `runtime: Runtime[Context]` in nodes, `graph.ainvoke(..., context=...)`).

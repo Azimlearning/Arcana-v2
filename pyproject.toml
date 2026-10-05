@@ -26,6 +26,7 @@ dependencies = [
     "langgraph>=1.0",
     "sqlalchemy>=2.0",
     "anthropic>=1.11.0",
+    "pyyaml>=6.0.3",
 ]
 
 [dependency-groups]
@@ -54,6 +55,10 @@ extend-exclude = [".claude", "packages", "web", "node_modules", "refdocs"]
 select = ["E", "F", "I", "W", "B", "UP", "RUF", "ASYNC"]
 ignore = ["E501"]
 
+[tool.ruff.lint.per-file-ignores]
+# The benchmark runner is a batch script: blocking file I/O around the async retrieval calls is intentional.
+"eval/run_ablation.py" = ["ASYNC230", "ASYNC240"]
+
 [tool.ruff.format]
 quote-style = "double"
 
@@ -66,9 +71,9 @@ useLibraryCodeForTypes = true
 reportMissingTypeStubs = false
 
 [tool.pytest.ini_options]
-testpaths = ["api"]
+testpaths = ["api", "eval/tests"]
 python_files = ["test_*.py"]
 asyncio_mode = "auto"
 addopts = "-ra --strict-markers"
-# `eval` shadows a Python builtin; keep pytest from scanning it as a rootdir package.
+# `eval` shadows a Python builtin: do not recurse into it from the rootdir; eval/tests is named in testpaths.
 norecursedirs = ["eval"]

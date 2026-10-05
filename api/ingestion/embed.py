@@ -59,6 +59,24 @@ class FakeEmbedder(Embedder):
         return [v / norm for v in vec]
 
 
+class CachingEmbedder(Embedder):
+    """Memoises by text. The benchmark uses it for queries, so every arm sees the identical query
+    vector (no embedding jitter between arms) and a live run pays for each question only once."""
+
+    def __init__(self, inner: Embedder):
+        self._inner = inner
+        self._cache: dict[str, list[float]] = {}
+        self.inner_calls = 0
+        """How many texts were actually sent to the wrapped embedder."""
+
+    async def embed(self, texts: Sequence[str]) -> list[list[float]]:
+        missing = [t for t in dict.fromkeys(texts) if t not in self._cache]
+        if missing:
+            self.inner_calls += len(missing)
+            self._cache.update(zip(missing, await self._inner.embed(missing), strict=True))
+        return [self._cache[t] for t in texts]
+
+
 class OpenAIEmbedder(Embedder):
     def __init__(
         self,

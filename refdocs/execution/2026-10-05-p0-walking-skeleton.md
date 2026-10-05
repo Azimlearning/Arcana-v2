@@ -10,11 +10,9 @@
 - Toolchain present: Node 24.11, uv 0.11. The machine has pnpm 10.12; `packageManager: pnpm@9.12.3` in the root `package.json` makes it fetch and run 9.12.3, so every `pnpm` command reports 9.12.3 (checked 2026-10-05; this doc previously said 9.12 was installed). Python 3.13 is used (D-18); 3.12 was never needed.
 - No API keys are needed until task 10. Tasks 1 to 9 run on fakes.
 
-## Status (2026-10-05, first P0 session)
+## Status (updated 2026-10-06)
 
-Tasks 1 to 9 are done: each Verify ran and passed on fakes (`ARCANA_LLM_MODE=fake`, `ARCANA_EMBED_MODE=fake`). No paid call was made. Tasks 10 and 11 are not started: task 10 waits for Azim's spend cap (Q-01), task 11 waits for confirmation of Q-05. Per-task deviations are marked **Reality** below.
-- Q-01 (spend cap) must be answered by Azim before task 10.
-- v1 is at `../Arcana/` (read-only reference). Do not edit it.
+Tasks 1 to 9 are done: each Verify ran and passed on fakes (`ARCANA_LLM_MODE=fake`, `ARCANA_EMBED_MODE=fake`). Task 11 (eval harness) is built and tested but its Verify is **not fully met**: the two RAGAS metrics are `null` because RAGAS is not installed (it needs about 94 packages and the drive is nearly full; D-15 stays, nothing is reimplemented). Task 10 (live providers) is not started: it waits for Azim's API keys. No paid call has been made. Q-01 ($5) and Q-05 (reuse v1's set) are decided (D-21). Per-task deviations are marked **Reality** below.
 
 ---
 
@@ -151,6 +149,8 @@ Requires Q-01 answered and keys in `.env` (see `refdocs/guides/env_setup.md`).
 
 **Verify:** `uv run python eval/run_ablation.py --questions q-cross-01,q-single-01 --arms all` writes a JSON with five arms × two questions, each with the four metrics, the hit rate and latency.
 
+**Reality (2026-10-06):** Built: `eval/{questions.yaml,corpus/MANIFEST.json,gold/,metrics.py,ragas_metrics.py,run_ablation.py,README.md,tests/}`. The question set and manifest are copied byte-identical from v1 (provenance header on the YAML; SHA-256 pinned by a test). Relevance is a frozen text rule (30 percent of a passage's 5-word shingles), because gold is passage text, not chunk ids. The runner ran on v1's real 16-paper corpus in fake mode (1,570 chunks, 14 seconds) and wrote five arms for each question with Recall@10, nDCG@10, ranking length, latency and the graph resolution report. **Not met:** the two RAGAS metrics are `null` with a reason until RAGAS is installed (`uv add ragas rapidfuzz`); the wrapper was written from the current docs and has not been executed. Findings: (1) **q-single-01 cannot be answered from the corpus** (no paper defines RRF; ADR D-21); its gold is `unanswerable`, its metrics `null`, and it is excluded from aggregates; (2) the all-zero scores on q-cross-01 are real misses, not a bug (the three relevant chunks rank 57, 435, 723 under BM25 and 274, 355, 1245 under fake dense); a positive control on q-single-02 scored recall 0.33 to 0.67; (3) a test caught a real bug in my metric (shingle size taken from different texts for passage and chunk). The smoke gold for q-cross-01 and q-single-02 was written by the assistant and is labelled as not the benchmark gold. The runner refuses live mode without `--allow-paid`.
+
 **Requirements added by the task 7 retrieval audit (ADR D-20).** The harness must:
 - treat any `result.failed` as an invalid question run, never as zero recall, and record `failed` per question;
 - cache the query embedding per question so the dense, flat and hybrid arms see identical vectors (also saves paid calls);
@@ -164,10 +164,10 @@ Requires Q-01 answered and keys in `.env` (see `refdocs/guides/env_setup.md`).
 
 ## Wrap-up (do not skip)
 
-The DECISIONS and file-structure items are ticked as of the first P0 session; the STATUS, CHANGELOG and this-doc items stay open until tasks 10 and 11 are done.
+The DECISIONS and file-structure items are ticked; STATUS, CHANGELOG and this doc stay open until task 10 is done and RAGAS is installed so task 11's Verify is met.
 
-- [ ] `refdocs/STATUS.md`: phase table updated, verification ledger updated with what was actually run (updated 2026-10-05 for tasks 1 to 9; finish after tasks 10 and 11)
-- [ ] `refdocs/changelog/CHANGELOG.md`: session entry added (2026-10-05 entry written; add one per further session)
-- [x] `refdocs/changelog/DECISIONS.md`: ADRs for Q-02 and Q-03 (D-17, D-18), plus D-19 and D-20, resolved `ASSUMED:` items removed
+- [ ] `refdocs/STATUS.md`: phase table updated, verification ledger updated with what was actually run (current through task 11's harness; finish after task 10 and the RAGAS install)
+- [ ] `refdocs/changelog/CHANGELOG.md`: session entry added (entries written for 2026-10-05 and 2026-10-06; add one per further session)
+- [x] `refdocs/changelog/DECISIONS.md`: ADRs for Q-02 and Q-03 (D-17, D-18), plus D-19, D-20 and D-21, resolved `ASSUMED:` items removed
 - [x] Write the file-structure doc now that a tree exists (`refdocs/guides/file_structure.md`)
-- [ ] This doc updated to match what actually happened (tasks 1 to 9 done; add tasks 10 and 11 when they run)
+- [ ] This doc updated to match what actually happened (tasks 1 to 9 and 11 recorded; add task 10 when it runs)

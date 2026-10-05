@@ -10,7 +10,7 @@
 | `web/` | The Next.js frontend. Shares source with the backend only through `packages/schema`. |
 | `packages/schema/` | Wire types in TypeScript, plus the codegen that writes `api/genui/generated.py`. |
 | `scripts/` | One-off tooling that is not part of the app (the vector-store spike). |
-| `eval/` | Evaluation harness. Not started (P0 task 11). |
+| `eval/` | Evaluation harness: frozen question set and manifest, gold, metrics, the five-arm runner, results. See `eval/README.md`. |
 | `refdocs/` | Every project document. `STATUS.md` first. |
 | `pyproject.toml`, `uv.lock` | The one Python project, at the root so `uv run uvicorn api.main:app` works. |
 | `package.json`, `pnpm-workspace.yaml` | The pnpm workspace (`web`, `packages/*`); pins pnpm 9.12.3. |
@@ -44,6 +44,17 @@ Tests sit beside the module they cover as `test_*.py`.
 | `components/genui/` | `registry.tsx` (typed over the block union; the only way a block becomes UI), `CitedSummary.tsx`, `BlockStates.tsx` (loading, empty, partial, error frames). |
 | `lib/` | `stream.ts` (SSE over POST, one terminal callback), `api.ts` (upload), `store.ts` (Zustand, upsert by block id). |
 | `test/fixtures.ts` | Block and stream builders for tests. |
+
+## `eval/`
+
+| Path | Job |
+|---|---|
+| `questions.yaml`, `corpus/MANIFEST.json` | v1's pre-registered 20 questions and 16-paper manifest, byte-identical (D-21), pinned by hash. PDFs are not in the repo. |
+| `gold/` | Hand-annotated gold passages (`q-*.yaml`) and the format and relevance rule (`README.md`). |
+| `metrics.py` | Recall@10 and nDCG@10 against gold passages. |
+| `ragas_metrics.py` | RAGAS non-LLM context metrics, imported lazily. |
+| `run_ablation.py` | The five-arm runner; one JSON per run in `results/`. |
+| `tests/` | Metric, frozen-asset and runner tests. |
 
 ## `packages/schema/`
 

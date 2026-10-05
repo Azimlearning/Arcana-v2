@@ -1,0 +1,9 @@
+question_id: q-single-01
+status: unanswerable
+annotated_on: '2026-10-05'
+reference_contexts: []
+reason: 'No document in the 16-paper corpus defines Reciprocal Rank Fusion. Searched all 16 PDFs (PyMuPDF
+  text, hyphenation joined): ''RRF'' 0 occurrences, ''rank fusion'' 0, ''reciprocal'' 2, both in 2401.15391
+  p3 defining the Mean Reciprocal Rank metric (MRR@K), not fusion. The question was pre-registered as
+  a self-contained single-document control but cannot be answered from this corpus. Retrieval metrics
+  are undefined for it; see eval/gold/README.md.'

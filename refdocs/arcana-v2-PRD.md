@@ -29,7 +29,7 @@ downstream decision.
 | Users | Single user, no auth (D-04) | No accounts, sessions, tenancy or per-user isolation work. Data lives on the local machine. |
 | Build approach | Ground-up rebuild; v1 is reference (D-01) | Nothing is inherited by default. A v1 or Synapse file copied in carries a provenance header. |
 | Evaluation | Automated only; no user study, no public testing (D-06) | The results chapter rests on the retrieval benchmark, the extraction audit and verifier mutation tests. No SUS score, no participants. |
-| Cost | Pay-per-use LLM APIs with a monthly cap (D-08) | Per-turn token budget, model tiers per task, caching. The cap value is open (Q-01). |
+| Cost | Pay-per-use LLM APIs with a monthly cap (D-08) | Per-turn token budget, model tiers per task, caching. The cap starts at $5 (D-21). |
 | Hardware | Windows 10 laptop; no Docker, no Postgres | Local-first storage that needs no server (D-09). |
 | Deploy | Decided later; local first (D-13) | Nothing assumes a host. Config is environment-driven so a host can be added. |
 | Paper continuity | The MCAIT paper's claims and protocol are the baseline | Benchmark settings stay comparable with v1 (chunking, embeddings, k = 60, the 20 pre-registered questions) unless an ADR says otherwise. |
@@ -211,6 +211,7 @@ under the same id.
 | D-18 | Python 3.13 | Whole dependency set installs and imports; v1's `<3.13` pin had no recorded reason (resolves Q-03) |
 | D-19 | Generated wire models are strict and forbid extras; five block statuses; `BlockMeta.error`; upsert by block id | `schema-guardian` found lax coercion accepting `"1"` for an int; fail closed means no coercion |
 | D-20 | Graph retrieval scoring is frozen before gold annotation: deterministic entity resolution, evidence-based tie-break, version-stamped results | `retrieval-auditor`: hash-order ties would make the graph arm noise; free constants invite test-set tuning |
+| D-21 | v1's question set and manifest reused unchanged and pinned by hash; monthly cap $5; q-single-01 found unanswerable from the corpus | Azim 2026-10-06; comparability with the pilot; constraint 9 |
 
 ---
 
@@ -221,11 +222,11 @@ anything load-bearing is built on it.
 
 | ID | Question | Owner / when |
 |---|---|---|
-| Q-01 | The monthly LLM spend cap, in USD | Azim, before the first paid run in P0 |
+| Q-01 | RESOLVED 2026-10-06 by D-21: $5 per month to start | n/a |
 | Q-02 | RESOLVED 2026-10-05 by D-17: exact numpy store in one `.npz` | n/a |
 | Q-03 | RESOLVED 2026-10-05 by D-18: Python 3.13 | n/a |
 | Q-04 | ASSUMED: the agent roster in §3.1 | P1 plan |
-| Q-05 | ASSUMED: v2 reuses v1's 20 pre-registered questions and 16-paper corpus manifest for continuity | P0 eval task; confirm with Azim before gold annotation |
+| Q-05 | RESOLVED 2026-10-06 by D-21: v1's 20 questions and 16-paper manifest reused unchanged (q-single-01 is unanswerable from the corpus: open for Azim) | Azim, before the P1 benchmark |
 | Q-06 | ASSUMED: the VerifiedLab tier targets STEM content in the user's corpus, with the physics contract covering the checkable subset | P4 plan |
 | Q-07 | Where to deploy, if anywhere | Later (D-13) |
 | Q-08 | RESOLVED 2026-10-05: Tailwind v4 and LangGraph 1.x were read from current docs (tasks 1 and 8); v1's usage differs and was not copied | n/a |

@@ -1,0 +1,22 @@
+question_id: q-cross-01
+status: smoke
+note: 'SMOKE gold: written by the assistant on 2026-10-05 to demonstrate the format and exercise the runner.
+  It is NOT the benchmark gold, which is annotated by hand in P1 before any benchmark arm is run.'
+annotated_on: '2026-10-05'
+reference_contexts:
+- doc_id: 2408.04948v1
+  page: 1
+  text: we show that HybridRAG which retrieves context from both vector database and KG outperforms both
+    traditional VectorRAG and GraphRAG indi- vidually when evaluated at both the retrieval and generation
+    stages in terms of retrieval accuracy and answer generation
+- doc_id: 2408.04948v1
+  page: 2
+  text: But GraphRAG generally underperforms in abstractive Q&A tasks or when there is not explicit entity
+    mentioned in the question. In the present work, we propose a combination of VectorRAG and GraphRAG,
+    called HybridRAG, to retrieve the relevant information from external documents for a given query to
+    the LLM that brings advantages of both
+- doc_id: 2410.05779v3
+  page: 7
+  text: graph-based RAG systems like LightRAG and GraphRAG consistently outperform purely chunk- based
+    retrieval methods such as NaiveRAG, HyDE, and RQRAG. This performance gap becomes particularly pronounced
+    as the dataset size increases.

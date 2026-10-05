@@ -1,0 +1,222 @@
+# Copied unchanged from Azimlearning/Arcana (v1), eval/questions.yaml @ 9a3d67f (D-01, D-16, Q-05).
+# Pre-registered 9 Jun 2026. The text below this header is byte-identical to v1; a test pins its
+# SHA-256. Changing a question is a declared amendment (constraint 9), never an edit.
+
+# Pre-registered benchmark questions — R-02 / Q-03 / docs/checklist.md §1.12.
+#
+# Methodological guard (R-02): this set is committed BEFORE any benchmark run.
+# Embeddings, corpus, and chunking are held constant across both pipelines;
+# only the retrieval strategy (hybrid vs flat) varies.
+#
+# Categories:
+#   cross_document  — requires synthesising across ≥2 source documents;
+#                     graph retrieval should demonstrably help here.
+#   single_document — answerable from one document; serves as a control group.
+#   contradiction   — asks about disagreements or tensions across sources.
+#
+# gold_doc_ids / gold_pages are populated once the benchmark corpus is fixed
+# and committed (before FYP 2 evaluation runs). Leave empty during dev.
+
+questions:
+
+  # ── Cross-document synthesis (12 questions) ──────────────────────────────
+
+  - id: q-cross-01
+    category: cross_document
+    question: >
+      What do the papers collectively conclude about the advantage of hybrid
+      retrieval (combining dense vector search, BM25, and graph traversal)
+      over pure vector search? Summarise the evidence across sources.
+    gold_doc_ids: []
+    gold_pages: []
+    notes: >
+      Primary benchmark question — directly tests whether graph retrieval
+      surfaces cross-document synthesis the flat baseline misses.
+
+  - id: q-cross-02
+    category: cross_document
+    question: >
+      How is the concept of a "knowledge graph" defined and used across the
+      papers in the corpus? Where do definitions converge or diverge?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: Entity-disambiguation question; graph traversal should surface shared concepts.
+
+  - id: q-cross-03
+    category: cross_document
+    question: >
+      What methods do multiple papers propose for reducing hallucination in
+      retrieval-augmented generation systems?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: Cross-paper technique inventory; tests multi-hop entity linkage.
+
+  - id: q-cross-04
+    category: cross_document
+    question: >
+      Across the corpus, which evaluation metrics are used to measure
+      retrieval quality? How consistently are they applied, and are the
+      benchmarks comparable across papers?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: >
+      Tests whether graph retrieval connects "evaluation" and "metric" nodes
+      that appear in separate papers.
+
+  - id: q-cross-05
+    category: cross_document
+    question: >
+      Which papers address multi-hop reasoning or multi-document retrieval?
+      What common findings or techniques appear across those works?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: Multi-hop question — the kind graph retrieval is specifically designed for.
+
+  - id: q-cross-06
+    category: cross_document
+    question: >
+      How do the papers compare BM25 with dense vector retrieval in terms of
+      complementarity? What does each method capture that the other misses?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: >
+      Directly relevant to Arcana's hybrid retrieval design; cross-paper comparison.
+
+  - id: q-cross-07
+    category: cross_document
+    question: >
+      What failure modes of vector-only retrieval are identified across the
+      papers? Provide examples and cite the relevant sources.
+    gold_doc_ids: []
+    gold_pages: []
+    notes: Tests multi-source failure-mode aggregation.
+
+  - id: q-cross-08
+    category: cross_document
+    question: >
+      Across the papers, what techniques are proposed for improving citation
+      accuracy in AI-generated answers? What do the proposed methods have in common?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: >
+      Tests entity linking between "citation", "accuracy", and specific technique nodes
+      across multiple documents.
+
+  - id: q-cross-09
+    category: cross_document
+    question: >
+      What approaches to constructing knowledge graphs from unstructured text are
+      described in the corpus? Which entity and relation types recur across papers?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: >
+      Graph-construction meta-question; tests whether graph traversal surfaces
+      shared entity extraction concepts.
+
+  - id: q-cross-10
+    category: cross_document
+    question: >
+      What do the papers collectively say about latency constraints and
+      performance trade-offs in production retrieval systems?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: Tests aggregation of performance-related claims across papers.
+
+  - id: q-cross-11
+    category: cross_document
+    question: >
+      How do different papers approach the chunking problem in RAG pipelines —
+      fixed-size, semantic, sentence-level, or other strategies? What are the
+      reported trade-offs?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: Common RAG design question with answers distributed across multiple papers.
+
+  - id: q-cross-12
+    category: cross_document
+    question: >
+      What open problems or identified gaps in RAG and knowledge-graph retrieval
+      research are mentioned across the papers?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: Tests the system's ability to aggregate "gap" entities from multiple papers.
+
+  # ── Single-document control group (4 questions) ──────────────────────────
+  # Expected: hybrid ≈ flat (graph retrieval should not change outcome).
+
+  - id: q-single-01
+    category: single_document
+    question: >
+      What is Reciprocal Rank Fusion (RRF) and how does it combine ranked lists
+      from multiple retrieval systems without requiring score calibration?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: Self-contained definition question; hybrid and flat should perform equally.
+
+  - id: q-single-02
+    category: single_document
+    question: >
+      What is the difference between sparse retrieval (e.g. BM25) and dense
+      retrieval (e.g. embedding-based ANN search) in terms of query representation?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: Control question testing definitional retrieval.
+
+  - id: q-single-03
+    category: single_document
+    question: >
+      What is the role of embedding models in semantic search, and how does the
+      quality of embeddings affect retrieval accuracy?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: Self-contained; tests whether the system can find a local definition.
+
+  - id: q-single-04
+    category: single_document
+    question: >
+      How does BM25 score a document for a query, and what are its known
+      limitations when applied to technical or domain-specific terminology?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: Purely definitional; used to confirm flat-RAG baseline is not systematically worse.
+
+  # ── Contradiction / disagreement (4 questions) ───────────────────────────
+
+  - id: q-contra-01
+    category: contradiction
+    question: >
+      Do the papers agree on whether larger chunk sizes improve retrieval
+      accuracy? Where do the sources contradict or qualify each other?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: Disagreement question — contradiction graph edges should help locate conflict.
+
+  - id: q-contra-02
+    category: contradiction
+    question: >
+      Is there consensus in the corpus on whether knowledge-graph augmentation
+      always improves retrieval over pure vector search? Identify any cases
+      where papers reach different conclusions.
+    gold_doc_ids: []
+    gold_pages: []
+    notes: >
+      The most directly relevant contradiction question for Arcana's thesis;
+      graph traversal should surface CONTRADICTS edges.
+
+  - id: q-contra-03
+    category: contradiction
+    question: >
+      How do the papers differ in their recommendations for when graph-based
+      retrieval should be preferred over vector-based retrieval?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: Tests nuanced disagreement detection across sources.
+
+  - id: q-contra-04
+    category: contradiction
+    question: >
+      What contradictory claims, if any, do the papers make about the
+      scalability of knowledge graph construction over large corpora?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: Scalability is frequently debated; graph retrieval should surface CONTRADICTS edges.

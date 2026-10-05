@@ -1,0 +1,205 @@
+[
+  {
+    "arxiv_id": "2312.10997v5",
+    "title": "Retrieval-Augmented Generation for Large Language Models: A Survey",
+    "published": "2023-12-18",
+    "authors": [
+      "Yunfan Gao",
+      "Yun Xiong",
+      "Xinyu Gao",
+      "Kangxiang Jia"
+    ],
+    "file": "2312.10997_Retrieval_Augmented_Generation_for_Large_Language_Models_A_Survey.pdf",
+    "bytes": 1662567
+  },
+  {
+    "arxiv_id": "2408.04948v1",
+    "title": "HybridRAG: Integrating Knowledge Graphs and Vector Retrieval Augmented Generation for Efficient Information Extraction",
+    "published": "2024-08-09",
+    "authors": [
+      "Bhaskarjit Sarmah",
+      "Benika Hall",
+      "Rohan Rao",
+      "Sunil Patel"
+    ],
+    "file": "2408.04948_HybridRAG_Integrating_Knowledge_Graphs_and_Vector_Retrieval_Augmented_.pdf",
+    "bytes": 572900
+  },
+  {
+    "arxiv_id": "2404.16130v2",
+    "title": "From Local to Global: A Graph RAG Approach to Query-Focused Summarization",
+    "published": "2024-04-24",
+    "authors": [
+      "Darren Edge",
+      "Ha Trinh",
+      "Newman Cheng",
+      "Joshua Bradley"
+    ],
+    "file": "2404.16130_From_Local_to_Global_A_Graph_RAG_Approach_to_Query_Focused_Summarizati.pdf",
+    "bytes": 6893854
+  },
+  {
+    "arxiv_id": "2501.00309v2",
+    "title": "Retrieval-Augmented Generation with Graphs (GraphRAG)",
+    "published": "2024-12-31",
+    "authors": [
+      "Haoyu Han",
+      "Yu Wang",
+      "Harry Shomer",
+      "Kai Guo"
+    ],
+    "file": "2501.00309_Retrieval_Augmented_Generation_with_Graphs_GraphRAG.pdf",
+    "bytes": 8896579
+  },
+  {
+    "arxiv_id": "2405.14831v3",
+    "title": "HippoRAG: Neurobiologically Inspired Long-Term Memory for Large Language Models",
+    "published": "2024-05-23",
+    "authors": [
+      "Bernal Jim\u00e9nez Guti\u00e9rrez",
+      "Yiheng Shu",
+      "Yu Gu",
+      "Michihiro Yasunaga"
+    ],
+    "file": "2405.14831_HippoRAG_Neurobiologically_Inspired_Long_Term_Memory_for_Large_Languag.pdf",
+    "bytes": 3404698
+  },
+  {
+    "arxiv_id": "2410.05779v3",
+    "title": "LightRAG: Simple and Fast Retrieval-Augmented Generation",
+    "published": "2024-10-08",
+    "authors": [
+      "Zirui Guo",
+      "Lianghao Xia",
+      "Yanhua Yu",
+      "Tu Ao"
+    ],
+    "file": "2410.05779_LightRAG_Simple_and_Fast_Retrieval_Augmented_Generation.pdf",
+    "bytes": 1123301
+  },
+  {
+    "arxiv_id": "2309.15217v2",
+    "title": "Ragas: Automated Evaluation of Retrieval Augmented Generation",
+    "published": "2023-09-26",
+    "authors": [
+      "Shahul Es",
+      "Jithin James",
+      "Luis Espinosa-Anke",
+      "Steven Schockaert"
+    ],
+    "file": "2309.15217_Ragas_Automated_Evaluation_of_Retrieval_Augmented_Generation.pdf",
+    "bytes": 231984
+  },
+  {
+    "arxiv_id": "2005.11401v4",
+    "title": "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks",
+    "published": "2020-05-22",
+    "authors": [
+      "Patrick Lewis",
+      "Ethan Perez",
+      "Aleksandra Piktus",
+      "Fabio Petroni"
+    ],
+    "file": "2005.11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks.pdf",
+    "bytes": 885323
+  },
+  {
+    "arxiv_id": "2310.11511v1",
+    "title": "Self-RAG: Learning to Retrieve, Generate, and Critique through Self-Reflection",
+    "published": "2023-10-17",
+    "authors": [
+      "Akari Asai",
+      "Zeqiu Wu",
+      "Yizhong Wang",
+      "Avirup Sil"
+    ],
+    "file": "2310.11511_Self_RAG_Learning_to_Retrieve_Generate_and_Critique_through_Self_Refle.pdf",
+    "bytes": 1405127
+  },
+  {
+    "arxiv_id": "2401.15391v1",
+    "title": "MultiHop-RAG: Benchmarking Retrieval-Augmented Generation for Multi-Hop Queries",
+    "published": "2024-01-27",
+    "authors": [
+      "Yixuan Tang",
+      "Yi Yang"
+    ],
+    "file": "2401.15391_MultiHop_RAG_Benchmarking_Retrieval_Augmented_Generation_for_Multi_Hop.pdf",
+    "bytes": 1895706
+  },
+  {
+    "arxiv_id": "2401.15884v3",
+    "title": "Corrective Retrieval Augmented Generation",
+    "published": "2024-01-29",
+    "authors": [
+      "Shi-Qi Yan",
+      "Jia-Chen Gu",
+      "Yun Zhu",
+      "Zhen-Hua Ling"
+    ],
+    "file": "2401.15884_Corrective_Retrieval_Augmented_Generation.pdf",
+    "bytes": 667756
+  },
+  {
+    "arxiv_id": "2309.01219v3",
+    "title": "Siren's Song in the AI Ocean: A Survey on Hallucination in Large Language Models",
+    "published": "2023-09-03",
+    "authors": [
+      "Yue Zhang",
+      "Yafu Li",
+      "Leyang Cui",
+      "Deng Cai"
+    ],
+    "file": "2309.01219_Siren_s_Song_in_the_AI_Ocean_A_Survey_on_Hallucination_in_Large_Langua.pdf",
+    "bytes": 1397562
+  },
+  {
+    "arxiv_id": "2410.13070v1",
+    "title": "Is Semantic Chunking Worth the Computational Cost?",
+    "published": "2024-10-16",
+    "authors": [
+      "Renyi Qu",
+      "Ruixuan Tu",
+      "Forrest Bao"
+    ],
+    "file": "2410.13070_Is_Semantic_Chunking_Worth_the_Computational_Cost.pdf",
+    "bytes": 1950662
+  },
+  {
+    "arxiv_id": "2404.03868v2",
+    "title": "Extract, Define, Canonicalize: An LLM-based Framework for Knowledge Graph Construction",
+    "published": "2024-04-05",
+    "authors": [
+      "Bowen Zhang",
+      "Harold Soh"
+    ],
+    "file": "2404.03868_Extract_Define_Canonicalize_An_LLM_based_Framework_for_Knowledge_Graph.pdf",
+    "bytes": 617811
+  },
+  {
+    "arxiv_id": "2212.10496v1",
+    "title": "Precise Zero-Shot Dense Retrieval without Relevance Labels",
+    "published": "2022-12-20",
+    "authors": [
+      "Luyu Gao",
+      "Xueguang Ma",
+      "Jimmy Lin",
+      "Jamie Callan"
+    ],
+    "file": "2212.10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels.pdf",
+    "bytes": 424964
+  },
+  {
+    "arxiv_id": "2304.09542v3",
+    "title": "Is ChatGPT Good at Search? Investigating Large Language Models as Re-Ranking Agents",
+    "published": "2023-04-19",
+    "authors": [
+      "Weiwei Sun",
+      "Lingyong Yan",
+      "Xinyu Ma",
+      "Shuaiqiang Wang"
+    ],
+    "file": "2304.09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra.pdf",
+    "bytes": 849174
+  }
+]

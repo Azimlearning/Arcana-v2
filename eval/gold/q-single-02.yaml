@@ -1,0 +1,19 @@
+question_id: q-single-02
+status: smoke
+note: 'SMOKE gold: written by the assistant on 2026-10-05 to demonstrate the format and exercise the runner.
+  It is NOT the benchmark gold, which is annotated by hand in P1 before any benchmark arm is run.'
+annotated_on: '2026-10-05'
+reference_contexts:
+- doc_id: 2212.10496v1
+  page: 3
+  text: 'of zero-shot dense retrieval lies precisely in Equation 1: it requires learning of two embedding
+    functions (for query and document re- spectively) into the same embedding space where inner product
+    captures relevance.'
+- doc_id: 2312.10997v5
+  page: 9
+  text: This mainly includes a sparse encoder (BM25) and a dense retriever (BERT architecture Pre-training
+    language models).
+- doc_id: 2312.10997v5
+  page: 9
+  text: sparse retrieval models can enhance the zero-shot retrieval capability of dense retrieval models
+    and assist dense retrievers in handling queries containing rare entities, thereby improving robustness.

@@ -4,7 +4,7 @@
 
 **Build philosophy:** walking skeleton first. One PDF, one chunk, one embedding, one hybrid call, one `CitedSummary`, one streamed block, one rendered component, end to end, before building the second of anything. Evidence is measured, never asserted.
 
-**Right now (2026-10-05):** P0 tasks 1 to 9 are built and verified on fakes. A fixture PDF goes in through the web UI and comes back as a `CitedSummary` with citations that name the source document; three failures were checked and each renders an error state: a forced LLM failure, a connection reset mid-stream, and an absent API. No paid call has ever been made. **Next:** Azim sets the monthly spend cap (Q-01), then task 10 (real providers behind the cap). Before task 11 (eval harness), Azim confirms that v1's 20 questions and corpus manifest are reused (Q-05). The execution doc is `refdocs/execution/2026-10-05-p0-walking-skeleton.md`; its **Reality** notes say where the build diverged from the plan.
+**Right now (2026-10-06):** P0 tasks 1 to 9 are built and verified on fakes, and task 11's eval harness is built and tested on v1's real 16-paper corpus in fake mode. No paid call has ever been made. Two things block the rest of P0: **task 10** (real providers behind the cap) waits for Azim's Anthropic and OpenRouter keys, and **task 11's Verify** is not fully met until RAGAS is installed (it needs about 94 packages and the development drive is nearly full). Decided: monthly cap $5 and reuse of v1's questions and manifest (D-21). The execution doc is `refdocs/execution/2026-10-05-p0-walking-skeleton.md`; its **Reality** notes say where the build diverged from the plan.
 
 ---
 
@@ -12,7 +12,7 @@
 
 | Phase | Scope | Status |
 |---|---|---|
-| P0 | Walking skeleton + eval harness | 🔶 Tasks 1 to 9 done on fakes; tasks 10 (live providers) and 11 (eval harness) not started |
+| P0 | Walking skeleton + eval harness | 🔶 Tasks 1 to 9 done on fakes; task 11 built, RAGAS metrics pending install; task 10 (live providers) not started |
 | P1 | Agent core with super tools; first full graph-vs-flat benchmark | ⬜ Not started |
 | P2 | GenUI catalog (level 1) + adaptive dashboard (level 2 LayoutSpec) | ⬜ Not started |
 | P3 | Trained tools: router distillation, Re-Rank, Mastery (optional) | ⬜ Not started |
@@ -39,7 +39,7 @@ Status vocabulary: use these exactly, and never round up:
 | Hybrid retrieval | Dense + BM25 + graph, RRF k = 60, per-signal toggles, deterministic entity resolution; scoring frozen (D-20) | 🔶 Behaviour verified by tests on the fixture. Retrieval quality on a real corpus is unmeasured; the harness requirements from the audit are not built yet |
 | One agent to one block | Research agent, Composer stub, fail-closed validator, SSE | 🔶 Verified end to end with a fake LLM. A real model's answers have never been validated |
 | Web | Shell, stream consumer, registry, `CitedSummary` with all states | ✅ Verified in a real browser, including a mid-stream connection reset and an absent API |
-| Eval harness | Question set + manifest (Q-05), gold-set format, five-arm runner, RAGAS smoke run | ⬜ Waiting on Q-05; its requirements are listed in the execution doc |
+| Eval harness | Question set + manifest (D-21), gold format, five-arm runner, Recall@10 and nDCG@10, RAGAS non-LLM metrics | 🔶 Built and tested; ran on the real corpus in fake mode. The two RAGAS metrics are `null` until RAGAS is installed. Gold is smoke only (2 questions); benchmark gold is P1 |
 
 ---
 
@@ -57,15 +57,23 @@ What has actually been run, not what has been written. A row here needs a real c
 | 2026-10-05 | Retrieval arms (task 7) | `pytest api/retrieval`: one test per arm, call-count spies for disabled signals, hand-computed RRF, failing retrievers; `retrieval-auditor` review | Pass; audit fixes applied and re-tested |
 | 2026-10-05 | API server (task 8) | `uvicorn api.main:app` in fake mode; `curl` for `/health`, upload, chat | `/health` 200; upload `ready` with 4 chunks; chat streamed loading, ready, done; `/health` 200 again on port 8765 after the last change |
 | 2026-10-05 | Web unit and component tests (task 9) | `pnpm --filter web test` (`test-runner` final run) | 5 files, 51 tests pass; typecheck, lint and build pass |
+| 2026-10-06 | Eval harness tests (task 11) | `uv run pytest` (api plus `eval/tests`), `uv run ruff check api eval scripts`, `uv run pyright api eval`, run by me | 307 passed; ruff clean; pyright 0 errors. The independent `test-runner` result is in the changelog |
+| 2026-10-06 | Frozen eval assets | `eval/tests/test_frozen_assets.py` pins the SHA-256 of v1's question set (body) and manifest; 20 questions (12, 4, 4); 16 papers | Pass |
+| 2026-10-06 | Runner on the real corpus, fake mode | `uv run python eval/run_ablation.py --questions q-cross-01,q-single-01 --arms all --corpus-dir ../Arcana/eval/corpus` | Exit 0 in 14 s; 16 papers, 1,570 chunks, 5 arms for each question; RAGAS metrics `null` (not installed); `eval/results/*smoke-fake.json` |
+| 2026-10-06 | Metric plumbing, not a bug | Gold passages matched exactly 3 chunks for q-cross-01 and 0 for q-single-01; ranks of the relevant chunks (BM25 57, 435, 723; fake dense 274, 355, 1245); positive control on q-single-02 | Zeros on q-cross-01 are real misses; q-single-02 scored recall 0.33 to 0.67 |
+| 2026-10-06 | q-single-01 cannot be answered from the corpus | PyMuPDF text search of all 16 PDFs for "RRF", "rank fusion", "reciprocal" | 0, 0, 2 (both Mean Reciprocal Rank); ADR D-21 |
 | 2026-10-05 | Web in a real browser (task 9) | Playwright: upload the fixture, ask a question; then a stand-in API reset the TCP connection after the loading block; then no API | Cited answer rendered with the document title, page and quote; connection-lost error alert, no skeleton left; "Could not reach the server." alert. Screenshots in `refdocs/evidence/` |
 
-**Not verified:** any call to Anthropic, OpenRouter or OpenAI; extraction or answer quality with a real model; retrieval on a real corpus; RAGAS; the spend cap against real costs. The independent final run of the Python checks by `test-runner` was cut short by a full disk, so the Python figures above are from my own runs (the JavaScript checks were run by `test-runner`).
+**Not verified:** the RAGAS metrics (the wrapper was written from the current docs and has not been executed); any call to Anthropic, OpenRouter or OpenAI; extraction or answer quality with a real model; retrieval on a real corpus; RAGAS; the spend cap against real costs. The independent final run of the Python checks by `test-runner` was cut short by a full disk, so the Python figures above are from my own runs (the JavaScript checks were run by `test-runner`).
 
 ---
 
 ## Known gaps
 
-- No `eval/` directory, gold annotations or benchmark numbers. Q-01 (spend cap) blocks the first paid run; Q-05 (reuse v1's questions and manifest) blocks task 11.
+- No benchmark numbers and no benchmark gold. The harness exists; the only gold is two smoke files written by the assistant (labelled as such). Hand-annotated gold is P1 and must be written before any benchmark arm is run.
+- **Question set defect (open for Azim):** q-single-01 ("What is Reciprocal Rank Fusion...") cannot be answered from the 16-paper corpus. It is handled as `unanswerable` (metrics `null`, excluded from aggregates) and was not edited; amending it (replace the question, add a paper that defines RRF, or keep it as a grounding test) is a declared amendment before the P1 benchmark (D-21).
+- RAGAS is not installed (about 94 packages; the drive is nearly full). Waiting on Azim to free space, then `uv add ragas rapidfuzz` and a re-run.
+- Task 10 waits for the API keys. Two assumptions to confirm then: OpenRouter's model ids, and the `text-embedding-3-large` price.
 - Retrieval has only been exercised on a 4-chunk fixture with hashed bag-of-words embeddings and a fake extractor. It says nothing yet about whether the graph helps.
 - The citation `quote` is a sentence chosen by the server from the cited chunk (verbatim and non-trivial, checked by the validator). A model-chosen supporting span, verified, is a P1 refinement. Chat history is accepted but unused.
 - Extraction has no seed, so each ingest gives a different graph; the benchmark must treat the ingested graph as a fixed artefact.
