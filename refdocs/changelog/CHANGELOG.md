@@ -28,6 +28,11 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-06: P2 task A2 (shared quote helpers)
+- **Changed:** `api/genui/evidence.py` (new; `best_excerpt` and `verified_quote` moved from `research.py` unchanged, plus `normalise`, `excerpt_containing`, `label_in_quote`), `api/agents/research.py` (imports them), `api/genui/test_evidence.py` (11 tests). A refactor with no behaviour change plus two new helpers for the relational grounding rule.
+- **Verified:** `uv run pytest api/genui api/agents -q` 204 passed; ruff and pyright clean. **Not verified:** nothing yet uses the new helpers (A3 and B2 do).
+- **Known issues / next steps:** A3 (the catalog spine and a multi-block Composer).
+
 ### 2026-10-06: P2 tasks A1 and A1b (reading, spike, catalog guide, codegen hardening)
 - **Changed:** `refdocs/guides/catalog.md` (new: the bound, schema and grounding conventions, six components with preconditions, supplier, caps, invariants, states and placement hints, the not-admitted table, layout defaults, the recipe for adding a component, the UI pipeline), `refdocs/guides/agents.md` (reviewed against the code), `packages/schema/codegen/to_python.ts` (hardened, new `--src` and `--out` flags), `api/genui/test_codegen_guard.py` (13 tests), D-31 note that the pipeline may change after testing, the P2 execution doc (A1 and A1b reality notes), indexes.
 - **Diagnosed (by a spike in a throwaway directory, removed afterwards):** the generator handled a five-variant discriminated union, nested lists, optional and nullable fields and unknown-field rejection correctly, but had **three silent weaknesses**: `/** @int */` in a one-line interface was ignored and the field became `float` (it accepted 33.5 for an integer); `interface Sub extends Base` dropped the base's fields so a required field stopped being required (fail open); a generic interface produced a module that could not be imported. All three are now refused at codegen with a message naming the construct. Docs read: Pydantic (a discriminated union cannot have a single variant, so `validate_block` must dispatch on type in B1; `union_tag_invalid` and `union_tag_not_found`), the installed React 19.3.0 types (`inert` is a boolean prop), Tailwind 4.3.3 (`@theme` in CSS, no config file).

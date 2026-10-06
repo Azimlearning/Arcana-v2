@@ -15,14 +15,13 @@ non-trivial span of the cited chunk; if it is not, the server's own sentence fro
 A fabricated quote therefore never reaches a block, and the validator re-checks the survivor.
 """
 
-import re
 from typing import Any
 
 from api.agents.framework import Agent, AgentOutput, tool_spec
 from api.agents.state import Answer, TurnContext
 from api.core.errors import ModelOutputInvalid
 from api.core.logging import get_logger
-from api.genui.validate import MIN_QUOTE_CHARS
+from api.genui.evidence import best_excerpt, verified_quote
 from api.llm.json_reply import parse_json_object
 from api.llm.types import LLMRequest
 from api.retrieval.types import RetrievedChunk
@@ -32,10 +31,6 @@ log = get_logger(__name__)
 
 PASSAGES = 8
 GRAPH_PASSAGES = 3
-QUOTE_CHARS = 240
-_WS = re.compile(r"\s+")
-_SENTENCE = re.compile(r"(?<=[.!?])\s+")
-_WORD = re.compile(r"[a-z0-9]{3,}")
 
 _BASE = (
     "You answer a question using ONLY the numbered passages provided. Reply with ONE JSON object and "
@@ -51,10 +46,6 @@ SYSTEM_COMPARE = (
     + " Several documents are provided. Attribute each claim to the document it comes from, and say "
     "where the documents agree or differ."
 )
-
-
-def _norm(text: str) -> str:
-    return _WS.sub(" ", text).strip()
 
 
 # ── evidence tools ────────────────────────────────────────────────────────────
@@ -119,28 +110,6 @@ def build_prompt(question: str, passages: list[tuple[RetrievedChunk, str]]) -> s
         page = f", p.{chunk.page}" if chunk.page else ""
         lines.append(f"[{number}] ({title}{page})\n{chunk.text}\n")
     return "\n".join(lines)
-
-
-def best_excerpt(chunk_text: str, segment_text: str) -> str:
-    """The sentence of the chunk sharing the most words with the segment, at most QUOTE_CHARS long.
-    A prefix of a sentence of the whitespace-normalised chunk, so always a verbatim span of it."""
-    normal = _norm(chunk_text)
-    wanted = set(_WORD.findall(segment_text.lower()))
-    sentences = [s for s in _SENTENCE.split(normal) if s] or [normal]
-    best = max(sentences, key=lambda s: len(wanted & set(_WORD.findall(s.lower()))))
-    if len(best) <= QUOTE_CHARS:
-        return best
-    return best[:QUOTE_CHARS].rsplit(" ", 1)[0]
-
-
-def verified_quote(chunk_text: str, proposed: object) -> str | None:
-    """The model's proposed quote if it is a verbatim, non-trivial span of the chunk, else None."""
-    if not isinstance(proposed, str):
-        return None
-    quote, chunk = _norm(proposed), _norm(chunk_text)
-    if not quote or quote not in chunk or len(quote) < min(MIN_QUOTE_CHARS, len(chunk)):
-        return None
-    return quote if len(quote) <= QUOTE_CHARS else quote[:QUOTE_CHARS].rsplit(" ", 1)[0]
 
 
 def _title(docs: DocStore, doc_id: str) -> str:

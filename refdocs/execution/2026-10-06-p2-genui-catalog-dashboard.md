@@ -2,7 +2,7 @@
 
 > Plan: `refdocs/plans/2026-10-06-p2-genui-catalog-dashboard.md`. Tasks run in order within each track. A task is not done until its **Verify** passes, not when the code compiles.
 > If reality diverges from this doc, **edit this doc** (CLAUDE.md rule 4) and note it in the changelog's Deviations line.
-> Status: approved by Azim 2026-10-06 with ADRs D-27 to D-31 already recorded. **A1 and A1b are done (2026-10-06); everything after them is not started.**
+> Status: approved by Azim 2026-10-06 with ADRs D-27 to D-31 already recorded. **A1, A1b and A2 are done (2026-10-06); everything after them is not started.**
 
 ## Before starting
 
@@ -52,6 +52,8 @@
 3. Add `label_in_quote(quote, label) -> bool` using the same normalisation, for the validator's relational rule.
 
 **Verify:** `uv run pytest api/agents api/genui -q` passes with the same number of existing tests plus the new ones; `uv run pytest api/genui/test_evidence.py -q` covers: a sentence with both labels is returned, one label only returns `None`, a label split across a line break still matches after normalisation, a result is always a substring of the normalised chunk, a too-short span is refused. `uv run ruff check api eval scripts` and `uv run pyright api eval` are clean.
+
+**Reality (A2 done 2026-10-06):** `api/genui/evidence.py` holds `normalise`, `best_excerpt`, `verified_quote` (moved unchanged from `research.py`, which now imports them, so `from api.agents.research import best_excerpt` still works) and two new helpers: `excerpt_containing(chunk_text, labels)` and `label_in_quote(quote, label)`. `excerpt_containing` returns the shortest sentence, else two adjacent sentences, else the tightest window around the labels, always a verbatim span of the normalised chunk of at most 240 characters, never shorter than the validator's 20-character minimum (it extends a too-short sentence instead of returning it), and `None` if any label is missing or the labels are farther apart than 240 characters (refused, not truncated). Behaviour of the existing code is unchanged. **Verified:** `uv run pytest api/genui api/agents -q` 204 passed (the 11 new tests in `api/genui/test_evidence.py` cover both labels in one sentence, a missing label, case and line-break matching, labels in adjacent sentences, the minimum length rule, a chunk shorter than the minimum, the tight window, a property check over several label sets that the result is verbatim, holds every label and respects both length limits, and the moved helpers); ruff and pyright clean. Known limit: a label must appear literally in the chunk; PDF hyphenation (`Aug- mented`) defeats a match, which is the same 17 to 30 percent of edges the live graph check already counted as ungroundable.
 
 ### Task A3: The catalog spine and a multi-block Composer
 
