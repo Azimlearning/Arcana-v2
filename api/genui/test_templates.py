@@ -175,3 +175,47 @@ def test_slots_are_typed_strings_and_only_graph_supplied_templates_are_reusable_
         0
     ].min_count == 2
     assert CATALOG["SourceList"].slots == ()
+
+
+# ── the pipeline section of the guide ─────────────────────────────────────────
+
+
+def test_the_guide_names_the_same_five_pipeline_stages_as_the_code():
+    import re
+
+    section = GUIDE.split("## UI generation pipeline", 1)[1]
+    table_stages = re.findall(r"^\| \*\*(\w+)\*\* \|", section, flags=re.M)
+    assert [s.lower() for s in table_stages] == list(templates.PIPELINE_STAGES)
+    assert "### Where P4 plugs in" in section and "### Re-verification" in section
+    for stage in ("Template", "Fences", "Checking", "Save", "Reuse"):
+        assert f"**{stage}:**" in section, f"the guide does not say where P4 plugs into {stage}"
+
+
+# ── a loosened cap must be caught for the intended rule, whichever cap it is ──
+
+
+def _all_caps():
+    return [(name, key) for name, template in CATALOG.items() for key in template.fences.caps]
+
+
+@pytest.mark.parametrize(("name", "key"), _all_caps())
+def test_loosening_any_single_cap_is_refused_at_registration(name, key, monkeypatch):
+    """Every cap of every template is guarded by a planted defect that fires only that cap's own rule (the defect names
+    the issue path it expects), so a validator that stops enforcing a cap cannot register."""
+    loosened = 1 if key == "min_steps" else 10_000  # a minimum is loosened downwards, a maximum upwards
+    monkeypatch.setitem(CATALOG[name].fences.caps, key, loosened)
+    with pytest.raises(TemplateRefused) as refused:
+        ensure_builtin_registered({})
+    assert refused.value.template == name and refused.value.defect, f"{name}.{key} was not guarded"
+
+
+def test_a_defect_rejected_for_the_wrong_reason_is_refused():
+    docs = fixture_store()
+    valid, defects = suite("GraphView")
+    wrong = PlantedDefect("a_defect_with_a_wrong_expectation", _set_missing_chunk, expects="data.nodes")
+    with pytest.raises(TemplateRefused, match="not for the intended rule"):
+        register_template(GRAPH_VIEW, docs, valid, [*defects, wrong], {})
+
+
+def _set_missing_chunk(raw):
+    raw["data"]["citations"][0]["chunkId"] = "no-such-chunk"

@@ -38,6 +38,7 @@ from api.genui.catalog import (
 from api.genui.generated import ErrorEnvelope, LayoutSpec, SavedPattern, UIBlock
 from api.genui.layout import compose_layout, prebuilt_layout
 from api.genui.patterns import params_of, validate_params
+from api.genui.templates import SUITES, TemplateRefused, fixture_store, register_template
 from api.genui.validate import validate_block, validate_layout
 from api.stores.doc_store import DocStore, Document
 
@@ -363,12 +364,35 @@ async def compose_from_pattern(ctx: TurnContext, pattern: SavedPattern) -> Compo
         log.warning("applied_block_rejected", component=template.name, issues=[i.path for i in exc.issues])
         raise PatternRefused("precondition_not_met", "Your documents no longer support this view.") from exc
     mode_intent = "relate" if pattern.layoutMode == "exploration" else "single"
-    layout = validate_layout(compose_layout([(block.id, template.name)], mode_intent), {block.id})
+    try:
+        layout = validate_layout(compose_layout([(block.id, template.name)], mode_intent), {block.id})
+    except ValidationFailed as exc:
+        log.warning("applied_layout_rejected", issues=[i.path for i in exc.issues])
+        raise PatternRefused("precondition_not_met", "This view could not be laid out.") from exc
     return Composition(
         (block,),
         (ComponentRecord(template.name, "admitted", (), block.id),),
         layout=layout,
     )
+
+
+async def reverify_pattern(ctx: TurnContext, pattern: SavedPattern) -> int:
+    """Re-verify a saved pattern (D-31, stage 5, E4): the template's registration suite is run again, and the pattern is
+    applied as a dry run on today's evidence against the template's **current** version. Returns that version (the
+    caller then marks the pattern current and `verified`). Raises `PatternRefused` with the reason otherwise, and the
+    pattern is left as it was: stale, with the reason, never silently updated."""
+    template = CATALOG.get(pattern.templateId)
+    suite = SUITES.get(pattern.templateId)
+    if template is None or suite is None or not template.reusable:
+        raise PatternRefused("template_changed", "The layout this view was made with no longer exists.")
+    valid, defects = suite()
+    try:
+        register_template(template, fixture_store(), valid, defects, {})  # a throwaway registry: this only checks
+    except TemplateRefused as exc:
+        log.error("reverify_registration_refused", template=template.name, defect=exc.defect)
+        raise PatternRefused("template_changed", "The layout this view was made with did not pass its checks.") from exc
+    await compose_from_pattern(ctx, pattern.model_copy(update={"templateVersion": template.version}))
+    return template.version
 
 
 WORKSPACE_SOURCES_ID = "workspace-sources"

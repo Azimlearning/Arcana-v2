@@ -61,6 +61,17 @@ describe("SavedViews", () => {
   });
 });
 
+describe("SavedViews: checking a stale view again", () => {
+  it("offers Check this view again only for the view whose layout moved on, and reports it", () => {
+    const onReverify = vi.fn();
+    const { rerender } = render(<SavedViews patterns={[savedPattern()]} busy={false} message="needs checking" onApply={vi.fn()} onDelete={vi.fn()} onReverify={onReverify} />);
+    expect(screen.queryByRole("button", { name: "Check this view again" })).not.toBeInTheDocument();
+    rerender(<SavedViews patterns={[savedPattern()]} busy={false} message="needs checking" staleId="p-1" onApply={vi.fn()} onDelete={vi.fn()} onReverify={onReverify} />);
+    fireEvent.click(screen.getByRole("button", { name: "Check this view again" }));
+    expect(onReverify).toHaveBeenCalledWith("p-1");
+  });
+});
+
 describe("SaveView", () => {
   it("collects a name and reports it, then confirms", async () => {
     const onSave = vi.fn(async () => ({ ok: true as const }));

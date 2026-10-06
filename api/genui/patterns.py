@@ -25,6 +25,7 @@ from api.genui.generated import PatternParam, SavedPattern
 from api.stores.doc_store import DocStore, StoredPattern
 
 NAME_MAX_CHARS = 80
+MAX_PATTERNS = 200  # a saved view is cheap but not free: list and save scan every row
 MAX_TURN_ID_CHARS = 64
 VALUE_MAX_CHARS = 120
 _DOC_ID = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
@@ -167,6 +168,24 @@ def save_pattern(docs: DocStore, turn_id: str, template_id: str, name: str) -> S
     if problems:
         raise BadRequest("That view cannot be saved: " + "; ".join(problems) + ".")
     mode = layout_mode if layout_mode in ADAPTIVE_MODES else "research"
+    # The same view saved again is the same pattern, even if re-verification has since moved the original to a newer
+    # template version (its id is fixed at creation): look for it by what it shows, not by its id.
+    existing_patterns = docs.list_patterns()
+    for existing in existing_patterns:
+        if (
+            existing.template_id == template_id
+            and existing.layout_mode == mode
+            and _same_params(existing, entry.params)
+        ):
+            if existing.template_version != template.version:
+                # The user has just saved a verified view of the current template: that brings a stale pattern up to date.
+                docs.update_pattern(existing.id, state="saved", template_version=template.version)
+                refreshed = docs.get_pattern(existing.id)
+                assert refreshed is not None
+                return to_saved(refreshed)
+            return to_saved(existing)
+    if len(existing_patterns) >= MAX_PATTERNS:
+        raise BadRequest(f"You can keep at most {MAX_PATTERNS} saved views. Delete one to save another.")
     stored = docs.put_pattern(
         StoredPattern(
             id=pattern_id(template_id, template.version, entry.params, mode),
@@ -189,7 +208,7 @@ def save_pattern(docs: DocStore, turn_id: str, template_id: str, name: str) -> S
 
 def to_saved(stored: StoredPattern) -> SavedPattern:
     """A stored pattern as the wire type. Raises if the row is damaged (it is never returned half-formed): the JSON must
-    parse, every field must fit the generated model, and when the template is known its parameters must be valid."""
+    parse and every field must fit the generated model."""
     try:
         params = [PatternParam.model_validate(p) for p in json.loads(stored.params_json)]
         saved = SavedPattern(
@@ -206,12 +225,18 @@ def to_saved(stored: StoredPattern) -> SavedPattern:
         )
     except (ValueError, TypeError, ValidationError) as exc:
         raise ValueError(f"stored pattern {stored.id!r} is damaged") from exc
-    template = CATALOG.get(saved.templateId)
-    if template is not None:
-        problems = validate_params(template, params_of(saved))
-        if problems:
-            raise ValueError(f"stored pattern {stored.id!r} has invalid parameters")
+    # Whether the parameters still fit the template's slots is NOT checked here: a pattern whose template has moved on is
+    # stale, not damaged. It is listed, and applying or re-verifying it is refused with `template_changed`.
     return saved
+
+
+def _same_params(stored: StoredPattern, params: Mapping[str, Sequence[str]]) -> bool:
+    try:
+        return {p["key"]: list(p["values"]) for p in json.loads(stored.params_json)} == {
+            k: list(v) for k, v in params.items()
+        }
+    except (ValueError, KeyError, TypeError):
+        return False
 
 
 def params_of(saved: SavedPattern) -> dict[str, list[str]]:

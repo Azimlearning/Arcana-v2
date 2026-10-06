@@ -34,15 +34,20 @@ export function SavedViews({
   patterns,
   busy,
   message,
+  staleId = null,
   onApply,
   onDelete,
+  onReverify,
 }: {
   patterns: SavedPattern[];
   busy: boolean;
   /** A sentence about the last attempt (a refusal, or a failed delete), or null. */
   message: string | null;
+  /** The view whose last attempt was refused because its layout moved on: it can be checked again. */
+  staleId?: string | null;
   onApply: (id: string) => void;
   onDelete: (id: string) => void;
+  onReverify?: (id: string) => void;
 }) {
   return (
     <div className="relative">
@@ -87,9 +92,21 @@ export function SavedViews({
         </div>
       </details>
       {message && (
-        <p role="alert" className="mt-1 max-w-80 text-xs text-red-700">
-          {message}
-        </p>
+        <div className="mt-1 max-w-80 text-xs">
+          <p role="alert" className="text-red-700">
+            {message}
+          </p>
+          {staleId && onReverify && (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => onReverify(staleId)}
+              className="mt-1 rounded border border-stone-300 px-2 py-0.5 text-stone-700 hover:bg-stone-100 disabled:opacity-40"
+            >
+              Check this view again
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

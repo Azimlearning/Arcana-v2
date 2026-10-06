@@ -31,17 +31,17 @@ WEB_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"]
 
 # Declared Content-Length limits, checked before the body is read. A chunked body without a
 # Content-Length is not caught here; the route still bounds what it keeps.
-MAX_BODY_BYTES = {"/chat": 512 * 1024, "/ingest": ingest.MAX_UPLOAD_BYTES + 1024 * 1024}
+MAX_BODY_BYTES = {"/chat": 512 * 1024, "/ingest": ingest.MAX_UPLOAD_BYTES + 1024 * 1024, "/patterns": 16 * 1024}
 
 
 def _envelope(code: ErrorCode, message: str, issues: list[FieldIssue] | None = None) -> ErrorEnvelope:
     return ErrorEnvelope(code=code, message=message, issues=issues or [], retryable=False)
 
 
-def _json_error(envelope: ErrorEnvelope, status: int | None = None, headers: dict[str, str] | None = None) -> JSONResponse:
-    return JSONResponse(
-        envelope.model_dump(), status_code=status or HTTP_STATUS[envelope.code], headers=headers
-    )
+def _json_error(
+    envelope: ErrorEnvelope, status: int | None = None, headers: dict[str, str] | None = None
+) -> JSONResponse:
+    return JSONResponse(envelope.model_dump(), status_code=status or HTTP_STATUS[envelope.code], headers=headers)
 
 
 class BodyLimit:
@@ -82,8 +82,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.exception_handler(StarletteHTTPException)
     async def http_error(_: Request, exc: StarletteHTTPException) -> JSONResponse:
-        code: ErrorCode = "not_found" if exc.status_code == 404 else (
-            "bad_request" if exc.status_code < 500 else "internal"
+        code: ErrorCode = (
+            "not_found" if exc.status_code == 404 else ("bad_request" if exc.status_code < 500 else "internal")
         )
         message = {404: "Not found.", 405: "Method not allowed."}.get(
             exc.status_code, "The request could not be handled."

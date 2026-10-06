@@ -11,7 +11,7 @@ from collections.abc import AsyncIterator
 from fastapi import APIRouter, Request, Response
 from fastapi.responses import StreamingResponse
 
-from api.agents.compose import compose_from_pattern
+from api.agents.compose import compose_from_pattern, reverify_pattern
 from api.agents.graph import stream_composition
 from api.agents.roster import default_roster
 from api.agents.state import TurnContext
@@ -41,6 +41,32 @@ async def delete_pattern(pattern_id: str, request: Request) -> Response:
     return Response(status_code=204)
 
 
+@router.post("/patterns/{pattern_id}/reverify")
+async def reverify(pattern_id: str, request: Request) -> SavedPattern:
+    """Check a saved view again against the current template and your documents. If it passes it is made current with the
+    template's version and marked `verified`; if not it stays as it was (stale) and the reason is a `pattern_refused`
+    envelope. No model call."""
+    container = request.app.state.container
+    stored = container.docs.get_pattern(pattern_id) if len(pattern_id) <= patterns.MAX_TURN_ID_CHARS else None
+    if stored is None:
+        raise NotFound("No saved view has that id.")
+    ctx = TurnContext(
+        docs=container.docs,
+        retrieve=container.retrieve,
+        llm=container.llm,
+        budget=TokenBudget(),
+        block_id=f"reverify-{uuid.uuid4().hex[:12]}",
+        roster=default_roster(),
+        graph=container.graph,
+    )
+    version = await reverify_pattern(ctx, patterns.to_saved(stored))
+    container.docs.update_pattern(pattern_id, state="verified", template_version=version)
+    updated = container.docs.get_pattern(pattern_id)
+    if updated is None:  # deleted while it was being checked
+        raise NotFound("No saved view has that id.")
+    return patterns.to_saved(updated)
+
+
 @router.post("/patterns/{pattern_id}/apply")
 async def apply_pattern(pattern_id: str, request: Request) -> StreamingResponse:
     """Apply a saved view: re-bind its evidence with the Graph agent's deterministic tools, then stream its block and
@@ -61,10 +87,13 @@ async def apply_pattern(pattern_id: str, request: Request) -> StreamingResponse:
         graph=container.graph,
     )
     composition = await compose_from_pattern(ctx, saved)  # a refusal is raised here, before the stream starts
-    container.docs.mark_pattern_used(saved.id, patterns.now())
 
     async def events() -> AsyncIterator[str]:
+        failed = False
         async for event in stream_composition(composition, ctx):
+            failed = failed or event.type == "error"
             yield sse(event)
+        if not failed:  # a use is a view that was shown, not an attempt
+            container.docs.mark_pattern_used(saved.id, patterns.now())
 
     return StreamingResponse(events(), media_type="text/event-stream", headers=SSE_HEADERS)

@@ -8,8 +8,11 @@ detail goes to the log, never to the client.
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Literal
 
 from api.genui.generated import ErrorCode, ErrorEnvelope, FieldIssue
+
+PatternRefusalReason = Literal["precondition_not_met", "template_changed", "document_missing"]
 
 
 class ArcanaError(Exception):
@@ -43,7 +46,7 @@ class PatternRefused(ArcanaError):
 
     code = "pattern_refused"
 
-    def __init__(self, reason: str, message: str):
+    def __init__(self, reason: PatternRefusalReason, message: str):
         super().__init__("This saved view cannot be shown.", [FieldIssue(path=reason, message=message)])
         self.reason = reason
 

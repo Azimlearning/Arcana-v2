@@ -445,6 +445,36 @@ describe("Workspace", () => {
       expect(useWorkspace.getState().order).toEqual([]);
     });
 
+    it("checks a view again when its layout moved on, then shows it", async () => {
+      routes["GET /patterns"] = () => jsonResponse({ patterns: [savedPattern()] });
+      const stale = envelope({ code: "pattern_refused", message: "This saved view cannot be shown.", retryable: false, issues: [{ path: "template_changed", message: "x" }] });
+      let verified = false;
+      routes["POST /patterns/p-1/apply"] = () => (verified ? appliedStream() : jsonResponse(stale, 409));
+      routes["POST /patterns/p-1/reverify"] = () => {
+        verified = true;
+        return jsonResponse(savedPattern({ state: "verified", templateVersion: 2 }));
+      };
+      render(<Workspace />);
+      await openList();
+      fireEvent.click(await screen.findByRole("button", { name: "Show Dense vs BM25" }));
+      expect(await screen.findByRole("alert")).toHaveTextContent(/older version.*checked again/);
+      fireEvent.click(screen.getByRole("button", { name: "Check this view again" }));
+      const studio = document.querySelector('[data-panel="studio"]') as HTMLElement;
+      expect(await within(studio).findByRole("group", { name: /Graph of/ })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Check this view again" })).not.toBeInTheDocument();
+    });
+
+    it("does not offer to check again a view that was refused for another reason", async () => {
+      routes["GET /patterns"] = () => jsonResponse({ patterns: [savedPattern()] });
+      const gone = envelope({ code: "pattern_refused", message: "x", retryable: false, issues: [{ path: "document_missing", message: "x" }] });
+      routes["POST /patterns/p-1/apply"] = () => jsonResponse(gone, 409);
+      render(<Workspace />);
+      await openList();
+      fireEvent.click(await screen.findByRole("button", { name: "Show Dense vs BM25" }));
+      expect(await screen.findByRole("alert")).toHaveTextContent("no longer in your library");
+      expect(screen.queryByRole("button", { name: "Check this view again" })).not.toBeInTheDocument();
+    });
+
     it("deletes a saved view and refreshes the list", async () => {
       let items = [savedPattern(), savedPattern({ id: "p-2", name: "Second" })];
       routes["GET /patterns"] = () => jsonResponse({ patterns: items });

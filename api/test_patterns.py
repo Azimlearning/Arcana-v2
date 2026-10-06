@@ -387,3 +387,159 @@ def test_an_unknown_pattern_is_not_found_and_apply_is_post_only(ready_client: Te
     refused(apply(ready_client, "no-such-pattern"), "not_found", 404)
     refused(apply(ready_client, "x" * 65), "not_found", 404)
     assert ready_client.get("/patterns/anything/apply").status_code == 405
+
+
+# ── re-verification (P2 E4) ───────────────────────────────────────────────────
+
+
+def reverify(app_client: TestClient, pattern_id: str):
+    return app_client.post(f"/patterns/{pattern_id}/reverify")
+
+
+def bump(monkeypatch: pytest.MonkeyPatch, template: str = "GraphView", version: int = 2) -> None:
+    from dataclasses import replace
+
+    monkeypatch.setitem(CATALOG, template, replace(CATALOG[template], version=version))
+
+
+def test_a_stale_pattern_re_verifies_after_the_template_moved_on_and_then_applies(
+    ready_client: TestClient, monkeypatch: pytest.MonkeyPatch
+):
+    pattern = SavedPattern.model_validate(save(ready_client, saved_turn(ready_client)).json())
+    bump(monkeypatch)  # the template is now at version 2: the pattern is stale
+    refusal(apply(ready_client, pattern.id), "template_changed")
+
+    response = reverify(ready_client, pattern.id)
+    assert response.status_code == 200
+    updated = SavedPattern.model_validate(response.json())
+    assert (updated.id, updated.templateVersion, updated.state) == (pattern.id, 2, "verified")
+    assert updated.params == pattern.params and updated.useCount == 0  # re-verifying is not a use
+
+    stream = events(apply(ready_client, pattern.id))  # and now it applies
+    assert [e.type for e in stream] == ["block", "layout", "done"]
+
+
+def test_a_pattern_whose_evidence_is_gone_stays_stale_with_its_reason(
+    ready_client: TestClient, monkeypatch: pytest.MonkeyPatch
+):
+    docs = ready_client.app.state.container.docs  # pyright: ignore[reportAttributeAccessIssue]
+    pattern = SavedPattern.model_validate(save(ready_client, saved_turn(ready_client)).json())
+    bump(monkeypatch)
+    for document in docs.list_documents():
+        docs.delete_document(document.id)
+    refusal(reverify(ready_client, pattern.id), "precondition_not_met")
+    (after,) = listing(ready_client)
+    assert (after.templateVersion, after.state) == (1, "saved")  # left exactly as it was
+
+
+def test_a_current_pattern_can_be_verified_too(ready_client: TestClient):
+    pattern = SavedPattern.model_validate(save(ready_client, saved_turn(ready_client)).json())
+    updated = SavedPattern.model_validate(reverify(ready_client, pattern.id).json())
+    assert (updated.templateVersion, updated.state) == (1, "verified")
+
+
+def test_a_template_that_no_longer_exists_or_fails_its_suite_cannot_re_verify(
+    ready_client: TestClient, monkeypatch: pytest.MonkeyPatch
+):
+    from api.stores.doc_store import StoredPattern
+
+    docs = ready_client.app.state.container.docs  # pyright: ignore[reportAttributeAccessIssue]
+    params = json.dumps([{"key": "entities", "values": ["A"]}])
+    docs.put_pattern(StoredPattern("gone", "n", "RemovedThing", 1, params, "research", "saved", 0, "t", None))
+    refusal(reverify(ready_client, "gone"), "template_changed")
+
+    pattern = SavedPattern.model_validate(save(ready_client, saved_turn(ready_client)).json())
+    monkeypatch.setitem(CATALOG["GraphView"].fences.caps, "nodes", 10_000)  # a hole in the validator
+    refusal(reverify(ready_client, pattern.id), "template_changed")
+    assert listing(ready_client)[0].state == "saved"
+
+
+def test_re_verification_makes_no_model_call_and_an_unknown_pattern_is_not_found(ready_client: TestClient):
+    container = ready_client.app.state.container  # pyright: ignore[reportAttributeAccessIssue]
+    pattern = SavedPattern.model_validate(save(ready_client, saved_turn(ready_client)).json())
+    provider = FakeProvider(fail_with="timeout")
+    container.llm = LLMService(provider, None, container.ledger)
+    before = (container.ledger.month_total(), len(container.ledger.rows()))
+    assert reverify(ready_client, pattern.id).status_code == 200
+    assert provider.calls == [] and (container.ledger.month_total(), len(container.ledger.rows())) == before
+    refused(reverify(ready_client, "no-such-pattern"), "not_found", 404)
+    refused(reverify(ready_client, "x" * 65), "not_found", 404)
+    assert ready_client.get("/patterns/anything/reverify").status_code == 405
+
+
+def test_saving_the_same_view_again_after_re_verification_is_still_one_pattern(
+    ready_client: TestClient, monkeypatch: pytest.MonkeyPatch
+):
+    first = SavedPattern.model_validate(save(ready_client, saved_turn(ready_client)).json())
+    bump(monkeypatch)
+    assert reverify(ready_client, first.id).status_code == 200
+    again = SavedPattern.model_validate(save(ready_client, saved_turn(ready_client), name="Again").json())
+    assert again.id == first.id and again.name == first.name and len(listing(ready_client)) == 1
+
+
+def test_saving_a_stale_view_again_brings_it_up_to_date(ready_client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    first = SavedPattern.model_validate(save(ready_client, saved_turn(ready_client)).json())
+    bump(monkeypatch)  # stale
+    turn_id = saved_turn(ready_client)  # a new turn records the view at the new version
+    again = SavedPattern.model_validate(save(ready_client, turn_id).json())
+    assert again.id == first.id and again.templateVersion == 2 and again.state == "saved"
+    assert [e.type for e in events(apply(ready_client, again.id))] == ["block", "layout", "done"]
+
+
+# ── review fixes: drift, limits, refusals ─────────────────────────────────────
+
+
+def test_a_pattern_whose_params_no_longer_fit_its_template_is_listed_stale_and_refused_not_a_500(
+    ready_client: TestClient,
+):
+    from api.stores.doc_store import StoredPattern
+
+    docs = ready_client.app.state.container.docs  # pyright: ignore[reportAttributeAccessIssue]
+    good = SavedPattern.model_validate(save(ready_client, saved_turn(ready_client)).json())
+    drifted = json.dumps([{"key": "people", "values": ["A"]}])  # a slot GraphView does not have
+    docs.put_pattern(StoredPattern("drift", "Drifted", "GraphView", 1, drifted, "research", "saved", 0, "t", None))
+    assert {p.id for p in listing(ready_client)} == {good.id, "drift"}  # one drifted row does not break the list
+    refusal(apply(ready_client, "drift"), "template_changed")
+    refusal(reverify(ready_client, "drift"), "template_changed")
+    assert apply(ready_client, good.id).status_code == 200  # and the healthy one still applies
+
+
+def test_a_layout_that_cannot_be_built_is_a_refusal_too(ready_client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    from api.agents import compose as compose_module
+    from api.genui.generated import LayoutSpec, PanelSpec
+
+    pattern = SavedPattern.model_validate(save(ready_client, saved_turn(ready_client)).json())
+    broken = LayoutSpec(
+        version=1,
+        origin="adaptive",
+        mode="research",
+        panels=[PanelSpec(id="sources", width=10), PanelSpec(id="chat", width=10), PanelSpec(id="studio", width=10)],
+        placements=[],
+    )
+    monkeypatch.setattr(compose_module, "compose_layout", lambda blocks, intent: broken)
+    refusal(apply(ready_client, pattern.id), "precondition_not_met")
+
+
+def test_the_number_of_saved_views_is_capped(ready_client: TestClient):
+    from api.stores.doc_store import StoredPattern
+
+    docs = ready_client.app.state.container.docs  # pyright: ignore[reportAttributeAccessIssue]
+    params = json.dumps([{"key": "entities", "values": ["A"]}])
+    for i in range(patterns.MAX_PATTERNS):
+        docs.put_pattern(StoredPattern(f"p{i}", "n", "GraphView", 1, params, "research", "saved", 0, f"t{i:04d}", None))
+    refused(save(ready_client, saved_turn(ready_client)))
+    assert len(listing(ready_client)) == patterns.MAX_PATTERNS
+
+
+def test_an_oversized_pattern_request_is_refused_before_it_is_read(client: TestClient):
+    response = client.post(
+        "/patterns", content=b"{}", headers={"Content-Type": "application/json", "Content-Length": str(1024 * 1024)}
+    )
+    assert response.status_code == 413 and ErrorEnvelope.model_validate(response.json()).code == "bad_request"
+
+
+def test_a_failed_apply_is_not_counted_as_a_use_but_a_shown_one_is(ready_client: TestClient):
+    pattern = SavedPattern.model_validate(save(ready_client, saved_turn(ready_client)).json())
+    docs = ready_client.app.state.container.docs  # pyright: ignore[reportAttributeAccessIssue]
+    assert apply(ready_client, pattern.id).status_code == 200
+    assert docs.get_pattern(pattern.id).use_count == 1

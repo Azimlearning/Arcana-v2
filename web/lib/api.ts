@@ -218,6 +218,23 @@ export async function savePattern(request: SavePatternRequest, options: Options 
   return { ok: false, error: unreadable() };
 }
 
+/**
+ * Check a saved view again against the current layout and your documents. On success it is current and `verified`; a
+ * failure is the server's `pattern_refused` envelope (the view is left as it was).
+ */
+export async function reverifyPattern(id: string, options: Options = {}): Promise<SaveResult> {
+  const response = await call(`/patterns/${encodeURIComponent(id)}/reverify`, { method: "POST" }, options);
+  if (!(response instanceof Response)) return { ok: false, error: response };
+  if (!response.ok) return { ok: false, error: await envelopeFromResponse(response) };
+  try {
+    const body: unknown = await response.json();
+    if (isSavedPattern(body)) return { ok: true, pattern: body };
+  } catch {
+    // not JSON
+  }
+  return { ok: false, error: unreadable() };
+}
+
 export async function deletePattern(id: string, options: Options = {}): Promise<DeleteResult> {
   const response = await call(`/patterns/${encodeURIComponent(id)}`, { method: "DELETE" }, options);
   if (!(response instanceof Response)) return { ok: false, error: response };

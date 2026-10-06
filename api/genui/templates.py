@@ -37,6 +37,9 @@ class PlantedDefect:
 
     name: str
     apply: Callable[[dict[str, Any]], None]
+    expects: str | None = None
+    """The exact issue path the validator must report for this defect (for a cap, the cap's own path). Without it a
+    defect could be rejected for some other, collateral reason while the rule it is meant to test is missing."""
 
 
 @dataclass(frozen=True)
@@ -57,6 +60,10 @@ class TemplateRefused(Exception):
         self.defect = defect
         self.reason = reason
 
+
+PIPELINE_STAGES: tuple[str, ...] = ("template", "fences", "checking", "save", "reuse")
+"""The five stages of the UI generation pipeline (D-31), in order. The guide (catalog.md, "UI generation pipeline") names
+the same five, and a test compares them, so the doc and the code cannot describe different pipelines."""
 
 REGISTRY: dict[str, Registration] = {}
 """The templates that passed registration, by name."""
@@ -91,8 +98,14 @@ def register_template(
             raise TemplateRefused(template.name, defect.name, "the defect changes nothing")
         try:
             validate_block(damaged, docs)
-        except ValidationFailed:
-            continue  # rejected, as it must be
+        except ValidationFailed as exc:
+            if defect.expects is not None and defect.expects not in {i.path for i in exc.issues}:
+                raise TemplateRefused(
+                    template.name,
+                    defect.name,
+                    f"the validator rejected it, but not for the intended rule (no issue at {defect.expects!r})",
+                ) from exc
+            continue  # rejected, for the right reason
         raise TemplateRefused(template.name, defect.name, "the validator accepted a block with this defect")
 
     registration = Registration(template.name, template.version, tuple(names))
@@ -106,6 +119,22 @@ A1 = "Alpha Method builds on Beta Index for fast lookup in the pipeline."
 A2 = "Beta Index is compared with Gamma Cache in the experiments."
 B1 = "In this second paper, Alpha Method underpins the baseline pipeline."
 B2 = "The second paper uses Beta Index as the sparse arm of its pipeline."
+CONCEPTS = [
+    "Concept One",
+    "Concept Two",
+    "Concept Three",
+    "Concept Four",
+    "Concept Five",
+    "Concept Six",
+    "Concept Seven",
+]
+CONCEPTS_A = "In this paper " + ", ".join(CONCEPTS[:-1]) + " and " + CONCEPTS[-1] + " are all discussed here."
+CONCEPTS_B = "In the second paper " + ", ".join(CONCEPTS[:-1]) + " and " + CONCEPTS[-1] + " are all discussed too."
+NODES = ["Node One", "Node Two", "Node Three", "Node Four", "Node Five", "Node Six", "Node Seven", "Node Eight"]
+CHAIN = " leads to ".join(NODES) + " in one long sentence."
+EXTRA_SENTENCE = "Alpha Method is described in another paper as well."
+EXTRA_PAPERS = ("c", "d", "e", "f", "g")  # five more papers, so a grid can be built with more rows than its cap
+EXTRA_EMPTY = 49  # and 49 empty documents, so a source list can be built with more items than its cap
 TITLE_A, TITLE_B = "Fixture Paper A", "Fixture Paper B"
 
 
@@ -113,14 +142,20 @@ def fixture_store() -> DocStore:
     """A throwaway in-memory store with two small papers whose sentences name a few concepts."""
     engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
     docs = SqliteDocStore(engine)
-    for doc_id, title in (("fx-a", TITLE_A), ("fx-b", TITLE_B)):
+    papers = [("fx-a", TITLE_A), ("fx-b", TITLE_B), *((f"fx-{x}", f"Fixture Paper {x.upper()}") for x in EXTRA_PAPERS)]
+    papers += [(f"fx-s{i}", f"Fixture Extra {i}") for i in range(EXTRA_EMPTY)]
+    for doc_id, title in papers:
         docs.put_document(Document(doc_id, title, f"{doc_id}.pdf", "ready", 1, None, "2026-01-01"))
     docs.put_chunks(
         [
             Chunk("fx-a-1", "fx-a", 0, 1, A1),
             Chunk("fx-a-2", "fx-a", 1, 2, A2),
+            Chunk("fx-a-3", "fx-a", 2, 3, CONCEPTS_A),
+            Chunk("fx-a-4", "fx-a", 3, 4, CHAIN),
             Chunk("fx-b-1", "fx-b", 0, 1, B1),
             Chunk("fx-b-2", "fx-b", 1, 2, B2),
+            Chunk("fx-b-3", "fx-b", 2, 3, CONCEPTS_B),
+            *(Chunk(f"fx-{x}-1", f"fx-{x}", 0, 1, EXTRA_SENTENCE) for x in EXTRA_PAPERS),
         ]
     )
     return docs
@@ -179,6 +214,15 @@ def _repeat(raw: dict[str, Any], key: str, times: int) -> None:
     _data(raw)[key] = _data(raw)[key] * times
 
 
+def _many_citations(raw: dict[str, Any]) -> None:
+    """One segment citing 41 distinct, verbatim citations: only the citation cap is exceeded."""
+    citations = [_cite(f"c{i}", "fx-a-1", "fx-a", TITLE_A, 1, A1) for i in range(1, 42)]
+    _data(raw)["citations"] = citations
+    _data(raw)["segments"] = [
+        {"text": "Alpha Method builds on Beta Index.", "citationIds": [c["id"] for c in citations]}
+    ]
+
+
 def _cited_summary() -> tuple[dict[str, Any], list[PlantedDefect]]:
     raw = BUILDERS["CitedSummary"](
         "fx-summary",
@@ -193,20 +237,28 @@ def _cited_summary() -> tuple[dict[str, Any], list[PlantedDefect]]:
         PlantedDefect("uncited_segment", _set("data.segments.0.citationIds", [])),
         PlantedDefect("segment_cites_missing_citation", _set("data.segments.0.citationIds", ["c7"])),
         PlantedDefect("ready_without_segments", lambda r: _data(r).update(segments=[])),
-        PlantedDefect("over_cap_segments", lambda r: _repeat(r, "segments", 41)),
+        PlantedDefect("over_cap_segments", lambda r: _repeat(r, "segments", 41), expects="data.segments"),
+        PlantedDefect("over_cap_citations", _many_citations, expects="data.citations"),
         PlantedDefect("placeholder_with_content", _set("meta.status", "empty")),
     ]
 
 
+def _many_documents(raw: dict[str, Any]) -> None:
+    """Fifty-one distinct, stored, ready documents: only the cap is exceeded."""
+    _data(raw)["documents"] += [
+        {"docId": f"fx-s{i}", "title": f"Fixture Extra {i}", "chunkCount": 0} for i in range(EXTRA_EMPTY)
+    ]
+
+
 def _source_list() -> tuple[dict[str, Any], list[PlantedDefect]]:
-    items = [{"docId": "fx-a", "title": TITLE_A, "chunkCount": 2}, {"docId": "fx-b", "title": TITLE_B, "chunkCount": 2}]
+    items = [{"docId": "fx-a", "title": TITLE_A, "chunkCount": 4}, {"docId": "fx-b", "title": TITLE_B, "chunkCount": 3}]
     raw = BUILDERS["SourceList"]("fx-sources", "ready", documents=items)
     return raw, [
         PlantedDefect("unknown_document", _set("data.documents.0.docId", "no-such-document")),
         PlantedDefect("wrong_title", _set("data.documents.0.title", "A Different Title")),
         PlantedDefect("wrong_chunk_count", _set("data.documents.0.chunkCount", 99)),
         PlantedDefect("duplicate_document", _set("data.documents.1.docId", "fx-a")),
-        PlantedDefect("over_cap_documents", lambda r: _repeat(r, "documents", 26)),
+        PlantedDefect("over_cap_documents", _many_documents, expects="data.documents"),
         PlantedDefect("ready_without_documents", lambda r: _data(r).update(documents=[])),
         PlantedDefect("placeholder_with_documents", _set("meta.status", "loading")),
         PlantedDefect("error_status_without_envelope", _set("meta.status", "error")),
@@ -241,12 +293,43 @@ def _graph_view() -> tuple[dict[str, Any], list[PlantedDefect]]:
         PlantedDefect("duplicate_node_id", _set("data.nodes.1.id", "alpha")),
         PlantedDefect("self_loop", _set("data.edges.0.target", "alpha")),
         PlantedDefect("edge_citing_nothing", _set("data.edges.0.citationId", "c9")),
-        PlantedDefect("over_long_relation", _set("data.edges.0.relation", "x" * 81)),
-        PlantedDefect("over_cap_nodes", lambda r: extra_nodes(r, 29)),
-        PlantedDefect("over_cap_edges", lambda r: _repeat(r, "edges", 41)),
+        PlantedDefect("over_long_relation", _set("data.edges.0.relation", "x" * 81), expects="data.edges.0.relation"),
+        PlantedDefect(
+            "over_long_label", _set("data.nodes.0.label", "Alpha Method" + "y" * 109), expects="data.nodes.0.label"
+        ),
+        PlantedDefect("over_cap_nodes", lambda r: extra_nodes(r, 29), expects="data.nodes"),
+        PlantedDefect("over_cap_edges", lambda r: _repeat(r, "edges", 41), expects="data.edges"),
         PlantedDefect("ready_without_edges", lambda r: _data(r).update(edges=[])),
         PlantedDefect("placeholder_with_graph", _set("meta.status", "empty")),
     ]
+
+
+def _many_rows(raw: dict[str, Any]) -> None:
+    """Five more papers, each with one grounded cell for the first column: seven rows, only the row cap exceeded."""
+    for x in EXTRA_PAPERS:
+        cid = f"cx-{x}"
+        _data(raw)["citations"].append(
+            _cite(cid, f"fx-{x}-1", f"fx-{x}", f"Fixture Paper {x.upper()}", 1, EXTRA_SENTENCE)
+        )
+        _data(raw)["rows"].append(
+            {
+                "docId": f"fx-{x}",
+                "docTitle": f"Fixture Paper {x.upper()}",
+                "cells": [{"dimensionId": "alpha", "citationId": cid}],
+            }
+        )
+
+
+def _many_dimensions(raw: dict[str, Any]) -> None:
+    """Seven more columns, each evidenced in both papers: nine columns, only the column cap exceeded."""
+    _data(raw)["citations"] += [
+        _cite("cc-a", "fx-a-3", "fx-a", TITLE_A, 3, CONCEPTS_A),
+        _cite("cc-b", "fx-b-3", "fx-b", TITLE_B, 3, CONCEPTS_B),
+    ]
+    for i, label in enumerate(CONCEPTS):
+        _data(raw)["dimensions"].append({"id": f"k{i}", "label": label})
+        _data(raw)["rows"][0]["cells"].append({"dimensionId": f"k{i}", "citationId": "cc-a"})
+        _data(raw)["rows"][1]["cells"].append({"dimensionId": f"k{i}", "citationId": "cc-b"})
 
 
 def _comparison_grid() -> tuple[dict[str, Any], list[PlantedDefect]]:
@@ -289,14 +372,25 @@ def _comparison_grid() -> tuple[dict[str, Any], list[PlantedDefect]]:
             "duplicate_cell", lambda r: _data(r)["rows"][0]["cells"].append(dict(_data(r)["rows"][0]["cells"][0]))
         ),
         PlantedDefect("duplicate_column_label", _set("data.dimensions.1.label", "alpha method")),
-        PlantedDefect("over_cap_rows", lambda r: _repeat(r, "rows", 4)),
+        PlantedDefect("over_cap_rows", _many_rows, expects="data.rows"),
+        PlantedDefect("over_cap_dimensions", _many_dimensions, expects="data.dimensions"),
         PlantedDefect(
-            "over_cap_dimensions",
-            lambda r: _data(r)["dimensions"].extend({"id": f"x{i}", "label": f"Entity {i}"} for i in range(7)),
+            "over_long_label",
+            _set("data.dimensions.0.label", "Alpha Method" + "y" * 109),
+            expects="data.dimensions.0.label",
         ),
         PlantedDefect("cell_for_unknown_dimension", _set("data.rows.0.cells.0.dimensionId", "ghost")),
         PlantedDefect("placeholder_with_rows", _set("meta.status", "empty")),
     ]
+
+
+def _long_path(raw: dict[str, Any]) -> None:
+    """A seven-step path through eight distinct concepts, all named in one stored sentence: only the step cap is exceeded."""
+    _data(raw)["steps"] = [
+        {"source": NODES[i], "target": NODES[i + 1], "relation": "leads to", "reversed": False, "citationId": "cc"}
+        for i in range(len(NODES) - 1)
+    ]
+    _data(raw)["citations"] = [_cite("cc", "fx-a-4", "fx-a", TITLE_A, 4, CHAIN)]
 
 
 def _concept_map() -> tuple[dict[str, Any], list[PlantedDefect]]:
@@ -332,9 +426,12 @@ def _concept_map() -> tuple[dict[str, Any], list[PlantedDefect]]:
         PlantedDefect("repeated_concept", _set("data.steps.1.target", "Alpha Method")),
         PlantedDefect("quote_without_label", _set("data.steps.1.target", "Louvain communities")),
         PlantedDefect("step_citing_nothing", _set("data.steps.0.citationId", "c9")),
-        PlantedDefect("single_step_path", lambda r: _data(r)["steps"].pop()),
-        PlantedDefect("over_cap_steps", lambda r: _repeat(r, "steps", 4)),
-        PlantedDefect("over_long_relation", _set("data.steps.0.relation", "x" * 81)),
+        PlantedDefect("single_step_path", lambda r: _data(r)["steps"].pop(), expects="data.steps"),
+        PlantedDefect("over_cap_steps", _long_path, expects="data.steps"),
+        PlantedDefect("over_long_relation", _set("data.steps.0.relation", "x" * 81), expects="data.steps.0.relation"),
+        PlantedDefect(
+            "over_long_label", _set("data.steps.0.source", "Alpha Method" + "y" * 109), expects="data.steps.0.source"
+        ),
         PlantedDefect("placeholder_with_steps", _set("meta.status", "empty")),
     ]
 
@@ -419,6 +516,7 @@ def fence_mismatches(guide: str, catalog: Mapping[str, Spec] | None = None) -> l
 
 
 __all__ = [
+    "PIPELINE_STAGES",
     "REGISTRY",
     "PlantedDefect",
     "Registration",

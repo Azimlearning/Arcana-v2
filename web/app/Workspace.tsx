@@ -15,7 +15,7 @@ import { SaveView, type SaveOutcome } from "@/components/shell/SaveView";
 import { SavedViews, refusalWords } from "@/components/shell/SavedViews";
 import { Shell } from "@/components/shell/Shell";
 import { TracePanel } from "@/components/TracePanel";
-import { deletePattern, fetchWorkspace, listPatterns, savePattern, uploadPdf } from "@/lib/api";
+import { deletePattern, fetchWorkspace, listPatterns, reverifyPattern, savePattern, uploadPdf } from "@/lib/api";
 import { placeBlocks } from "@/lib/layout";
 import { streamApply, streamChat } from "@/lib/stream";
 import { activeLayout, useWorkspace } from "@/lib/store";
@@ -26,6 +26,7 @@ export function Workspace() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<ErrorEnvelope | null>(null);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
+  const [staleId, setStaleId] = useState<string | null>(null);
   const abort = useRef<AbortController | null>(null);
 
   const loadWorkspace = useCallback(async () => {
@@ -49,6 +50,7 @@ export function Workspace() {
   const showView = useCallback(async (id: string) => {
     if (useWorkspace.getState().turn === "streaming") return;
     setSavedMessage(null);
+    setStaleId(null);
     abort.current?.abort();
     abort.current = new AbortController();
     useWorkspace.getState().startTurn();
@@ -60,6 +62,8 @@ export function Workspace() {
         onError: (error) => {
           useWorkspace.getState().finishTurn();
           setSavedMessage(refusalWords(error));
+          // A view whose layout moved on can be checked again; any other refusal is final until the documents change.
+          if (error.code === "pattern_refused" && error.issues[0]?.path === "template_changed") setStaleId(id);
         },
         onDone: () => {
           useWorkspace.getState().finishTurn();
@@ -69,6 +73,21 @@ export function Workspace() {
       { signal: abort.current.signal },
     );
   }, [loadPatterns]);
+
+  const checkAgain = useCallback(
+    async (id: string) => {
+      setSavedMessage(null);
+      setStaleId(null);
+      const result = await reverifyPattern(id);
+      if (!result.ok) {
+        setSavedMessage(refusalWords(result.error));
+        return;
+      }
+      await loadPatterns();
+      await showView(id); // it is current now: show it
+    },
+    [loadPatterns, showView],
+  );
 
   const removeView = useCallback(
     async (id: string) => {
@@ -267,8 +286,10 @@ export function Workspace() {
               patterns={patterns}
               busy={turn === "streaming"}
               message={savedMessage}
+              staleId={staleId}
               onApply={(id) => void showView(id)}
               onDelete={(id) => void removeView(id)}
+              onReverify={(id) => void checkAgain(id)}
             />
           </div>
         </>

@@ -242,17 +242,44 @@ The recipe, in order. Task C1's toy-component test (`api/genui/test_layout.py`) 
 
 ## UI generation pipeline
 
-D-31. One pipeline, five stages, for every UI the system produces. In P2 it runs for typed (data) UI; P4 adds generated
-code to the same stages. The pipeline may be changed after testing (Azim, 2026-10-06), so each stage is a small,
-replaceable interface.
+D-31. One pipeline, five stages, for every UI the system produces. In P2 it runs for typed (data) UI and is built end to
+end; P4 adds generated code to the same stages. The pipeline may be changed after testing (Azim, 2026-10-06), so each
+stage is a small, replaceable interface. The five stage names below are the same five as `PIPELINE_STAGES` in
+`api/genui/templates.py`, and a test compares them.
 
-| Stage | P2 (typed UI) | Where in code | P4 adds |
+| Stage | As built in P2 (typed UI) | Where in code | What P4 adds |
 |---|---|---|---|
-| **Template** | a catalog entry: version, typed slots, evidence requirements, placement hint | `api/genui/catalog.py`, `templates.py` (task E1) | a template body for generated artifacts; the Lab Builder starts from a template, never a blank page |
-| **Fences** | caps, the grounding rule, accessibility requirements, declared per template | `templates.py` (E1) | allowed libraries, no network, no same-origin, resource budgets |
-| **Checking** | precondition, build, schema, content validation, a registration-time mutation suite, accessibility structure | `catalog.py`, `validate.py`, `templates.py` | static analysis, contract property tests, fuzzing, a sandbox run, the verifier and delivery gate |
-| **Save** | a pattern: template id and version, typed parameters, layout mode; content-addressed; state `generated`, `verified`, `saved`; evidence never stored | `api/genui/patterns.py`, `ui_patterns` table (E2) | `cached`, `audited`, `promoted`, eviction, crystallisation into a template |
-| **Reuse** | apply a saved pattern: re-bind fresh evidence, re-check, fail closed with a reason (`precondition_not_met`, `template_changed`, `document_missing`) | `compose_from_pattern` (E3), re-verification (E4) | reuse selected by evidence shape; staleness on a model or prompt change |
+| **Template** | a catalog `Spec`: name, version, precondition, typed slots (strings only), `reusable`, placement hint, fences | `api/genui/catalog.py` | a template body for generated artifacts; the Lab Builder starts from a template, never a blank page |
+| **Fences** | per template: caps (the one source of the validator's limits), the grounding rule id, accessibility requirements; stated in each component section above and checked against the code by a parse | `Fences` in `catalog.py`; `fence_mismatches` in `templates.py` | allowed libraries, no network, no same-origin, resource budgets |
+| **Checking** | precondition (`Spec.check`), build, schema, content validation (`validate_block`), a registration-time mutation suite (`register_template`: a template cannot register unless every planted defect is rejected; run at start-up), the layout validator and the last gate | `catalog.py`, `validate.py`, `templates.py`, `layout.py` | static analysis, contract property tests, fuzzing, a sandbox run, the verifier and delivery gate |
+| **Save** | a pattern: template id and version, string parameters validated against the template's slots, layout mode; content-addressed; state `generated`, `verified` or `saved`; evidence never stored; saved only from a turn whose view was recorded as verified | `api/genui/patterns.py`, tables `ui_patterns` and `turn_views`, `POST/GET/DELETE /patterns` | `cached`, `audited`, `promoted`, eviction, crystallisation into a template |
+| **Reuse** | apply a saved pattern: re-bind the evidence with the Graph agent's tools, re-check, fail closed with a reason (`precondition_not_met`, `template_changed`, `document_missing`); no model call; a stale pattern is re-verified (`POST /patterns/{id}/reverify`) | `compose_from_pattern`, `reverify_pattern` in `api/agents/compose.py`; `POST /patterns/{id}/apply` | reuse selected by evidence shape; staleness on a model or prompt change |
 
 Hard constraint 3 is unchanged: no generated code reaches the client except as a verifier-minted type, and P2 contains
 no code generation.
+
+### Where P4 plugs in
+
+- **Template:** a generated artifact's template body goes into a new field on `Spec` (the catalog entry stays the record
+  of version, slots, fences and placement). Its `check` is the same precondition over `ComposerEvidence`.
+- **Fences:** `Fences` gains the code-specific fences (allowed libraries from the local vendor directory, no network, no
+  same-origin, resource budgets) beside `caps`, `grounding` and `a11y`; the guide's `**Fences:**` line and
+  `fence_mismatches` extend with them.
+- **Checking:** the checks are an ordered list of functions that each return the problems they find; the code stages
+  (static analysis, contract property tests, fuzzing, the sandbox run) are appended before the verifier, which alone mints
+  the type the client may render. `register_template`'s planted defects extend to planted code defects.
+- **Save:** `PatternState` gains `cached`, `audited` and `promoted` (a schema change, so a client that does not know them
+  refuses the pattern rather than guessing); `SavedPattern` stays strings only, and a generated artifact is referenced by
+  the id of its verified record, never carried inline.
+- **Reuse:** `compose_from_pattern` and `reverify_pattern` already return refusal reasons; P4 adds reasons for a changed
+  model or prompt. Re-verification re-runs the template's registration suite, which for generated code is the whole
+  checking stage.
+
+### Re-verification
+
+A pattern whose template has moved on (a different version, `template_changed`) is **stale**: applying it shows nothing
+and names the reason. `POST /patterns/{id}/reverify` re-runs the template's registration suite and applies the pattern as
+a dry run on the current evidence against the template's current version. If both pass, the pattern is made current with
+that version and marked `verified`; if either fails, the pattern is left exactly as it was, stale, and the response
+names the reason. Saving the same view again also brings a stale pattern up to date (the user has just saved a verified
+view of the current template). Neither path calls a model.

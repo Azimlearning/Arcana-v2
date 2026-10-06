@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { envelope, jsonResponse, layout, savedPattern, sourceList } from "@/test/fixtures";
 
-import { deletePattern, fetchWorkspace, isSavedPattern, listPatterns, savePattern } from "./api";
+import { deletePattern, fetchWorkspace, isSavedPattern, listPatterns, reverifyPattern, savePattern } from "./api";
 
 const prebuilt = layout([{ blockId: "workspace-sources", panel: "sources", order: 0 }], {
   origin: "prebuilt",
@@ -135,6 +135,21 @@ describe("saved views", () => {
       expect(result.ok).toBe(false);
       if (!result.ok) expect(result.error.retryable).toBe(true);
     }
+  });
+
+  it("re-verifies a view with a POST and returns the updated pattern, or the server's refusal", async () => {
+    const ok = opts(jsonResponse(savedPattern({ state: "verified", templateVersion: 2 })));
+    const result = await reverifyPattern("p/1", { fetchImpl: ok.fetchImpl, baseUrl: ok.baseUrl });
+    expect(result.ok && result.pattern.state).toBe("verified");
+    const [url, init] = ok.spy.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("http://api/patterns/p%2F1/reverify");
+    expect(init.method).toBe("POST");
+
+    const refusal = envelope({ code: "pattern_refused", message: "x", retryable: false, issues: [{ path: "precondition_not_met", message: "m" }] });
+    const no = opts(jsonResponse(refusal, 409));
+    expect(await reverifyPattern("p", { fetchImpl: no.fetchImpl, baseUrl: no.baseUrl })).toEqual({ ok: false, error: refusal });
+    const bad = opts(jsonResponse({ nonsense: true }));
+    expect((await reverifyPattern("p", { fetchImpl: bad.fetchImpl, baseUrl: bad.baseUrl })).ok).toBe(false);
   });
 
   it("recognises a pattern's shape", () => {
