@@ -258,6 +258,6 @@ def test_only_the_composer_may_build_blocks():
         for p in root.rglob("*.py")
         if not p.name.startswith("test_")  # tests may build raw dicts to probe the validator
         and "api.genui.builders" in p.read_text(encoding="utf-8")
-        and p.name not in {"compose.py", "builders.py"}
+        and p.name not in {"compose.py", "builders.py", "templates.py"}
     ]
     assert offenders == []

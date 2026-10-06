@@ -24,8 +24,8 @@ from typing import Any
 
 from api.agents.framework import Agent, AgentOutput, tool_spec
 from api.agents.state import TurnContext
-from api.genui.alignment import MAX_GRID_DIMS, MAX_GRID_DOCS, settle
-from api.genui.catalog import MAX_LABEL_CHARS
+from api.genui.alignment import settle
+from api.genui.catalog import cap
 from api.genui.evidence import excerpt_containing
 from api.genui.text import MIN_LABEL_CHARS
 from api.retrieval.entities import resolve_query_entities
@@ -214,7 +214,9 @@ def _align(graph: GraphStore, ctx: TurnContext, seeds: list[str]) -> Alignment:
         for n in ordered
         if (node := graph.get_node(n))
         and len(node.doc_ids) >= 2
-        and MIN_LABEL_CHARS <= len(node.label.strip()) <= MAX_LABEL_CHARS  # a column the grid would drop anyway
+        and MIN_LABEL_CHARS
+        <= len(node.label.strip())
+        <= cap("ComparisonGrid", "label_chars")  # a column the grid would drop anyway
     ][:MAX_ALIGN_CANDIDATES]
     cells: dict[tuple[str, str], dict[str, Any]] = {}
     documents: dict[str, Any] = {}
@@ -261,7 +263,13 @@ def _align(graph: GraphStore, ctx: TurnContext, seeds: list[str]) -> Alignment:
             labels.get(n, n).lower(),
         ),
     )
-    docs, dims = settle(doc_order, dim_order, set(cells), max_docs=MAX_GRID_DOCS, max_dims=MAX_GRID_DIMS)
+    docs, dims = settle(
+        doc_order,
+        dim_order,
+        set(cells),
+        max_docs=cap("ComparisonGrid", "documents"),
+        max_dims=cap("ComparisonGrid", "entities"),
+    )
     if len(docs) < 2 or len(dims) < 2:
         return Alignment()
     return Alignment(
@@ -291,7 +299,11 @@ async def align_documents(entities: list[str], ctx: TurnContext) -> Alignment:
     graph = ctx.graph
     if graph is None:
         return Alignment()
-    seeds = list(dict.fromkeys(n for e in entities[:MAX_GRID_DIMS] if (n := _resolve_one(e, graph)[0]) is not None))
+    seeds = list(
+        dict.fromkeys(
+            n for e in entities[: cap("ComparisonGrid", "entities")] if (n := _resolve_one(e, graph)[0]) is not None
+        )
+    )
     return _align(graph, ctx, seeds)
 
 
@@ -324,7 +336,7 @@ async def _run(query: str, ctx: TurnContext) -> AgentOutput:
     if result is None or not result.edges:
         result = _none(report)
     # Alignment needs no edges: two papers can both discuss an entity without a stored relation between them.
-    result.alignment = _align(graph, ctx, ids[:MAX_GRID_DIMS]).payload() if ids else {}
+    result.alignment = _align(graph, ctx, ids[: cap("ComparisonGrid", "entities")]).payload() if ids else {}
     if result.mode == "none":
         return AgentOutput(result.payload(), status="partial", note="no entity resolved" if not ids else "no edges")
     return AgentOutput(result.payload())

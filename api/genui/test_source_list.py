@@ -4,7 +4,7 @@ import pytest
 
 from api.core.errors import ValidationFailed
 from api.genui.builders import source_list
-from api.genui.catalog import MAX_SOURCES
+from api.genui.catalog import cap
 from api.genui.generated import SourceList
 from api.genui.validate import validate_block
 from api.stores.doc_store import Document
@@ -82,7 +82,7 @@ def test_a_document_that_is_not_ready_is_rejected(stored):
 def test_more_than_the_cap_is_rejected(stored):
     docs, _, _ = stored
     items = []
-    for i in range(MAX_SOURCES + 1):
+    for i in range(cap("SourceList", "documents") + 1):
         docs.put_document(Document(f"d{i}", f"Paper {i}", f"d{i}.pdf", "ready", 1, None, "t"))
         items.append(item(f"d{i}", f"Paper {i}", 0))
     assert "data.documents" in fails(source_list("b", "ready", documents=items), docs)

@@ -24,12 +24,12 @@ from api.core.logging import get_logger
 from api.genui.builders import BUILDERS, cited_summary
 from api.genui.catalog import (
     CATALOG,
-    MAX_SOURCES,
     ComponentRecord,
     ComposerEvidence,
     Composition,
     Spec,
     alignment_grid,
+    cap,
     concept_path,
     graph_edges,
 )
@@ -100,7 +100,9 @@ def _documents(ctx: TurnContext) -> tuple[tuple[Document, ...], dict[str, int]]:
     simply not admitted."""
     try:
         documents = tuple(ctx.docs.list_documents())
-        listed = [d for d in documents if d.status == "ready"][:MAX_SOURCES]  # counts only for what can be shown
+        listed = [d for d in documents if d.status == "ready"][
+            : cap("SourceList", "documents")
+        ]  # counts only for what can be shown
         return documents, {d.id: len(ctx.docs.chunks_for_document(d.id)) for d in listed}
     except Exception as exc:
         log.warning("document_listing_failed", error=type(exc).__name__)
@@ -227,7 +229,7 @@ def _source_items(documents: Iterable[Document], chunk_counts: Mapping[str, int]
 
 
 def _raw_source_list(spec: Spec, ctx: TurnContext, evidence: ComposerEvidence, empty: bool) -> dict[str, Any]:
-    listed = _source_items(evidence.documents, evidence.chunk_counts, spec.caps["documents"])
+    listed = _source_items(evidence.documents, evidence.chunk_counts, spec.fences.caps["documents"])
     return BUILDERS[spec.name](_block_id(spec, ctx), "ready", documents=listed)
 
 
@@ -319,7 +321,7 @@ def compose_workspace(docs: DocStore) -> tuple[LayoutSpec, list[UIBlock]]:
     documents (an `empty` one when there are none). No model call. Unlike a turn, this does not swallow a store
     failure or a validation failure: the caller gets the exception and answers with an error envelope, so a
     half-built workspace is never sent."""
-    ready = [d for d in docs.list_documents() if d.status == "ready"][: CATALOG["SourceList"].caps["documents"]]
+    ready = [d for d in docs.list_documents() if d.status == "ready"][: cap("SourceList", "documents")]
     counts = {d.id: len(docs.chunks_for_document(d.id)) for d in ready}
     items = _source_items(ready, counts, len(ready))
     builder = BUILDERS["SourceList"]

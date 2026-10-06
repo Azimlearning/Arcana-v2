@@ -10,9 +10,6 @@ from __future__ import annotations
 
 from collections.abc import Collection, Sequence
 
-MAX_GRID_DOCS = 6
-MAX_GRID_DIMS = 8
-
 
 def settle(
     doc_order: Sequence[str],

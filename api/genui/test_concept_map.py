@@ -9,7 +9,7 @@ from api.agents.framework import AgentResult
 from api.agents.test_agents import GRAPH, QUESTION, make_ctx
 from api.core.errors import ValidationFailed
 from api.genui.builders import concept_map
-from api.genui.catalog import MAX_PATH_STEPS, concept_path
+from api.genui.catalog import cap, concept_path
 from api.genui.evidence import excerpt_containing
 from api.genui.generated import ConceptMap
 from api.genui.validate import validate_block
@@ -204,7 +204,7 @@ def test_a_path_that_cannot_be_drawn_says_why(world, change, reason):
     change(broken)
     assert concept_path(broken) == ([], reason)
     assert concept_path(None) == ([], "no_graph_result")
-    assert MAX_PATH_STEPS == 6
+    assert cap("ConceptMap", "steps") == 6
 
 
 def test_a_path_that_ends_at_the_wrong_entity_is_refused(world):

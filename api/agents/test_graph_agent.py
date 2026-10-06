@@ -353,7 +353,9 @@ async def test_whatever_the_graph_looks_like_every_cell_is_that_papers_own_verba
     """Property test over random handmade graphs: a cell the evidence does not support is never produced."""
     import random
 
-    from api.genui.alignment import MAX_GRID_DIMS, MAX_GRID_DOCS
+    from api.genui.catalog import cap
+
+    max_docs, max_dims = cap("ComparisonGrid", "documents"), cap("ComparisonGrid", "entities")
     from api.genui.text import label_in_quote, normalise
 
     rng = random.Random(11)
@@ -389,7 +391,7 @@ async def test_whatever_the_graph_looks_like_every_cell_is_that_papers_own_verba
         result = await align_documents(seeds, ctx)
         produced += bool(result.cells)
 
-        assert len(result.documents) <= MAX_GRID_DOCS and len(result.dimensions) <= MAX_GRID_DIMS
+        assert len(result.documents) <= max_docs and len(result.dimensions) <= max_dims
         shown_docs = {d["doc_id"] for d in result.documents}
         by_dim: dict[str, set[str]] = {}
         for cell in result.cells:
@@ -401,7 +403,7 @@ async def test_whatever_the_graph_looks_like_every_cell_is_that_papers_own_verba
         assert {d["id"] for d in result.dimensions} == set(by_dim)
         assert all(len(docs_) >= 2 for docs_ in by_dim.values())  # every entity shown is evidenced twice
         assert shown_docs == {c["doc_id"] for c in result.cells}  # every paper shown has a cell
-        assert len(result.documents) in (0, *range(2, MAX_GRID_DOCS + 1))
+        assert len(result.documents) in (0, *range(2, max_docs + 1))
     assert produced >= 8  # the property was exercised on real alignments, not only on empty ones
 
 

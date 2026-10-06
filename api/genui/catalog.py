@@ -15,7 +15,7 @@ from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
 from typing import Any, Literal, cast, get_args
 
-from api.genui.alignment import MAX_GRID_DIMS, MAX_GRID_DOCS, settle
+from api.genui.alignment import settle
 from api.genui.generated import ComponentDecision, DecisionReason, LayoutSpec, PanelId, UIBlock
 from api.genui.text import MIN_LABEL_CHARS, MIN_QUOTE_CHARS, label_in_quote, normalise
 from api.stores.doc_store import Document
@@ -51,19 +51,62 @@ class Result:
 
 
 @dataclass(frozen=True)
+class Slot:
+    """A typed parameter a saved pattern may carry for a template. Strings only: an `entity` is a label the graph
+    resolves, a `document_id` names a stored document. A pattern carries no evidence, only these."""
+
+    name: str
+    kind: Literal["entity", "document_id"]
+    min_count: int = 1
+    max_count: int = 1
+
+
+@dataclass(frozen=True)
+class A11yRequirement:
+    """A role and label the component must expose (checked statically against its source, see test_templates)."""
+
+    role: str
+    label: str
+
+
+@dataclass(frozen=True)
+class Fences:
+    """The declared limits a template stays inside (D-31). The validator, the Composer and the Graph agent all read
+    their caps from here, so there is one source of truth; catalog.md states the same numbers and a test parses them."""
+
+    caps: dict[str, int]
+    grounding: str
+    """The id of the grounding rule the template's block must satisfy (see catalog.md, "Conventions")."""
+    a11y: tuple[A11yRequirement, ...] = ()
+
+
+@dataclass(frozen=True)
 class Spec:
+    """A template: the reviewed, versioned recipe for one component (D-31). Generation starts from it."""
+
     name: str
     """The `type` tag of the block, exactly as in the schema's UIBlock union."""
     precondition: str
     """The structural precondition in words, as written in catalog.md."""
     supplied_by: tuple[str, ...]
     """The agents whose output the check reads."""
-    caps: Mapping[str, int]
+    fences: Fences
     placement: PlacementHint
     check: Callable[[ComposerEvidence], Result]
+    version: int = 1
+    """Bumped when the template's preconditions, fences or block shape change; a saved pattern records the version it
+    was made with and is stale (until re-verified) when it differs."""
+    slots: tuple[Slot, ...] = ()
+    """The parameters a saved pattern of this template may carry."""
+    reusable: bool = False
+    """True if a saved pattern can be applied without Research: its evidence is re-bound by the Graph agent's tools."""
     terminal: bool = False
     """The turn's answer component. When its precondition fails the Composer shows its empty state instead of
     omitting it, so every turn ends with a visible result (constraint 4)."""
+
+    @property
+    def caps(self) -> dict[str, int]:
+        return self.fences.caps
 
 
 RecordOutcome = Literal["admitted", "empty", "refused", "error"]
@@ -108,19 +151,20 @@ CITED_SUMMARY = Spec(
     name="CitedSummary",
     precondition="The Research agent produced at least one segment, each citing a stored chunk.",
     supplied_by=("research", "fact_checker"),
-    caps={"segments": 40, "citations": 40},
+    fences=Fences(
+        caps={"segments": 40, "citations": 40},
+        grounding="citation_verbatim_quote",
+        a11y=(A11yRequirement("region", "Sources"),),
+    ),
     placement=PlacementHint(panel="chat", priority=10),
     check=_check_cited_summary,
     terminal=True,
 )
 
-MAX_SOURCES = 50
-MAX_GRAPH_NODES = 30
-MAX_GRAPH_EDGES = 40
-MAX_LABEL_CHARS = 120
-MAX_RELATION_CHARS = 80
-MAX_PATH_STEPS = 6
-MIN_PATH_STEPS = 2
+
+def cap(component: str, key: str) -> int:
+    """One cap of one template's fences (read at call time, so a change in the fences is a change everywhere)."""
+    return CATALOG[component].fences.caps[key]
 
 
 def _check_source_list(evidence: ComposerEvidence) -> Result:
@@ -136,6 +180,7 @@ def graph_edges(graph: dict[str, Any] | None) -> list[dict[str, Any]]:
     Composer so the two cannot disagree."""
     if not graph:
         return []
+    caps = CATALOG["GraphView"].fences.caps
     labels: dict[str, str] = graph.get("labels") or {}
     drawn: list[dict[str, Any]] = []
     nodes: set[str] = set()
@@ -145,14 +190,14 @@ def graph_edges(graph: dict[str, Any] | None) -> list[dict[str, Any]]:
         relation = str(edge.get("relation") or "").replace("_", " ").strip()
         if not (isinstance(quote, str) and quote and isinstance(title, str) and title and src != dst):
             continue
-        if src not in labels or dst not in labels or not relation or len(relation) > MAX_RELATION_CHARS:
+        if src not in labels or dst not in labels or not relation or len(relation) > caps["relation_chars"]:
             continue
-        if any(not MIN_LABEL_CHARS <= len(labels[n].strip()) <= MAX_LABEL_CHARS for n in (src, dst)):
+        if any(not MIN_LABEL_CHARS <= len(labels[n].strip()) <= caps["label_chars"] for n in (src, dst)):
             continue
         # The same tests the validator applies to the quote, so an edge admitted here cannot sink the whole block.
         if len(normalise(quote)) < MIN_QUOTE_CHARS or not all(label_in_quote(quote, labels[n]) for n in (src, dst)):
             continue
-        if len(drawn) >= MAX_GRAPH_EDGES or len(nodes | {src, dst}) > MAX_GRAPH_NODES:
+        if len(drawn) >= caps["edges"] or len(nodes | {src, dst}) > caps["nodes"]:
             continue
         nodes.update((src, dst))
         drawn.append({**edge, "relation": relation, "page": page if isinstance(page, int) else None})
@@ -167,6 +212,7 @@ def alignment_grid(
     names its dimension's label (the tests the validator applies), then the documents and dimensions are settled
     again (see `settle`): every dimension in two or more rows, every row with a cell, both within the caps. A pure
     function of the payload, shared by the check and the Composer."""
+    caps = CATALOG["ComparisonGrid"].fences.caps
     alignment = (graph or {}).get("alignment") or {}
     labels: dict[str, str] = {}
     seen_labels: set[str] = set()
@@ -185,14 +231,14 @@ def alignment_grid(
         doc_id, dim_id, quote = cell.get("doc_id"), cell.get("dimension_id"), cell.get("quote")
         if doc_id not in titles or dim_id not in labels or not isinstance(quote, str):
             continue
-        if not MIN_LABEL_CHARS <= len(labels[dim_id].strip()) <= MAX_LABEL_CHARS:
+        if not MIN_LABEL_CHARS <= len(labels[dim_id].strip()) <= caps["label_chars"]:
             continue
         if len(normalise(quote)) < MIN_QUOTE_CHARS or not label_in_quote(quote, labels[dim_id]):
             continue
         if cell.get("doc_title") != titles[doc_id]:
             continue
         cells.setdefault((doc_id, dim_id), cell)
-    docs, dims = settle(list(titles), list(labels), set(cells), max_docs=MAX_GRID_DOCS, max_dims=MAX_GRID_DIMS)
+    docs, dims = settle(list(titles), list(labels), set(cells), max_docs=caps["documents"], max_dims=caps["entities"])
     if len(docs) < 2 or len(dims) < 2:
         return [], [], []
     return (
@@ -216,7 +262,17 @@ COMPARISON_GRID = Spec(
         "the documents by a verbatim quote naming it."
     ),
     supplied_by=("graph",),
-    caps={"documents": MAX_GRID_DOCS, "entities": MAX_GRID_DIMS},
+    fences=Fences(
+        caps={"documents": 6, "entities": 8, "label_chars": 120},
+        grounding="quote_of_row_document_names_column_label",
+        a11y=(
+            A11yRequirement("table", "Comparison of"),
+            A11yRequirement("region", "Comparison table"),
+            A11yRequirement("region", "Sources"),
+        ),
+    ),
+    slots=(Slot("entities", "entity", 2, 8), Slot("documents", "document_id", 0, 6)),
+    reusable=True,
     placement=PlacementHint(panel="chat", priority=20),
     check=_check_comparison_grid,
 )
@@ -231,13 +287,14 @@ def concept_path(graph: dict[str, Any] | None) -> tuple[list[dict[str, Any]], st
     Composer."""
     if not graph:
         return [], "no_graph_result"
+    caps = CATALOG["ConceptMap"].fences.caps
     edges = graph.get("edges") or []
     entities = graph.get("entities") or []
     if graph.get("mode") != "path" or not edges or not entities:
         return [], "not_a_path"
-    if len(edges) < MIN_PATH_STEPS:
+    if len(edges) < caps["min_steps"]:
         return [], "single_hop"
-    if len(edges) > MAX_PATH_STEPS:
+    if len(edges) > caps["steps"]:
         return [], "path_too_long"
     labels: dict[str, str] = graph.get("labels") or {}
     steps: list[dict[str, Any]] = []
@@ -260,8 +317,8 @@ def concept_path(graph: dict[str, Any] | None) -> tuple[list[dict[str, Any]], st
             and isinstance(title, str)
             and title
             and relation
-            and len(relation) <= MAX_RELATION_CHARS
-            and all(MIN_LABEL_CHARS <= len(n.strip()) <= MAX_LABEL_CHARS for n in names)
+            and len(relation) <= caps["relation_chars"]
+            and all(MIN_LABEL_CHARS <= len(n.strip()) <= caps["label_chars"] for n in names)
             and len(normalise(quote)) >= MIN_QUOTE_CHARS
             and all(label_in_quote(quote, n) for n in names)
         ):
@@ -302,7 +359,13 @@ CONCEPT_MAP = Spec(
         "naming both of its concepts, with no concept repeated."
     ),
     supplied_by=("graph",),
-    caps={"steps": MAX_PATH_STEPS},
+    fences=Fences(
+        caps={"min_steps": 2, "steps": 6, "label_chars": 120, "relation_chars": 80},
+        grounding="quote_names_both_ends_of_every_step",
+        a11y=(A11yRequirement("list", "Steps"), A11yRequirement("region", "Sources")),
+    ),
+    slots=(Slot("entities", "entity", 2, 2),),
+    reusable=True,
     placement=PlacementHint(panel="studio", priority=30),
     check=_check_concept_map,
 )
@@ -318,7 +381,18 @@ GRAPH_VIEW = Spec(
     name="GraphView",
     precondition="The Graph agent returned at least one edge whose chunk holds a verbatim quote naming both endpoints.",
     supplied_by=("graph",),
-    caps={"nodes": MAX_GRAPH_NODES, "edges": MAX_GRAPH_EDGES},
+    fences=Fences(
+        caps={"nodes": 30, "edges": 40, "label_chars": 120, "relation_chars": 80},
+        grounding="quote_names_both_ends_of_every_edge",
+        a11y=(
+            A11yRequirement("group", "Graph of"),
+            A11yRequirement("region", "Relations"),
+            A11yRequirement("region", "Details"),
+            A11yRequirement("region", "Sources"),
+        ),
+    ),
+    slots=(Slot("entities", "entity", 1, 2),),
+    reusable=True,
     placement=PlacementHint(panel="studio", priority=20),
     check=_check_graph_view,
 )
@@ -327,7 +401,12 @@ SOURCE_LIST = Spec(
     name="SourceList",
     precondition="At least one document in the store has status ready.",
     supplied_by=("document_store",),
-    caps={"documents": MAX_SOURCES},
+    fences=Fences(
+        caps={"documents": 50},
+        grounding="stored_document_metadata",
+        a11y=(A11yRequirement("region", "Documents"),),
+    ),
+    reusable=True,
     placement=PlacementHint(panel="sources", priority=10),
     check=_check_source_list,
 )

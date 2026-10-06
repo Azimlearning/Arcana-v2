@@ -66,6 +66,7 @@ Status: **built** (P0).
 - **Supplied by:** flat retrieval (dense plus BM25), checked by the Fact Checker.
 - **Payload:** `segments: {text, citationIds}[]`, `citations: Citation[]`.
 - **Caps:** none beyond the citation rules.
+- **Fences:** caps `segments=40 citations=40`; grounding `citation_verbatim_quote`; a11y `region:Sources`. Slots: none. Template version 1; reusable without Research: no.
 - **Validator invariants:** as in `api/genui/validate.py` (citations unique and resolvable, no orphan citation, a ready
   block has a segment, every segment cites).
 - **States:** all four; `empty` for a declined or unanswerable question (the `q-single-01` control renders here).
@@ -80,6 +81,7 @@ Status: **built** (P2 B1).
 - **Supplied by:** the document store (metadata only).
 - **Payload:** `documents: {docId, title, chunkCount}[]`.
 - **Caps:** 50 documents (`MAX_SOURCES` in `api/genui/catalog.py`, shared with the validator); title as stored.
+- **Fences:** caps `documents=50`; grounding `stored_document_metadata`; a11y `region:Documents`. Slots: none. Template version 1; reusable without Research: yes.
 - **Validator invariants:** unique ids; every `docId` exists and is `ready`; `title` and `chunkCount` equal the stored
   values; placeholder statuses carry no documents. It asserts existence only, so it carries no citations.
 - **States:** `loading`; `error`; ready list. `empty` is implemented by the component, but the Composer never sends it: with no ready document the component is refused (`no_ready_document`) and no block is sent.
@@ -95,6 +97,7 @@ Status: **built** (P2 B2). **Works on real data and is interactive (D-29).**
 - **Supplied by:** the graph (Graph agent `neighborhood`).
 - **Payload:** `nodes: {id, label}[]`, `edges: {source, target, relation, citationId}[]`, `citations`.
 - **Caps:** 30 nodes, 40 edges; label at most 120 characters, relation at most 80.
+- **Fences:** caps `nodes=30 edges=40 label_chars=120 relation_chars=80`; grounding `quote_names_both_ends_of_every_edge`; a11y `group:Graph of | region:Relations | region:Details | region:Sources`. Slots: `entities` (entity, 1 to 2). Template version 1; reusable without Research: yes.
 - **Validator invariants:** labels 2 to 120 characters; node ids unique; every edge endpoint is a node; every node touches at least one edge; every
   edge cites a citation of this block; each cited quote contains both endpoint labels; no orphan citation.
 - **States:** all four. Ready: a deterministic radial SVG diagram with selectable nodes and edges (selecting shows the
@@ -125,6 +128,7 @@ Status: **built** (P2 B3, with the Graph agent tool `align_documents`).
 - **Payload:** `dimensions: {id, label}[]`, `rows: {docId, docTitle, cells: {dimensionId, citationId}[]}[]`, `citations`.
   A dimension with no evidence in a row has no cell; there is no text cell.
 - **Caps:** 6 documents, 8 entities.
+- **Fences:** caps `documents=6 entities=8 label_chars=120`; grounding `quote_of_row_document_names_column_label`; a11y `table:Comparison of | region:Comparison table | region:Sources`. Slots: `entities` (entity, 2 to 8), `documents` (document_id, 0 to 6). Template version 1; reusable without Research: yes.
 - **Validator invariants:** unique dimension and row ids; two columns may not share a label; at most one cell per dimension in a row; a cell's dimension exists; a cell's citation exists, its chunk
   belongs to **the row's document**, and its quote contains the dimension's label; every dimension has cells in at least 2
   rows; every row has at least 1 cell; no orphan citation.
@@ -151,6 +155,7 @@ Status: **built** (P2 B4).
   `from` and `to`: `from` is a Python keyword and the generated model could not have it. `reversed` is true when the stored
   relation runs against the path, so the map states the claim the way the document does.)
 - **Caps:** 6 steps.
+- **Fences:** caps `min_steps=2 steps=6 label_chars=120 relation_chars=80`; grounding `quote_names_both_ends_of_every_step`; a11y `list:Steps | region:Sources`. Slots: `entities` (entity, 2 to 2). Template version 1; reusable without Research: yes.
 - **Validator invariants:** steps contiguous (`steps[i].source == steps[i-1].target`); no repeated node; each step cites a
   citation of this block whose quote contains both labels; no orphan citation.
 - **States:** all four. Ready: a vertical chain (concept, relation, concept) with each step's quote and source link.

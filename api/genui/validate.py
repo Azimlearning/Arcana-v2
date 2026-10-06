@@ -15,9 +15,9 @@ Two layers:
          segment, docTitle and page equal the stored document's title and the chunk's page, and a
          quote is at least MIN_QUOTE_CHARS long (or the whole chunk, if it is shorter);
        - any block: a non-empty id (upsert-by-id keys on it);
-       - "SourceList": placeholders carry no documents; otherwise at most MAX_SOURCES, unique ids, each id a
+       - "SourceList": placeholders carry no documents; otherwise at most the template's `documents` fence, unique ids, each id a
          stored document that is ready, with the stored title and passage count ("ready" needs one or more).
-       - "ConceptMap": 2 to MAX_PATH_STEPS steps, each starting where the previous one ended, no concept repeated,
+       - "ConceptMap": `min_steps` to `steps` steps (the template's fences), each starting where the previous one ended, no concept repeated,
          and each step's cited quote contains both of its labels. A step's `relation` and `reversed` flag come from
          the Composer, which read them from the graph: this validator holds the DocStore only, so it can prove
          co-mention in a stored quote but not the direction of a relation.
@@ -36,16 +36,7 @@ from typing import Any
 from pydantic import TypeAdapter, ValidationError
 
 from api.core.errors import ValidationFailed
-from api.genui.alignment import MAX_GRID_DIMS, MAX_GRID_DOCS
-from api.genui.catalog import (
-    MAX_GRAPH_EDGES,
-    MAX_GRAPH_NODES,
-    MAX_LABEL_CHARS,
-    MAX_PATH_STEPS,
-    MAX_RELATION_CHARS,
-    MAX_SOURCES,
-    MIN_PATH_STEPS,
-)
+from api.genui.catalog import CATALOG
 from api.genui.generated import (
     Citation,
     CitedSummary,
@@ -133,6 +124,7 @@ def _common_issues(block: UIBlock) -> list[FieldIssue]:
 
 
 def _source_list_issues(block: SourceList, docs: DocStore) -> list[FieldIssue]:
+    caps = _caps("SourceList")
     documents = block.data.documents
     if block.meta.status in PLACEHOLDER_STATUSES:
         if documents:
@@ -142,8 +134,8 @@ def _source_list_issues(block: SourceList, docs: DocStore) -> list[FieldIssue]:
     issues: list[FieldIssue] = []
     if block.meta.status == "ready" and not documents:
         issues.append(FieldIssue(path="data.documents", message="a ready block needs at least one document"))
-    if len(documents) > MAX_SOURCES:
-        issues.append(FieldIssue(path="data.documents", message=f"at most {MAX_SOURCES} documents may be listed"))
+    if len(documents) > caps["documents"]:
+        issues.append(FieldIssue(path="data.documents", message=f"at most {caps['documents']} documents may be listed"))
     seen: set[str] = set()
     for i, item in enumerate(documents):
         if item.docId in seen:
@@ -162,6 +154,11 @@ def _source_list_issues(block: SourceList, docs: DocStore) -> list[FieldIssue]:
                 FieldIssue(path=f"data.documents.{i}.chunkCount", message="does not match the stored passage count")
             )
     return issues
+
+
+def _caps(component: str) -> dict[str, int]:
+    """The template's fences: the one source of the limits this validator enforces."""
+    return CATALOG[component].fences.caps
 
 
 LAYOUT_VERSION = 1
@@ -223,6 +220,7 @@ def validate_layout(raw: LayoutSpec | Mapping[str, Any], known_block_ids: Collec
 
 
 def _concept_map_issues(block: ConceptMap, docs: DocStore) -> list[FieldIssue]:
+    caps = _caps("ConceptMap")
     data, status = block.data, block.meta.status
     if status in PLACEHOLDER_STATUSES:
         if data.steps or data.citations:
@@ -230,10 +228,10 @@ def _concept_map_issues(block: ConceptMap, docs: DocStore) -> list[FieldIssue]:
         return []
 
     issues: list[FieldIssue] = []
-    if status == "ready" and len(data.steps) < MIN_PATH_STEPS:
-        issues.append(FieldIssue(path="data.steps", message=f"a path has at least {MIN_PATH_STEPS} steps"))
-    if len(data.steps) > MAX_PATH_STEPS:
-        issues.append(FieldIssue(path="data.steps", message=f"a path has at most {MAX_PATH_STEPS} steps"))
+    if status == "ready" and len(data.steps) < caps["min_steps"]:
+        issues.append(FieldIssue(path="data.steps", message=f"a path has at least {caps['min_steps']} steps"))
+    if len(data.steps) > caps["steps"]:
+        issues.append(FieldIssue(path="data.steps", message=f"a path has at most {caps['steps']} steps"))
 
     citations = {c.id: c for c in data.citations}
     if len(citations) != len(data.citations):
@@ -251,15 +249,16 @@ def _concept_map_issues(block: ConceptMap, docs: DocStore) -> list[FieldIssue]:
             issues.append(FieldIssue(path=f"{where}.target", message="a concept may not appear twice in a path"))
         seen.add(_norm(step.target).lower())
         for end, name in ((step.source, "source"), (step.target, "target")):
-            if not MIN_LABEL_CHARS <= len(end.strip()) <= MAX_LABEL_CHARS:
+            if not MIN_LABEL_CHARS <= len(end.strip()) <= caps["label_chars"]:
                 issues.append(
                     FieldIssue(
-                        path=f"{where}.{name}", message=f"a label is {MIN_LABEL_CHARS} to {MAX_LABEL_CHARS} characters"
+                        path=f"{where}.{name}",
+                        message=f"a label is {MIN_LABEL_CHARS} to {caps['label_chars']} characters",
                     )
                 )
-        if not step.relation.strip() or len(step.relation) > MAX_RELATION_CHARS:
+        if not step.relation.strip() or len(step.relation) > caps["relation_chars"]:
             issues.append(
-                FieldIssue(path=f"{where}.relation", message=f"a relation is 1 to {MAX_RELATION_CHARS} characters")
+                FieldIssue(path=f"{where}.relation", message=f"a relation is 1 to {caps['relation_chars']} characters")
             )
         citation = citations.get(step.citationId)
         if citation is None:
@@ -279,6 +278,7 @@ def _concept_map_issues(block: ConceptMap, docs: DocStore) -> list[FieldIssue]:
 
 
 def _comparison_grid_issues(block: ComparisonGrid, docs: DocStore) -> list[FieldIssue]:
+    caps = _caps("ComparisonGrid")
     data, status = block.data, block.meta.status
     if status in PLACEHOLDER_STATUSES:
         if data.dimensions or data.rows or data.citations:
@@ -288,10 +288,12 @@ def _comparison_grid_issues(block: ComparisonGrid, docs: DocStore) -> list[Field
     issues: list[FieldIssue] = []
     if status == "ready" and (len(data.rows) < 2 or len(data.dimensions) < 2):
         issues.append(FieldIssue(path="data", message="a ready grid compares at least two documents on two entities"))
-    if len(data.rows) > MAX_GRID_DOCS:
-        issues.append(FieldIssue(path="data.rows", message=f"at most {MAX_GRID_DOCS} documents may be compared"))
-    if len(data.dimensions) > MAX_GRID_DIMS:
-        issues.append(FieldIssue(path="data.dimensions", message=f"at most {MAX_GRID_DIMS} entities may be compared"))
+    if len(data.rows) > caps["documents"]:
+        issues.append(FieldIssue(path="data.rows", message=f"at most {caps['documents']} documents may be compared"))
+    if len(data.dimensions) > caps["entities"]:
+        issues.append(
+            FieldIssue(path="data.dimensions", message=f"at most {caps['entities']} entities may be compared")
+        )
 
     labels: dict[str, str] = {}
     seen_labels: set[str] = set()
@@ -302,11 +304,11 @@ def _comparison_grid_issues(block: ComparisonGrid, docs: DocStore) -> list[Field
             issues.append(FieldIssue(path=f"data.dimensions.{i}.label", message="two columns may not share a label"))
         seen_labels.add(_norm(dimension.label).lower())
         labels[dimension.id] = dimension.label
-        if not MIN_LABEL_CHARS <= len(dimension.label.strip()) <= MAX_LABEL_CHARS:
+        if not MIN_LABEL_CHARS <= len(dimension.label.strip()) <= caps["label_chars"]:
             issues.append(
                 FieldIssue(
                     path=f"data.dimensions.{i}.label",
-                    message=f"a label is {MIN_LABEL_CHARS} to {MAX_LABEL_CHARS} characters",
+                    message=f"a label is {MIN_LABEL_CHARS} to {caps['label_chars']} characters",
                 )
             )
 
@@ -376,6 +378,7 @@ def _comparison_grid_issues(block: ComparisonGrid, docs: DocStore) -> list[Field
 
 
 def _graph_view_issues(block: GraphView, docs: DocStore) -> list[FieldIssue]:
+    caps = _caps("GraphView")
     data, status = block.data, block.meta.status
     if status in PLACEHOLDER_STATUSES:
         if data.nodes or data.edges or data.citations:
@@ -385,21 +388,21 @@ def _graph_view_issues(block: GraphView, docs: DocStore) -> list[FieldIssue]:
     issues: list[FieldIssue] = []
     if status == "ready" and not data.edges:
         issues.append(FieldIssue(path="data.edges", message="a ready block needs at least one edge"))
-    if len(data.nodes) > MAX_GRAPH_NODES:
-        issues.append(FieldIssue(path="data.nodes", message=f"at most {MAX_GRAPH_NODES} nodes may be drawn"))
-    if len(data.edges) > MAX_GRAPH_EDGES:
-        issues.append(FieldIssue(path="data.edges", message=f"at most {MAX_GRAPH_EDGES} edges may be drawn"))
+    if len(data.nodes) > caps["nodes"]:
+        issues.append(FieldIssue(path="data.nodes", message=f"at most {caps['nodes']} nodes may be drawn"))
+    if len(data.edges) > caps["edges"]:
+        issues.append(FieldIssue(path="data.edges", message=f"at most {caps['edges']} edges may be drawn"))
 
     labels: dict[str, str] = {}
     for i, node in enumerate(data.nodes):
         if node.id in labels:
             issues.append(FieldIssue(path=f"data.nodes.{i}.id", message="node ids must be unique"))
         labels[node.id] = node.label
-        if not MIN_LABEL_CHARS <= len(node.label.strip()) <= MAX_LABEL_CHARS:
+        if not MIN_LABEL_CHARS <= len(node.label.strip()) <= caps["label_chars"]:
             issues.append(
                 FieldIssue(
                     path=f"data.nodes.{i}.label",
-                    message=f"a label is {MIN_LABEL_CHARS} to {MAX_LABEL_CHARS} characters",
+                    message=f"a label is {MIN_LABEL_CHARS} to {caps['label_chars']} characters",
                 )
             )
 
@@ -410,10 +413,10 @@ def _graph_view_issues(block: GraphView, docs: DocStore) -> list[FieldIssue]:
     touched: set[str] = set()
     referenced: set[str] = set()
     for i, edge in enumerate(data.edges):
-        if not edge.relation.strip() or len(edge.relation) > MAX_RELATION_CHARS:
+        if not edge.relation.strip() or len(edge.relation) > caps["relation_chars"]:
             issues.append(
                 FieldIssue(
-                    path=f"data.edges.{i}.relation", message=f"a relation is 1 to {MAX_RELATION_CHARS} characters"
+                    path=f"data.edges.{i}.relation", message=f"a relation is 1 to {caps['relation_chars']} characters"
                 )
             )
         ends_ok = True
@@ -464,7 +467,12 @@ def _cited_summary_issues(block: CitedSummary, docs: DocStore) -> list[FieldIssu
             )
         return issues
 
-    # "partial" and "ready": whatever is present must be grounded.
+    # "partial" and "ready": whatever is present must be grounded, within the template's fences.
+    caps = _caps("CitedSummary")
+    if len(data.segments) > caps["segments"]:
+        issues.append(FieldIssue(path="data.segments", message=f"at most {caps['segments']} segments may be shown"))
+    if len(data.citations) > caps["citations"]:
+        issues.append(FieldIssue(path="data.citations", message=f"at most {caps['citations']} citations may be shown"))
     by_id = {c.id: c for c in data.citations}
     if len(by_id) != len(data.citations):
         issues.append(FieldIssue(path="data.citations", message="citation ids must be unique"))

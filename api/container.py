@@ -7,6 +7,7 @@ from sqlalchemy import Engine
 
 from api.core.settings import Settings
 from api.fakes import fake_llm_responder
+from api.genui.templates import ensure_builtin_registered
 from api.ingestion.embed import Embedder, build_embedder
 from api.ingestion.pipeline import IngestDeps
 from api.llm.factory import build_llm_service
@@ -58,6 +59,7 @@ class Container:
 
 
 def build_container(settings: Settings) -> Container:
+    ensure_builtin_registered()  # a template whose validator has a hole stops the application starting (D-31)
     data = settings.arcana_data_dir
     data.mkdir(parents=True, exist_ok=True)
     engine = make_engine(data / "arcana.db")

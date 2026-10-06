@@ -6,7 +6,7 @@ import pytest
 
 from api.core.errors import ValidationFailed
 from api.genui.builders import graph_view
-from api.genui.catalog import MAX_GRAPH_EDGES, MAX_GRAPH_NODES, graph_edges
+from api.genui.catalog import cap, graph_edges
 from api.genui.evidence import excerpt_containing
 from api.genui.generated import GraphView
 from api.genui.validate import validate_block
@@ -102,7 +102,7 @@ def test_a_duplicate_node_id_and_a_self_loop_are_rejected(base):
 
 def test_more_nodes_than_the_cap_is_rejected(base):
     docs, raw = base
-    for i in range(MAX_GRAPH_NODES - 1):  # 2 + 29 = 31 nodes
+    for i in range(cap("GraphView", "nodes") - 1):  # 2 + 29 = 31 nodes
         raw["data"]["nodes"].append({"id": f"n{i}", "label": "BM25"})
     paths = fails(raw, docs)
     assert "data.nodes" in paths
@@ -110,7 +110,7 @@ def test_more_nodes_than_the_cap_is_rejected(base):
 
 def test_more_edges_than_the_cap_is_rejected(base):
     docs, raw = base
-    raw["data"]["edges"] = raw["data"]["edges"] * (MAX_GRAPH_EDGES + 1)
+    raw["data"]["edges"] = raw["data"]["edges"] * (cap("GraphView", "edges") + 1)
     assert "data.edges" in fails(raw, docs)
 
 
@@ -166,7 +166,7 @@ def test_the_node_cap_stops_a_big_graph_without_leaving_a_half_edge():
         for i in range(40)
     ]  # 80 distinct ends, 40 edges
     drawn = graph_edges(payload(*edges, labels=labels))
-    assert len(drawn) == MAX_GRAPH_NODES // 2  # 15 edges use exactly the 30 nodes allowed
+    assert len(drawn) == cap("GraphView", "nodes") // 2  # 15 edges use exactly the 30 nodes allowed
 
 
 def test_nothing_is_drawn_without_a_payload():

@@ -12,7 +12,7 @@ from api.agents.graph import run_turn
 from api.agents.test_agents import GRAPH, QUESTION, make_ctx
 from api.core.errors import ValidationFailed
 from api.genui.builders import BUILDERS
-from api.genui.catalog import CATALOG, ComposerEvidence, PlacementHint, Result, Spec
+from api.genui.catalog import CATALOG, ComposerEvidence, Fences, PlacementHint, Result, Spec
 from api.genui.generated import BlockEvent, DoneEvent, LayoutEvent, LayoutSpec, PanelSpec, Placement
 from api.genui.layout import WIDTHS, compose_layout, prebuilt_layout
 from api.genui.validate import validate_layout
@@ -193,7 +193,7 @@ async def test_a_new_component_is_placed_by_its_hint_with_no_change_to_the_layou
         name="ToyShelf",
         precondition="The turn's intent is the toy intent (a test field of the evidence).",
         supplied_by=("test",),
-        caps={},
+        fences=Fences(caps={}, grounding="none"),
         placement=PlacementHint(panel="studio", priority=5),
         check=lambda evidence: Result(evidence.intent == "toy", () if evidence.intent == "toy" else ("not_toy",)),
     )
