@@ -14,7 +14,7 @@ Two layers:
        - no orphan citations (every citation is cited by some segment), no id cited twice in one
          segment, docTitle and page equal the stored document's title and the chunk's page, and a
          quote is at least MIN_QUOTE_CHARS long (or the whole chunk, if it is shorter);
-       - any block: a non-empty id (upsert-by-id keys on it) and a non-negative order;
+       - any block: a non-empty id (upsert-by-id keys on it);
        - "SourceList": placeholders carry no documents; otherwise at most MAX_SOURCES, unique ids, each id a
          stored document that is ready, with the stored title and passage count ("ready" needs one or more).
        - "ConceptMap": 2 to MAX_PATH_STEPS steps, each starting where the previous one ended, no concept repeated,
@@ -30,7 +30,7 @@ points into the block.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Collection, Mapping
 from typing import Any
 
 from pydantic import TypeAdapter, ValidationError
@@ -53,6 +53,7 @@ from api.genui.generated import (
     ConceptMap,
     FieldIssue,
     GraphView,
+    LayoutSpec,
     SourceList,
     UIBlock,
 )
@@ -121,8 +122,6 @@ def _common_issues(block: UIBlock) -> list[FieldIssue]:
 
     if not block.id.strip():
         issues.append(FieldIssue(path="id", message="must not be empty"))
-    if block.meta.order < 0:
-        issues.append(FieldIssue(path="meta.order", message="must not be negative"))
     if (status == "error") != (error is not None):
         issues.append(
             FieldIssue(
@@ -163,6 +162,64 @@ def _source_list_issues(block: SourceList, docs: DocStore) -> list[FieldIssue]:
                 FieldIssue(path=f"data.documents.{i}.chunkCount", message="does not match the stored passage count")
             )
     return issues
+
+
+LAYOUT_VERSION = 1
+MIN_CHAT_WIDTH = 25
+_LAYOUT = TypeAdapter(LayoutSpec)
+
+
+def validate_layout(raw: LayoutSpec | Mapping[str, Any], known_block_ids: Collection[str] | None = None) -> LayoutSpec:
+    """Return the validated layout, or raise ValidationFailed naming every violated field. Fail closed: a layout
+    that fails is not sent, and the client keeps the layout it has. `known_block_ids`, when given, are the blocks the
+    turn produced: a placement for any other block is a violation."""
+    data = raw.model_dump() if isinstance(raw, LayoutSpec) else dict(raw)
+    try:
+        layout = _LAYOUT.validate_python(data)
+    except ValidationError as exc:
+        raise ValidationFailed("The layout does not match the wire schema.", _schema_issues(exc, None)) from exc
+
+    issues: list[FieldIssue] = []
+    if layout.version != LAYOUT_VERSION:
+        issues.append(FieldIssue(path="version", message=f"only version {LAYOUT_VERSION} is supported"))
+    if (layout.origin == "prebuilt") != (layout.mode == "basic"):
+        issues.append(FieldIssue(path="mode", message="the prebuilt origin and the basic mode go together"))
+
+    widths: dict[str, int] = {}
+    for i, panel in enumerate(layout.panels):
+        if panel.id in widths:
+            issues.append(FieldIssue(path=f"panels.{i}.id", message="panel ids must be unique"))
+        widths[panel.id] = panel.width
+        if not 0 <= panel.width <= 100:
+            issues.append(FieldIssue(path=f"panels.{i}.width", message="a width is a whole number from 0 to 100"))
+    if sum(p.width for p in layout.panels) != 100:
+        issues.append(FieldIssue(path="panels", message="widths must sum to 100"))
+    if "chat" not in widths:
+        issues.append(FieldIssue(path="panels", message="the chat panel is required"))
+    elif widths["chat"] < MIN_CHAT_WIDTH:
+        issues.append(FieldIssue(path="panels", message=f"the chat panel must be at least {MIN_CHAT_WIDTH} wide"))
+
+    seen_blocks: set[str] = set()
+    orders: set[tuple[str, int]] = set()
+    for i, placement in enumerate(layout.placements):
+        where = f"placements.{i}"
+        if placement.blockId in seen_blocks:
+            issues.append(FieldIssue(path=f"{where}.blockId", message="a block is placed once"))
+        seen_blocks.add(placement.blockId)
+        if known_block_ids is not None and placement.blockId not in known_block_ids:
+            issues.append(FieldIssue(path=f"{where}.blockId", message="this turn produced no such block"))
+        if placement.panel not in widths:
+            issues.append(FieldIssue(path=f"{where}.panel", message="the panel is not in this layout"))
+        elif widths[placement.panel] == 0:
+            issues.append(FieldIssue(path=f"{where}.panel", message="a hidden panel (width 0) holds no blocks"))
+        if placement.order < 0:
+            issues.append(FieldIssue(path=f"{where}.order", message="must not be negative"))
+        if (placement.panel, placement.order) in orders:
+            issues.append(FieldIssue(path=f"{where}.order", message="orders are unique within a panel"))
+        orders.add((placement.panel, placement.order))
+    if issues:
+        raise ValidationFailed("The layout failed validation.", issues)
+    return layout
 
 
 def _concept_map_issues(block: ConceptMap, docs: DocStore) -> list[FieldIssue]:

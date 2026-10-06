@@ -9,11 +9,12 @@ import type { ErrorEnvelope } from "@arcana/schema";
 import { renderBlock } from "@/components/genui/registry";
 import { TracePanel } from "@/components/TracePanel";
 import { uploadPdf } from "@/lib/api";
+import { panelOf } from "@/lib/layout";
 import { streamChat } from "@/lib/stream";
 import { useWorkspace } from "@/lib/store";
 
 export function Workspace() {
-  const { documents, order, blocks, turn, turnError } = useWorkspace();
+  const { documents, order, blocks, layout, turn, turnError } = useWorkspace();
   const [question, setQuestion] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<ErrorEnvelope | null>(null);
@@ -40,6 +41,7 @@ export function Workspace() {
       { message, history: [] },
       {
         onBlock: (block) => useWorkspace.getState().upsertBlock(block),
+        onLayout: (next) => useWorkspace.getState().setLayout(next),
         onError: (error) => useWorkspace.getState().failTurn(error),
         onDone: () => useWorkspace.getState().finishTurn(),
       },
@@ -47,7 +49,9 @@ export function Workspace() {
     );
   }, [question]);
 
-  const chatBlocks = order.map((id) => blocks[id]).filter((b) => b?.meta.panel === "chat");
+  // Interim (C3 builds the real panels): a block is held out of the answer column only once the layout places it in
+  // another panel. Until a layout arrives, or if none does, every block is shown here in arrival order.
+  const chatBlocks = order.map((id) => blocks[id]).filter((b) => b && panelOf(layout, b.id) === "chat");
   // The answer block's id is the turn's id (other blocks of the turn have derived ids). Offer the trace once the turn has ended, including a turn that
   // ended in an error (the trace of a failure is the one most worth reading). A turn whose connection
   // died may have no trace on the server; opening the panel then shows the server's not-found message.

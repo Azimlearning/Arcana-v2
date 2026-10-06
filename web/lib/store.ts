@@ -1,7 +1,7 @@
 // Client state for the workspace (Zustand). Blocks are stored by id: a block event whose id is
 // already present REPLACES that block in place (loading -> ready), which is the wire's update model.
 
-import type { ErrorEnvelope, IngestResponse, UIBlock } from "@arcana/schema";
+import type { ErrorEnvelope, IngestResponse, LayoutSpec, UIBlock } from "@arcana/schema";
 import { create } from "zustand";
 
 export type TurnStatus = "idle" | "streaming" | "failed";
@@ -29,12 +29,15 @@ interface WorkspaceState {
   /** Block ids in first-seen order, and the blocks themselves. */
   order: string[];
   blocks: Record<string, UIBlock>;
+  /** The layout the server sent for this turn's blocks, or null before one arrives (then every block is in chat). */
+  layout: LayoutSpec | null;
   turn: TurnStatus;
   turnError: ErrorEnvelope | null;
 
   addDocument: (doc: IngestResponse) => void;
   startTurn: () => void;
   upsertBlock: (block: UIBlock) => void;
+  setLayout: (layout: LayoutSpec) => void;
   /** End the turn with an error: any block still loading or partial becomes an error block. */
   failTurn: (error: ErrorEnvelope) => void;
   finishTurn: () => void;
@@ -44,6 +47,7 @@ export const useWorkspace = create<WorkspaceState>()((set) => ({
   documents: [],
   order: [],
   blocks: {},
+  layout: null,
   turn: "idle",
   turnError: null,
 
@@ -51,13 +55,15 @@ export const useWorkspace = create<WorkspaceState>()((set) => ({
     set((s) => ({ documents: [...s.documents.filter((d) => d.docId !== doc.docId), doc] })),
 
   // A new question starts a fresh answer panel; the documents stay.
-  startTurn: () => set({ order: [], blocks: {}, turn: "streaming", turnError: null }),
+  startTurn: () => set({ order: [], blocks: {}, layout: null, turn: "streaming", turnError: null }),
 
   upsertBlock: (block) =>
     set((s) => ({
       order: s.order.includes(block.id) ? s.order : [...s.order, block.id],
       blocks: { ...s.blocks, [block.id]: block },
     })),
+
+  setLayout: (layout) => set({ layout }),
 
   failTurn: (error) =>
     set((s) => {

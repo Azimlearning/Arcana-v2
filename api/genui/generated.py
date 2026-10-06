@@ -30,8 +30,6 @@ class BlockEvent(BaseModel):
 
 class BlockMeta(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
-    panel: Panel
-    order: int
     status: BlockStatus
     error: ErrorEnvelope | None
 
@@ -177,6 +175,27 @@ class IngestResponse(BaseModel):
     error: str | None
 
 
+class LayoutEvent(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    type: Literal['layout']
+    layout: LayoutSpec
+
+
+class LayoutSpec(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    version: int
+    origin: LayoutOrigin
+    mode: LayoutMode
+    panels: list[PanelSpec]
+    placements: list[Placement]
+
+
+class PanelSpec(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    id: PanelId
+    width: int
+
+
 class PathStep(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
     source: str
@@ -184,6 +203,13 @@ class PathStep(BaseModel):
     relation: str
     reversed: bool
     citationId: str
+
+
+class Placement(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    blockId: str
+    panel: PanelId
+    order: int
 
 
 class SourceItem(BaseModel):
@@ -235,11 +261,15 @@ ChatRole = Literal['user', 'assistant']
 
 ErrorCode = Literal['validation_failed', 'bad_request', 'not_found', 'budget_exhausted', 'spend_cap_exceeded', 'provider_unavailable', 'internal']
 
-Panel = Literal['sources', 'chat', 'studio']
+LayoutMode = Literal['basic', 'research', 'exploration']
+
+LayoutOrigin = Literal['prebuilt', 'adaptive']
+
+PanelId = Literal['sources', 'chat', 'studio']
 
 StepStatus = Literal['ok', 'partial', 'failed', 'refused']
 
-StreamEvent = Annotated[BlockEvent | StreamErrorEvent | DoneEvent, Field(discriminator='type')]
+StreamEvent = Annotated[BlockEvent | LayoutEvent | StreamErrorEvent | DoneEvent, Field(discriminator='type')]
 
 TurnOutcome = Literal['answered', 'empty', 'error']
 
@@ -268,7 +298,11 @@ GridCell.model_rebuild()
 GridDimension.model_rebuild()
 GridRow.model_rebuild()
 IngestResponse.model_rebuild()
+LayoutEvent.model_rebuild()
+LayoutSpec.model_rebuild()
+PanelSpec.model_rebuild()
 PathStep.model_rebuild()
+Placement.model_rebuild()
 SourceItem.model_rebuild()
 SourceList.model_rebuild()
 SourceListData.model_rebuild()

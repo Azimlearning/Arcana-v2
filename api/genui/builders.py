@@ -15,15 +15,11 @@ def cited_summary(
     *,
     data: dict[str, Any] | None = None,
     error: ErrorEnvelope | None = None,
-    order: int = 0,
-    panel: str = "chat",
 ) -> dict[str, Any]:
     return {
         "type": "CitedSummary",
         "id": block_id,
         "meta": {
-            "panel": panel,
-            "order": order,
             "status": status,
             "error": error.model_dump() if error is not None else None,
         },
@@ -37,15 +33,11 @@ def source_list(
     *,
     documents: list[dict[str, Any]] | None = None,
     error: ErrorEnvelope | None = None,
-    order: int = 0,
-    panel: str = "sources",
 ) -> dict[str, Any]:
     return {
         "type": "SourceList",
         "id": block_id,
         "meta": {
-            "panel": panel,
-            "order": order,
             "status": status,
             "error": error.model_dump() if error is not None else None,
         },
@@ -59,15 +51,11 @@ def graph_view(
     *,
     data: dict[str, Any] | None = None,
     error: ErrorEnvelope | None = None,
-    order: int = 0,
-    panel: str = "studio",
 ) -> dict[str, Any]:
     return {
         "type": "GraphView",
         "id": block_id,
         "meta": {
-            "panel": panel,
-            "order": order,
             "status": status,
             "error": error.model_dump() if error is not None else None,
         },
@@ -81,15 +69,11 @@ def comparison_grid(
     *,
     data: dict[str, Any] | None = None,
     error: ErrorEnvelope | None = None,
-    order: int = 0,
-    panel: str = "chat",
 ) -> dict[str, Any]:
     return {
         "type": "ComparisonGrid",
         "id": block_id,
         "meta": {
-            "panel": panel,
-            "order": order,
             "status": status,
             "error": error.model_dump() if error is not None else None,
         },
@@ -103,15 +87,11 @@ def concept_map(
     *,
     data: dict[str, Any] | None = None,
     error: ErrorEnvelope | None = None,
-    order: int = 0,
-    panel: str = "studio",
 ) -> dict[str, Any]:
     return {
         "type": "ConceptMap",
         "id": block_id,
         "meta": {
-            "panel": panel,
-            "order": order,
             "status": status,
             "error": error.model_dump() if error is not None else None,
         },

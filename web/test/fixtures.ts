@@ -1,4 +1,4 @@
-import type { CitedSummary, ComparisonGrid, ConceptMap, ErrorEnvelope, GraphView, SourceList, StreamEvent, TurnTrace } from "@arcana/schema";
+import type { CitedSummary, ComparisonGrid, ConceptMap, ErrorEnvelope, GraphView, LayoutSpec, SourceList, StreamEvent, TurnTrace } from "@arcana/schema";
 
 export const TITLE = "Hybrid Retrieval over Knowledge Graphs";
 
@@ -11,7 +11,7 @@ export function block(
   return {
     type: "CitedSummary",
     id: "turn-1",
-    meta: { panel: "chat", order: 0, status, error },
+    meta: { status, error },
     data: {
       segments: content
         ? [
@@ -42,7 +42,7 @@ export function sourceList(
   return {
     type: "SourceList",
     id: "turn-1-sources",
-    meta: { panel: "sources", order: 10, status, error },
+    meta: { status, error },
     data: { documents: content ? documents : [] },
   };
 }
@@ -56,7 +56,7 @@ export function graphView(
   return {
     type: "GraphView",
     id: "turn-1-graph-view",
-    meta: { panel: "studio", order: 20, status, error },
+    meta: { status, error },
     data: {
       nodes: content
         ? [
@@ -91,7 +91,7 @@ export function comparisonGrid(
   return {
     type: "ComparisonGrid",
     id: "turn-1-comparison-grid",
-    meta: { panel: "chat", order: 20, status, error },
+    meta: { status, error },
     data: {
       dimensions: content
         ? [
@@ -143,7 +143,7 @@ export function conceptMap(
   return {
     type: "ConceptMap",
     id: "turn-1-concept-map",
-    meta: { panel: "studio", order: 30, status, error },
+    meta: { status, error },
     data: {
       steps: content
         ? [
@@ -161,6 +161,22 @@ export function conceptMap(
         : [],
       ...overrides,
     },
+  };
+}
+
+/** An adaptive layout placing the given blocks, as the server's `compose_layout` would for a turn. */
+export function layout(placements: LayoutSpec["placements"], overrides: Partial<LayoutSpec> = {}): LayoutSpec {
+  return {
+    version: 1,
+    origin: "adaptive",
+    mode: "research",
+    panels: [
+      { id: "sources", width: 20 },
+      { id: "chat", width: 45 },
+      { id: "studio", width: 35 },
+    ],
+    placements,
+    ...overrides,
   };
 }
 

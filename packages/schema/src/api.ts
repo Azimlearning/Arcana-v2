@@ -2,6 +2,7 @@
 
 import type { UIBlock } from "./blocks";
 import type { ErrorEnvelope } from "./errors";
+import type { LayoutSpec } from "./layout";
 
 export type ChatRole = "user" | "assistant";
 
@@ -40,6 +41,15 @@ export interface BlockEvent {
   block: UIBlock;
 }
 
+/**
+ * Where the turn's blocks go (level 2). Sent after the turn's blocks and before `done`, only if it passed
+ * validation; a client that cannot read it keeps the layout it has.
+ */
+export interface LayoutEvent {
+  type: "layout";
+  layout: LayoutSpec;
+}
+
 /** A failure of the whole turn (as opposed to one block, which carries meta.error). */
 export interface StreamErrorEvent {
   type: "error";
@@ -50,4 +60,4 @@ export interface DoneEvent {
   type: "done";
 }
 
-export type StreamEvent = BlockEvent | StreamErrorEvent | DoneEvent;
+export type StreamEvent = BlockEvent | LayoutEvent | StreamErrorEvent | DoneEvent;

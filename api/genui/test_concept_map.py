@@ -240,7 +240,7 @@ async def test_the_composer_offers_a_valid_map_for_a_grounded_path_and_refuses_a
     ctx.results["graph"] = AgentResult("graph", "ok", payload)
     composition = compose(ctx)
     block = next(b for b in composition.blocks if b.type == "ConceptMap")
-    assert isinstance(block, ConceptMap) and block.id == f"{ctx.block_id}-concept-map" and block.meta.panel == "studio"
+    assert isinstance(block, ConceptMap) and block.id == f"{ctx.block_id}-concept-map"
     assert len(block.data.steps) == 3 and len(block.data.citations) == 3
     assert next(r for r in composition.records if r.component == "ConceptMap").outcome == "admitted"
 

@@ -15,7 +15,7 @@ from api.agents.state import TurnContext
 from api.core.budget import TokenBudget
 from api.fakes import fake_llm_responder
 from api.genui.catalog import Composition
-from api.genui.generated import BlockEvent, DoneEvent, StreamErrorEvent
+from api.genui.generated import BlockEvent, DoneEvent, LayoutEvent, StreamErrorEvent
 from api.llm.ledger import SpendLedger
 from api.llm.providers.fake import FakeProvider
 from api.llm.service import LLMService
@@ -165,7 +165,7 @@ async def test_the_composer_replaces_a_block_the_validator_rejects_with_an_error
 async def test_run_turn_streams_loading_then_the_final_block_with_the_same_id_then_done(ingested, tmp_path):
     deps, _ = ingested
     events = [e async for e in run_turn(GRAPH, QUESTION, make_ctx(deps, tmp_path))]
-    assert [type(e) for e in events] == [BlockEvent, BlockEvent, BlockEvent, DoneEvent]
+    assert [type(e) for e in events] == [BlockEvent, BlockEvent, BlockEvent, LayoutEvent, DoneEvent]
     first, second, third = events[0], events[1], events[2]
     assert isinstance(first, BlockEvent) and isinstance(second, BlockEvent) and isinstance(third, BlockEvent)
     assert first.block.meta.status == "loading" and second.block.meta.status == "ready"
@@ -229,7 +229,7 @@ async def test_a_block_built_around_the_validator_is_never_streamed(ingested, tm
     sneaky = CitedSummary.model_construct(
         type="CitedSummary",
         id="blk",
-        meta=BlockMeta.model_construct(panel="chat", order=0, status="ready", error=None),
+        meta=BlockMeta.model_construct(status="ready", error=None),
         data=CitedSummaryData.model_construct(
             segments=[SummarySegment.model_construct(text="Unsupported claim.", citationIds=["zz"])],
             citations=[],

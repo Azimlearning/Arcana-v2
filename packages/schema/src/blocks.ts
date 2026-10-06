@@ -10,8 +10,6 @@
 import type { ErrorEnvelope } from "./errors";
 import type { CitedSummaryData, ComparisonGridData, ConceptMapData, GraphViewData, SourceListData } from "./payloads";
 
-export type Panel = "sources" | "chat" | "studio";
-
 /**
  * Lifecycle of a block on the wire. `empty`, `loading`, `partial`, `error` are the states every
  * component must render; `ready` is a complete block (the execution doc names only the four
@@ -28,9 +26,6 @@ export type Panel = "sources" | "chat" | "studio";
 export type BlockStatus = "empty" | "loading" | "partial" | "ready" | "error";
 
 export interface BlockMeta {
-  panel: Panel;
-  /** @int */
-  order: number;
   status: BlockStatus;
   /** Why the block failed. Non-null if and only if status is "error". */
   error: ErrorEnvelope | null;

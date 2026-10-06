@@ -191,37 +191,49 @@ Status: planned only if the phase has room, task B5.
 
 ## Layout defaults and placement hints
 
-Each component declares a placement hint (preferred panel, priority) on its catalog entry; `compose_layout` reads the
-hints and contains no component names (D-27). The widths below are judgement defaults asserted by invariants (integers
+Each component declares a placement hint (`PlacementHint`: preferred panel, priority; lower priority sits first in its
+panel) on its catalog entry; `compose_layout` (`api/genui/layout.py`) reads the hints and contains no component names
+(D-27, asserted by a source-scan test). The widths below are judgement defaults asserted by invariants (integers
 summing to 100, chat at least 25, a panel with no placements has width 0 except chat), not by exact numbers.
 
 | Layout | When | Sources | Chat | Studio |
 |---|---|---|---|---|
 | `prebuilt` (mode `basic`) | the workspace before any question, and the fallback | 20 | 60 | 20 |
-| `adaptive`, mode `research` | a turn whose admitted components include a studio-hinted one | 20 | 45 | 35 |
-| `adaptive`, mode `research`, no studio component | answer only or answer plus grid | 20 | 80 | 0 |
-| `adaptive`, mode `exploration` | intent `relate` and a graph-hinted component admitted | 10 | 30 | 60 |
-| any adaptive layout without a `SourceList` | no sources component | 0 | chat plus studio as above, sources width added to chat | |
+| `adaptive`, mode `research`, with a `SourceList` | a turn whose admitted components include a studio-hinted one | 20 | 45 | 35 |
+| `adaptive`, mode `research`, with a `SourceList`, no studio component | answer plus source list, or plus a grid | 20 | 80 | 0 |
+| `adaptive`, mode `exploration`, with a `SourceList` | intent `relate` and a studio-hinted component admitted | 10 | 30 | 60 |
+| any adaptive layout with an empty panel | nothing placed there (for example no `SourceList`, so answer only is 0 / 100 / 0) | 0 for that panel | its width added to chat | |
+
+The prebuilt layout places only the workspace's own source list (in the sources panel, task C2); every turn block with no
+placement is shown in chat in arrival order. `validate_layout` (`api/genui/validate.py`) asserts the invariants: version 1,
+the prebuilt origin goes with the basic mode, whole-number widths summing to 100, chat present and at least 25, a hidden
+panel holds nothing, each block placed once, unique orders within a panel, only blocks the turn produced. A layout that
+fails is not sent; the client applies the same rules (`web/lib/layout.ts`) and ignores one that does not pass. A new
+*component* needs no edit to `layout.py`; a new *panel* is a change to `layout.py`, `layout.ts` and the shell together.
 
 ## How to add a component
 
-The recipe, in order. Task C1's toy-component test follows it literally; if a step here is wrong, that test fails.
+The recipe, in order. Task C1's toy-component test (`api/genui/test_layout.py`) follows steps 2 and 6 literally (a `Spec` with a hint, and a
+`_RAW` entry); it reuses an existing block type, so steps 3, 4, 5 and 7 are not exercised by it.
 
 1. **Write the precondition first** in a new section of this file: what the payload asserts, which retrieval signal
    supplies it, caps, validator invariants, states, placement hint, and whether flat retrieval could supply it. If
    retrieval cannot satisfy it, stop: the component is not admissible (see "Not admitted").
-2. **Catalog entry** (`api/genui/catalog.py`): name, version, precondition statement, supplier, caps, fences, placement
-   hint, and the deterministic `check(evidence)` returning satisfied plus reason codes.
+2. **Catalog entry** (`api/genui/catalog.py`): name, precondition statement, supplier, caps, a `PlacementHint`, and the
+   deterministic `check(evidence)` returning satisfied plus reason codes.
 3. **Schema first** (`packages/schema/src/payloads.ts`, `blocks.ts`): the `*Data` interface and the block variant added
    to the `UIBlock` union. Follow the schema conventions above. Then `pnpm codegen` and `pnpm codegen:check`.
 4. **Validator rules** (`api/genui/validate.py`): the invariants, fail closed, each with a tamper test.
-5. **Builder** (`api/genui/builders.py`): a raw block dict from the evidence. Only the Composer imports it.
-6. **Admission**: automatic. The Composer walks the catalog; nothing to edit in `compose.py` and nothing in
-   `layout.py`.
+5. **Builder** (`api/genui/builders.py`): a raw block dict from the evidence, added to the `BUILDERS` dict (the
+   completeness test compares it with the catalog and the schema). Only the Composer imports it.
+6. **Admission and placement**: the Composer walks the catalog, so admission is automatic. Add one entry to `_RAW` in
+   `api/agents/compose.py` (how the raw block is made from the evidence). Nothing in `layout.py`, `layout.ts` or the shell:
+   the layout places the block by its hint (`test_layout.py` proves it with a toy component).
 7. **Web component** (`web/components/genui/`): all four states, text form, roles and labels; registered in
    `registry.tsx` (a missing entry is a compile error).
 8. **Tests**: admission (satisfied and not satisfied), tamper (each invariant), component states, a11y roles.
-9. **Run `schema-guardian`**, update the completeness test's set and this file's status line.
+9. **Run `schema-guardian`**, update the completeness test's set (`PLANNED` in `api/agents/test_catalog.py`; `_RAW` and
+   `BUILDERS` must also cover the name) and this file's status line.
 
 ## UI generation pipeline
 

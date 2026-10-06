@@ -101,8 +101,12 @@ def test_chat_streams_a_loading_block_then_a_validated_ready_block_then_done(rea
     assert response.headers["cache-control"] == "no-cache"
 
     stream = events(response)  # every event parsed against the generated schema
-    assert [e.type for e in stream] == ["block", "block", "block", "block", "done"]
+    assert [e.type for e in stream] == ["block", "block", "block", "block", "layout", "done"]
     loading, final = stream[0].block, stream[1].block  # pyright: ignore[reportAttributeAccessIssue]
+    layout = stream[4].layout  # pyright: ignore[reportAttributeAccessIssue]
+    assert layout.origin == "adaptive" and sum(p.width for p in layout.panels) == 100
+    shown = {e.block.id for e in stream[:4]}  # pyright: ignore[reportAttributeAccessIssue]
+    assert {p.blockId for p in layout.placements} <= shown  # it places only blocks this turn produced
     extra = [(e.block.type, e.block.meta.status) for e in stream[2:4]]  # pyright: ignore[reportAttributeAccessIssue]
     assert extra == [("SourceList", "ready"), ("GraphView", "ready")]  # a comparison turn also drew the graph
     assert loading.meta.status == "loading" and final.meta.status == "ready"
@@ -127,7 +131,7 @@ def test_chat_with_the_llm_forced_to_fail_streams_the_error_state_not_a_blank(re
     container = ready_client.app.state.container  # pyright: ignore[reportAttributeAccessIssue]
     container.llm = LLMService(FakeProvider(fail_with="timeout"), None, container.ledger)
     stream = events(chat(ready_client))
-    assert [e.type for e in stream] == ["block", "block", "done"]
+    assert [e.type for e in stream] == ["block", "block", "layout", "done"]  # the layout still follows the blocks
     final = stream[1].block  # pyright: ignore[reportAttributeAccessIssue]
     assert final.meta.status == "error" and final.meta.error.code == "provider_unavailable"
     assert final.data.segments == []
@@ -284,7 +288,7 @@ def test_a_turn_forced_to_one_hop_still_ends_with_a_block_and_a_trace(ready_clie
 
     monkeypatch.setattr(chat_route, "TurnContext", lambda **kw: TurnContext(**kw, limits=TurnLimits(max_hops=1)))
     stream = events(chat(ready_client))
-    assert [e.type for e in stream] == ["block", "block", "done"]  # a block, not a hang or a crash
+    assert [e.type for e in stream] == ["block", "block", "layout", "done"]  # a block, not a hang or a crash
     final = stream[1].block  # pyright: ignore[reportAttributeAccessIssue]
     assert final.meta.status == "error" and final.meta.error.code == "budget_exhausted"
     assert final.data.segments == []  # nothing unchecked or half-answered is shown

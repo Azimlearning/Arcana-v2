@@ -5,11 +5,11 @@ import json
 import pytest
 from pydantic import TypeAdapter, ValidationError
 
-from api.genui.generated import BlockMeta, CitedSummary, StreamEvent
+from api.genui.generated import BlockMeta, CitedSummary, PanelSpec, StreamEvent
 
 
 def block(**meta_overrides: object) -> dict:
-    meta = {"panel": "chat", "order": 0, "status": "ready", "error": None, **meta_overrides}
+    meta = {"status": "ready", "error": None, **meta_overrides}
     return {
         "type": "CitedSummary",
         "id": "b1",
@@ -26,7 +26,7 @@ def test_valid_block_validates_from_dict_and_json():
 @pytest.mark.parametrize("bad", ["1", True, 1.0])
 def test_int_fields_do_not_coerce(bad: object):
     with pytest.raises(ValidationError):
-        BlockMeta.model_validate({"panel": "chat", "status": "ready", "error": None, "order": bad})
+        PanelSpec.model_validate({"id": "chat", "width": bad})
 
 
 def test_unknown_field_is_rejected():
@@ -37,11 +37,11 @@ def test_unknown_field_is_rejected():
 
 def test_nan_is_rejected():
     with pytest.raises(ValidationError):
-        CitedSummary.model_validate_json(json.dumps(block(order=float("nan"))))
+        PanelSpec.model_validate_json(json.dumps({"id": "chat", "width": float("nan")}))
 
 
 def test_error_field_is_required_not_defaulted():
-    meta = {"panel": "chat", "order": 0, "status": "ready"}
+    meta = {"status": "ready"}
     with pytest.raises(ValidationError):
         BlockMeta.model_validate(meta)
 

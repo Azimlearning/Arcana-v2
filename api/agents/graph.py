@@ -18,8 +18,15 @@ from api.agents.framework import route_to_agent
 from api.agents.state import TurnContext, TurnState
 from api.core.errors import envelope_from_exception
 from api.core.logging import get_logger
-from api.genui.generated import BlockEvent, DoneEvent, StreamErrorEvent, UIBlock
-from api.genui.validate import validate_block
+from api.genui.generated import (
+    BlockEvent,
+    DoneEvent,
+    LayoutEvent,
+    LayoutSpec,
+    StreamErrorEvent,
+    UIBlock,
+)
+from api.genui.validate import validate_block, validate_layout
 
 log = get_logger(__name__)
 
@@ -40,15 +47,30 @@ def build_turn_graph():
     return builder.compile()
 
 
+def _checked_layout(layout: LayoutSpec | None, block_ids: set[str]) -> LayoutEvent | None:
+    """The last gate before the wire for the layout, as `_checked` is for a block: re-validated from plain data against
+    the blocks about to be sent, so a layout mutated or built around the validator is not streamed. Never raises: a
+    layout that cannot be checked is left out, and layout never fails a turn."""
+    if layout is None:
+        return None
+    try:
+        return LayoutEvent(type="layout", layout=validate_layout(layout.model_dump(), block_ids))
+    except Exception as exc:
+        log.warning("layout_dropped_at_the_gate", error=type(exc).__name__)
+        return None
+
+
 def _checked(block: UIBlock, ctx: TurnContext) -> BlockEvent:
     """The last gate before the wire. Re-validates from plain data, so a block that was built with
     model_construct, or mutated after it was validated, cannot be streamed (constraint 2)."""
     return BlockEvent(type="block", block=validate_block(block.model_dump(), ctx.docs))
 
 
-async def run_turn(graph, question: str, ctx: TurnContext) -> AsyncIterator[BlockEvent | StreamErrorEvent | DoneEvent]:
+async def run_turn(
+    graph, question: str, ctx: TurnContext
+) -> AsyncIterator[BlockEvent | LayoutEvent | StreamErrorEvent | DoneEvent]:
     """Stream one turn: a loading block at once, then every block the Composer chose (the answer has the
-    loading block's id, so it replaces it), then done.
+    loading block's id, so it replaces it), then the layout for them if it passed validation, then done.
 
     If the graph itself fails, the Composer still terminates the turn: an error-state block with the
     same id replaces the loading one, then the stream carries the error event, then done. The client
@@ -64,7 +86,8 @@ async def run_turn(graph, question: str, ctx: TurnContext) -> AsyncIterator[Bloc
 
     try:
         state = await graph.ainvoke({"question": question}, context=ctx)
-        finals = [_checked(block, ctx) for block in state["composition"].blocks]
+        composition = state["composition"]
+        finals = [_checked(block, ctx) for block in composition.blocks]
     except Exception as exc:
         log.error("turn_failed", error=type(exc).__name__)
         envelope = envelope_from_exception(exc)
@@ -75,4 +98,9 @@ async def run_turn(graph, question: str, ctx: TurnContext) -> AsyncIterator[Bloc
 
     for event in finals:
         yield event
+    layout_event = _checked_layout(composition.layout, {e.block.id for e in finals})
+    if (
+        layout_event is not None
+    ):  # only a layout that passes the last gate is sent; without one the client keeps its own
+        yield layout_event
     yield DoneEvent(type="done")

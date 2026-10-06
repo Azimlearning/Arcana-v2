@@ -4,7 +4,7 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { TITLE, block, comparisonGrid, envelope, frame, jsonResponse, sseResponse, trace } from "@/test/fixtures";
+import { TITLE, block, comparisonGrid, envelope, frame, jsonResponse, layout, sourceList, sseResponse, trace } from "@/test/fixtures";
 import { useWorkspace } from "@/lib/store";
 
 import { Workspace } from "./Workspace";
@@ -159,6 +159,41 @@ describe("Workspace", () => {
     expect(await screen.findByRole("table")).toBeInTheDocument();
     fireEvent.click(await screen.findByRole("button", { name: "Show how this was answered" }));
     expect(await screen.findByText(/1\. orchestrator/)).toBeInTheDocument(); // the trace of "turn-1", the answer's id
+  });
+
+  it("shows in the answer column only what the layout places in chat; the rest is held for its own panel", async () => {
+    routes["/chat"] = () =>
+      sseResponse([
+        frame({ type: "block", block: block("loading") }),
+        frame({ type: "block", block: block("ready") }),
+        frame({ type: "block", block: sourceList("ready") }),
+        frame({
+          type: "layout",
+          layout: layout([
+            { blockId: "turn-1", panel: "chat", order: 0 },
+            { blockId: "turn-1-sources", panel: "sources", order: 0 },
+          ]),
+        }),
+        frame({ type: "done" }),
+      ]);
+    render(<Workspace />);
+    ask();
+    await screen.findByText(/Dense retrieval embeds passages/);
+    expect(screen.queryByText("BM25 in Practice")).not.toBeInTheDocument(); // placed in sources, not chat
+    expect(useWorkspace.getState().blocks["turn-1-sources"]).toBeDefined(); // still held, for the sources panel
+  });
+
+  it("without a layout every block is shown in the answer column in arrival order", async () => {
+    routes["/chat"] = () =>
+      sseResponse([
+        frame({ type: "block", block: block("loading") }),
+        frame({ type: "block", block: block("ready") }),
+        frame({ type: "block", block: sourceList("ready") }),
+        frame({ type: "done" }),
+      ]);
+    render(<Workspace />);
+    ask();
+    expect(await screen.findByText("BM25 in Practice")).toBeInTheDocument();
   });
 
   it("offers the trace of a turn that ended in an error too, and says so if the server has none", async () => {

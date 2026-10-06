@@ -11,6 +11,8 @@ construct a block, so nothing reaches the wire that the Composer did not build a
 """
 
 import re
+from collections.abc import Callable
+from dataclasses import replace
 from typing import Any
 
 from langgraph.runtime import Runtime
@@ -32,7 +34,8 @@ from api.genui.catalog import (
     graph_edges,
 )
 from api.genui.generated import ErrorEnvelope, UIBlock
-from api.genui.validate import validate_block
+from api.genui.layout import compose_layout
+from api.genui.validate import validate_block, validate_layout
 from api.stores.doc_store import Document
 
 log = get_logger(__name__)
@@ -207,30 +210,52 @@ def _concept_data(evidence: ComposerEvidence) -> dict[str, Any]:
     return {"steps": out, "citations": list(citations.values())}
 
 
+def _raw_cited_summary(spec: Spec, ctx: TurnContext, evidence: ComposerEvidence, empty: bool) -> dict[str, Any]:
+    builder = BUILDERS[spec.name]
+    if empty:
+        return builder(_block_id(spec, ctx), "empty")
+    return builder(_block_id(spec, ctx), "ready", data=evidence.answer)
+
+
+def _raw_source_list(spec: Spec, ctx: TurnContext, evidence: ComposerEvidence, empty: bool) -> dict[str, Any]:
+    listed = [
+        {"docId": d.id, "title": d.title, "chunkCount": evidence.chunk_counts.get(d.id, 0)}
+        for d in evidence.documents
+        if d.status == "ready"
+    ][: spec.caps["documents"]]
+    return BUILDERS[spec.name](_block_id(spec, ctx), "ready", documents=listed)
+
+
+def _raw_graph_view(spec: Spec, ctx: TurnContext, evidence: ComposerEvidence, empty: bool) -> dict[str, Any]:
+    return BUILDERS[spec.name](_block_id(spec, ctx), "ready", data=_graph_data(evidence))
+
+
+def _raw_comparison_grid(spec: Spec, ctx: TurnContext, evidence: ComposerEvidence, empty: bool) -> dict[str, Any]:
+    return BUILDERS[spec.name](_block_id(spec, ctx), "ready", data=_grid_data(evidence))
+
+
+def _raw_concept_map(spec: Spec, ctx: TurnContext, evidence: ComposerEvidence, empty: bool) -> dict[str, Any]:
+    return BUILDERS[spec.name](_block_id(spec, ctx), "ready", data=_concept_data(evidence))
+
+
+RawBuilder = Callable[[Spec, TurnContext, ComposerEvidence, bool], dict[str, Any]]
+_RAW: dict[str, RawBuilder] = {
+    "CitedSummary": _raw_cited_summary,
+    "SourceList": _raw_source_list,
+    "GraphView": _raw_graph_view,
+    "ComparisonGrid": _raw_comparison_grid,
+    "ConceptMap": _raw_concept_map,
+}
+"""How each catalog component's raw block is made from the evidence: one entry per component (the recipe in
+catalog.md, "How to add a component"). The completeness test keeps this, the catalog and the builders in step."""
+
+
 def _raw(spec: Spec, ctx: TurnContext, evidence: ComposerEvidence, *, empty: bool) -> dict[str, Any]:
     """The unvalidated block for one admitted (or, for the terminal component, empty) spec."""
-    builder = BUILDERS[spec.name]
-    where = {"panel": spec.placement.panel, "order": spec.placement.priority}
-    block_id = _block_id(spec, ctx)
-    if spec.name == "CitedSummary":
-        return builder(block_id, "empty") if empty else builder(block_id, "ready", data=evidence.answer)
-    if spec.name == "SourceList":
-        listed = [
-            {"docId": d.id, "title": d.title, "chunkCount": evidence.chunk_counts.get(d.id, 0)}
-            for d in evidence.documents
-            if d.status == "ready"
-        ][: spec.caps["documents"]]
-        return builder(block_id, "ready", documents=listed, **where)
-    if spec.name == "GraphView":
-        return builder(block_id, "ready", data=_graph_data(evidence), **where)
-    if spec.name == "ComparisonGrid":
-        return builder(block_id, "ready", data=_grid_data(evidence), **where)
-    if spec.name == "ConceptMap":
-        return builder(block_id, "ready", data=_concept_data(evidence), **where)
-    raise AssertionError(f"no builder wiring for {spec.name}")  # the completeness test keeps this in step
+    return _RAW[spec.name](spec, ctx, evidence, empty)
 
 
-def compose(ctx: TurnContext) -> Composition:
+def _compose_blocks(ctx: TurnContext) -> Composition:
     """Walk the catalog and build every block whose precondition the evidence satisfies. Never raises and never
     returns nothing: the terminal component is always present, as an error or empty block if it must be."""
     answer, failure = _gate(ctx)
@@ -258,6 +283,24 @@ def compose(ctx: TurnContext) -> Composition:
         blocks.append(block)
         records.append(ComponentRecord(spec.name, "empty" if empty else "admitted", result.reasons, block.id))
     return Composition(tuple(blocks), tuple(records))
+
+
+def compose(ctx: TurnContext) -> Composition:
+    """The turn's blocks (see `_compose_blocks`) and, last, the adaptive layout for them. The layout is validated
+    against the blocks actually produced; if it is invalid it is left out and the reason recorded, and the turn is
+    unaffected: layout never fails a turn."""
+    composition = _compose_blocks(ctx)
+    components = {r.block_id: r.component for r in composition.records if r.block_id}
+    admitted = [(b.id, components.get(b.id, "")) for b in composition.blocks]
+    try:
+        layout = validate_layout(compose_layout(admitted, ctx.intent), {b.id for b in composition.blocks})
+    except ValidationFailed as exc:
+        log.warning("layout_rejected", issues=[i.path for i in exc.issues])
+        return replace(composition, layout_failure=tuple(i.path for i in exc.issues))
+    except Exception as exc:  # a bug in layout must not end the turn either
+        log.error("layout_failed", error=type(exc).__name__)
+        return replace(composition, layout_failure=("internal",))
+    return replace(composition, layout=layout)
 
 
 def compose_block(ctx: TurnContext) -> UIBlock:

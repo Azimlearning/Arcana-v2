@@ -208,9 +208,7 @@ async def test_the_composer_offers_a_valid_grid_for_a_grounded_alignment_and_ref
     ctx.results["graph"] = AgentResult("graph", "ok", graph_payload(deps, d1, cells))
     composition = compose(ctx)
     grid = next(b for b in composition.blocks if b.type == "ComparisonGrid")
-    assert (
-        isinstance(grid, ComparisonGrid) and grid.id == f"{ctx.block_id}-comparison-grid" and grid.meta.panel == "chat"
-    )
+    assert isinstance(grid, ComparisonGrid) and grid.id == f"{ctx.block_id}-comparison-grid"
     assert [r.docId for r in grid.data.rows] == [d1, "d2"] and len(grid.data.dimensions) == 2
     record = next(r for r in composition.records if r.component == "ComparisonGrid")
     assert record.outcome == "admitted" and record.block_id == grid.id

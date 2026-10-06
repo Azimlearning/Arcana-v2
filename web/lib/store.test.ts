@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { block, comparisonGrid, conceptMap, envelope, graphView, sourceList } from "@/test/fixtures";
+import { block, comparisonGrid, conceptMap, envelope, graphView, layout, sourceList } from "@/test/fixtures";
 
 import { toErrorBlock, useWorkspace } from "./store";
 
@@ -64,35 +64,44 @@ describe("workspace store", () => {
     expect(s().documents).toEqual([{ docId: "d", title: "Again", status: "ready", chunkCount: 2, error: null }]);
   });
 
+  it("holds the layout of the turn, and a new question starts without one", () => {
+    expect(s().layout).toBeNull();
+    const placed = layout([{ blockId: "turn-1", panel: "chat", order: 0 }]);
+    s().setLayout(placed);
+    expect(s().layout).toEqual(placed);
+    s().startTurn();
+    expect(s().layout).toBeNull();
+  });
+
   it("toErrorBlock keeps identity and panel, clears content", () => {
     const failed = toErrorBlock(block("ready"), envelope());
     expect(failed.id).toBe("turn-1");
-    expect(failed.meta).toMatchObject({ panel: "chat", status: "error" });
+    expect(failed.meta).toMatchObject({ status: "error" });
     expect(failed.data).toEqual({ segments: [], citations: [] });
   });
 
-  it("toErrorBlock empties a ConceptMap too, and keeps its own panel", () => {
+  it("toErrorBlock empties a ConceptMap too", () => {
     const failed = toErrorBlock(conceptMap("ready"), envelope());
-    expect(failed.meta).toMatchObject({ panel: "studio", status: "error" });
+    expect(failed.meta).toMatchObject({ status: "error" });
     expect(failed.data).toEqual({ steps: [], citations: [] });
   });
 
-  it("toErrorBlock empties a ComparisonGrid too, and keeps its own panel", () => {
+  it("toErrorBlock empties a ComparisonGrid too", () => {
     const failed = toErrorBlock(comparisonGrid("ready"), envelope());
-    expect(failed.meta).toMatchObject({ panel: "chat", status: "error" });
+    expect(failed.meta).toMatchObject({ status: "error" });
     expect(failed.data).toEqual({ dimensions: [], rows: [], citations: [] });
   });
 
-  it("toErrorBlock empties a GraphView too, and keeps its own panel", () => {
+  it("toErrorBlock empties a GraphView too", () => {
     const failed = toErrorBlock(graphView("ready"), envelope());
-    expect(failed.meta).toMatchObject({ panel: "studio", status: "error" });
+    expect(failed.meta).toMatchObject({ status: "error" });
     expect(failed.data).toEqual({ nodes: [], edges: [], citations: [] });
   });
 
-  it("toErrorBlock empties a SourceList too, and keeps its own panel", () => {
+  it("toErrorBlock empties a SourceList too", () => {
     const failed = toErrorBlock(sourceList("partial"), envelope());
     expect(failed.type).toBe("SourceList");
-    expect(failed.meta).toMatchObject({ panel: "sources", status: "error" });
+    expect(failed.meta).toMatchObject({ status: "error" });
     expect(failed.data).toEqual({ documents: [] });
   });
 });

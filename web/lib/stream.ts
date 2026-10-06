@@ -8,7 +8,9 @@
 // neither. A stream that closes without `done`, a network failure, an HTTP error and a malformed
 // frame are all onError. A caller-initiated abort is silent.
 
-import type { BlockEvent, ChatRequest, ErrorEnvelope, StreamEvent, UIBlock } from "@arcana/schema";
+import type { BlockEvent, ChatRequest, ErrorEnvelope, LayoutSpec, StreamEvent, UIBlock } from "@arcana/schema";
+
+import { isLayoutSpec } from "./layout";
 
 export const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000").replace(
   /\/$/,
@@ -17,6 +19,8 @@ export const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localho
 
 export interface StreamHandlers {
   onBlock: (block: UIBlock) => void;
+  /** The layout for the turn's blocks. Only a readable layout is delivered; an unreadable one is dropped. */
+  onLayout?: (layout: LayoutSpec) => void;
   onError: (error: ErrorEnvelope) => void;
   onDone: () => void;
 }
@@ -63,8 +67,10 @@ export function parseFrame(raw: string): StreamEvent | null {
   if (!data) return null; // a comment or keep-alive
   const parsed: unknown = JSON.parse(data);
   if (typeof parsed !== "object" || parsed === null) throw new Error("event is not an object");
-  const event = parsed as { type?: unknown; block?: unknown; error?: unknown };
+  const event = parsed as { type?: unknown; block?: unknown; error?: unknown; layout?: unknown };
   if (event.type === "done") return { type: "done" };
+  // A layout this client cannot read is not an error: it is ignored and the client keeps the layout it has.
+  if (event.type === "layout") return isLayoutSpec(event.layout) ? { type: "layout", layout: event.layout } : null;
   if (event.type === "error" && isEnvelope(event.error)) return { type: "error", error: event.error };
   if (
     event.type === "block" &&
@@ -120,6 +126,7 @@ export async function streamChat(
     }
     if (finished || event === null) return;
     if (event.type === "block") handlers.onBlock(event.block);
+    else if (event.type === "layout") handlers.onLayout?.(event.layout);
     else if (event.type === "error") fail(event.error);
     else finish(handlers.onDone);
   };

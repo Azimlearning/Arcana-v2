@@ -1,16 +1,17 @@
-import type { ErrorEnvelope, UIBlock } from "@arcana/schema";
+import type { ErrorEnvelope, LayoutSpec, UIBlock } from "@arcana/schema";
 import { describe, expect, it, vi } from "vitest";
 
-import { block, envelope, frame, jsonResponse, sseResponse } from "@/test/fixtures";
+import { block, envelope, frame, jsonResponse, layout, sseResponse } from "@/test/fixtures";
 
 import { parseFrame, streamChat } from "./stream";
 
 const REQUEST = { message: "q", history: [] };
 
 function collect() {
-  const calls = { blocks: [] as UIBlock[], errors: [] as ErrorEnvelope[], done: 0 };
+  const calls = { blocks: [] as UIBlock[], layouts: [] as LayoutSpec[], errors: [] as ErrorEnvelope[], done: 0 };
   const handlers = {
     onBlock: (b: UIBlock) => calls.blocks.push(b),
+    onLayout: (l: LayoutSpec) => calls.layouts.push(l),
     onError: (e: ErrorEnvelope) => calls.errors.push(e),
     onDone: () => (calls.done += 1),
   };
@@ -33,6 +34,30 @@ describe("streamChat", () => {
     expect(calls.blocks.map((b) => b.meta.status)).toEqual(["loading", "ready"]);
     expect(calls.done).toBe(1);
     expect(calls.errors).toEqual([]);
+  });
+
+  it("delivers a readable layout after the blocks and before done", async () => {
+    const placed = layout([{ blockId: "turn-1", panel: "chat", order: 0 }]);
+    const { calls } = await run(sseResponse([FULL.replace(frame({ type: "done" }), frame({ type: "layout", layout: placed }) + frame({ type: "done" }))]));
+    expect(calls.layouts).toEqual([placed]);
+    expect(calls.done).toBe(1);
+    expect(calls.errors).toEqual([]);
+  });
+
+  it("ignores a layout it cannot read, without an error and without losing the rest of the turn", async () => {
+    const unknownVersion = layout([], { version: 2 });
+    const { calls } = await run(sseResponse([FULL.replace(frame({ type: "done" }), frame({ type: "layout", layout: unknownVersion }) + frame({ type: "done" }))]));
+    expect(calls.layouts).toEqual([]);
+    expect(calls.blocks).toHaveLength(2);
+    expect(calls.done).toBe(1);
+    expect(calls.errors).toEqual([]);
+  });
+
+  it("a stream from a server that sends no layout still works (the handler is optional)", async () => {
+    const fetchImpl = vi.fn(async () => sseResponse([FULL]));
+    let done = 0;
+    await streamChat(REQUEST, { onBlock: () => {}, onError: () => {}, onDone: () => (done += 1) }, { fetchImpl: fetchImpl as unknown as typeof fetch, baseUrl: "http://api" });
+    expect(done).toBe(1);
   });
 
   it("posts the request as JSON to /chat", async () => {
@@ -118,7 +143,7 @@ describe("streamChat", () => {
     const controller = new AbortController();
     controller.abort();
     const { calls } = await run(() => Promise.reject(new DOMException("aborted", "AbortError")), controller.signal);
-    expect(calls).toEqual({ blocks: [], errors: [], done: 0 });
+    expect(calls).toEqual({ blocks: [], layouts: [], errors: [], done: 0 });
   });
 });
 

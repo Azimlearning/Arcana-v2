@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from typing import Any, Literal
 
 from api.genui.alignment import MAX_GRID_DIMS, MAX_GRID_DOCS, settle
-from api.genui.generated import UIBlock
+from api.genui.generated import LayoutSpec, PanelId, UIBlock
 from api.genui.text import MIN_LABEL_CHARS, MIN_QUOTE_CHARS, label_in_quote, normalise
 from api.stores.doc_store import Document
 
@@ -36,10 +36,10 @@ class ComposerEvidence:
 
 
 @dataclass(frozen=True)
-class Placement:
+class PlacementHint:
     """A hint to the layout, not a position (D-27): the panel this component prefers and its priority in it."""
 
-    panel: str
+    panel: PanelId
     priority: int
 
 
@@ -59,7 +59,7 @@ class Spec:
     supplied_by: tuple[str, ...]
     """The agents whose output the check reads."""
     caps: Mapping[str, int]
-    placement: Placement
+    placement: PlacementHint
     check: Callable[[ComposerEvidence], Result]
     terminal: bool = False
     """The turn's answer component. When its precondition fails the Composer shows its empty state instead of
@@ -86,6 +86,10 @@ class Composition:
 
     blocks: tuple[UIBlock, ...]
     records: tuple[ComponentRecord, ...] = field(default=())
+    layout: LayoutSpec | None = None
+    """The validated adaptive layout, or None when it could not be composed or failed validation."""
+    layout_failure: tuple[str, ...] = ()
+    """Field paths (or a short code) saying why there is no layout. Empty when there is one."""
 
     @property
     def primary(self) -> UIBlock:
@@ -105,7 +109,7 @@ CITED_SUMMARY = Spec(
     precondition="The Research agent produced at least one segment, each citing a stored chunk.",
     supplied_by=("research", "fact_checker"),
     caps={"segments": 40, "citations": 40},
-    placement=Placement(panel="chat", priority=10),
+    placement=PlacementHint(panel="chat", priority=10),
     check=_check_cited_summary,
     terminal=True,
 )
@@ -213,7 +217,7 @@ COMPARISON_GRID = Spec(
     ),
     supplied_by=("graph",),
     caps={"documents": MAX_GRID_DOCS, "entities": MAX_GRID_DIMS},
-    placement=Placement(panel="chat", priority=20),
+    placement=PlacementHint(panel="chat", priority=20),
     check=_check_comparison_grid,
 )
 
@@ -299,7 +303,7 @@ CONCEPT_MAP = Spec(
     ),
     supplied_by=("graph",),
     caps={"steps": MAX_PATH_STEPS},
-    placement=Placement(panel="studio", priority=30),
+    placement=PlacementHint(panel="studio", priority=30),
     check=_check_concept_map,
 )
 
@@ -315,7 +319,7 @@ GRAPH_VIEW = Spec(
     precondition="The Graph agent returned at least one edge whose chunk holds a verbatim quote naming both endpoints.",
     supplied_by=("graph",),
     caps={"nodes": MAX_GRAPH_NODES, "edges": MAX_GRAPH_EDGES},
-    placement=Placement(panel="studio", priority=20),
+    placement=PlacementHint(panel="studio", priority=20),
     check=_check_graph_view,
 )
 
@@ -324,7 +328,7 @@ SOURCE_LIST = Spec(
     precondition="At least one document in the store has status ready.",
     supplied_by=("document_store",),
     caps={"documents": MAX_SOURCES},
-    placement=Placement(panel="sources", priority=10),
+    placement=PlacementHint(panel="sources", priority=10),
     check=_check_source_list,
 )
 

@@ -53,19 +53,16 @@ def test_a_grounded_ready_block_passes(ctx):
 
 def test_a_malformed_block_is_rejected_with_its_field_path(ctx):
     docs, _, raw = ctx
-    raw["meta"]["order"] = "1"  # a string where an int is declared: no coercion
-    assert paths(fails(raw, docs)) == ["meta.order"]
+    raw["data"]["citations"][0]["page"] = "1"  # a string where an int is declared: no coercion
+    assert paths(fails(raw, docs)) == ["data.citations.0.page"]
 
 
 def test_every_violation_is_reported_not_just_the_first(ctx):
     docs, _, raw = ctx
-    raw["meta"]["order"] = "1"
     raw["meta"]["status"] = "great"
     raw["data"]["citations"][0]["page"] = "3"
     raw["surprise"] = True
-    assert sorted(paths(fails(raw, docs))) == sorted(
-        ["meta.order", "meta.status", "data.citations.0.page", "surprise"]
-    )
+    assert sorted(paths(fails(raw, docs))) == sorted(["meta.status", "data.citations.0.page", "surprise"])
 
 
 def test_a_missing_field_and_a_wrong_type_tag_are_located(ctx):
@@ -84,7 +81,7 @@ def test_an_empty_block_is_rejected_not_crashed():
 
 def test_schema_failure_never_reaches_the_content_rules(ctx):
     docs, _, raw = ctx
-    raw["meta"]["order"] = 1.5
+    raw["data"]["citations"][0]["page"] = 1.5
     assert all(not p.startswith("data.segments") for p in paths(fails(raw, docs)))
 
 
@@ -231,8 +228,7 @@ def test_an_id_cited_twice_in_one_segment_is_rejected(ctx):
     assert paths(fails(raw, docs)) == ["data.segments.0.citationIds.1"]
 
 
-def test_an_empty_id_and_a_negative_order_are_rejected(ctx):
+def test_an_empty_id_is_rejected(ctx):
     docs, _, raw = ctx
     raw["id"] = "  "
-    raw["meta"]["order"] = -1
-    assert sorted(paths(fails(raw, docs))) == ["id", "meta.order"]
+    assert paths(fails(raw, docs)) == ["id"]

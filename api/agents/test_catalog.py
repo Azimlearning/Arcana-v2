@@ -59,7 +59,7 @@ async def test_a_turn_yields_one_cited_summary_and_one_source_list_with_two_admi
     ]
     assert [r.block_id for r in composition.records if r.outcome == "admitted"] == [b.id for b in composition.blocks]
     listing = composition.blocks[1]
-    assert listing.meta.panel == "sources" and listing.id != composition.primary.id  # its own id: no replacing
+    assert listing.id != composition.primary.id  # its own id: no replacing
 
 
 async def test_a_comparison_with_a_graph_adds_a_grounded_graph_view(ingested, tmp_path):
@@ -74,7 +74,7 @@ async def test_a_comparison_with_a_graph_adds_a_grounded_graph_view(ingested, tm
     assert composition.records[3].reasons == ("no_shared_entities",)
     assert composition.records[4].reasons == ("single_hop",)  # Dense Retrieval to BM25 is one hop: the graph view's case
     view = composition.blocks[2]
-    assert view.meta.panel == "studio" and view.id == "blk-graph-view"
+    assert view.id == "blk-graph-view"
     assert {n.label for n in view.data.nodes} == {"Dense Retrieval", "BM25"}  # type: ignore[union-attr]
     (edge,) = view.data.edges  # type: ignore[union-attr]
     quote = next(c.quote for c in view.data.citations if c.id == edge.citationId)  # type: ignore[union-attr]
@@ -113,7 +113,7 @@ def test_a_block_type_with_no_content_rules_is_refused_not_passed(ingested):
 
     class Unknown:
         id = "x"
-        meta = type("Meta", (), {"status": "ready", "error": None, "order": 0})()
+        meta = type("Meta", (), {"status": "ready", "error": None})()
 
     issues = validate._content_issues(Unknown(), deps.docs)  # type: ignore[arg-type]
     assert [i.path for i in issues] == ["type"]
