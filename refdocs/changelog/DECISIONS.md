@@ -372,6 +372,32 @@ over-count an OpenRouter call slightly. Rejected: a ledger table inside each dat
 total" query (two files to keep in step), and leaving unknown models priced as the dearest (a dated id is not
 unknown).
 
+## D-24: Benchmark protocol amendments and enforcement, before the first live run (2026-10-06)
+
+**Decision.** (1) The first benchmark runs the 19 approved questions; `q-single-01` stays an unapproved,
+unanswerable control and is excluded and reported as such (the run records `questions_selected` and
+`questions_excluded`). (2) Primary metrics are Recall@10 and nDCG@10 only, Holm-corrected against each other for
+the pre-registered hybrid-versus-flat test; RAGAS stays `null` until the end of the project. (3) The paid runner,
+not only pytest, enforces the freeze: question set, manifest, approved gold hashes and the whole protocol stamp
+hash live in `eval/frozen.py`; a live run on a changed asset or an uncommitted tree is refused, and every result
+records its commit. (4) Wilcoxon differences are rounded to 12 decimals before ranking, so mathematically tied
+recall differences tie. (5) Ingestion facts persist beside the stores, the stored documents must equal the
+manifest's, and `--expect-*-sha256` ties a benchmark run to the stores the one-shot ingestion made.
+
+**Why.** The pre-benchmark `retrieval-auditor` found that a result could not name its code, the freeze was only
+machine-checked by pytest, ingestion facts were lost when ingestion and benchmark were separate invocations, the
+19-question run was undeclared, and the p-value was wrong in about 40 percent of simulated question sets because
+float noise broke ties in Recall@10 differences (fractions such as 4/7 and 6/7).
+
+**Trade-offs / rejected.** Refusing a dirty tree means committing before every live run. Pinning the whole stamp
+makes any retrieval constant change a deliberate act (version bump plus ADR), as D-20 intended. Rejected: an
+ingest-only mode (ingestion plus benchmark in one invocation, or separate runs tied by hashes, both work now);
+replacing `q-single-01` unilaterally (Azim's call).
+
+**Open, not decided here.** The graph arm's tie-break across documents is a hash order (D-20 says "document
+order"); it adds question-independent noise to hybrid. Changing it needs a version bump to `p0-3` and an
+amendment, and is cheapest now, before any arm has run. Recorded in the README as a limitation; Azim decides.
+
 ---
 
 ## Working assumptions (`ASSUMED:`)

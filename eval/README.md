@@ -27,9 +27,44 @@ which signals are enabled. `flat` against `hybrid` is the comparison that measur
 Per question and arm: Recall@10, nDCG@10, the RAGAS context metrics (or `null` if RAGAS is not installed),
 ranking length, latency, the graph entity-resolution report and the chunk ids returned. For the run: the
 protocol stamp (every frozen retrieval constant), the relevance rule, the mode, content hashes of the
-questions, manifest, gold files, graph and vectors, and per-document ingestion facts.
+questions, manifest, gold files, graph, vectors and chunks, per-document ingestion facts, the commit and
+whether the code was clean, the selected and excluded questions, and versions of the libraries and parameters
+that shape results but are not part of the stamp (embedding model, extraction `max_tokens`, BM25 and parser
+versions). The summary adds entity-resolution rates per graph-using arm.
+
+## Declared amendments to the pre-registered protocol (constraint 9)
+
+Every departure from the frozen question set or protocol is declared here and in `DECISIONS.md`.
+
+1. **The first benchmark runs 19 questions, not 20 (ADR D-24).** `q-single-01` ("What is Reciprocal Rank
+   Fusion...") cannot be answered from the 16-paper corpus (ADR D-21); its gold is `unanswerable` and its
+   metrics are `null`, so it contributes to no aggregate in any case. It is not approved, so the runner refuses a
+   live run that selects it. Run with `--questions` naming the 19 approved questions. The results file records
+   `questions_selected` and `questions_excluded` (with the reason), so the exclusion is visible. If Azim
+   amends `q-single-01` later (replace it, add a paper that defines RRF, or keep it as a "finds nothing"
+   control) that is a further amendment with its own ADR; results from before and after are not pooled.
+2. **Primary metrics are Recall@10 and nDCG@10 only.** The RAGAS context metrics are deferred to the end of the
+   project (Azim, 2026-10-06) and stay `null`; no model-judged score is computed (D-15). The primary
+   comparison is hybrid against flat, and the two primary metrics are Holm-corrected against each other.
+3. **Known limitations the report must state:** 19 questions is a small, non-random sample; gold passages and
+   relevant chunks are shared across questions, so questions are not independent; the gold was drafted by
+   keyword and phrase search, which may favour lexical retrieval; about 13 of 109 gold passages straddle two
+   overlapping chunks (both count as relevant); the graph arm breaks score ties in document order, and across
+   papers that order is a hash order, so for a hub entity its ties add question-independent noise to the
+   hybrid arm (D-20, an open question for Azim: keep, or amend before the run with a version bump).
 
 ## Rules the runner enforces
+
+- **A live run checks the freeze itself** (`eval/frozen.py`), not only pytest: the question set, the manifest,
+  every selected question's approved gold and the whole retrieval protocol stamp must match their pinned
+  hashes, otherwise the run is refused. It also refuses an uncommitted `api/`, `eval/`, `packages/`,
+  `pyproject.toml` or `uv.lock` (`--allow-dirty` overrides, and the result records it), and records the commit.
+- **The stores must be the ones the one-shot ingestion made.** Per-document ingestion facts (nodes, edges,
+  extraction failures) are saved to `ingestion_report.json` beside the stores and copied into every later
+  results file, so a run that merely reuses stored documents still reports them. The stored documents must be
+  exactly the manifest's. `--expect-graph-sha256`, `--expect-vectors-sha256` and `--expect-chunks-sha256`
+  refuse a run whose stores differ from the hashes recorded at ingestion.
+- A run in which more than 5 percent of chunks failed extraction is refused.
 
 - Corpus parity must hold before anything runs; otherwise the run is refused.
 - The query embedding is computed once per question and shared by every arm.

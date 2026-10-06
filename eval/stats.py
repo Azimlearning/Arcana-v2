@@ -33,6 +33,10 @@ from pathlib import Path
 from typing import Any
 
 PRIMARY = ("hybrid", "flat")
+DIFF_DECIMALS = 12
+"""Differences are rounded before ranking and before the zero test. Recall@10 is a ratio such as 4/7, so two
+mathematically equal differences (4/7 - 3/7 and 6/7 - 5/7) differ in the last float digit; exact float
+equality would give them different ranks and change the p-value."""
 METRICS = ("recall_at_10", "ndcg_at_10")
 
 
@@ -67,6 +71,7 @@ def _average_ranks(values: Sequence[float]) -> list[float]:
 
 
 def wilcoxon_signed_rank(differences: Sequence[float]) -> WilcoxonResult:
+    differences = [round(d, DIFF_DECIMALS) + 0.0 for d in differences]  # + 0.0 turns -0.0 into 0.0
     nonzero = [d for d in differences if d != 0]
     n_zero = len(differences) - len(nonzero)
     if not nonzero:
@@ -114,7 +119,7 @@ def paired_differences(results: Sequence[dict[str, Any]], metric: str, a: str, b
         if ra["invalid"] or rb["invalid"] or ra[metric] is None or rb[metric] is None:
             continue
         ids.append(q["question_id"])
-        diffs.append(ra[metric] - rb[metric])
+        diffs.append(round(ra[metric] - rb[metric], DIFF_DECIMALS) + 0.0)
     return ids, diffs
 
 
@@ -140,6 +145,9 @@ def compare(results: Sequence[dict[str, Any]], metric: str, a: str, b: str) -> d
 
 def analyse(results: Sequence[dict[str, Any]], arms: Sequence[str]) -> dict[str, Any]:
     primary = [compare(results, m, *PRIMARY) for m in METRICS] if all(a in arms for a in PRIMARY) else []
+    primary_usable = [t for t in primary if t["p_value"] is not None]
+    for t, adj in zip(primary_usable, holm([t["p_value"] for t in primary_usable]), strict=True):
+        t["p_value_holm"] = round(adj, 6)  # Recall@10 and nDCG@10 are both primary: correct across the two
     secondary: list[dict[str, Any]] = []
     for metric in METRICS:
         family = [
@@ -148,6 +156,8 @@ def analyse(results: Sequence[dict[str, Any]], arms: Sequence[str]) -> dict[str,
             if {a, b} != set(PRIMARY) and a != b
         ]
         usable = [r for r in family if r["p_value"] is not None]
+        for r in family:
+            r.setdefault("p_value_holm", None)  # nothing to test (no non-zero difference): no p, no adjustment
         for r, adj in zip(usable, holm([r["p_value"] for r in usable]), strict=True):
             r["p_value_holm"] = round(adj, 6)
         secondary.extend(family)
@@ -161,9 +171,19 @@ def analyse(results: Sequence[dict[str, Any]], arms: Sequence[str]) -> dict[str,
         "method": "Wilcoxon signed-rank, exact two-sided; zero differences dropped; rank-biserial effect size",
         "caveat": (
             "A small sample (at most 19 to 20 questions) that is not a random draw; arms share the corpus and "
-            "gold. A p-value describes this question set, not retrieval in general. A null result is a result."
+            "gold. Questions are not independent: several gold passages and relevant chunks serve more than one "
+            "question. The gold was drafted by keyword and phrase search, which may favour lexical retrieval. A "
+            "p-value describes this question set, not retrieval in general. A null result is a result."
         ),
     }
+
+
+def gate_warning(gate: dict[str, Any] | None) -> str | None:
+    """A statistics file made from a run whose empty-graph gate failed must say so: that result is an
+    entity-resolution defect, not a finding about graphs, and must not be quoted."""
+    if gate and gate.get("enforced") and gate.get("passed") is False:
+        return "EMPTY-GRAPH GATE FAILED in the run these statistics come from: do not quote them as a finding."
+    return None
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -182,6 +202,10 @@ def main(argv: list[str] | None = None) -> int:
         "protocol": run.get("protocol"),
         "relevance_rule": run.get("relevance_rule"),
         "hashes": run.get("hashes"),
+        "code": run.get("code"),
+        "questions_selected": run.get("questions_selected"),
+        "empty_graph_gate": (data.get("summary") or {}).get("empty_graph_gate"),
+        "gate_warning": gate_warning((data.get("summary") or {}).get("empty_graph_gate")),
         **analyse(data["results"], arms),
     }
     target = Path(args.out) if args.out else path.with_name(path.stem + "-stats.json")

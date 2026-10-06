@@ -26,7 +26,10 @@ from __future__ import annotations
 import argparse
 import asyncio
 import hashlib
+import importlib.metadata
 import json
+import platform
+import subprocess
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
@@ -50,7 +53,7 @@ from api.retrieval.hybrid import hybrid_retrieve
 from api.retrieval.protocol import protocol_stamp
 from api.retrieval.sparse import SparseRetriever
 from api.stores.preflight import check_corpus_parity
-from eval import metrics
+from eval import frozen, metrics
 from eval.ragas_metrics import RagasUnavailable, non_llm_context_metrics, ragas_status
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -78,9 +81,10 @@ MAX_EXTRACTION_FAILURE_RATE = 0.05
 
 def require_extraction_quality(ingestion: list[dict[str, Any]]) -> None:
     """A graph built from mostly-failed extractions would make the graph arms look useless for a reason that
-    has nothing to do with graphs. Refuse a run where more than 5 percent of the chunks ingested NOW failed
-    to extract (documents reused from an earlier ingest report None and are not counted here)."""
-    fresh = [d for d in ingestion if d.get("ingested_now")]
+    has nothing to do with graphs. Refuse a run where more than 5 percent of the chunks failed to extract.
+    Every document whose failure count is known counts, whether ingested now or in an earlier invocation
+    (its facts are read back from the ingestion report saved beside the stores)."""
+    fresh = [d for d in ingestion if d.get("extraction_failures") is not None]
     chunks = sum(d["chunks"] for d in fresh)
     failures = sum(d["extraction_failures"] or 0 for d in fresh)
     if chunks and failures / chunks > MAX_EXTRACTION_FAILURE_RATE:
@@ -88,6 +92,99 @@ def require_extraction_quality(ingestion: list[dict[str, Any]]) -> None:
             f"{failures} of {chunks} chunks failed extraction ({failures / chunks:.0%}); "
             f"the limit is {MAX_EXTRACTION_FAILURE_RATE:.0%}. The graph would not be a fair test."
         )
+
+
+def git_state() -> dict[str, Any]:
+    """The code a result came from: the commit, and whether api/ or eval/ differ from it."""
+
+    def git(*args: str) -> str | None:
+        try:
+            done = subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True, timeout=30, check=True)
+        except (OSError, subprocess.SubprocessError):
+            return None
+        return done.stdout.strip()
+
+    commit = git("rev-parse", "HEAD")
+    changed = git("status", "--porcelain", "--", "api", "eval", "packages", "uv.lock", "pyproject.toml")
+    return {"commit": commit, "dirty": None if changed is None else bool(changed), "changed_files": (changed or "").splitlines()[:20]}
+
+
+def require_clean_code(live: bool, allow_dirty: bool) -> dict[str, Any]:
+    """A live result must trace to a committed tree (check 7): refuse to run on uncommitted code."""
+    state = git_state()
+    if live and not allow_dirty and (state["commit"] is None or state["dirty"] is not False):
+        raise RunInvalid(
+            "a live run needs a committed, clean api/ and eval/ so the result names the code it ran on "
+            f"(commit {state['commit']}, changed: {state['changed_files']}); commit first"
+        )
+    return state
+
+
+def environment() -> dict[str, Any]:
+    """Versions and parameters that shape the results but are not part of the retrieval protocol stamp."""
+
+    def version(name: str) -> str | None:
+        try:
+            return importlib.metadata.version(name)
+        except importlib.metadata.PackageNotFoundError:
+            return None
+
+    from api.ingestion.chunk import BOUNDARY_LOOKBACK
+    from api.ingestion.embed import EMBEDDING_MODEL
+    from api.ingestion.extract import EXTRACTION_MAX_TOKENS
+
+    return {
+        "python": platform.python_version(),
+        "rank_bm25": version("rank-bm25"), "pymupdf": version("pymupdf"), "networkx": version("networkx"),
+        "numpy": version("numpy"), "embedding_model": EMBEDDING_MODEL, "extraction_max_tokens": EXTRACTION_MAX_TOKENS,
+        "chunk_boundary_lookback": BOUNDARY_LOOKBACK,
+    }
+
+
+def chunks_sha256(chunks: list[Any]) -> str:
+    """Content hash of the chunk store (ids and text, sorted): the SQLite file's bytes are not stable."""
+    h = hashlib.sha256()
+    for c in sorted(chunks, key=lambda c: c.id):
+        h.update(f"{c.id}\t{c.text}\n".encode())
+    return h.hexdigest()
+
+
+INGESTION_REPORT = "ingestion_report.json"
+
+
+def load_ingestion_report(data_dir: Path) -> dict[str, dict[str, Any]]:
+    path = data_dir / INGESTION_REPORT
+    if not path.exists():
+        return {}
+    return {d["arxiv_id"]: d for d in json.loads(path.read_text(encoding="utf-8"))}
+
+
+def save_ingestion_report(data_dir: Path, ingestion: list[dict[str, Any]], saved: dict[str, dict[str, Any]]) -> None:
+    """Persist per-document ingestion facts beside the stores, so a later invocation that merely reuses the
+    stored documents still reports node, edge and extraction-failure counts."""
+    merged = dict(saved)
+    for d in ingestion:
+        if d.get("ingested_now") or d.get("extraction_failures") is not None:
+            merged[d["arxiv_id"]] = {k: v for k, v in d.items() if k != "facts_from_earlier_ingest"}
+    (data_dir / INGESTION_REPORT).write_text(json.dumps(list(merged.values()), indent=2), encoding="utf-8")
+
+
+def require_store_matches_manifest(stored_doc_ids: set[str], ingestion: list[dict[str, Any]]) -> None:
+    """The stored documents must be exactly the manifest's: a stale paper in a reused data directory would
+    join every arm."""
+    expected = {d["doc_id"] for d in ingestion}
+    if stored_doc_ids != expected:
+        raise RunInvalid(
+            f"the stored documents are not the manifest's: unexpected {sorted(stored_doc_ids - expected)}, "
+            f"missing {sorted(expected - stored_doc_ids)}"
+        )
+
+
+def require_expected_hashes(actual: dict[str, str], expected: dict[str, str | None]) -> None:
+    """Refuse to benchmark stores that are not the ones the one-shot ingestion produced."""
+    wrong = {k: (v, actual[k]) for k, v in expected.items() if v and actual[k] != v}
+    if wrong:
+        raise RunInvalid("the stores differ from the ones expected (name: expected, actual): " + str(wrong))
 
 
 class RunInvalid(Exception):
@@ -126,7 +223,11 @@ def select_arms(spec: str) -> list[str]:
 
 
 async def ensure_corpus(
-    container: Container, manifest: list[dict[str, Any]], corpus_dir: Path, reingest: bool
+    container: Container,
+    manifest: list[dict[str, Any]],
+    corpus_dir: Path,
+    reingest: bool,
+    saved: dict[str, dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     """Ingest every manifest paper (or reuse what is already stored, unchanged). Returns per-document facts."""
     report: list[dict[str, Any]] = []
@@ -139,8 +240,12 @@ async def ensure_corpus(
         stored = container.docs.get_document(doc_id)
         if stored is not None and stored.status == "ready" and not reingest:
             n_chunks = len(container.docs.chunks_for_document(doc_id))
+            earlier = (saved or {}).get(entry["arxiv_id"])
+            facts = earlier if earlier and earlier.get("doc_id") == doc_id else {}
             report.append({"arxiv_id": entry["arxiv_id"], "doc_id": doc_id, "status": "ready", "chunks": n_chunks,
-                           "nodes": None, "edges": None, "extraction_failures": None, "ingested_now": False})
+                           "nodes": facts.get("nodes"), "edges": facts.get("edges"),
+                           "extraction_failures": facts.get("extraction_failures"), "ingested_now": False,
+                           "facts_from_earlier_ingest": bool(facts)})
             continue
         result = await ingest_pdf(raw, entry["file"], container.ingest_deps)
         report.append({"arxiv_id": entry["arxiv_id"], "doc_id": result.doc_id, "status": result.status,
@@ -193,6 +298,26 @@ def mean(values: list[float]) -> float | None:
     return round(sum(values) / len(values), 4) if values else None
 
 
+def resolution_summary(results: list[dict[str, Any]], arms: list[str]) -> dict[str, Any]:
+    """How much of each question the graph recognised, per graph-using arm. An empty-graph gate alone cannot
+    catch a graph that matches only a generic hub node for every question; these numbers can."""
+    out: dict[str, Any] = {}
+    for arm in (a for a in arms if a in ("graph", "hybrid")):
+        rows = [
+            q["arms"][arm]["resolution"] for q in results if not q["arms"][arm]["invalid"] and q["arms"][arm].get("resolution")
+        ]
+        if not rows:
+            continue
+        out[arm] = {
+            "questions": len(rows),
+            "mean_hit_rate": mean([r["hit_rate"] for r in rows]),
+            "mean_exact_hit_rate": mean([r["exact_hit_rate"] for r in rows]),
+            "fraction_with_an_exact_entity": round(sum(1 for r in rows if r["n_exact"] > 0) / len(rows), 4),
+            "fraction_with_any_entity": round(sum(1 for r in rows if r["entities"]) / len(rows), 4),
+        }
+    return out
+
+
 def summarise(results: list[dict[str, Any]], arms: list[str]) -> dict[str, Any]:
     per_arm: dict[str, Any] = {}
     for arm in arms:
@@ -214,7 +339,7 @@ def summarise(results: list[dict[str, Any]], arms: list[str]) -> dict[str, Any]:
         gate.update({"arm": graph_arm, "empty_graph_fraction": None if fraction is None else round(fraction, 4),
                      "threshold": EMPTY_GRAPH_GATE, "enforced": enforced,
                      "passed": True if fraction is None or not enforced else fraction <= EMPTY_GRAPH_GATE})
-    return {"per_arm": per_arm, "empty_graph_gate": gate}
+    return {"per_arm": per_arm, "empty_graph_gate": gate, "entity_resolution": resolution_summary(results, arms)}
 
 
 async def run(args: argparse.Namespace) -> tuple[Path, dict[str, Any]]:
@@ -227,18 +352,32 @@ async def run(args: argparse.Namespace) -> tuple[Path, dict[str, Any]]:
     configure_logging("WARNING")
 
     questions_path, manifest_path, gold_dir = Path(args.questions_file), Path(args.manifest), Path(args.gold_dir)
-    questions = select_questions(load_questions(questions_path), args.questions)
+    all_questions = load_questions(questions_path)
+    questions = select_questions(all_questions, args.questions)
     arms = select_arms(args.arms)
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     golds = {q["id"]: metrics.load_gold(gold_dir, q["id"]) for q in questions}
     require_approved_gold(golds, live)
+    if live:  # the freeze is checked by the paid runner itself, not only by pytest
+        drift = frozen.check_frozen(questions_path, manifest_path, gold_dir, [q["id"] for q in questions])
+        if drift:
+            raise RunInvalid("the frozen benchmark assets changed: " + "; ".join(drift))
+    code = require_clean_code(live, getattr(args, "allow_dirty", False))
+    selected_ids = {q["id"] for q in questions}
+    excluded = [
+        {"question_id": q["id"], "reason": "not selected for this run"} for q in all_questions if q["id"] not in selected_ids
+    ]
 
     container = build_container(settings)
-    ingestion = await ensure_corpus(container, manifest, Path(args.corpus_dir), args.reingest)
+    saved = load_ingestion_report(data_dir)
+    ingestion = await ensure_corpus(container, manifest, Path(args.corpus_dir), args.reingest, saved)
+    data_dir.mkdir(parents=True, exist_ok=True)
+    save_ingestion_report(data_dir, ingestion, saved)
     failed_docs = [d["arxiv_id"] for d in ingestion if d["status"] != "ready"]
     if failed_docs:
         raise RunInvalid(f"documents failed to ingest: {failed_docs}")
     require_extraction_quality(ingestion)
+    require_store_matches_manifest({d.id for d in container.docs.list_documents()}, ingestion)
     problems = check_corpus_parity(container.docs, container.vectors, container.graph)
     if problems:
         raise RunInvalid("corpus parity check failed: " + "; ".join(problems))
@@ -252,6 +391,19 @@ async def run(args: argparse.Namespace) -> tuple[Path, dict[str, Any]]:
         "graph": GraphRetriever(graph=container.graph, docs=container.docs),
     }
     ragas = ragas_status()
+    store_hashes = {
+        "graph_sha256": sha256_file(data_dir / "graph.json"),
+        "vectors_sha256": sha256_file(data_dir / "vectors.npz"),
+        "chunks_sha256": chunks_sha256(chunks),
+    }
+    require_expected_hashes(
+        store_hashes,
+        {
+            "graph_sha256": args.expect_graph_sha256,
+            "vectors_sha256": args.expect_vectors_sha256,
+            "chunks_sha256": args.expect_chunks_sha256,
+        },
+    )
 
     results: list[dict[str, Any]] = []
     for q in questions:
@@ -272,12 +424,14 @@ async def run(args: argparse.Namespace) -> tuple[Path, dict[str, Any]]:
         "run": {
             "timestamp": started.isoformat(), "label": args.label, "mode": mode,
             "warning": FAKE_WARNING if mode == {"llm": "fake", "embed": "fake"} else None,
+            "code": code, "environment": environment(),
+            "questions_selected": [q["id"] for q in questions], "questions_excluded": excluded,
             "protocol": protocol_stamp(), "relevance_rule": metrics.rule_stamp(), "ragas": ragas,
             "extraction_model": ANTHROPIC_MODELS["light"] if settings.arcana_llm_mode == "live" else "fake",
             "arms": arms, "query_embeddings_computed": cached.inner_calls,
             "hashes": {
                 "questions_sha256": sha256_file(questions_path), "manifest_sha256": sha256_file(manifest_path),
-                "graph_sha256": sha256_file(data_dir / "graph.json"), "vectors_sha256": sha256_file(data_dir / "vectors.npz"),
+                **store_hashes,
                 "gold_sha256": {qid: sha256_file(gold_dir / f"{qid}.yaml") for qid, g in golds.items() if g is not None},
             },
             "corpus": {"documents": ingestion, "chunks": len(chunks), "parity_problems": problems},
@@ -305,6 +459,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument("--label", default="run")
     p.add_argument("--reingest", action="store_true", help="ingest again even if a document is already stored")
     p.add_argument("--allow-paid", action="store_true", help="permit live (paid) providers")
+    p.add_argument("--allow-dirty", action="store_true", help="permit a live run on an uncommitted tree (the result records it)")
+    p.add_argument("--expect-graph-sha256", help="refuse to run unless the graph store has this hash")
+    p.add_argument("--expect-vectors-sha256", help="refuse to run unless the vector store has this hash")
+    p.add_argument("--expect-chunks-sha256", help="refuse to run unless the chunk store has this content hash")
     return p.parse_args(argv)
 
 
@@ -326,6 +484,9 @@ def main(argv: list[str] | None = None) -> int:
     if gate.get("empty_graph_fraction") is not None:
         print(f"  empty-graph fraction ({gate['arm']}): {gate['empty_graph_fraction']} "
               f"(gate {'enforced' if gate['enforced'] else 'not enforced below ' + str(GATE_MIN_QUESTIONS) + ' questions'})")
+    for arm, r in out["summary"].get("entity_resolution", {}).items():
+        print(f"  entity resolution ({arm}): mean hit rate {r['mean_hit_rate']}, exact {r['mean_exact_hit_rate']}, "
+              f"questions with an exact entity {r['fraction_with_an_exact_entity']}")
     if not run_info["ragas"]["available"]:
         print(f"  RAGAS metrics are null: {run_info['ragas']['reason']}", file=sys.stderr)
     invalid = sum(s["invalid"] for s in out["summary"]["per_arm"].values())
