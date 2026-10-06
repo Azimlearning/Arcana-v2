@@ -92,7 +92,7 @@ def _singularise(token: str) -> str:
     return token
 
 
-EXTRACTION_MAX_TOKENS = 1024
+EXTRACTION_MAX_TOKENS = 2048
 
 
 def extraction_request(chunk: Chunk) -> LLMRequest:

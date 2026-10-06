@@ -41,7 +41,7 @@ def test_git_state_names_a_full_commit_hash_and_lists_changes():
 
 def test_the_environment_block_records_versions_and_parameters():
     env = run_ablation.environment()
-    assert env["embedding_model"] == "text-embedding-3-large" and env["extraction_max_tokens"] == 1024
+    assert env["embedding_model"] == "text-embedding-3-large" and env["extraction_max_tokens"] == 2048
     assert env["chunk_boundary_lookback"] == 200 and env["python"].startswith("3.")
 
 

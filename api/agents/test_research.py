@@ -63,8 +63,13 @@ async def test_compare_documents_balances_papers_and_reaches_past_the_fused_top(
     # The fused ranking is all paper one; paper two only appears deeper in a signal's own ranking.
     ctx, _ = make_ctx(tmp_path, "{}", fused=["a1", "a2", "a3"], deeper=["b1", "b2"])
     picked = [c.id for c in await compare_documents("q", ctx)]
-    assert picked == ["a1", "b1", "a2", "b2"]  # every paper's best first, at most two each
-    assert "a3" not in picked
+    assert picked == ["a1", "b1", "a2", "b2", "a3"]  # every paper's best first, then the slots fill round robin
+
+
+async def test_compare_documents_fills_the_passage_limit_when_one_paper_dominates(tmp_path: Path):
+    # Found with a real model on a one-paper corpus: capping each paper at two passages left Research with two.
+    ctx, _ = make_ctx(tmp_path, "{}", fused=["a1", "a2", "a3"])
+    assert [c.id for c in await compare_documents("q", ctx)] == ["a1", "a2", "a3"]
 
 
 # ── cross-document answers ────────────────────────────────────────────────────
@@ -73,9 +78,9 @@ async def test_compare_documents_balances_papers_and_reaches_past_the_fused_top(
 async def test_a_comparison_cites_both_papers(tmp_path: Path):
     reply = reply_of(
         ("Paper One embeds text.", [{"passage": 1, "quote": "It ranks by cosine similarity."}]),
-        ("Paper Two counts terms.", [{"passage": 3, "quote": "It needs no training."}]),
+        ("Paper Two counts terms.", [{"passage": 4, "quote": "It needs no training."}]),
     )
-    # Prompt order is grouped by document: [1] a1, [2] a2, [3] b1, [4] b2.
+    # Prompt order is grouped by document: [1] a1, [2] a2, [3] a3, [4] b1, [5] b2.
     ctx, _ = make_ctx(tmp_path, reply, fused=["a1", "a2", "a3"], deeper=["b1", "b2"], intent="compare")
     out = await _run("compare them", ctx)
     assert out.status == "ok" and out.note is None

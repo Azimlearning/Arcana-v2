@@ -398,6 +398,25 @@ replacing `q-single-01` unilaterally (Azim's call).
 order"); it adds question-independent noise to hybrid. Changing it needs a version bump to `p0-3` and an
 amendment, and is cheapest now, before any arm has run. Recorded in the README as a limitation; Azim decides.
 
+## D-25: Extraction output limit 2,048 tokens, measured on a live paper (2026-10-06)
+
+**Decision.** `EXTRACTION_MAX_TOKENS` is 2,048 (was 1,024). The extraction prompt, schema caps and model are
+unchanged, so the protocol stamp (and its pinned hash) is unchanged.
+
+**Why.** The first live run (one paper, Ragas, 35 chunks, Claude Haiku 4.5): 3 of 35 replies (8.6 percent) hit
+the 1,024-token limit and were cut off mid-JSON, so all 3 failed extraction; at 2,048 only 1 of 35 (2.9 percent)
+failed and 1 reply still reached the limit. 8.6 percent would have tripped the 5 percent extraction-quality gate
+and refused the benchmark. Measured cost rose from $0.00311 to $0.00356 per chunk, which projects to about
+$5.6 for the 1,570-chunk corpus (plus about $0.07 of embeddings), inside the $10 cap.
+
+**Trade-offs / rejected.** A larger limit raises the per-call worst-case reservation (about $0.011) and the
+theoretical ceiling if every reply ran to the limit (about $17); the cap and the per-document budget check
+still bound real spend, and real replies average about 620 tokens. Rejected: re-asking a truncated chunk (a
+second billed call per failure, and nondeterministic); leaving 1,024 and accepting a failed gate; lowering the
+schema caps (changes what is extracted, and the protocol).
+
+**Limits of the evidence.** One paper, one run. The 5 percent gate still applies to the whole corpus ingestion.
+
 ---
 
 ## Working assumptions (`ASSUMED:`)

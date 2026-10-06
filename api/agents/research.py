@@ -31,7 +31,6 @@ from api.stores.doc_store import DocStore
 log = get_logger(__name__)
 
 PASSAGES = 8
-PER_DOCUMENT = 2
 GRAPH_PASSAGES = 3
 QUOTE_CHARS = 240
 _WS = re.compile(r"\s+")
@@ -86,7 +85,8 @@ async def retrieve_evidence(query: str, ctx: TurnContext) -> list[RetrievedChunk
 
 
 async def compare_documents(query: str, ctx: TurnContext) -> list[RetrievedChunk]:
-    """Evidence balanced across documents: up to two passages from each, best documents first."""
+    """Evidence balanced across documents: round robin, every document's best passage before any second-best, until
+    the passage limit is reached. A corpus (or a question) dominated by one paper therefore still gets a full set."""
     result = await ctx.retrieve(query)
     pool = graph_evidence(ctx)  # chunks behind graph connections: often the link between two papers
     seen = {c.id for c in pool}
@@ -103,7 +103,7 @@ async def compare_documents(query: str, ctx: TurnContext) -> list[RetrievedChunk
     for chunk in pool:
         by_document.setdefault(chunk.doc_id, []).append(chunk)
     picked: list[RetrievedChunk] = []
-    for round_ in range(PER_DOCUMENT):  # round robin: every document's best before any second-best
+    for round_ in range(PASSAGES):  # round robin: every document's best before any second-best, until full
         for chunks in by_document.values():
             if round_ < len(chunks) and len(picked) < PASSAGES:
                 picked.append(chunks[round_])
