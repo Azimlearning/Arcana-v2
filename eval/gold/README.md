@@ -51,7 +51,7 @@ A file is **approved** when its `approved_by` field is set. The ablation runner 
 any selected question's gold is not approved (`require_approved_gold`, tested); a fake-mode run may use
 drafts because it only checks plumbing, and its results record `gold_approved`. Once approved, a file is
 frozen: changing it is a declared amendment (constraint 9): the file's hash is pinned, so an edit fails the test until the hash is
-updated in the same commit as an ADR. `q-single-01` is the one unapproved file, until its amendment is decided (ADR D-21).
+updated in the same commit as an ADR. `q-single-01` is approved as a "should find nothing" control (ADR D-26) and pinned like the rest.
 
 ## How the 2026-10-06 drafts were made (method)
 
@@ -89,7 +89,7 @@ nDCG). Questions flagged **review** are ones where the corpus answers only part 
 | `q-cross-10` | benchmark (approved) | 7 | 6 | 8 | the corpus speaks of cost and speed more than production latency |
 | `q-cross-11` | benchmark (approved) | 5 | 4 | 6 | |
 | `q-cross-12` | benchmark (approved) | 7 | 5 | 7 | |
-| `q-single-01` | unanswerable | 0 | 0 | 0 | no paper defines Reciprocal Rank Fusion (ADR D-21); amendment pending |
+| `q-single-01` | unanswerable | 0 | 0 | 0 | no paper defines Reciprocal Rank Fusion (ADR D-21); kept as an approved, pinned control (ADR D-26) |
 | `q-single-02` | benchmark (approved) | 5 | 3 | 4 | |
 | `q-single-03` | benchmark (approved) | 5 | 3 | 7 | |
 | `q-single-04` | benchmark (approved) | 4 | 3 | 3 | **review:** the corpus never gives BM25's scoring formula; passages cover only the word-overlap description and where it does and does not work |

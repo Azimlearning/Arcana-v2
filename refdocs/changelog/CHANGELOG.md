@@ -28,6 +28,12 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-06: q-single-01 resolved (D-26) and the file-structure guide brought up to date
+- **Decided:** D-26. Azim: "you decided for me using best judgment". `q-single-01` stays in the pre-registered set as an approved, hash-pinned "should find nothing" control (no question replaced, no paper added). Chosen because replacing it changes the frozen question set, adding a paper changes the frozen manifest and forces a second paid ingestion with a different graph, and keeping it costs nothing: it already contributed null metrics, so a 20-question run gives the same numbers as the 19-question benchmark.
+- **Changed:** `eval/gold/q-single-01.yaml` (decision, `approved_by`, `approved_on`), `eval/frozen.py` (pin; all 20 gold files pinned), tests (every gold file approved), gold and eval READMEs, plan checklist (item now met), `refdocs/guides/file_structure.md` (every P1 file, agent roles, routes, eval tools).
+- **Control result:** the live system, asked the unanswerable question on the ingested corpus, returned an `empty` block: retrieval surfaced tangential chunks, the Research agent said the passages do not contain the answer, nothing was invented or cited; $0.0074. One question, one run: the behaviour is possible, not shown reliable.
+- **Verified:** `uv run pytest eval` 104 passed; the control turn above. **Not verified:** that the control behaves the same across repeated runs.
+
 ### 2026-10-06: P1 tasks B5 and B6, the first benchmark and the phase wrap-up
 - **Changed:** results `eval/results/20261006T093813Z-benchmark.json` and `eval/results/20261006T093813Z-benchmark-stats.json`; the plan's definition of done ticked item by item; STATUS, indexes, execution doc.
 - **Decided:** nothing new. On the one open question (the graph arm's cross-document tie-break) Azim said "proceed" without choosing, so I kept the frozen protocol as my recommendation stated: changing it after seeing results would not be legitimate. Recorded as a limitation (D-24, eval README).

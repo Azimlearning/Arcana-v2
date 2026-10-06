@@ -26,6 +26,7 @@ PROTOCOL_STAMP_SHA256 = "16afb1a3b478e3437012526163babede56ea28c2b5b2ebf09283bea
 
 # Gold approved by Azim on 2026-10-06 (benchmark gold, written before any arm was run).
 APPROVED_GOLD_SHA256 = {
+    "q-single-01": "6701bd090d329a94b5e9ab3e088decdb4aaeb01227e345e1b0b257d4cdc35ceb",
     "q-contra-01": "6b948862ed26e55ee395c307782e41d017dae135354c7957869613723bf1c91a",
     "q-contra-02": "726b1c81fbe3f654172f2f968b9f845fe3f14df7273402bb42e07a694e9d5b4b",
     "q-contra-03": "eb576a76dd5f25c464ed89d4dd0cabd1825544474fb71b8cb5b8116be1f2c7f8",

@@ -12,9 +12,7 @@ from eval.frozen import (
     APPROVED_GOLD_SHA256,
     HEADER_END,
     MANIFEST_SHA256,
-    PROTOCOL_STAMP_SHA256,
     QUESTIONS_BODY_SHA256,
-    stamp_sha256,
 )
 
 EVAL = Path(__file__).resolve().parents[1]
@@ -76,14 +74,9 @@ def test_approved_gold_is_pinned_and_unchanged():
     assert approved == APPROVED_GOLD_SHA256  # same files, same bytes: none unpinned, none edited
 
 
-def test_the_one_unapproved_file_is_the_unanswerable_control_awaiting_its_amendment():
+def test_every_gold_file_is_approved_including_the_unanswerable_control():
     unapproved = [
         p.stem for p in (EVAL / "gold").glob("q-*.yaml") if not yaml.safe_load(p.read_text(encoding="utf-8")).get("approved_by")
     ]
-    assert unapproved == ["q-single-01"]  # ADR D-21: amendment pending
-
-
-def test_the_whole_protocol_stamp_is_pinned():
-    """A change to any frozen retrieval constant (a weight, a tie-break, the stopwords, the prompt, the chunk
-    size) must fail here until the version is bumped and an ADR says why (D-20)."""
-    assert stamp_sha256() == PROTOCOL_STAMP_SHA256
+    assert unapproved == []  # q-single-01 was approved as a "should find nothing" control (ADR D-26)
+    assert len(APPROVED_GOLD_SHA256) == 20

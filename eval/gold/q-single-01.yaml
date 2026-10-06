@@ -7,3 +7,6 @@ reason: 'No document in the 16-paper corpus defines Reciprocal Rank Fusion. Sear
   p3 defining the Mean Reciprocal Rank metric (MRR@K), not fusion. The question was pre-registered as
   a self-contained single-document control but cannot be answered from this corpus. Retrieval metrics
   are undefined for it; see eval/gold/README.md.'
+decision: 'Amendment decided 2026-10-06 (ADR D-26), the decision delegated to the assistant by Azim: keep this question as a "should find nothing" control. It stays in the pre-registered set, its gold stays unanswerable, and its retrieval metrics stay undefined (null) and out of every aggregate. It is not replaced and no paper is added, so the frozen question set and manifest are unchanged and the ingested stores stay valid.'
+approved_by: Azim
+approved_on: '2026-10-06'

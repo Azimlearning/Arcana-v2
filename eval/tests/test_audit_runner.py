@@ -141,7 +141,7 @@ def test_the_frozen_check_passes_on_the_real_assets_and_names_each_drift(tmp_pat
     changed_questions.write_bytes(questions.read_bytes() + b"\n- extra\n")
     assert any("question set" in p for p in frozen.check_frozen(changed_questions, manifest, gold_dir, ids))
 
-    # an unapproved file is require_approved_gold's to report, not a pin mismatch
+    # the unanswerable control is approved and pinned like the rest
     assert frozen.check_frozen(questions, manifest, gold_dir, ["q-single-01"]) == []
 
 

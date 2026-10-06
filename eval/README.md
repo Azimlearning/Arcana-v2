@@ -36,13 +36,13 @@ versions). The summary adds entity-resolution rates per graph-using arm.
 
 Every departure from the frozen question set or protocol is declared here and in `DECISIONS.md`.
 
-1. **The first benchmark runs 19 questions, not 20 (ADR D-24).** `q-single-01` ("What is Reciprocal Rank
-   Fusion...") cannot be answered from the 16-paper corpus (ADR D-21); its gold is `unanswerable` and its
-   metrics are `null`, so it contributes to no aggregate in any case. It is not approved, so the runner refuses a
-   live run that selects it. Run with `--questions` naming the 19 approved questions. The results file records
-   `questions_selected` and `questions_excluded` (with the reason), so the exclusion is visible. If Azim
-   amends `q-single-01` later (replace it, add a paper that defines RRF, or keep it as a "finds nothing"
-   control) that is a further amendment with its own ADR; results from before and after are not pooled.
+1. **The first benchmark ran 19 questions, not 20 (ADR D-24), and `q-single-01` is a control (ADR D-26).**
+   `q-single-01` ("What is Reciprocal Rank Fusion...") cannot be answered from the 16-paper corpus (ADR D-21);
+   its gold is `unanswerable` and its metrics are `null`, so it contributes to no aggregate in any case. It is
+   kept in the pre-registered set as a "should find nothing" control, approved and hash-pinned (no question was
+   replaced and no paper added, so the frozen question set, manifest and stores are unchanged). The first
+   benchmark selected the 19 answerable questions and its results file records `questions_excluded` with the
+   reason; a 20-question run would give the same numbers.
 2. **Primary metrics are Recall@10 and nDCG@10 only.** The RAGAS context metrics are deferred to the end of the
    project (Azim, 2026-10-06) and stay `null`; no model-judged score is computed (D-15). The primary
    comparison is hybrid against flat, and the two primary metrics are Holm-corrected against each other.

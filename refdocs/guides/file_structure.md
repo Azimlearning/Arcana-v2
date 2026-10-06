@@ -1,6 +1,6 @@
 # File Structure: Arcana v2
 
-> The tree as of P0 task 9 (2026-10-05). Update it when a directory is added or a module's job changes. `CLAUDE.md` holds the rules; this is the map.
+> The tree as of the end of P1 (2026-10-06). Update it when a directory is added or a module's job changes. `CLAUDE.md` holds the rules; this is the map.
 
 ## Top level
 
@@ -22,15 +22,15 @@
 |---|---|
 | `main.py` | App factory. Loads settings and opens stores in the startup lifespan; every error leaves as an `ErrorEnvelope`. |
 | `container.py` | Builds stores, providers and retrievers for the configured mode. |
-| `fakes.py` | Fake LLM mode: dispatches on request purpose to the extraction or research fake. |
+| `fakes.py` | Fake LLM mode: dispatches on request purpose (extract, research, route, check) to the matching fake. |
 | `core/` | `settings` (typed env, fails loudly), `logging`, `errors` (the error types and HTTP map), `budget` (per-turn tokens). |
 | `genui/` | `generated.py` (do not edit; from the schema), `validate.py` (the fail-closed gate), `builders.py` (raw block dicts, importable only by the Composer), `stream.py` (SSE framing). |
-| `llm/` | The LLM seam: `service` (fallback, cap, ledger), `ledger` (spend and the monthly cap), `pricing`, `models`, `providers/{anthropic,openrouter,fake}`, `factory`, `json_reply`. |
-| `stores/` | `GraphStore`, `VectorStore`, `DocStore` abstractions; `local/` holds the NetworkX, numpy and SQLite implementations; `preflight` checks corpus parity. |
-| `ingestion/` | PDF to chunks, vectors and graph: `parse`, `chunk`, `embed`, `extract`, `pipeline`, `fakes`. |
+| `llm/` | The LLM seam: `service` (fallback, cap, ledger; prices by the requested model, D-23), `ledger` (spend and the monthly cap; one file `data/ledger.db` in a live mode), `pricing`, `models`, `providers/{anthropic,openrouter,fake}`, `factory`, `json_reply`. |
+| `stores/` | `GraphStore`, `VectorStore`, `DocStore` abstractions (`DocStore` also keeps each turn's trace); `local/` holds the NetworkX, numpy and SQLite implementations; `preflight` checks corpus parity. |
+| `ingestion/` | PDF to chunks, vectors and graph: `parse`, `chunk`, `embed`, `extract` (output limit 2,048 tokens, D-25), `pipeline` (per-document size and budget checks), `fakes`. |
 | `retrieval/` | `dense`, `sparse`, `graph`, `entities` (query entity resolution), `fusion` (RRF), `hybrid` (entry point), `arms` (the five ablation arms), `protocol` (the frozen-settings stamp). |
-| `agents/` | `research` (retrieve then answer from evidence), `compose` (the Composer stub: the only place blocks are made), `graph` (the LangGraph turn graph and `run_turn`), `state`, `fakes`. |
-| `routes/` | `chat` (SSE) and `ingest` (multipart upload). `/health` is in `main.py`. |
+| `agents/` | `framework` (`Roster`, `route_to_agent`: hop and token budgets, loop guard, trace steps, tool schemas), `orchestrator` (intent rules, one light-tier call when unsure), `research` (`retrieve_evidence`, `compare_documents`; model-chosen quotes verified verbatim), `graph_agent` (`find_path`, `neighborhood`; grounded edges only), `fact_checker` (quote check, judge plus lexical fallback; pure core), `roster` (the one module that imports every agent), `compose` (the Composer stub: the only place blocks are made; shows only what the Fact Checker passed), `graph` (the LangGraph turn graph and `run_turn`), `state` (`TurnContext`), `fakes`. Agents never import each other (a test enforces it). |
+| `routes/` | `chat` (SSE; records each turn and its trace), `ingest` (multipart upload) and `trace` (`GET /turns/{id}/trace`). `/health` is in `main.py`. |
 | `tests/fixtures/` | `hybrid_retrieval.pdf` and the script that regenerates it. |
 | `conftest.py` | Shared fixtures: the fixture PDF, real local stores over fake providers, an `ingested` corpus. |
 
@@ -41,8 +41,9 @@ Tests sit beside the module they cover as `test_*.py`.
 | Path | Job |
 |---|---|
 | `app/` | Next.js App Router: `layout`, `page`, `Workspace.tsx` (the shell: upload, question, answer panel). |
+| `components/TracePanel.tsx` | The collapsible record of what the agents did on a turn (loads when first opened; status in words). |
 | `components/genui/` | `registry.tsx` (typed over the block union; the only way a block becomes UI), `CitedSummary.tsx`, `BlockStates.tsx` (loading, empty, partial, error frames). |
-| `lib/` | `stream.ts` (SSE over POST, one terminal callback), `api.ts` (upload), `store.ts` (Zustand, upsert by block id). |
+| `lib/` | `stream.ts` (SSE over POST, one terminal callback), `api.ts` (upload, `fetchTrace`), `store.ts` (Zustand, upsert by block id). |
 | `test/fixtures.ts` | Block and stream builders for tests. |
 
 ## `eval/`
@@ -53,16 +54,22 @@ Tests sit beside the module they cover as `test_*.py`.
 | `gold/` | Hand-annotated gold passages (`q-*.yaml`) and the format and relevance rule (`README.md`). |
 | `metrics.py` | Recall@10 and nDCG@10 against gold passages. |
 | `ragas_metrics.py` | RAGAS non-LLM context metrics, imported lazily. |
-| `run_ablation.py` | The five-arm runner; one JSON per run in `results/`. |
-| `tests/` | Metric, frozen-asset and runner tests. |
+| `run_ablation.py` | The five-arm runner; one JSON per run in `results/`. A live run checks the freeze, names its commit and refuses stores that are not the ingested ones (D-24). |
+| `frozen.py` | Every pinned hash (question set, manifest, approved gold, the whole protocol stamp) and `check_frozen`; used by pytest and by the runner. |
+| `stats.py` | Hand-written Wilcoxon signed-rank (exact p, Holm, rank-biserial effect size); writes `<run>-stats.json`. |
+| `verify_gold.py` | Checks every gold passage is verbatim on its page and reachable by a chunk. Needs the PDFs. |
+| `mutation_factcheck.py` | Plants known defects in valid answers and records how many the Fact Checker catches. |
+| `report_ingestion.py` | Writes the cost record of a live ingestion from the spend ledger (totals, per paper, per call, CSV). |
+| `results/` | Committed results: the smoke run, the mutation suite, the live ingestion record, and the first benchmark with its statistics. |
+| `tests/` | Metric, frozen-asset, runner, statistics, gold-verifier and report tests. |
 
 ## `packages/schema/`
 
 | Path | Job |
 |---|---|
-| `src/blocks.ts`, `payloads.ts`, `api.ts`, `errors.ts` | The wire types. Start every wire change here. |
+| `src/blocks.ts`, `payloads.ts`, `api.ts`, `errors.ts`, `trace.ts` | The wire types (`trace.ts`: `TurnTrace`, `AgentStep`). Start every wire change here. |
 | `codegen/to_python.ts` | TypeScript to Pydantic; `pnpm codegen` writes, `pnpm codegen:check` fails on drift. |
 
 ## `refdocs/`
 
-`STATUS.md` (where we are), `arcana-v2-PRD.md` (scope and decision log), `changelog/` (`CHANGELOG.md`, `DECISIONS.md`), `plans/` and `execution/` (what and how), `guides/` (`env_setup.md`, `checklist.md`, this file), `context/`, `evidence/` (screenshots from real runs).
+`STATUS.md` (where we are), `arcana-v2-PRD.md` (scope and decision log), `changelog/` (`CHANGELOG.md`, `DECISIONS.md`), `plans/` and `execution/` (what and how), `guides/` (`env_setup.md`, `checklist.md`, this file), `context/`, `evidence/` (screenshots from real runs and the live ingestion cost record).

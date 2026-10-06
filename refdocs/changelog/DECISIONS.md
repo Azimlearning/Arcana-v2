@@ -417,6 +417,29 @@ schema caps (changes what is extracted, and the protocol).
 
 **Limits of the evidence.** One paper, one run. The 5 percent gate still applies to the whole corpus ingestion.
 
+## D-26: q-single-01 is kept as a "should find nothing" control (2026-10-06, amends D-21)
+
+**Decision.** The unanswerable question `q-single-01` stays in the pre-registered set as a negative control. Its
+gold stays `unanswerable`, its retrieval metrics stay undefined (null) and out of every aggregate, and it is now
+approved and hash-pinned like the other 19 files. Azim delegated the choice to the assistant on 2026-10-06
+("you decided for me using best judgment").
+
+**Why.** The corpus never defines Reciprocal Rank Fusion (D-21). The three options were to replace the question,
+add a paper that defines RRF, or keep it as a control. Replacing it changes the pre-registered question set;
+adding a paper changes the frozen manifest and forces a second paid ingestion that produces a different graph,
+so results before and after could not be compared. Keeping it changes nothing frozen, leaves the ingested stores
+and the first benchmark valid (the question already contributed null metrics, so the 19-question numbers are
+what a 20-question run would give), and turns the defect into a free test of "ground before generating".
+
+**What the control showed.** Asked of the live system on the ingested corpus (one turn, $0.0074): retrieval
+returned tangential chunks (a mention of RAG-Fusion, a conformal-calibration passage), the Research agent
+answered that the passages do not contain the answer, and the Composer rendered an `empty` block with no
+segments and no citations. Nothing was invented. One question, one run: it shows the behaviour is possible, not
+that it is reliable.
+
+**Trade-offs / rejected.** The question set keeps one question that can never score; accepted, it is
+pre-registered. Rejected: replacing the question; adding a paper.
+
 ---
 
 ## Working assumptions (`ASSUMED:`)
