@@ -31,9 +31,9 @@ DEFAULT_INTENT: Intent = "single"
 
 # Which agents each intent runs, in order. Agents missing from the roster are skipped.
 INTENT_PLANS: dict[Intent, tuple[str, ...]] = {
-    "single": ("research",),
-    "compare": ("research",),
-    "relate": ("graph", "research"),
+    "single": ("research", "fact_checker"),
+    "compare": ("research", "fact_checker"),
+    "relate": ("graph", "research", "fact_checker"),
 }
 
 _PATTERNS: dict[Intent, re.Pattern[str]] = {

@@ -41,9 +41,11 @@ def test_the_rules_classify_and_report_their_confidence(question: str, intent: s
     assert classify(question) == (intent, confident)
 
 
-def test_every_intent_has_a_plan_that_ends_in_research():
+def test_every_intent_has_a_plan_that_checks_what_research_answers():
     assert set(INTENT_PLANS) == {"single", "compare", "relate"}
-    assert all(plan[-1] == "research" for plan in INTENT_PLANS.values())  # the answering agent runs last
+    for plan in INTENT_PLANS.values():
+        assert plan[-1] == "fact_checker"  # nothing is shown that the checker has not seen
+        assert plan.index("research") < plan.index("fact_checker")  # and it runs after the answer exists
 
 
 # ── routing in a turn ─────────────────────────────────────────────────────────

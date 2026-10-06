@@ -1,0 +1,53 @@
+{
+  "generated": "2026-10-06T00:52:58+00:00",
+  "seed": 20261006,
+  "cases": 50,
+  "support_rule": {
+    "kind": "lexical overlap only, no model judge",
+    "threshold": 0.4
+  },
+  "clean_answers": {
+    "kept": 50,
+    "of": 50,
+    "pass_rate": 1.0
+  },
+  "per_type": {
+    "non_verbatim_quote": {
+      "kind": "deterministic",
+      "planted": 50,
+      "detected": 50,
+      "detection_rate": 1.0
+    },
+    "wrong_chunk_citation": {
+      "kind": "deterministic",
+      "planted": 50,
+      "detected": 50,
+      "detection_rate": 1.0
+    },
+    "wrong_document": {
+      "kind": "deterministic",
+      "planted": 50,
+      "detected": 50,
+      "detection_rate": 1.0
+    },
+    "invented_other_document": {
+      "kind": "lexical (reported, not asserted)",
+      "planted": 50,
+      "detected": 49,
+      "detection_rate": 0.98
+    },
+    "invented_same_document": {
+      "kind": "lexical (reported, not asserted)",
+      "planted": 50,
+      "detected": 48,
+      "detection_rate": 0.96
+    },
+    "negated_claim": {
+      "kind": "lexical (reported, not asserted)",
+      "planted": 50,
+      "detected": 0,
+      "detection_rate": 0.0
+    }
+  },
+  "caveat": "Lexical fallback only; the model judge is not measured here. Invented claims are real sentences from the corpus, not model hallucinations, so the invented-claim rates are likely optimistic. negated_claim shows the lexical rule's blind spot: a claim that keeps the evidence's words passes it."
+}

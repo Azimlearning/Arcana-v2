@@ -6,8 +6,10 @@ import pytest
 from sqlalchemy import create_engine
 
 from api.agents.fakes import fake_research_responder
+from api.agents.framework import Roster
 from api.agents.graph import build_turn_graph, run_turn
-from api.agents.research import best_excerpt
+from api.agents.orchestrator import ORCHESTRATOR
+from api.agents.research import RESEARCH, best_excerpt
 from api.agents.roster import default_roster
 from api.agents.state import TurnContext
 from api.core.budget import TokenBudget
@@ -117,7 +119,9 @@ async def test_a_segment_citing_nothing_real_is_dropped_never_shown(ingested, tm
             ]
         }
     )
-    block = await run(deps, tmp_path, responder=lambda r: reply)
+    # Research drops the two ungrounded segments, so the survivor is segment 1 of the answer the checker sees.
+    approve = '{"verdicts": [{"segment": 1, "supported": true}]}'  # this test is about citations, not support
+    block = await run(deps, tmp_path, responder=lambda r: reply if r.purpose == "research" else approve)
     assert block.meta.status == "ready"
     assert [s.text for s in block.data.segments] == ["Properly cited."]
 
@@ -132,7 +136,8 @@ async def test_an_answer_with_no_grounded_segment_is_an_error_not_an_ungrounded_
 async def test_a_quote_invented_by_the_model_is_ignored(ingested, tmp_path):
     deps, _ = ingested
     reply = json.dumps({"segments": [{"text": "x", "cites": [1], "quote": "INVENTED QUOTE"}]})
-    block = await run(deps, tmp_path, responder=lambda r: reply)
+    approve = '{"verdicts": [{"segment": 1, "supported": true}]}'
+    block = await run(deps, tmp_path, responder=lambda r: reply if r.purpose == "research" else approve)
     assert block.meta.status == "ready"
     assert all("INVENTED" not in c.quote for c in block.data.citations)
 
@@ -148,6 +153,7 @@ async def test_the_composer_replaces_a_block_the_validator_rejects_with_an_error
         return result
 
     ctx = make_ctx(deps, tmp_path)
+    ctx.roster = Roster([ORCHESTRATOR, RESEARCH])  # no Fact Checker: this exercises the validator backstop alone
     ctx.retrieve = retrieve_then_lose_the_chunks
     block = (await GRAPH.ainvoke({"question": QUESTION}, context=ctx))["block"]
     error = error_of(block)

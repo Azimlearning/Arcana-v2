@@ -24,7 +24,8 @@ from api.genui.validate import validate_block
 
 log = get_logger(__name__)
 
-# Agents whose failure ends the turn. Their errors become the error block.
+# Agents whose failure ends the turn. Their errors become the error block. The Fact Checker is handled
+# separately in compose_block: it gates what may be shown, rather than producing the answer.
 DECISIVE = ("orchestrator", "research")
 
 
@@ -59,6 +60,18 @@ def compose_block(ctx: TurnContext) -> UIBlock:
             ctx, ErrorEnvelope(code="internal", message="No agent produced an answer.", issues=[], retryable=False)
         )
     answer = research.payload.get("answer")
+    if ctx.roster.get("fact_checker"):
+        # Fail closed: with a checker on the roster, only what it passed is shown. A checker that was
+        # never run, failed or was refused is an error block, never the unchecked answer.
+        checker = ctx.results.get("fact_checker")
+        if checker is None or checker.status in ("failed", "refused"):
+            error = checker.error if checker else None
+            return error_block(
+                ctx,
+                error
+                or ErrorEnvelope(code="internal", message="The answer could not be checked.", issues=[], retryable=False),
+            )
+        answer = checker.payload.get("answer")
     raw: dict[str, Any] = (
         cited_summary(ctx.block_id, "empty")
         if answer is None

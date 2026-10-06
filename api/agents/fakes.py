@@ -24,6 +24,12 @@ def fake_research_responder(request: LLMRequest) -> str:
     return json.dumps({"segments": segments})
 
 
+def fake_check_responder(request: LLMRequest) -> str:
+    """Fake mode has no judge: an empty reply gives no verdicts, so the Fact Checker's deterministic
+    lexical rule decides every claim. Honest: a fake that approved everything would hide a broken check."""
+    return "{}"
+
+
 def fake_route_responder(request: LLMRequest) -> str:
     """Routes everything to the single-question plan, so fake mode never needs a real router."""
     return json.dumps({"intent": "single"})
