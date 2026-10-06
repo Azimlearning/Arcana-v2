@@ -46,6 +46,23 @@ class Turn:
     error_code: str | None
 
 
+@dataclass(frozen=True)
+class StoredPattern:
+    """A saved UI pattern as the store keeps it (D-31). `params_json` is a serialised list of parameters: strings only,
+    never evidence, block data or document text. The caller validates it on the way in and out."""
+
+    id: str
+    name: str
+    template_id: str
+    template_version: int
+    params_json: str
+    layout_mode: str
+    state: str
+    use_count: int
+    created_at: str
+    last_used_at: str | None
+
+
 class DocStore(ABC):
     @abstractmethod
     def put_document(self, doc: Document) -> None:
@@ -96,3 +113,35 @@ class DocStore(ABC):
     @abstractmethod
     def get_trace(self, turn_id: str) -> str | None:
         """The serialised trace recorded for the turn, or None. The caller validates it."""
+
+    @abstractmethod
+    def record_view(self, turn_id: str, view_json: str) -> None:
+        """Keep the turn's view record (which reusable components it showed, with their parameters). Replaces one."""
+
+    @abstractmethod
+    def get_view(self, turn_id: str) -> str | None:
+        """The serialised view record for the turn, or None. The caller validates it."""
+
+    @abstractmethod
+    def put_pattern(self, pattern: StoredPattern) -> StoredPattern:
+        """Keep a pattern. If one with the same id exists it is kept as it is and returned: saving the same view
+        twice is one pattern."""
+
+    @abstractmethod
+    def get_pattern(self, pattern_id: str) -> StoredPattern | None: ...
+
+    @abstractmethod
+    def list_patterns(self) -> list[StoredPattern]:
+        """Every saved pattern, oldest first."""
+
+    @abstractmethod
+    def delete_pattern(self, pattern_id: str) -> bool:
+        """Delete a pattern. True if there was one."""
+
+    @abstractmethod
+    def mark_pattern_used(self, pattern_id: str, when: str) -> None:
+        """Count one use and stamp the time. A no-op for an unknown id."""
+
+    @abstractmethod
+    def update_pattern(self, pattern_id: str, *, state: str, template_version: int) -> None:
+        """Set a pattern's state and the template version it is current with (re-verification)."""

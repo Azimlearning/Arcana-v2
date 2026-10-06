@@ -28,8 +28,10 @@ from api.genui.catalog import (
     ComposerEvidence,
     Composition,
     Spec,
+    ViewComponent,
     alignment_grid,
     cap,
+    component_params,
     concept_path,
     graph_edges,
 )
@@ -274,6 +276,7 @@ def _compose_blocks(ctx: TurnContext) -> Composition:
     evidence = _evidence(ctx, answer)
     blocks: list[UIBlock] = []
     records: list[ComponentRecord] = []
+    view: list[ViewComponent] = []
     for spec in CATALOG.values():
         result = spec.check(evidence)
         if not result.satisfied and not spec.terminal:
@@ -291,7 +294,11 @@ def _compose_blocks(ctx: TurnContext) -> Composition:
             continue
         blocks.append(block)
         records.append(ComponentRecord(spec.name, "empty" if empty else "admitted", result.reasons, block.id))
-    return Composition(tuple(blocks), tuple(records))
+        if spec.reusable and not empty:
+            params = component_params(spec.name, evidence.graph)
+            if params is not None:  # the block passed validation just above: the view is verified
+                view.append(ViewComponent(spec.name, spec.version, params, True))
+    return Composition(tuple(blocks), tuple(records), view=tuple(view))
 
 
 def compose(ctx: TurnContext) -> Composition:

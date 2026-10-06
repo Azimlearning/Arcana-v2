@@ -212,11 +212,43 @@ class PathStep(BaseModel):
     citationId: str
 
 
+class PatternList(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    patterns: list[SavedPattern]
+
+
+class PatternParam(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    key: str
+    values: list[str]
+
+
 class Placement(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
     blockId: str
     panel: PanelId
     order: int
+
+
+class SavePatternRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    turnId: str
+    templateId: str
+    name: str
+
+
+class SavedPattern(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    id: str
+    name: str
+    templateId: str
+    templateVersion: int
+    params: list[PatternParam]
+    layoutMode: LayoutMode
+    state: PatternState
+    useCount: int
+    createdAt: str
+    lastUsedAt: str | None
 
 
 class SourceItem(BaseModel):
@@ -283,6 +315,8 @@ LayoutOrigin = Literal['prebuilt', 'adaptive']
 
 PanelId = Literal['sources', 'chat', 'studio']
 
+PatternState = Literal['generated', 'verified', 'saved']
+
 StepStatus = Literal['ok', 'partial', 'failed', 'refused']
 
 StreamEvent = Annotated[BlockEvent | LayoutEvent | StreamErrorEvent | DoneEvent, Field(discriminator='type')]
@@ -319,7 +353,11 @@ LayoutEvent.model_rebuild()
 LayoutSpec.model_rebuild()
 PanelSpec.model_rebuild()
 PathStep.model_rebuild()
+PatternList.model_rebuild()
+PatternParam.model_rebuild()
 Placement.model_rebuild()
+SavePatternRequest.model_rebuild()
+SavedPattern.model_rebuild()
 SourceItem.model_rebuild()
 SourceList.model_rebuild()
 SourceListData.model_rebuild()

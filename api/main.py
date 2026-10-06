@@ -22,7 +22,7 @@ from api.core.errors import HTTP_STATUS, ArcanaError, envelope_from_exception
 from api.core.logging import configure_logging, get_logger
 from api.core.settings import Settings, load_settings
 from api.genui.generated import ErrorCode, ErrorEnvelope, FieldIssue
-from api.routes import chat, ingest, trace, workspace
+from api.routes import chat, ingest, patterns, trace, workspace
 
 log = get_logger(__name__)
 
@@ -73,7 +73,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(title="Arcana v2", lifespan=lifespan)
     app.add_middleware(BodyLimit)
     app.add_middleware(
-        CORSMiddleware, allow_origins=WEB_ORIGINS, allow_methods=["GET", "POST"], allow_headers=["*"]
+        CORSMiddleware, allow_origins=WEB_ORIGINS, allow_methods=["GET", "POST", "DELETE"], allow_headers=["*"]
     )
 
     @app.exception_handler(ArcanaError)
@@ -119,6 +119,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(ingest.router)
     app.include_router(trace.router)
     app.include_router(workspace.router)
+    app.include_router(patterns.router)
     return app
 
 

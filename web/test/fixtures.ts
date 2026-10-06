@@ -1,4 +1,4 @@
-import type { CitedSummary, ComparisonGrid, ConceptMap, ErrorEnvelope, GraphView, LayoutSpec, SourceList, WorkspaceResponse, StreamEvent, TurnTrace } from "@arcana/schema";
+import type { CitedSummary, ComparisonGrid, ConceptMap, ErrorEnvelope, GraphView, LayoutSpec, SavedPattern, SourceList, WorkspaceResponse, StreamEvent, TurnTrace } from "@arcana/schema";
 
 export const TITLE = "Hybrid Retrieval over Knowledge Graphs";
 
@@ -198,6 +198,22 @@ const FALLBACK: LayoutSpec = {
   ],
   placements: [{ blockId: "workspace-sources", panel: "sources", order: 0 }],
 };
+
+export function savedPattern(overrides: Partial<SavedPattern> = {}): SavedPattern {
+  return {
+    id: "p-1",
+    name: "Dense vs BM25",
+    templateId: "GraphView",
+    templateVersion: 1,
+    params: [{ key: "entities", values: ["Dense Retrieval", "BM25"] }],
+    layoutMode: "research",
+    state: "saved",
+    useCount: 0,
+    createdAt: "2026-10-07T10:00:00+00:00",
+    lastUsedAt: null,
+    ...overrides,
+  };
+}
 
 export function envelope(overrides: Partial<ErrorEnvelope> = {}): ErrorEnvelope {
   return { code: "provider_unavailable", message: "The model is unavailable.", issues: [], retryable: true, ...overrides };

@@ -1,6 +1,14 @@
 // Non-streaming calls. Failures are returned as the shared ErrorEnvelope, never thrown as strings.
 
-import type { ErrorEnvelope, IngestResponse, TurnTrace, UIBlock, WorkspaceResponse } from "@arcana/schema";
+import type {
+  ErrorEnvelope,
+  IngestResponse,
+  SavedPattern,
+  SavePatternRequest,
+  TurnTrace,
+  UIBlock,
+  WorkspaceResponse,
+} from "@arcana/schema";
 
 import { isLayoutSpec } from "./layout";
 import { API_BASE, clientError, envelopeFromResponse } from "./stream";
@@ -133,4 +141,86 @@ export async function fetchWorkspace(
     // not JSON
   }
   return { ok: false, error: clientError("The server sent an unreadable response.", false) };
+}
+
+
+// ── saved views (patterns) ───────────────────────────────────────────────────
+
+export type PatternsResult = { ok: true; patterns: SavedPattern[] } | { ok: false; error: ErrorEnvelope };
+export type SaveResult = { ok: true; pattern: SavedPattern } | { ok: false; error: ErrorEnvelope };
+export type DeleteResult = { ok: true } | { ok: false; error: ErrorEnvelope };
+
+const PATTERN_STATES = ["generated", "verified", "saved"];
+const LAYOUT_MODES = ["basic", "research", "exploration"];
+
+export function isSavedPattern(value: unknown): value is SavedPattern {
+  if (typeof value !== "object" || value === null) return false;
+  const p = value as Partial<SavedPattern>;
+  return (
+    typeof p.id === "string" &&
+    p.id !== "" &&
+    typeof p.name === "string" &&
+    typeof p.templateId === "string" &&
+    Number.isInteger(p.templateVersion) &&
+    Array.isArray(p.params) &&
+    p.params.every(
+      (q) => typeof q === "object" && q !== null && typeof q.key === "string" && Array.isArray(q.values) && q.values.every((v) => typeof v === "string"),
+    ) &&
+    typeof p.layoutMode === "string" &&
+    LAYOUT_MODES.includes(p.layoutMode) &&
+    typeof p.state === "string" &&
+    PATTERN_STATES.includes(p.state) &&
+    Number.isInteger(p.useCount) &&
+    typeof p.createdAt === "string" &&
+    (p.lastUsedAt === null || typeof p.lastUsedAt === "string")
+  );
+}
+
+type Options = { baseUrl?: string; fetchImpl?: typeof fetch };
+
+async function call(path: string, init: RequestInit | undefined, options: Options): Promise<Response | ErrorEnvelope> {
+  const { baseUrl = API_BASE, fetchImpl = fetch } = options;
+  try {
+    return await fetchImpl(`${baseUrl}${path}`, init);
+  } catch {
+    return clientError("Could not reach the server.");
+  }
+}
+
+const unreadable = () => clientError("The server sent an unreadable response.", false);
+
+/** The user's saved views. The server validates every one; this only refuses a body that is not a list of them. */
+export async function listPatterns(options: Options = {}): Promise<PatternsResult> {
+  const response = await call("/patterns", undefined, options);
+  if (!(response instanceof Response)) return { ok: false, error: response };
+  if (!response.ok) return { ok: false, error: await envelopeFromResponse(response) };
+  try {
+    const body = (await response.json()) as { patterns?: unknown };
+    if (Array.isArray(body?.patterns) && body.patterns.every(isSavedPattern)) return { ok: true, patterns: body.patterns };
+  } catch {
+    // not JSON
+  }
+  return { ok: false, error: unreadable() };
+}
+
+/** Keep one view of a finished turn. */
+export async function savePattern(request: SavePatternRequest, options: Options = {}): Promise<SaveResult> {
+  const init = { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(request) };
+  const response = await call("/patterns", init, options);
+  if (!(response instanceof Response)) return { ok: false, error: response };
+  if (!response.ok) return { ok: false, error: await envelopeFromResponse(response) };
+  try {
+    const body: unknown = await response.json();
+    if (isSavedPattern(body)) return { ok: true, pattern: body };
+  } catch {
+    // not JSON
+  }
+  return { ok: false, error: unreadable() };
+}
+
+export async function deletePattern(id: string, options: Options = {}): Promise<DeleteResult> {
+  const response = await call(`/patterns/${encodeURIComponent(id)}`, { method: "DELETE" }, options);
+  if (!(response instanceof Response)) return { ok: false, error: response };
+  if (!response.ok) return { ok: false, error: await envelopeFromResponse(response) };
+  return { ok: true };
 }

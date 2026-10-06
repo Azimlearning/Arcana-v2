@@ -123,6 +123,18 @@ class ComponentRecord:
 
 
 @dataclass(frozen=True)
+class ViewComponent:
+    """One view the turn showed that a user could save: a reusable template, the version it was built with, the
+    parameters that would re-bind its evidence (strings only) and whether its block passed validation. Recorded with the
+    turn (no evidence in it) so `POST /patterns` can save from it."""
+
+    template: str
+    version: int
+    params: dict[str, list[str]]
+    verified: bool
+
+
+@dataclass(frozen=True)
 class Composition:
     """The Composer's whole output for a turn: the blocks to stream (the terminal one first) and one record
     per component the catalog considered."""
@@ -133,6 +145,8 @@ class Composition:
     """The validated adaptive layout, or None when it could not be composed or failed validation."""
     layout_failure: tuple[str, ...] = ()
     """Field paths (or a short code) saying why there is no layout. Empty when there is one."""
+    view: tuple[ViewComponent, ...] = ()
+    """The reusable views this turn showed, each verified (its block passed validation), with its parameters."""
 
     @property
     def primary(self) -> UIBlock:
@@ -415,6 +429,26 @@ CATALOG: dict[str, Spec] = {
     spec.name: spec for spec in (CITED_SUMMARY, SOURCE_LIST, GRAPH_VIEW, COMPARISON_GRID, CONCEPT_MAP)
 }
 """Every component the Composer may admit, in the order it considers them (the terminal one first)."""
+
+
+def component_params(name: str, graph: dict[str, Any] | None) -> dict[str, list[str]] | None:
+    """The parameters that would re-bind a reusable template's evidence from this turn's Graph result: the question's
+    resolved entity labels, up to the slot's limit. None if the template is not reusable or the turn did not resolve
+    enough entities for its slots. Strings only, and never evidence."""
+    template = CATALOG[name]
+    if not template.reusable:
+        return None
+    seeds = [s["label"] for s in (graph or {}).get("seeds") or [] if isinstance(s.get("label"), str)]
+    params: dict[str, list[str]] = {}
+    for slot in template.slots:
+        if slot.kind != "entity":
+            continue
+        values = seeds[: slot.max_count]
+        if len(values) < slot.min_count:
+            return None
+        params[slot.name] = values
+    return params
+
 
 _KNOWN_REASONS: frozenset[str] = frozenset(get_args(DecisionReason))
 

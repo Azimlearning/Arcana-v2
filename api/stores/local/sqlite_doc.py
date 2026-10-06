@@ -22,7 +22,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 
-from api.stores.doc_store import Chunk, DocStatus, DocStore, Document, Turn
+from api.stores.doc_store import Chunk, DocStatus, DocStore, Document, StoredPattern, Turn
 
 metadata = MetaData()
 
@@ -70,6 +70,31 @@ turn_traces = Table(
 )
 
 
+# New tables, like `turn_traces`: create_all adds a missing table and never alters an existing one, so a data
+# directory created before they existed still opens and gains them.
+turn_views = Table(
+    "turn_views",
+    metadata,
+    Column("turn_id", String, primary_key=True),
+    Column("view_json", Text, nullable=False),
+)
+
+ui_patterns = Table(
+    "ui_patterns",
+    metadata,
+    Column("id", String, primary_key=True),
+    Column("name", String, nullable=False),
+    Column("template_id", String, nullable=False),
+    Column("template_version", Integer, nullable=False),
+    Column("params_json", Text, nullable=False),
+    Column("layout_mode", String, nullable=False),
+    Column("state", String, nullable=False),
+    Column("use_count", Integer, nullable=False),
+    Column("created_at", String, nullable=False),
+    Column("last_used_at", String),
+)
+
+
 def make_engine(path: Path) -> Engine:
     """The one SQLite engine for the data directory. Foreign keys on, WAL for concurrent readers."""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -99,6 +124,21 @@ def _doc(row) -> Document:
 
 def _chunk(row) -> Chunk:
     return Chunk(id=row.id, doc_id=row.doc_id, ordinal=row.ordinal, page=row.page, text=row.text)
+
+
+def _pattern(row) -> StoredPattern:
+    return StoredPattern(
+        id=row.id,
+        name=row.name,
+        template_id=row.template_id,
+        template_version=row.template_version,
+        params_json=row.params_json,
+        layout_mode=row.layout_mode,
+        state=row.state,
+        use_count=row.use_count,
+        created_at=row.created_at,
+        last_used_at=row.last_used_at,
+    )
 
 
 def _upsert(table: Table, values: dict, key: str = "id"):
@@ -220,3 +260,61 @@ class SqliteDocStore(DocStore):
         with self.engine.connect() as conn:
             row = conn.execute(select(turn_traces.c.trace_json).where(turn_traces.c.turn_id == turn_id)).first()
             return row[0] if row else None
+
+    def record_view(self, turn_id: str, view_json: str) -> None:
+        with self.engine.begin() as conn:
+            conn.execute(_upsert(turn_views, {"turn_id": turn_id, "view_json": view_json}, key="turn_id"))
+
+    def get_view(self, turn_id: str) -> str | None:
+        with self.engine.connect() as conn:
+            row = conn.execute(select(turn_views.c.view_json).where(turn_views.c.turn_id == turn_id)).first()
+            return row[0] if row else None
+
+    def put_pattern(self, pattern: StoredPattern) -> StoredPattern:
+        values = {
+            "id": pattern.id,
+            "name": pattern.name,
+            "template_id": pattern.template_id,
+            "template_version": pattern.template_version,
+            "params_json": pattern.params_json,
+            "layout_mode": pattern.layout_mode,
+            "state": pattern.state,
+            "use_count": pattern.use_count,
+            "created_at": pattern.created_at,
+            "last_used_at": pattern.last_used_at,
+        }
+        with self.engine.begin() as conn:
+            conn.execute(sqlite_insert(ui_patterns).values(**values).on_conflict_do_nothing(index_elements=["id"]))
+        stored = self.get_pattern(pattern.id)
+        assert stored is not None
+        return stored
+
+    def get_pattern(self, pattern_id: str) -> StoredPattern | None:
+        with self.engine.connect() as conn:
+            row = conn.execute(select(ui_patterns).where(ui_patterns.c.id == pattern_id)).first()
+            return _pattern(row) if row else None
+
+    def list_patterns(self) -> list[StoredPattern]:
+        with self.engine.connect() as conn:
+            rows = conn.execute(select(ui_patterns).order_by(ui_patterns.c.created_at, ui_patterns.c.id)).all()
+            return [_pattern(r) for r in rows]
+
+    def delete_pattern(self, pattern_id: str) -> bool:
+        with self.engine.begin() as conn:
+            return conn.execute(delete(ui_patterns).where(ui_patterns.c.id == pattern_id)).rowcount > 0
+
+    def mark_pattern_used(self, pattern_id: str, when: str) -> None:
+        with self.engine.begin() as conn:
+            conn.execute(
+                ui_patterns.update()
+                .where(ui_patterns.c.id == pattern_id)
+                .values(use_count=ui_patterns.c.use_count + 1, last_used_at=when)
+            )
+
+    def update_pattern(self, pattern_id: str, *, state: str, template_version: int) -> None:
+        with self.engine.begin() as conn:
+            conn.execute(
+                ui_patterns.update()
+                .where(ui_patterns.c.id == pattern_id)
+                .values(state=state, template_version=template_version)
+            )

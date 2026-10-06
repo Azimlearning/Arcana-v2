@@ -48,6 +48,8 @@ class GraphResult:
     edges: list[dict[str, Any]] = field(default_factory=list)
     labels: dict[str, str] = field(default_factory=dict)
     """Display label of every node in `nodes`, by node id."""
+    seeds: list[dict[str, str]] = field(default_factory=list)
+    """The question's resolved entities, in question order, as `{id, label}`. A saved view re-binds from these."""
     alignment: dict[str, Any] = field(default_factory=dict)
     """Entity-by-document alignment for the question's entities (see `Alignment`), empty when there is none."""
     unquoted: int = 0
@@ -64,6 +66,7 @@ class GraphResult:
             "labels": self.labels,
             "unquoted": self.unquoted,
             "alignment": self.alignment,
+            "seeds": self.seeds,
             "chunk_ids": self.chunk_ids,
             "resolution": self.resolution,
         }
@@ -337,6 +340,9 @@ async def _run(query: str, ctx: TurnContext) -> AgentOutput:
         result = _none(report)
     # Alignment needs no edges: two papers can both discuss an entity without a stored relation between them.
     result.alignment = _align(graph, ctx, ids[: cap("ComparisonGrid", "entities")]).payload() if ids else {}
+    result.seeds = [
+        {"id": n, "label": node.label} for n in ids[: cap("ComparisonGrid", "entities")] if (node := graph.get_node(n))
+    ]
     if result.mode == "none":
         return AgentOutput(result.payload(), status="partial", note="no entity resolved" if not ids else "no edges")
     return AgentOutput(result.payload())

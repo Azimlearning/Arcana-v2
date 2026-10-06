@@ -19,6 +19,7 @@ from api.core.budget import TokenBudget
 from api.core.errors import BadRequest
 from api.core.logging import get_logger
 from api.genui.generated import BlockEvent, ChatRequest, StreamErrorEvent
+from api.genui.patterns import view_to_json
 from api.genui.stream import SSE_HEADERS, sse
 from api.stores.doc_store import Turn
 
@@ -84,7 +85,18 @@ async def chat(body: ChatRequest, request: Request) -> StreamingResponse:
             except Exception as exc:  # recording is bookkeeping: it must never break the response
                 log.error("turn_not_recorded", error=type(exc).__name__)
             try:
-                outcome = "answered" if final_status in ("ready", "partial") else "empty" if final_status == "empty" else "error"
+                if ctx.view:
+                    container.docs.record_view(ctx.block_id, view_to_json(ctx.layout_mode, ctx.view))
+            except Exception as exc:  # the views are bookkeeping for saving: they must never break the response
+                log.error("view_not_recorded", error=type(exc).__name__)
+            try:
+                outcome = (
+                    "answered"
+                    if final_status in ("ready", "partial")
+                    else "empty"
+                    if final_status == "empty"
+                    else "error"
+                )
                 container.docs.record_trace(ctx.block_id, ctx.trace(outcome).model_dump_json())
             except Exception as exc:
                 log.error("trace_not_recorded", error=type(exc).__name__)

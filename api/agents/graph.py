@@ -100,6 +100,8 @@ async def run_turn(
     for event in finals:
         yield event
     layout_event = _checked_layout(composition.layout, {e.block.id for e in finals})
+    ctx.view = composition.view  # recorded with the turn so a view can be saved from it
+    ctx.layout_mode = layout_event.layout.mode if layout_event is not None else "research"
     if (
         layout_event is not None
     ):  # only a layout that passes the last gate is sent; without one the client keeps its own
