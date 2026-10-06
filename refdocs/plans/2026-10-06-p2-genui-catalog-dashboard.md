@@ -2,7 +2,7 @@
 
 > Phase P2 of `refdocs/arcana-v2-PRD.md` §6. Execution doc: `refdocs/execution/2026-10-06-p2-genui-catalog-dashboard.md`.
 > A plan says **what and why**. The execution doc says **how and in what order**.
-> Status: **Approved by Azim 2026-10-06** with the refinements recorded in ADRs D-27 to D-30 (an extensible layout, a prebuilt Basic layout first, a working graph output, a small roster of core agents). Nothing in this plan is built.
+> Status: **Approved by Azim 2026-10-06** with the refinements recorded in ADRs D-27 to D-31 (an extensible layout, a prebuilt Basic layout first, a working graph output, a small roster of core agents, and a GenUI generation pipeline: template, fences, checking, save, reuse). Nothing in this plan is built.
 
 ## Why this exists
 
@@ -77,6 +77,13 @@ relational components are actually available.
   nodes and edges that show their grounded quote and source, keyboard operation and a text list of the same
   relations, shown working on the real ingested corpus. A sixth, `InsightCard` (a multi-hop path whose
   endpoints are evidenced in different papers), is a **stretch** task, cut first if the phase runs long.
+- **The UI generation pipeline spine (D-31): template, fences, checking, save, reuse, for typed UI.** The five
+  components become reviewed, versioned **templates** with declared **fences** (caps, grounding, accessibility);
+  **checking** is staged and fail closed and includes a **mutation suite that must pass before a template can
+  register**; a verified view can be **saved as a pattern** (template, version, typed parameters, layout; never
+  the evidence) and **reused** later from the saved list, where applying it re-runs the preconditions on the
+  current evidence and fails closed if they no longer hold or the template changed. The basic components stay the
+  foundation. P4 adds generated code to this same pipeline.
 - **A deterministic, evidence-admitting Composer (D-28).** The Composer computes which components' preconditions
   the turn's evidence satisfies, builds exactly those, validates each, and drops (never repairs) any that fail.
   It makes no model call.
@@ -124,8 +131,11 @@ relational components are actually available.
   Basic and Adaptive switch is in scope; richer modes are not.
 - **A model-chosen layout.** It would add a paid call per turn and an unmeasured chooser. Deterministic rules
   keep P2 free and testable; a learned chooser is the P3 router's job.
-- **Level 3 (`VerifiedLab`) and the governed lifecycle (P4).** P2 adds no path by which generated code reaches
-  the client; hard constraint 3 is untouched.
+- **Level 3 (`VerifiedLab`), generated code, and the full governed lifecycle (P4).** The pipeline's code stages
+  (static analysis of generated code, contract property tests, fuzzing, the sandbox run, the verifier and delivery
+  gate) and the lifecycle states beyond `generated`, `verified` and `saved` (`cached`, `audited`, `promoted`,
+  crystallisation) are P4 and plug into the P2 spine. P2 adds no path by which generated code reaches the client;
+  hard constraint 3 is untouched.
 - **User-resizable panels** (v1's `PanelResizer`): not needed for the exit criteria.
 - **Any change to retrieval, the protocol stamp, the extraction prompt, the gold or the ingested stores.** The
   benchmark's pins must stay green.
@@ -183,6 +193,16 @@ the prebuilt layout when the adaptive spec is missing or fails a client shape ch
 path executes anything. ASSUMED (reading of the request): auto-applying Adaptive after the first answer unless
 Basic is pinned; one client setting, cheap to change.
 
+**The UI pipeline (D-31).** One path for every UI: *template* (a catalog entry with a version, typed slots and a
+placement hint) → *fences* (the template's declared limits: caps, the grounding rule, accessibility requirements)
+→ *checking* (precondition, build, schema, content, and the registration-time mutation suite) → *save* (a pattern:
+template id and version, typed parameters, layout mode; content-addressed; state `generated`, `verified` or
+`saved`; evidence never stored) → *reuse* (listed with the prebuilt layouts; applying re-binds fresh evidence, runs
+the checks again, and fails closed with a reason: `precondition_not_met` or `template_changed`). Applying a
+pattern uses only deterministic tools, so it costs nothing. The pipeline is typed-data only in P2; its interfaces
+are drawn so P4's generated-code stages are additional checks and an additional kind of template body, not a
+redesign.
+
 **A graph output that works, without a new dependency.** `GraphView` and `ConceptMap` use a deterministic radial
 SVG layout written for this project (no force simulation, no library). The diagram is interactive: selecting a
 node highlights its edges and shows each incident edge's relation, quote and source link; nodes and edges are
@@ -230,6 +250,10 @@ nothing.
 | "Extensible for all future GenUI features" is claimed but only holds if a new component really needs no layout change | Medium: easy to claim, easy to break by hard-coding a component name in the layout rules | Placement hints live on the catalog `Spec`; a test registers a toy component and asserts it is laid out with no edit to `layout.py`, the layout schema or the shell; the recipe in `catalog.md` is followed by that test |
 | Basic-then-Adaptive is my reading of the request (the default switching behaviour) | Medium: the intent is clear, the exact default is not | Recorded as ASSUMED in D-28; one client setting (`pinned`, auto-apply), covered by tests, trivial to change |
 | An interactive SVG graph is more work and more accessibility surface than a static one | Medium | Dependency-free deterministic layout; selection, focus and the text alternative are component tests; judged on real data in the browser run, not on fixtures |
+| The pipeline adds four tasks (templates and fences, saved patterns, reuse, re-verification) to a phase that was already large | Medium | Track E comes after the layout work; the pre-declared cut line is that reuse and re-verification (E3, E4) may move to the start of P4 while the template, fence and store work (E1, E2) stays, recorded in the changelog if used |
+| "Fences" is my reading of an unclear word in the request | Medium | Recorded as ASSUMED in D-31 with the definition used; renaming the stage costs nothing if something else was meant |
+| Saving a view without saving its evidence means a reused pattern can behave differently on a different corpus | Medium: it is the intent (evidence goes stale) | Apply re-runs the preconditions and fails closed with a reason; a test deletes a document and applies the pattern |
+| "More advanced than Synapse" cannot be checked: the Synapse code is not on this machine | High that it cannot be verified now | Stated in D-31 as design intent only; no comparative claim is made anywhere |
 | Consolidating agents (D-30) tempts a refactor of P1 code now | Low once stated | P2 adds no agent and renames none; the map in `agents.md` is documentation plus the rule for future phases; any merge (Studio) is a P5 plan decision |
 
 ## Definition of done
@@ -260,6 +284,11 @@ nothing.
 - [ ] **Extensibility is demonstrated, not claimed:** a test registers a toy component through the documented
   recipe and it is admitted, validated, laid out and rendered with no change to the layout module, the layout
   schema or the shell.
+- [ ] **The pipeline exists end to end for typed UI:** a template cannot register unless its mutation suite
+  rejects every planted defect (a test registers a template with a deliberate validator hole and asserts the
+  refusal); a verified adaptive view can be saved as a pattern, listed with the prebuilt layouts, and applied
+  later with no model call; applying fails closed with a reason when a document it needs is gone or the template
+  version changed (tests and a browser capture).
 - [ ] `refdocs/guides/agents.md` maps each of v1's agents to a v2 core agent and tool group (or to a stated drop),
   and states the rule for when something may become an agent (D-30).
 - [ ] The trace panel shows, for a turn, which components were offered and which were refused and why.
@@ -269,5 +298,5 @@ nothing.
 - [ ] No agent module imports another agent module and only the Composer imports the builders and the layout
   function (tests); no retrieval pin or frozen asset changed (`eval/tests` green).
 - [ ] `schema-guardian` has reviewed every wire change; `test-runner` is green on the full suite, lint, types,
-  codegen check and build; STATUS, CHANGELOG, ADRs D-27 to D-30, the file structure guide and the indexes are
+  codegen check and build; STATUS, CHANGELOG, ADRs D-27 to D-31, the file structure guide and the indexes are
   current.

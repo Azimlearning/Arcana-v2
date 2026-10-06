@@ -2,7 +2,7 @@
 
 > Plan: `refdocs/plans/2026-10-06-p2-genui-catalog-dashboard.md`. Tasks run in order within each track. A task is not done until its **Verify** passes, not when the code compiles.
 > If reality diverges from this doc, **edit this doc** (CLAUDE.md rule 4) and note it in the changelog's Deviations line.
-> Status: approved by Azim 2026-10-06 with ADRs D-27 to D-30 already recorded. Nothing here has been run.
+> Status: approved by Azim 2026-10-06 with ADRs D-27 to D-31 already recorded. Nothing here has been run.
 
 ## Before starting
 
@@ -25,9 +25,9 @@
 1. **Read the actual sources before writing a type.** Read `packages/schema/codegen/to_python.ts` end to end (which TypeScript shapes it supports: unions of 5 or more variants, nested arrays, nullable fields, optional fields, string-literal unions, the `@int` tag, any limit it states). Read the current Pydantic docs on discriminated unions with `Annotated[... | ..., Field(discriminator=...)]` and `TypeAdapter`. Read the current React 19 docs for the `inert` attribute and the current Tailwind v4 docs for theme tokens (v1 used Tailwind v3 token classes such as `bg-paper`; v2's `globals.css` is CSS-first). Use context7 or the official sites, not memory.
 2. **Spike, in a scratch directory, not the repo.** Copy `packages/schema` to a temporary folder, add a throwaway 5-variant union with a nested array and a nullable field, run its codegen into a scratch output, and import the result: `TypeAdapter(UIBlock).validate_python` must select the right variant and reject an unknown field and a wrong type. Delete the scratch copy afterwards. Record what worked and what did not in the execution doc.
 3. **Write `refdocs/guides/catalog.md`** before any schema type (constraint 7). One section per component in the plan's table (`CitedSummary`, `SourceList`, `GraphView`, `ComparisonGrid`, `ConceptMap`, `InsightCard` marked stretch): structural precondition, supplied by, caps, content invariants the validator enforces, which states it renders and what each shows, its **placement hint** (preferred panel and priority), and why it is or is not admissible with flat retrieval. Add the "not admitted, and why" table from D-29, and a **"How to add a component" recipe**: the ordered steps (catalog entry with precondition and placement hint; schema type; codegen; validator rules; builder; Composer admission is automatic from the catalog; web component with four states; admission and tamper tests; a row here), written so task C1's toy-component test can follow it literally.
-4. **Write `refdocs/guides/agents.md`**: a table mapping each of v1's agents (Orchestrator; Research, Graph, Learning, Writing, Socratic Tutor, Discovery, Methodology, Debate, Annotation, Comparator, Contradiction, Cross-document, Literature, Timeline; UI, Citation, Visual, Document, Audio; Fact Checker, Memory, Study Planner, Web Search) to its v2 home under D-30 (a core agent and tool group, or a stated drop), the rule for when something may become an agent, and which tools exist today versus which arrive in which phase. Read v1's tiers in `../Arcana/docs/arcana_prd.md` (sections TIER 1 to TIER 4) and `../Arcana/api/agents/` while writing it.
+4. **Review and extend `refdocs/guides/agents.md`** (a first version was written on 2026-10-06 from v1's PRD tiers and `api/agents/`; check each row against the code and v1, and add any tool this phase introduces). The brief for it: a table mapping each of v1's agents (Orchestrator; Research, Graph, Learning, Writing, Socratic Tutor, Discovery, Methodology, Debate, Annotation, Comparator, Contradiction, Cross-document, Literature, Timeline; UI, Citation, Visual, Document, Audio; Fact Checker, Memory, Study Planner, Web Search) to its v2 home under D-30 (a core agent and tool group, or a stated drop), the rule for when something may become an agent, and which tools exist today versus which arrive in which phase. Read v1's tiers in `../Arcana/docs/arcana_prd.md` (sections TIER 1 to TIER 4) and `../Arcana/api/agents/` while writing it.
 
-**Verify:** `catalog.md` exists with a section for each of the six components, each naming a precondition, a supplier, caps, invariants and a placement hint, and a recipe section; `grep -c "^## " refdocs/guides/catalog.md` is at least 7. `agents.md` has a row for every v1 agent listed above (a test-free check: `grep -c "^|" refdocs/guides/agents.md` is at least 25 plus the header). The ADR ids D-27 to D-30 exist in `DECISIONS.md` and in the PRD §7 table (`grep -c "^| D-2[7-9]\|^| D-30" refdocs/arcana-v2-PRD.md` is 4). The spike's result is written down (it produced valid Python and a correct variant selection, or it names exactly what failed and the task list is amended before B1). `git status` shows no new files under `packages/schema` or `api`.
+**Verify:** `catalog.md` exists with a section for each of the six components, each naming a precondition, a supplier, caps, invariants and a placement hint, and a recipe section; `grep -c "^## " refdocs/guides/catalog.md` is at least 7. `agents.md` has a row for every v1 agent listed above (a test-free check: `grep -c "^|" refdocs/guides/agents.md` is at least 25 plus the header). The ADR ids D-27 to D-31 exist in `DECISIONS.md` and in the PRD §7 table (`grep -c "^| D-2[7-9]\|^| D-3[01]" refdocs/arcana-v2-PRD.md` is 5). `catalog.md` has a "UI generation pipeline" section describing the five stages as D-31 defines them and how P4 extends them. The spike's result is written down (it produced valid Python and a correct variant selection, or it names exactly what failed and the task list is amended before B1). `git status` shows no new files under `packages/schema` or `api`.
 
 ### Task A2: Shared evidence helpers (a refactor with no behaviour change)
 
@@ -169,6 +169,51 @@ Only if A1 to B4, C1 to C3 and D1 are green and Azim agrees the phase has room; 
 
 ---
 
+## Track E: the UI generation pipeline spine (D-31)
+
+Runs after Track C (it needs the composition record and the layout). Cut line: if the phase runs long, E3 and E4 may move to the start of P4; E1 and E2 stay. Record any cut in the changelog.
+
+### Task E1: Templates and fences
+
+**Files:** `api/genui/templates.py` (new), `api/genui/catalog.py`, `api/genui/validate.py`, `api/genui/test_templates.py` (new), `refdocs/guides/catalog.md`.
+
+1. Extend the catalog `Spec` into the template record: add `version` (integer), `slots` (the typed parameters a saved pattern may carry: names and kinds, strings only), and `fences` (size caps, the grounding rule id, the accessibility requirements as a list of required roles and labels). The caps the validator enforces are read from the template's fences, so there is one source of truth; delete the duplicated constants.
+2. **Registration-time mutation suite.** `register_template(template, planted_defects)` builds a valid block from a fixture, applies each planted defect (a missing chunk, a non-verbatim quote, a quote without a label, a cell citing another document, an over-cap list, an orphan citation, and any defect the template declares), runs `validate_block`, and **refuses to register unless every defect is rejected**. The five components register through it; the tamper tests written in B1 to B5 become their declared suites.
+3. Document the fences per template in `catalog.md` and add a test that the numbers there equal the registered fences (a parse check, so the doc cannot drift).
+
+**Verify:** `uv run pytest api/genui api/agents -q` passes; new tests: a template with a deliberate validator hole (a planted defect that validates) is refused with the defect named; the five registered templates each reject 100 percent of their planted defects; changing a cap in one place changes the validator's behaviour and the doc check fails until the doc is updated; `uv run pytest eval/tests/test_frozen_assets.py -q` passes.
+
+### Task E2: The saved-pattern store and endpoints (schema first)
+
+**Files:** `packages/schema/src/patterns.ts` (new), `api/genui/generated.py` (generated), `api/stores/doc_store.py`, `api/stores/local/sqlite_doc.py`, `api/genui/patterns.py` (new), `api/routes/patterns.py` (new), `api/main.py`, tests.
+
+1. **Schema first.** `PatternState = "generated" | "verified" | "saved"`; `PatternParam { key, values: string[] }`; `SavedPattern { id, name, templateId, /** @int */ templateVersion, params: PatternParam[], layoutMode, state, /** @int */ useCount, createdAt, lastUsedAt: string | null }`; `SavePatternRequest { turnId, name }`; `PatternList { patterns: SavedPattern[] }`. Strings only: no free-form JSON. `pnpm codegen`, `pnpm codegen:check`.
+2. **Store.** A new table `ui_patterns` behind `DocStore` (a new table, as for `turn_traces`; an older database must still open). The id is a content hash of template id, version, sorted parameters and layout mode, so saving the same view twice is one pattern. No evidence, no block data and no document text is stored.
+3. **Endpoints.** `POST /patterns` saves from a recorded turn: the server reads the turn's composition record (task C4) and refuses unless the composition was `verified` (every block passed validation); `GET /patterns`; `DELETE /patterns/{id}`. Names are plain text with a length cap. Everything validates on the way in and out and fails closed to the error envelope.
+
+**Verify:** `pnpm codegen:check` exits 0; `uv run pytest api -q` passes with tests: save, list and delete round trip; the same view saved twice is one id; an unverified composition is refused; a parameter that is not one of the template's slots is rejected; a name over the cap is rejected; a database created before the table existed opens and gains it; the stored JSON contains no document text (a body search); `pnpm --filter web test` and `pnpm -r typecheck` pass for the new client types. Run `schema-guardian`.
+
+### Task E3: Reuse: apply a saved pattern
+
+**Files:** `api/genui/patterns.py`, `api/agents/compose.py` (`compose_from_pattern`), `api/routes/patterns.py` (`POST /patterns/{id}/apply`), `web/components/shell/SavedViews.tsx` (new), `web/lib/store.ts`, `web/lib/api.ts`, tests.
+
+1. `POST /patterns/{id}/apply` streams like a turn: it re-binds evidence by running the Graph agent's deterministic tools with the pattern's parameters (entity labels, document ids), then runs the pattern's template through admission, build and validation, then the layout. **No Research, no Fact Checker, no model call.**
+2. **Fail closed with a reason:** the template's precondition no longer holds on the current evidence (`precondition_not_met`); the template's version differs from the pattern's (`template_changed`, the pattern is stale until re-verified, E4); a document the parameters name no longer exists (`document_missing`). Each is a recorded refusal, never a partial block.
+3. **Web.** A "Save this view" action on the adaptive dashboard and a "Saved views" list beside the Basic and Adaptive switch (the saved patterns are the user's prebuilt versions): choosing one applies it through the usual block and layout path; a refused apply shows its reason in plain words; delete is available.
+
+**Verify:** `uv run pytest api -q` and `pnpm --filter web test` pass with tests: save a view then apply it on the same corpus and get blocks equal to the original's data; the provider's call list is empty and the ledger is unchanged around an apply; deleting a document it needs makes the apply refuse with `document_missing`; bumping the template version in a test makes it refuse with `template_changed`; an unknown pattern id is `not_found`; the web list renders, applies, shows a refusal, and deletes.
+
+### Task E4: Re-verification and the hand-off to P4
+
+**Files:** `api/genui/patterns.py`, `api/routes/patterns.py` (`POST /patterns/{id}/reverify`), tests, `refdocs/guides/catalog.md`.
+
+1. `reverify(pattern)` re-runs the template's registration suite and the pattern's checks on current evidence; success updates the pattern to the current template version and sets state `verified`; failure keeps it stale with the reason.
+2. Write the "UI generation pipeline" section of `catalog.md`: the five stages as built, what P4 adds to each (the generated-code checks, `cached`, `audited`, `promoted`, crystallisation into a template), and the interface points (where a generated artifact's template body, fences and checks plug in).
+
+**Verify:** `uv run pytest api -q` passes with tests: a stale pattern re-verifies after the template is re-registered and then applies; a pattern whose evidence is gone stays stale with its reason; `catalog.md` has the section and its stage names match the code's (a doc check). Run `schema-guardian` and `cost-auditor` in D3 over the whole track.
+
+---
+
 ## Track D: evidence
 
 ### Task D1: A real browser, end to end
@@ -176,12 +221,12 @@ Only if A1 to B4, C1 to C3 and D1 are green and Azim agrees the phase has room; 
 **Files:** `refdocs/evidence/` (screenshots), execution doc.
 
 1. Try the Playwright browser tool first (it timed out on connection on 2026-10-06 and worked earlier the same day); if it will not connect, install a local browser with `pnpm exec playwright install chromium` (check free disk first, 7.3 GB were free) and drive it from a small script kept outside the repo.
-2. **Fakes, two real papers.** Start the API and web with a scratch data directory and capture first the **prebuilt Basic layout with the source list before any question**. Then ingest two real corpus papers (the RAG survey and HybridRAG are known to work) with the fake LLM and fake embedder, ask a cross-document comparison question and a relationship question. Capture: the Adaptive dashboard from a `LayoutSpec` (sources panel with `SourceList`, chat panel with the cited summary and the comparison grid, studio panel with the graph), the relationship layout, and the switch back to Basic (pinned).
+2. **Fakes, two real papers.** Start the API and web with a scratch data directory and capture first the **prebuilt Basic layout with the source list before any question**. Then ingest two real corpus papers (the RAG survey and HybridRAG are known to work) with the fake LLM and fake embedder, ask a cross-document comparison question and a relationship question. Capture: the Adaptive dashboard from a `LayoutSpec` (sources panel with `SourceList`, chat panel with the cited summary and the comparison grid, studio panel with the graph), the relationship layout, the switch back to Basic (pinned), and saving the adaptive view as a pattern and applying it from the saved views list.
 3. **Fallback.** Remove the layout event (a scratch launcher that drops it, outside the repo) and capture the default layout with the same blocks.
 4. **Real model.** Against `data/eval-live-live` with the live providers, run 3 to 5 questions (including the unanswerable control `q-single-01`: expect only an empty `CitedSummary` and an empty-ish composition, no invented component). Read the ledger before and after: the composition step has no entry; total about $0.05.
 5. **The graph must work on real data.** For at least three real benchmark questions on `data/eval-live-live`, capture `GraphView` drawn from the real extracted neighbourhood, select a node by click and by keyboard, and capture the details area showing the incident edges' grounded quotes and source links. Inspect, and write down honestly, what the grid and graph look like on real data (whether generic entities dominate, whether the 30-node cap truncates, whether the radial layout is legible).
 
-**Verify:** screenshots are saved under `refdocs/evidence/p2-*.png` and listed in the changelog; the browser run shows the prebuilt Basic layout with a source list before any question, the three panels populated from the adaptive layout, the layout change for the relationship question, the switch to Basic and back, the fallback layout when the event is removed, a real graph drawn and a node selection showing its edges' quotes on real data, and the trace panel's "Offered / Not offered" section; the ledger delta for the composition step is `$0.0000` and no new purpose appears in the ledger; the control question yields no relational component.
+**Verify:** screenshots are saved under `refdocs/evidence/p2-*.png` and listed in the changelog; the browser run shows the prebuilt Basic layout with a source list before any question, the three panels populated from the adaptive layout, the layout change for the relationship question, the switch to Basic and back, a view saved and applied from the saved list (ledger delta zero), the fallback layout when the event is removed, a real graph drawn and a node selection showing its edges' quotes on real data, and the trace panel's "Offered / Not offered" section; the ledger delta for the composition step is `$0.0000` and no new purpose appears in the ledger; the control question yields no relational component.
 
 ### Task D2: The admission-rate study (the first measurement of the bound)
 
@@ -222,4 +267,4 @@ Only if A1 to B4, C1 to C3 and D1 are green and Azim agrees the phase has room; 
 
 ## Task order at a glance
 
-`A1` (read, spike, catalog doc with the extension recipe, agent map; ADRs D-27 to D-30 already written) → `A2` (shared evidence helpers) → `A3` (catalog spine with placement hints, multi-block Composer) → `B1` SourceList → `B2` GraphView → `B3` ComparisonGrid and `align_documents` → `B4` ConceptMap → `B5` InsightCard (stretch) → `C1` extensible LayoutSpec, toy-component test, removing placement from `BlockMeta` → `C2` `GET /workspace` (the prebuilt version before any question) → `C3` web shell, Basic first with the Adaptive switch → `C4` composition record in the trace → `D1` real browser end to end → `D2` admission-rate study → `D3` reviews → `D4` wrap-up.
+`A1` (read, spike, catalog doc with the extension recipe, agent map; ADRs D-27 to D-30 already written) → `A2` (shared evidence helpers) → `A3` (catalog spine with placement hints, multi-block Composer) → `B1` SourceList → `B2` GraphView → `B3` ComparisonGrid and `align_documents` → `B4` ConceptMap → `B5` InsightCard (stretch) → `C1` extensible LayoutSpec, toy-component test, removing placement from `BlockMeta` → `C2` `GET /workspace` (the prebuilt version before any question) → `C3` web shell, Basic first with the Adaptive switch → `C4` composition record in the trace → `E1` templates and fences → `E2` saved patterns store → `E3` reuse: apply a saved pattern → `E4` re-verification and the P4 hand-off → `D1` real browser end to end → `D2` admission-rate study → `D3` reviews → `D4` wrap-up.

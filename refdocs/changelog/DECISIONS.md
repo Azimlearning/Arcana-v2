@@ -502,6 +502,10 @@ on the real ingested corpus, not only on fakes.
 high"; and "i do want the graph output to work in v2 which was not there in v1". Extensibility is a property of
 the recipe and the contracts, not of the number of components built now.
 
+**Amendment (later 2026-10-06, D-31).** The catalog components are the *basic accommodating components* and
+stay the foundation; they are also the first templates of the UI generation pipeline (template, fences, checking,
+save, reuse), whose spine P2 builds for typed UI and whose generated-code stage is P4.
+
 **Trade-offs / rejected.** A smaller catalog than v1's 24, which the MCAIT paper already names as a ceiling.
 Rejected: building all 24 (components with no agent or evidence behind them would be filled by the model, the
 failure the bound exists to prevent).
@@ -530,6 +534,52 @@ new capability costs a tool and a catalog entry, not a new agent.
 tool selection already in the framework). The Fact Checker stays separate on purpose: a checker merged into a
 generator would grade its own work. ASSUMED: merging Tutor and Writer into one Studio agent is settled
 properly in the P5 plan; D-22's separate Tutor and Writer are superseded as a plan, not yet built.
+
+## D-31: GenUI has its own generation pipeline: template, fences, checking, save, reuse (2026-10-06, amends D-29)
+
+**Decision.** Generative UI gets one pipeline with five stages, used by every UI the system produces:
+
+1. **Template.** A reviewed, versioned recipe for a UI (the component or composition, its typed slots, the
+   evidence it needs, its placement hint). Generation starts from a template, never from a blank page. The
+   catalog entry is the template.
+2. **Fences.** The declared limits a template, and later a generated artifact, must stay inside: size caps,
+   the grounding rule (every assertion cites a stored quote), accessibility requirements, and for code (P4) the
+   allowed libraries, no network, no same-origin, resource budgets. ASSUMED reading of the word "frenses" in the
+   request; if something else was meant this stage is renamed, not removed.
+3. **Checking.** Staged and fail closed: precondition (admission), build, schema, content validation, a
+   **registration-time mutation suite** (a template cannot register unless every planted defect is rejected),
+   accessibility structure; and in P4 for generated code: static analysis, contract property tests, fuzzing, a
+   sandbox run and the verifier.
+4. **Save.** A saved *pattern*: the template id and version, its parameters and its layout, content-addressed, with
+   a lifecycle state (`generated`, `verified`, `saved` in P2; `cached`, `audited`, `promoted` and crystallisation
+   in P4, per D-11), use counts and provenance. **Evidence is not saved**; it is re-bound when the pattern is used.
+5. **Reuse.** Saved patterns appear beside the prebuilt layouts (D-28). Applying one re-runs its preconditions on
+   the current evidence and fails closed with a reason if they no longer hold or the template version changed
+   (stale until re-verified). No model call is needed to apply a pattern.
+
+**Staging.** P2 builds the whole pipeline for **typed (data) UI**: the five catalog components as templates, the
+fences, the checks, the saved-pattern store and the reuse flow. P4 adds the **generated-code** stage (the Lab
+Builder, the verifier, the delivery gate and the sandbox) to the same pipeline. Hard constraint 3 is unchanged: no
+generated code reaches the client except as a verifier-minted type, and P2 contains no code generation. The basic
+accommodating components of D-29 remain the foundation: the pipeline makes them templates, it does not replace them.
+
+**Why.** Azim 2026-10-06: GenUI needs "its own ui generation pipeline which goes through templates, [fences],
+checking, just like synapse but more advanced, then the ui component will be saved and can be used in future, but
+also it needs to have all the basic accommodating ui components like before". Building the spine now means P4's
+generated code plugs into a pipeline that already has saving, reuse, staleness and tests, and the saved patterns
+immediately serve as the "prebuilt versions" of D-28.
+
+**Intended advances over Synapse** (from `refdocs/arcana-v2-sources.md`'s description of its contract,
+mutation tests, fuzz checks and promotion ladder; I have not read Synapse's code, which is not on this machine, so
+these are design intentions, not measured claims): templates as the starting point; a contract bound to retrieved
+evidence; mutation testing applied at template registration, not only to artifacts; versioned staleness; reuse
+selected by evidence shape; crystallisation into typed components (P4).
+
+**Trade-offs / rejected.** P2 grows (four more tasks); the cut line is that the reuse and re-verification tasks may
+slip to the start of P4 if P2 runs long, with the template, fence and store tasks kept. Rejected: pulling generated
+code into P2 (it is the safety-critical path and needs the verifier, so it stays P4); saving evidence with a pattern
+(it goes stale and could outlive the documents it came from); a free-form saved-JSON pattern (parameters are typed
+strings validated against the template's slots).
 
 ---
 
