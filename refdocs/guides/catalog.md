@@ -48,8 +48,8 @@ labels asserted in its component test; colour is never the only carrier of meani
 **Schema conventions** (found by a spike on 2026-10-06 against `packages/schema/codegen/to_python.ts`; task A1b makes
 codegen enforce them):
 
-- `/** @int */` must be on **its own line** directly above the property. In a one-line interface it is silently ignored
-  and the field becomes `float` (a count would accept 1.5).
+- `/** @int */` must be on **its own line** directly above the property. In a one-line interface it used to be silently
+  ignored and the field became `float` (a count would accept 1.5); codegen now refuses it.
 - Never use `interface X extends Y`: codegen drops the base's fields from `X`, so a required field would stop being
   required (it fails open).
 - No generic interfaces: codegen emits a module that cannot be imported.

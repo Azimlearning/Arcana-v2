@@ -29,4 +29,4 @@ Status vocabulary: `Draft` · `In progress` · `Done` · `Blocked` · `Supersede
 |---|---|---|
 | [2026-10-05-p0-walking-skeleton.md](2026-10-05-p0-walking-skeleton.md) | P0: walking skeleton + eval harness | In progress (closed with two deferrals, see STATUS) |
 | [2026-10-06-p1-agent-core.md](2026-10-06-p1-agent-core.md) | P1: agent core with super tools + first full benchmark | Done 2026-10-06; one declared open item (RAGAS metrics deferred to the end); result inconclusive |
-| [2026-10-06-p2-genui-catalog-dashboard.md](2026-10-06-p2-genui-catalog-dashboard.md) | P2: GenUI catalog (level 1, evidence-admitted components) + adaptive dashboard (level 2 `LayoutSpec`) + first measurement of the bound | In progress (approved 2026-10-06, ADRs D-27 to D-31; task A1 done) |
+| [2026-10-06-p2-genui-catalog-dashboard.md](2026-10-06-p2-genui-catalog-dashboard.md) | P2: GenUI catalog (level 1, evidence-admitted components) + adaptive dashboard (level 2 `LayoutSpec`) + first measurement of the bound | In progress (approved 2026-10-06, ADRs D-27 to D-31; tasks A1 and A1b done) |

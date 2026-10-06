@@ -2,7 +2,7 @@
 
 > Plan: `refdocs/plans/2026-10-06-p2-genui-catalog-dashboard.md`. Tasks run in order within each track. A task is not done until its **Verify** passes, not when the code compiles.
 > If reality diverges from this doc, **edit this doc** (CLAUDE.md rule 4) and note it in the changelog's Deviations line.
-> Status: approved by Azim 2026-10-06 with ADRs D-27 to D-31 already recorded. **A1 is done (2026-10-06); everything after it is not started.**
+> Status: approved by Azim 2026-10-06 with ADRs D-27 to D-31 already recorded. **A1 and A1b are done (2026-10-06); everything after them is not started.**
 
 ## Before starting
 
@@ -36,10 +36,12 @@
 **Files:** `packages/schema/codegen/to_python.ts`, `api/genui/test_codegen_guard.py` (new).
 
 1. Make the codegen testable: accept optional `--src <dir>` and `--out <file>` (defaults unchanged) so a test can run it on fixture schemas without touching the repo.
-2. **Fail loudly** on: an interface with `extends`; an interface with type parameters; an `@int` tag that is not attached to a property. **Fix the footgun by supporting it:** treat an `@int` in the property's leading comment as the tag, so the one-line form works; then fail if the number of `@int` mentions inside an interface differs from the number of properties tagged.
-3. Tests in `api/genui/test_codegen_guard.py` run `pnpm exec tsx codegen/to_python.ts --src <tmp> --out <tmp>/generated.py` on fixtures and assert: a clean fixture generates importable Python with `int` for both tag placements; `extends`, a generic and a stray `@int` each exit non-zero with a message naming the construct; a union variant with no literal `type` still fails; `--check` reports drift on a changed fixture. The tests skip with a stated reason if `pnpm` is not on the path.
+2. **Fail loudly** on: an interface with `extends`; an interface with type parameters; an `@int` tag that is not attached to a property (which includes the one-line form: TypeScript parses a same-line comment as a trailing comment of the previous property, so it cannot be attributed reliably): fail when the number of `@int` mentions inside an interface differs from the number of properties tagged. Also fail on generic type aliases. Supporting the one-line form was tried and does not work; refusing it loudly is the safe behaviour.
+3. Tests in `api/genui/test_codegen_guard.py` run `pnpm exec tsx codegen/to_python.ts --src <tmp> --out <tmp>/generated.py` on fixtures and assert: a clean fixture generates importable Python with `int` for the own-line tag; the inline tag, `extends`, a generic interface or alias and a stray `@int` each exit non-zero with a message naming the construct; a union variant with no literal `type` still fails; `--check` reports drift on a changed fixture. The tests skip with a stated reason if `pnpm` is not on the path.
 
 **Verify:** `pnpm codegen:check` exits 0 on the real schema (the generated `api/genui/generated.py` must be unchanged: `git diff --stat api/genui/generated.py` is empty); `uv run pytest api/genui/test_codegen_guard.py -q` passes; `pnpm -r typecheck` and `pnpm -r lint` exit 0; reverting the guard makes the matching test fail (run once to prove the tests bite).
+
+**Reality (A1b done 2026-10-06):** `packages/schema/codegen/to_python.ts` now accepts `--src <dir>` and `--out <file>` (defaults unchanged) and stops with a message naming the construct on: an interface with `extends`, a generic interface, a generic type alias, and any `@int` mention that is not a JSDoc tag attached to a property. The one-line `@int` form is refused, not supported: TypeScript attaches a same-line comment to the previous property as a trailing comment (a support attempt was tried first and failed in the first test run). `api/genui/test_codegen_guard.py` (13 tests) runs the real generator on fixture schemas in a temp directory. **Verified:** `pnpm codegen:check` OK and `api/genui/generated.py` byte-identical (`git diff --stat` empty); `uv run pytest` 537 passed (524 before, 13 new), ruff clean, pyright 0 errors, `pnpm -r typecheck` and `pnpm -r lint` clean; **the tests bite:** with only the four guard conditions disabled, exactly five tests fail (inline `@int`, `extends`, generic interface, generic alias, stray `@int`) and the other eight pass; then the guards were restored. (A first attempt at that proof broke the script's syntax and so proved nothing; it was redone by disabling only the conditions.) Not covered: schema files that already exist in the repo were not edited, so no existing type was affected.
 
 ### Task A2: Shared evidence helpers (a refactor with no behaviour change)
 

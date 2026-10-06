@@ -31,14 +31,25 @@ import type {
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = resolve(__dirname, "..");
 const REPO_ROOT = resolve(PKG_ROOT, "..", "..");
-const OUTPUT = resolve(REPO_ROOT, "api", "genui", "generated.py");
+// `--src <dir>` and `--out <file>` exist so the guards below can be tested on fixture schemas without touching the
+// repo (api/genui/test_codegen_guard.py). With neither flag the behaviour is exactly as before.
+function argValue(flag: string): string | undefined {
+  const i = process.argv.indexOf(flag);
+  return i >= 0 ? process.argv[i + 1] : undefined;
+}
+const srcArg = argValue("--src");
+const outArg = argValue("--out");
+const OUTPUT = outArg ? resolve(outArg) : resolve(REPO_ROOT, "api", "genui", "generated.py");
 
 const isCheck = process.argv.includes("--check");
 
-const project = new Project({
-  tsConfigFilePath: resolve(PKG_ROOT, "tsconfig.json"),
-  skipAddingFilesFromTsConfig: false,
-});
+const project = srcArg
+  ? new Project({ skipAddingFilesFromTsConfig: true })
+  : new Project({
+      tsConfigFilePath: resolve(PKG_ROOT, "tsconfig.json"),
+      skipAddingFilesFromTsConfig: false,
+    });
+if (srcArg) project.addSourceFilesAtPaths(resolve(srcArg).replace(/\\/g, "/") + "/**/*.ts");
 
 interface IfaceItem {
   kind: "iface";
@@ -54,7 +65,7 @@ type Item = IfaceItem | AliasItem;
 
 const items: Item[] = [];
 // ts-morph returns POSIX-style paths even on Windows; normalise for the prefix check.
-const SRC_DIR = resolve(PKG_ROOT, "src").replace(/\\/g, "/");
+const SRC_DIR = (srcArg ? resolve(srcArg) : resolve(PKG_ROOT, "src")).replace(/\\/g, "/");
 for (const sf of project.getSourceFiles()) {
   const fp = sf.getFilePath().replace(/\\/g, "/");
   if (!fp.startsWith(SRC_DIR)) continue;
@@ -158,6 +169,9 @@ function mapUnionTypeNode(union: UnionTypeNode, ctx: string): string {
 
 // ─── Emitters ─────────────────────────────────────────────────
 function hasIntTag(prop: PropertySignature): boolean {
+  // Only a JSDoc comment attached to the property counts. A one-line `{ id: string; /** @int */ page: number }` is
+  // parsed as a trailing comment of the previous property, so the tag is not attached; emitInterface refuses it
+  // (it used to be ignored silently and the field became `float`).
   return prop
     .getJsDocs()
     .some((doc) => doc.getTags().some((tag) => tag.getTagName() === "int"));
@@ -166,6 +180,19 @@ function hasIntTag(prop: PropertySignature): boolean {
 function emitInterface(iface: InterfaceDeclaration): string {
   const name = iface.getName();
   const ctx = `interface ${name}`;
+  // Three constructs the generator used to accept and mishandle silently (found by the P2 A1 spike). Each now stops
+  // the build: they weaken validation or break the generated module instead of failing where the schema is written.
+  if (iface.getExtends().length > 0) {
+    fail(ctx, "`extends` is not supported: the base interface's fields would be silently dropped from the model");
+  }
+  if (iface.getTypeParameters().length > 0) {
+    fail(ctx, "generic interfaces are not supported: the generated Python module could not be imported");
+  }
+  const intMentions = (iface.getText().match(/@int\b/g) ?? []).length;
+  const intTagged = iface.getProperties().filter(hasIntTag).length;
+  if (intMentions !== intTagged) {
+    fail(ctx, "an `@int` tag is not attached to a property (put `/** @int */` directly before the property it applies to)");
+  }
   // strict: no coercion ("1" or true is not an int); extra='forbid': unknown keys fail. Both fail closed.
   const lines: string[] = [
     `class ${name}(BaseModel):`,
@@ -195,6 +222,9 @@ function hasTypeLiteral(interfaceName: string): boolean {
 function emitAlias(alias: TypeAliasDeclaration): string {
   const name = alias.getName();
   const ctx = `type ${name}`;
+  if (alias.getTypeParameters().length > 0) {
+    fail(ctx, "generic type aliases are not supported: the generated Python module could not be imported");
+  }
   const typeNode = alias.getTypeNode();
   if (!typeNode) fail(ctx, "missing body");
   const node = typeNode as TypeNode;
