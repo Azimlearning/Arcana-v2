@@ -170,6 +170,8 @@ Run `cost-auditor` on the live ingestion and benchmark path (per-call cost, retr
 
 **Verify:** `uv run pytest eval/tests` passes; `eval/results/` holds the results JSON and the statistics JSON with the protocol stamp, relevance rule and hashes; the gate passed or the defect is written up; no arm shows an invalid run that was scored as zero.
 
+**Reality, part 1 (2026-10-06, no keys needed):** `eval/stats.py` and `eval/tests/test_stats.py` are done. The Wilcoxon signed-rank test is hand-written (no scipy dependency): exact two-sided p from the permutation distribution of the tie-adjusted ranks, zero differences dropped and counted, rank-biserial effect size, Holm-adjusted p-values for the secondary pairs, hybrid versus flat as the pre-registered primary. Checked against brute-force enumeration of every sign assignment (12 random cases with ties and zeros) and the textbook Darwin data (W- 24, W+ 96, p 0.0413, the published value). A question with an invalid arm or no gold is left out of a pair, never scored as zero. The CLI reads a runner results file and writes `<run>-stats.json` carrying the protocol stamp, relevance rule, hashes and any fake-mode warning; on the fake smoke file hybrid equals flat, so it reports n=0 and no p-value. Not done: the benchmark run itself (needs the live corpus, B2 to B4) and RAGAS (deferred to the end of the project by Azim).
+
 ### Task B6: Wrap-up
 
 STATUS, CHANGELOG, ADRs, this doc updated, file-structure doc updated; the plan's definition of done checked item by item.
