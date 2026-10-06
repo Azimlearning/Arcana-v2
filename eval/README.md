@@ -15,6 +15,7 @@ uv run python eval/run_ablation.py --questions q-cross-01,q-single-01 --arms all
 | `metrics.py` | Recall@10 and nDCG@10 against gold passages, with the frozen relevance rule. |
 | `ragas_metrics.py` | RAGAS `NonLLMContextRecall` and `NonLLMContextPrecisionWithReference`, imported lazily. |
 | `run_ablation.py` | The five-arm runner. Writes one JSON per run to `results/`. |
+| `bound.py` | The admission-rate study (P2 D2): which catalog components each layer's evidence admits on the 20 questions. See "The admission-rate study" below. |
 | `tests/` | Metric, frozen-asset and runner tests (`uv run pytest eval/tests`). |
 
 ## The five arms
@@ -94,3 +95,21 @@ as retrieval results. Real numbers need live providers (P0 task 10) and the hand
 RAGAS is not installed yet: it adds about 94 packages and the development drive is nearly full. Until it is
 installed the two RAGAS metrics are `null` with a reason; nothing substitutes for them. To install:
 `uv add ragas rapidfuzz`, then re-run.
+
+## The admission-rate study (`bound.py`, P2 D2)
+
+Measures the MCAIT paper's "bound" on this corpus: for each of the frozen 20 questions and for two layers (`flat`:
+dense plus BM25; `hybrid`: all three signals plus the Graph agent's deterministic tools), which catalog components'
+preconditions the evidence satisfies, with the catalog's own `check` functions, and the reason code for each refusal.
+
+```bash
+uv run python eval/bound.py --allow-paid     --expect-graph-sha256 <hash> --expect-vectors-sha256 <hash> --expect-chunks-sha256 <hash>
+```
+
+The protocol is the module docstring of `bound.py`, fixed before the run. In short: the frozen questions and stores only
+(refused on a hash mismatch or an uncommitted tree); retrieval and the Graph agent's deterministic tools only, so no
+Research agent, no Fact Checker and no model call (the only paid calls are the query embeddings); no threshold tuned
+after the results are seen; the answer component's admission is a proxy and is not a finding. It is an admission rate
+over 20 questions on one ingestion: not a quality score, not a proof of the paper's claim, and nothing about other
+questions. Exit 3 if flat admits a graph component or the run spends on anything but `embed`.
+
