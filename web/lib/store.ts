@@ -8,11 +8,14 @@ export type TurnStatus = "idle" | "streaming" | "failed";
 
 /** The block as an error-state block carrying `error`. Used when the stream dies mid-turn. */
 export function toErrorBlock(block: UIBlock, error: ErrorEnvelope): UIBlock {
-  return {
-    ...block,
-    meta: { ...block.meta, status: "error", error },
-    data: { segments: [], citations: [] },
-  };
+  const meta = { ...block.meta, status: "error" as const, error };
+  // An error block is a placeholder: it carries no content, whatever the type held before.
+  switch (block.type) {
+    case "CitedSummary":
+      return { ...block, meta, data: { segments: [], citations: [] } };
+    case "SourceList":
+      return { ...block, meta, data: { documents: [] } };
+  }
 }
 
 interface WorkspaceState {

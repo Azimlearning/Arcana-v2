@@ -30,3 +30,25 @@ export interface CitedSummaryData {
   segments: SummarySegment[];
   citations: Citation[];
 }
+
+/** One uploaded document as the source list shows it. Both fields are copied from the document store. */
+export interface SourceItem {
+  docId: string;
+  /** The stored title, verbatim. Render it as text. */
+  title: string;
+  /**
+   * Number of stored passages for the document.
+   * @int
+   */
+  chunkCount: number;
+}
+
+/**
+ * The documents the workspace can answer from. In a `ready` block there is at least one item (at most 50),
+ * ids are unique, every docId is a stored document whose status is `ready`, and `title` and `chunkCount`
+ * equal the stored values. Placeholder blocks (`empty`, `loading`, `error`) carry no documents. The schema
+ * cannot say so; the server validator does.
+ */
+export interface SourceListData {
+  documents: SourceItem[];
+}

@@ -31,5 +31,27 @@ def cited_summary(
     }
 
 
-BUILDERS: dict[str, Callable[..., dict[str, Any]]] = {"CitedSummary": cited_summary}
+def source_list(
+    block_id: str,
+    status: str,
+    *,
+    documents: list[dict[str, Any]] | None = None,
+    error: ErrorEnvelope | None = None,
+    order: int = 0,
+    panel: str = "sources",
+) -> dict[str, Any]:
+    return {
+        "type": "SourceList",
+        "id": block_id,
+        "meta": {
+            "panel": panel,
+            "order": order,
+            "status": status,
+            "error": error.model_dump() if error is not None else None,
+        },
+        "data": {"documents": documents if documents is not None else []},
+    }
+
+
+BUILDERS: dict[str, Callable[..., dict[str, Any]]] = {"CitedSummary": cited_summary, "SourceList": source_list}
 """One builder per catalog component, keyed by block type. A test keeps this in step with the catalog and the schema."""

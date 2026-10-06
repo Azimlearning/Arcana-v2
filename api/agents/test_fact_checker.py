@@ -19,6 +19,7 @@ from api.agents.fact_checker import (
 from api.agents.framework import Agent, AgentOutput, Roster, route_to_agent
 from api.agents.state import Answer, TurnContext
 from api.core.budget import TokenBudget
+from api.genui.generated import CitedSummary
 from api.llm.ledger import SpendLedger
 from api.llm.providers.fake import FakeProvider
 from api.llm.service import LLMService
@@ -239,6 +240,7 @@ async def test_a_checker_that_raises_never_lets_the_unchecked_answer_through(tmp
     result = await check(ctx)
     assert result.status == "failed" and result.payload == {}
     block = compose_block(ctx)
+    assert isinstance(block, CitedSummary)
     assert block.meta.status == "error" and block.data.segments == [] and block.data.citations == []
 
 

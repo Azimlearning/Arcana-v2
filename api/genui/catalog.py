@@ -29,6 +29,8 @@ class ComposerEvidence:
     """The Graph agent's payload (mode, entities, nodes, edges, chunk_ids), or None when it did not run."""
     documents: tuple[Document, ...]
     intent: str
+    chunk_counts: Mapping[str, int] = field(default_factory=dict)
+    """Stored passage count per document id, for the documents listed above."""
 
 
 @dataclass(frozen=True)
@@ -101,10 +103,28 @@ CITED_SUMMARY = Spec(
     precondition="The Research agent produced at least one segment, each citing a stored chunk.",
     supplied_by=("research", "fact_checker"),
     caps={"segments": 40, "citations": 40},
-    placement=Placement(panel="chat", priority=0),
+    placement=Placement(panel="chat", priority=10),
     check=_check_cited_summary,
     terminal=True,
 )
 
-CATALOG: dict[str, Spec] = {spec.name: spec for spec in (CITED_SUMMARY,)}
+MAX_SOURCES = 50
+
+
+def _check_source_list(evidence: ComposerEvidence) -> Result:
+    return (
+        Result(True) if any(d.status == "ready" for d in evidence.documents) else Result(False, ("no_ready_document",))
+    )
+
+
+SOURCE_LIST = Spec(
+    name="SourceList",
+    precondition="At least one document in the store has status ready.",
+    supplied_by=("document_store",),
+    caps={"documents": MAX_SOURCES},
+    placement=Placement(panel="sources", priority=10),
+    check=_check_source_list,
+)
+
+CATALOG: dict[str, Spec] = {spec.name: spec for spec in (CITED_SUMMARY, SOURCE_LIST)}
 """Every component the Composer may admit, in the order it considers them (the terminal one first)."""

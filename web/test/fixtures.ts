@@ -1,4 +1,4 @@
-import type { CitedSummary, ErrorEnvelope, StreamEvent, TurnTrace } from "@arcana/schema";
+import type { CitedSummary, ErrorEnvelope, SourceList, StreamEvent, TurnTrace } from "@arcana/schema";
 
 export const TITLE = "Hybrid Retrieval over Knowledge Graphs";
 
@@ -27,6 +27,23 @@ export function block(
         : [],
       ...overrides,
     },
+  };
+}
+
+export function sourceList(
+  status: SourceList["meta"]["status"],
+  documents: SourceList["data"]["documents"] = [
+    { docId: "d1", title: TITLE, chunkCount: 12 },
+    { docId: "d2", title: "BM25 in Practice", chunkCount: 1 },
+  ],
+  error: ErrorEnvelope | null = null,
+): SourceList {
+  const content = status === "ready" || status === "partial";
+  return {
+    type: "SourceList",
+    id: "turn-1-sources",
+    meta: { panel: "sources", order: 10, status, error },
+    data: { documents: content ? documents : [] },
   };
 }
 

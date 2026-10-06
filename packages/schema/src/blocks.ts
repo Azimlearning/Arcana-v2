@@ -8,7 +8,7 @@
 //   5. Write the component's structural precondition down (constraint 7).
 
 import type { ErrorEnvelope } from "./errors";
-import type { CitedSummaryData } from "./payloads";
+import type { CitedSummaryData, SourceListData } from "./payloads";
 
 export type Panel = "sources" | "chat" | "studio";
 
@@ -44,5 +44,13 @@ export interface CitedSummary {
   data: CitedSummaryData;
 }
 
+export interface SourceList {
+  type: "SourceList";
+  /** Non-empty. Stable across updates: a later block with the same id replaces this one. */
+  id: string;
+  meta: BlockMeta;
+  data: SourceListData;
+}
+
 // Codegen emits a discriminated union (Field(discriminator='type')) once there are 2+ variants.
-export type UIBlock = CitedSummary;
+export type UIBlock = CitedSummary | SourceList;

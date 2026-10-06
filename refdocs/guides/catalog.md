@@ -74,15 +74,15 @@ Status: **built** (P0).
 
 ## SourceList
 
-Status: planned, task B1.
+Status: **built** (P2 B1).
 
 - **Precondition:** at least one document with status `ready` in the document store.
 - **Supplied by:** the document store (metadata only).
 - **Payload:** `documents: {docId, title, chunkCount}[]`.
-- **Caps:** 50 documents; title as stored.
+- **Caps:** 50 documents (`MAX_SOURCES` in `api/genui/catalog.py`, shared with the validator); title as stored.
 - **Validator invariants:** unique ids; every `docId` exists and is `ready`; `title` and `chunkCount` equal the stored
   values; placeholder statuses carry no documents. It asserts existence only, so it carries no citations.
-- **States:** `empty` when no documents exist; `loading`; `error`; ready list.
+- **States:** `loading`; `error`; ready list. `empty` is implemented by the component, but the Composer never sends it: with no ready document the component is refused (`no_ready_document`) and no block is sent.
 - **Placement hint:** sources panel, priority 10.
 - **Admissible with flat retrieval:** yes (it needs no retrieval at all, which is why it can be shown before any question).
 

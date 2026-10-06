@@ -101,8 +101,9 @@ def test_chat_streams_a_loading_block_then_a_validated_ready_block_then_done(rea
     assert response.headers["cache-control"] == "no-cache"
 
     stream = events(response)  # every event parsed against the generated schema
-    assert [e.type for e in stream] == ["block", "block", "done"]
+    assert [e.type for e in stream] == ["block", "block", "block", "done"]  # loading, answer, source list
     loading, final = stream[0].block, stream[1].block  # pyright: ignore[reportAttributeAccessIssue]
+    assert stream[2].block.type == "SourceList" and stream[2].block.meta.status == "ready"  # pyright: ignore[reportAttributeAccessIssue]
     assert loading.meta.status == "loading" and final.meta.status == "ready"
     assert loading.id == final.id  # the second block replaces the first
     assert final.data.segments and final.data.citations

@@ -10,6 +10,7 @@ This module is the ONLY importer of api.genui.builders (a test enforces it): no 
 construct a block, so nothing reaches the wire that the Composer did not build and validate.
 """
 
+import re
 from typing import Any
 
 from langgraph.runtime import Runtime
@@ -19,12 +20,20 @@ from api.agents.state import TurnContext, TurnState
 from api.core.errors import ValidationFailed
 from api.core.logging import get_logger
 from api.genui.builders import BUILDERS, cited_summary
-from api.genui.catalog import CATALOG, ComponentRecord, ComposerEvidence, Composition, Spec
+from api.genui.catalog import (
+    CATALOG,
+    MAX_SOURCES,
+    ComponentRecord,
+    ComposerEvidence,
+    Composition,
+    Spec,
+)
 from api.genui.generated import ErrorEnvelope, UIBlock
 from api.genui.validate import validate_block
 from api.stores.doc_store import Document
 
 log = get_logger(__name__)
+_KEBAB = re.compile(r"(?<!^)(?=[A-Z])")
 
 # Agents whose failure ends the turn. Their errors become the error block. The Fact Checker is handled
 # separately in compose_block: it gates what may be shown, rather than producing the answer.
@@ -79,31 +88,52 @@ def _gate(ctx: TurnContext) -> tuple[dict[str, Any] | None, ErrorEnvelope | None
     return (answer.data if answer is not None else None), None
 
 
-def _documents(ctx: TurnContext) -> tuple[Document, ...]:
-    """The corpus listing. Every turn must end at the Composer (constraint 4), so a store that cannot list is
-    treated as an empty corpus here, and any component that needs documents is simply not admitted."""
+def _documents(ctx: TurnContext) -> tuple[tuple[Document, ...], dict[str, int]]:
+    """The corpus listing with each document's passage count. Every turn must end at the Composer (constraint 4),
+    so a store that cannot list is treated as an empty corpus here, and any component that needs documents is
+    simply not admitted."""
     try:
-        return tuple(ctx.docs.list_documents())
+        documents = tuple(ctx.docs.list_documents())
+        listed = [d for d in documents if d.status == "ready"][:MAX_SOURCES]  # counts only for what can be shown
+        return documents, {d.id: len(ctx.docs.chunks_for_document(d.id)) for d in listed}
     except Exception as exc:
         log.warning("document_listing_failed", error=type(exc).__name__)
-        return ()
+        return (), {}
 
 
 def _evidence(ctx: TurnContext, answer: dict[str, Any] | None) -> ComposerEvidence:
     graph = ctx.results.get("graph")
+    documents, chunk_counts = _documents(ctx)
     return ComposerEvidence(
         answer=answer,
         graph=graph.payload if graph is not None and graph.status in ("ok", "partial") else None,
-        documents=_documents(ctx),
+        documents=documents,
         intent=ctx.intent,
+        chunk_counts=chunk_counts,
     )
 
 
+def _block_id(spec: Spec, ctx: TurnContext) -> str:
+    """The id of the block a spec produces: the turn's id for the answer (it replaces the loading block), a derived
+    id for every other component so it never replaces anything. One place, so records and builders agree."""
+    return ctx.block_id if spec.terminal else f"{ctx.block_id}-{_KEBAB.sub('-', spec.name).lower()}"
+
+
 def _raw(spec: Spec, ctx: TurnContext, evidence: ComposerEvidence, *, empty: bool) -> dict[str, Any]:
+    """The unvalidated block for one admitted (or, for the terminal component, empty) spec."""
     builder = BUILDERS[spec.name]
+    where = {"panel": spec.placement.panel, "order": spec.placement.priority}
+    block_id = _block_id(spec, ctx)
     if spec.name == "CitedSummary":
-        return builder(ctx.block_id, "empty") if empty else builder(ctx.block_id, "ready", data=evidence.answer)
-    raise AssertionError(f"no builder wiring for {spec.name}")  # unreachable while the catalog holds CitedSummary only
+        return builder(block_id, "empty") if empty else builder(block_id, "ready", data=evidence.answer)
+    if spec.name == "SourceList":
+        listed = [
+            {"docId": d.id, "title": d.title, "chunkCount": evidence.chunk_counts.get(d.id, 0)}
+            for d in evidence.documents
+            if d.status == "ready"
+        ][: spec.caps["documents"]]
+        return builder(block_id, "ready", documents=listed, **where)
+    raise AssertionError(f"no builder wiring for {spec.name}")  # the completeness test keeps this in step
 
 
 def compose(ctx: TurnContext) -> Composition:
@@ -129,7 +159,7 @@ def compose(ctx: TurnContext) -> Composition:
             log.warning("composed_block_rejected", component=spec.name, issues=[i.path for i in exc.issues])
             if spec.terminal:
                 blocks.insert(0, error_block(ctx, exc.to_envelope()))
-            records.append(ComponentRecord(spec.name, "error", tuple(i.path for i in exc.issues), ctx.block_id))
+            records.append(ComponentRecord(spec.name, "error", tuple(i.path for i in exc.issues), _block_id(spec, ctx)))
             continue
         blocks.append(block)
         records.append(ComponentRecord(spec.name, "empty" if empty else "admitted", result.reasons, block.id))

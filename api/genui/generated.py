@@ -100,6 +100,26 @@ class IngestResponse(BaseModel):
     error: str | None
 
 
+class SourceItem(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    docId: str
+    title: str
+    chunkCount: int
+
+
+class SourceList(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    type: Literal['SourceList']
+    id: str
+    meta: BlockMeta
+    data: SourceListData
+
+
+class SourceListData(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    documents: list[SourceItem]
+
+
 class StreamErrorEvent(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
     type: Literal['error']
@@ -137,7 +157,7 @@ StreamEvent = Annotated[BlockEvent | StreamErrorEvent | DoneEvent, Field(discrim
 
 TurnOutcome = Literal['answered', 'empty', 'error']
 
-UIBlock = CitedSummary
+UIBlock = Annotated[CitedSummary | SourceList, Field(discriminator='type')]
 
 AgentStep.model_rebuild()
 BlockEvent.model_rebuild()
@@ -151,6 +171,9 @@ DoneEvent.model_rebuild()
 ErrorEnvelope.model_rebuild()
 FieldIssue.model_rebuild()
 IngestResponse.model_rebuild()
+SourceItem.model_rebuild()
+SourceList.model_rebuild()
+SourceListData.model_rebuild()
 StreamErrorEvent.model_rebuild()
 SummarySegment.model_rebuild()
 TurnTrace.model_rebuild()

@@ -165,11 +165,12 @@ async def test_the_composer_replaces_a_block_the_validator_rejects_with_an_error
 async def test_run_turn_streams_loading_then_the_final_block_with_the_same_id_then_done(ingested, tmp_path):
     deps, _ = ingested
     events = [e async for e in run_turn(GRAPH, QUESTION, make_ctx(deps, tmp_path))]
-    assert [type(e) for e in events] == [BlockEvent, BlockEvent, DoneEvent]
-    first, second = events[0], events[1]
-    assert isinstance(first, BlockEvent) and isinstance(second, BlockEvent)
+    assert [type(e) for e in events] == [BlockEvent, BlockEvent, BlockEvent, DoneEvent]
+    first, second, third = events[0], events[1], events[2]
+    assert isinstance(first, BlockEvent) and isinstance(second, BlockEvent) and isinstance(third, BlockEvent)
     assert first.block.meta.status == "loading" and second.block.meta.status == "ready"
     assert first.block.id == second.block.id == "blk"  # same id: the second replaces the first
+    assert third.block.type == "SourceList" and third.block.id != "blk"  # the source list is its own block
 
 
 async def test_a_failure_of_the_graph_itself_is_a_stream_error_event(ingested, tmp_path):

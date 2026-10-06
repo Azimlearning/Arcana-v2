@@ -2,22 +2,29 @@ import type { CitedSummary as CitedSummaryBlock, UIBlock } from "@arcana/schema"
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { block } from "@/test/fixtures";
+import { block, sourceList } from "@/test/fixtures";
 
 import { CitedSummary } from "./CitedSummary";
+import { SourceList } from "./SourceList";
 import { registry, renderBlock, type Registry } from "./registry";
 
 describe("block registry", () => {
   it("registers a component for every block type in the wire union", () => {
     // Compile-time too: `registry: Registry<UIBlock>` fails to typecheck if a variant is missing.
-    const types: UIBlock["type"][] = ["CitedSummary"];
+    const types: UIBlock["type"][] = ["CitedSummary", "SourceList"];
     for (const type of types) expect(registry[type]).toBeTypeOf("function");
     expect(registry.CitedSummary).toBe(CitedSummary);
+    expect(registry.SourceList).toBe(SourceList);
   });
 
   it("renders a known block through its registered component", () => {
     render(<>{renderBlock(block("ready"))}</>);
     expect(screen.getByText(/Dense retrieval embeds passages/)).toBeInTheDocument();
+  });
+
+  it("renders a SourceList block through the registry", () => {
+    render(<>{renderBlock(sourceList("ready"))}</>);
+    expect(screen.getByText("BM25 in Practice")).toBeInTheDocument();
   });
 
   it("an unregistered block type renders an error state, never a crash or a blank", () => {

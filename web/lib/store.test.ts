@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { block, envelope } from "@/test/fixtures";
+import { block, envelope, sourceList } from "@/test/fixtures";
 
 import { toErrorBlock, useWorkspace } from "./store";
 
@@ -68,6 +68,13 @@ describe("workspace store", () => {
     const failed = toErrorBlock(block("ready"), envelope());
     expect(failed.id).toBe("turn-1");
     expect(failed.meta).toMatchObject({ panel: "chat", status: "error" });
-    expect(failed.data.segments).toEqual([]);
+    expect(failed.data).toEqual({ segments: [], citations: [] });
+  });
+
+  it("toErrorBlock empties a SourceList too, and keeps its own panel", () => {
+    const failed = toErrorBlock(sourceList("partial"), envelope());
+    expect(failed.type).toBe("SourceList");
+    expect(failed.meta).toMatchObject({ panel: "sources", status: "error" });
+    expect(failed.data).toEqual({ documents: [] });
   });
 });

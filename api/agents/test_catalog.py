@@ -8,13 +8,14 @@ from api.agents.compose import compose
 from api.agents.test_agents import GRAPH, QUESTION, make_ctx
 from api.core.budget import TokenBudget
 from api.fakes import fake_llm_responder
-from api.genui import generated
+from api.genui import generated, validate
 from api.genui.builders import BUILDERS
-from api.genui.catalog import CATALOG, CITED_SUMMARY, ComposerEvidence
+from api.genui.catalog import CATALOG, CITED_SUMMARY, SOURCE_LIST, ComposerEvidence
 from api.llm.providers.fake import FakeProvider
+from api.stores.doc_store import Document
 
 CATALOG_DOC = Path(__file__).resolve().parents[2] / "refdocs" / "guides" / "catalog.md"
-PLANNED = {"SourceList", "GraphView", "ComparisonGrid", "ConceptMap", "InsightCard"}
+PLANNED = {"GraphView", "ComparisonGrid", "ConceptMap", "InsightCard"}
 """Components written up in catalog.md but not built yet. Each task B1 to B5 moves one name out of this set."""
 
 
@@ -43,14 +44,19 @@ async def _composed(ingested, tmp_path):
     return deps, ctx, provider, state
 
 
-async def test_a_turn_yields_one_cited_summary_and_one_admitted_record(ingested, tmp_path):
+async def test_a_turn_yields_one_cited_summary_and_one_source_list_with_two_admitted_records(ingested, tmp_path):
     _, _, _, state = await _composed(ingested, tmp_path)
     composition = state["composition"]
-    assert [b.type for b in composition.blocks] == ["CitedSummary"]
+    assert [b.type for b in composition.blocks] == ["CitedSummary", "SourceList"]  # the answer first
     assert composition.blocks[0].meta.status == "ready"
     assert state["block"] is composition.primary
-    assert [(r.component, r.outcome) for r in composition.records] == [("CitedSummary", "admitted")]
-    assert composition.records[0].block_id == composition.primary.id
+    assert [(r.component, r.outcome) for r in composition.records] == [
+        ("CitedSummary", "admitted"),
+        ("SourceList", "admitted"),
+    ]
+    assert [r.block_id for r in composition.records] == [b.id for b in composition.blocks]
+    listing = composition.blocks[1]
+    assert listing.meta.panel == "sources" and listing.id != composition.primary.id  # its own id: no replacing
 
 
 async def test_composing_issues_no_provider_call(ingested, tmp_path):
@@ -69,10 +75,34 @@ async def test_no_evidence_is_an_empty_record_and_still_one_block(ingested, tmp_
     ctx = make_ctx(deps, tmp_path, budget=TokenBudget())
     state = await GRAPH.ainvoke({"question": QUESTION}, context=ctx)
     composition = state["composition"]
-    assert len(composition.blocks) == 1 and composition.primary.meta.status == "empty"
+    assert len(composition.blocks) == 1 and composition.primary.meta.status == "empty"  # no SourceList either
     assert [(r.component, r.outcome, r.reasons) for r in composition.records] == [
-        ("CitedSummary", "empty", ("no_grounded_answer",))
+        ("CitedSummary", "empty", ("no_grounded_answer",)),
+        ("SourceList", "refused", ("no_ready_document",)),
     ]
+
+
+def test_a_block_type_with_no_content_rules_is_refused_not_passed(ingested):
+    """Fail closed for the next component: a variant added to the schema but not to the validator cannot ship."""
+    deps, _ = ingested
+
+    class Unknown:
+        id = "x"
+        meta = type("Meta", (), {"status": "ready", "error": None, "order": 0})()
+
+    issues = validate._content_issues(Unknown(), deps.docs)  # type: ignore[arg-type]
+    assert [i.path for i in issues] == ["type"]
+
+
+def test_the_source_list_check_needs_a_ready_document():
+    def with_docs(*statuses):
+        docs = tuple(Document(f"d{i}", "T", "p.pdf", s, 1, None, "t") for i, s in enumerate(statuses))
+        return ComposerEvidence(answer=None, graph=None, documents=docs, intent="single")
+
+    assert SOURCE_LIST.check(with_docs("failed", "ready")).satisfied
+    refused = SOURCE_LIST.check(with_docs("failed", "pending"))
+    assert not refused.satisfied and refused.reasons == ("no_ready_document",)
+    assert not SOURCE_LIST.check(with_docs()).satisfied
 
 
 def test_the_cited_summary_check_is_a_pure_function_of_the_evidence():

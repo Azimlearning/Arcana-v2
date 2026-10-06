@@ -14,11 +14,14 @@ Two layers:
        - no orphan citations (every citation is cited by some segment), no id cited twice in one
          segment, docTitle and page equal the stored document's title and the chunk's page, and a
          quote is at least MIN_QUOTE_CHARS long (or the whole chunk, if it is shorter);
-       - any block: a non-empty id (upsert-by-id keys on it) and a non-negative order.
+       - any block: a non-empty id (upsert-by-id keys on it) and a non-negative order;
+       - "SourceList": placeholders carry no documents; otherwise at most MAX_SOURCES, unique ids, each id a
+         stored document that is ready, with the stored title and passage count ("ready" needs one or more).
+       - a block type with no rules here is refused, so a component cannot ship without written invariants.
 
-Issue paths are dotted and relative to the block, e.g. "data.segments.0.citationIds.1". When the
-UIBlock union grows, the discriminator tag Pydantic puts at the front of a path is stripped so the
-path still points into the block.
+Issue paths are dotted and relative to the block, e.g. "data.segments.0.citationIds.1". The
+discriminator tag Pydantic puts at the front of a union member's path is stripped so the path still
+points into the block.
 """
 
 from __future__ import annotations
@@ -30,7 +33,8 @@ from typing import Any
 from pydantic import TypeAdapter, ValidationError
 
 from api.core.errors import ValidationFailed
-from api.genui.generated import CitedSummary, FieldIssue, UIBlock
+from api.genui.catalog import MAX_SOURCES
+from api.genui.generated import CitedSummary, FieldIssue, SourceList, UIBlock
 from api.stores.doc_store import DocStore
 
 _UI_BLOCK = TypeAdapter(UIBlock)
@@ -50,8 +54,15 @@ def _path(loc: tuple[Any, ...], tag: str | None) -> str:
     return ".".join(parts) or "(block)"
 
 
+_TAG_ERRORS = {"union_tag_invalid", "union_tag_not_found"}
+
+
 def _schema_issues(exc: ValidationError, tag: str | None) -> list[FieldIssue]:
-    return [FieldIssue(path=_path(e["loc"], tag), message=e["msg"]) for e in exc.errors()]
+    # With a discriminated union, a missing or unknown `type` is reported with an empty location: name it.
+    return [
+        FieldIssue(path="type" if e["type"] in _TAG_ERRORS else _path(e["loc"], tag), message=e["msg"])
+        for e in exc.errors()
+    ]
 
 
 def validate_block(raw: Mapping[str, Any], docs: DocStore) -> UIBlock:
@@ -68,7 +79,20 @@ def validate_block(raw: Mapping[str, Any], docs: DocStore) -> UIBlock:
     return block
 
 
-def _content_issues(block: CitedSummary, docs: DocStore) -> list[FieldIssue]:
+def _content_issues(block: UIBlock, docs: DocStore) -> list[FieldIssue]:
+    """Rules common to every block, then the rules of its own type. A type with no rules here is refused:
+    a component is not shown until its invariants are written down (constraint 7)."""
+    issues = _common_issues(block)
+    if isinstance(block, CitedSummary):
+        issues += _cited_summary_issues(block, docs)
+    elif isinstance(block, SourceList):
+        issues += _source_list_issues(block, docs)
+    else:
+        issues.append(FieldIssue(path="type", message="no content rules exist for this block type"))
+    return issues
+
+
+def _common_issues(block: UIBlock) -> list[FieldIssue]:
     issues: list[FieldIssue] = []
     status, error = block.meta.status, block.meta.error
 
@@ -83,6 +107,44 @@ def _content_issues(block: CitedSummary, docs: DocStore) -> list[FieldIssue]:
                 message="must be set if and only if status is 'error'",
             )
         )
+    return issues
+
+
+def _source_list_issues(block: SourceList, docs: DocStore) -> list[FieldIssue]:
+    documents = block.data.documents
+    if block.meta.status in PLACEHOLDER_STATUSES:
+        if documents:
+            return [FieldIssue(path="data", message=f"a '{block.meta.status}' block must carry no documents")]
+        return []
+
+    issues: list[FieldIssue] = []
+    if block.meta.status == "ready" and not documents:
+        issues.append(FieldIssue(path="data.documents", message="a ready block needs at least one document"))
+    if len(documents) > MAX_SOURCES:
+        issues.append(FieldIssue(path="data.documents", message=f"at most {MAX_SOURCES} documents may be listed"))
+    seen: set[str] = set()
+    for i, item in enumerate(documents):
+        if item.docId in seen:
+            issues.append(FieldIssue(path=f"data.documents.{i}.docId", message="listed twice"))
+        seen.add(item.docId)
+        stored = docs.get_document(item.docId)
+        if stored is None:
+            issues.append(FieldIssue(path=f"data.documents.{i}.docId", message="no stored document has this id"))
+            continue
+        if stored.status != "ready":
+            issues.append(FieldIssue(path=f"data.documents.{i}.docId", message="the document is not ready to be cited"))
+        if item.title != stored.title:
+            issues.append(FieldIssue(path=f"data.documents.{i}.title", message="does not match the stored title"))
+        if item.chunkCount != len(docs.chunks_for_document(item.docId)):
+            issues.append(
+                FieldIssue(path=f"data.documents.{i}.chunkCount", message="does not match the stored passage count")
+            )
+    return issues
+
+
+def _cited_summary_issues(block: CitedSummary, docs: DocStore) -> list[FieldIssue]:
+    issues: list[FieldIssue] = []
+    status = block.meta.status
 
     data = block.data
     if status in PLACEHOLDER_STATUSES:
@@ -106,9 +168,7 @@ def _content_issues(block: CitedSummary, docs: DocStore) -> list[FieldIssue]:
     referenced: set[str] = set()
     for i, segment in enumerate(data.segments):
         if not segment.citationIds:
-            issues.append(
-                FieldIssue(path=f"data.segments.{i}.citationIds", message="a segment must cite evidence")
-            )
+            issues.append(FieldIssue(path=f"data.segments.{i}.citationIds", message="a segment must cite evidence"))
         seen_here: set[str] = set()
         for j, cid in enumerate(segment.citationIds):
             referenced.add(cid)
@@ -135,9 +195,7 @@ def _content_issues(block: CitedSummary, docs: DocStore) -> list[FieldIssue]:
             issues.append(FieldIssue(path=f"data.citations.{i}", message="no segment cites this citation"))
         stored = chunks.get(citation.chunkId)
         if stored is None:
-            issues.append(
-                FieldIssue(path=f"data.citations.{i}.chunkId", message="no stored chunk has this id")
-            )
+            issues.append(FieldIssue(path=f"data.citations.{i}.chunkId", message="no stored chunk has this id"))
             continue
         if stored.doc_id != citation.docId:
             issues.append(
@@ -158,9 +216,7 @@ def _content_issues(block: CitedSummary, docs: DocStore) -> list[FieldIssue]:
                     )
                 )
         if citation.page != stored.page:
-            issues.append(
-                FieldIssue(path=f"data.citations.{i}.page", message="does not match the cited chunk's page")
-            )
+            issues.append(FieldIssue(path=f"data.citations.{i}.page", message="does not match the cited chunk's page"))
         quote, chunk_text = _norm(citation.quote), _norm(stored.text)
         if not quote:
             issues.append(FieldIssue(path=f"data.citations.{i}.quote", message="a quote is required"))
