@@ -52,3 +52,33 @@ export interface SourceItem {
 export interface SourceListData {
   documents: SourceItem[];
 }
+
+/** A concept in the graph. `id` is the graph's canonical key; `label` is its display name as stored. */
+export interface GraphNode {
+  id: string;
+  label: string;
+}
+
+/**
+ * A relation between two nodes, evidenced by one citation of this block (`citationId`). In a `ready` block the
+ * cited quote contains the labels of both endpoints. Direction is source to target.
+ */
+export interface GraphEdge {
+  source: string;
+  target: string;
+  relation: string;
+  citationId: string;
+}
+
+/**
+ * A node-link graph of what the documents say connects. In a `ready` block there is at least one edge, at most 30
+ * nodes and 40 edges, node ids are unique, every edge joins two different listed nodes, every node touches an
+ * edge, every edge cites a citation of this block, and every citation is cited. Citations follow the CitedSummary
+ * rules (stored chunk, matching title and page, verbatim quote). Placeholders carry no nodes, edges or citations.
+ * The schema cannot say so; the server validator does.
+ */
+export interface GraphViewData {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  citations: Citation[];
+}

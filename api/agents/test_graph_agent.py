@@ -34,9 +34,14 @@ def make_graph(tmp_path: Path) -> NetworkXGraphStore:
     return graph
 
 
-def make_ctx(tmp_path: Path, *, graph: Any = "default", missing: tuple[str, ...] = ()) -> TurnContext:
-    known = {k: v for k, v in CHUNKS.items() if k not in missing}
-    docs: Any = SimpleNamespace(get_chunks=lambda ids: {i: known[i] for i in ids if i in known})
+def make_ctx(
+    tmp_path: Path, *, graph: Any = "default", missing: tuple[str, ...] = (), chunks: dict[str, Any] | None = None
+) -> TurnContext:
+    known = {k: v for k, v in (chunks or CHUNKS).items() if k not in missing}
+    docs: Any = SimpleNamespace(
+        get_chunks=lambda ids: {i: known[i] for i in ids if i in known},
+        get_document=lambda doc_id: SimpleNamespace(title=f"Paper {doc_id}"),
+    )
     none: Any = None
     return TurnContext(
         docs, none, none, TokenBudget(), "blk", graph=make_graph(tmp_path) if graph == "default" else graph
@@ -221,3 +226,31 @@ async def test_a_comparison_pools_the_graphs_evidence_with_retrieval(tmp_path: P
 
 def test_without_a_graph_result_there_is_no_graph_evidence(tmp_path: Path):
     assert graph_evidence(make_ctx(tmp_path)) == []
+
+
+# ── quotes for the graph view ─────────────────────────────────────────────────
+
+LABELLED = {
+    **CHUNKS,
+    "c1": SimpleNamespace(
+        id="c1", doc_id="d1", page=3, text="Dense retrieval uses a vector index to find passages quickly. It scales well."
+    ),
+}
+
+
+async def test_an_edge_whose_chunk_names_both_labels_carries_a_verbatim_quote_page_and_title(tmp_path: Path):
+    result = await neighborhood("dense retrieval", 1, make_ctx(tmp_path, chunks=LABELLED))
+    by_chunk = {e["chunk_id"]: e for e in result.edges}
+    grounded = by_chunk["c1"]
+    assert grounded["quote"] == "Dense retrieval uses a vector index to find passages quickly."
+    assert grounded["quote"] in LABELLED["c1"].text
+    assert grounded["page"] == 3 and grounded["doc_title"] == "Paper d1"
+    assert result.labels["dense_retrieval"] == "dense retrieval" and result.labels["vector_index"] == "vector index"
+
+
+async def test_an_edge_whose_chunk_does_not_name_both_labels_stays_but_has_no_quote(tmp_path: Path):
+    result = await neighborhood("dense retrieval", 1, make_ctx(tmp_path, chunks=LABELLED))
+    by_chunk = {e["chunk_id"]: e for e in result.edges}
+    assert by_chunk["c3"]["quote"] is None  # "Chunk 3 text." names neither entity
+    assert result.unquoted == 1
+    assert "c3" in result.chunk_ids  # still evidence for the Research agent: chunk_ids is unchanged

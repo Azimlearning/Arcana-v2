@@ -15,6 +15,8 @@ export function toErrorBlock(block: UIBlock, error: ErrorEnvelope): UIBlock {
       return { ...block, meta, data: { segments: [], citations: [] } };
     case "SourceList":
       return { ...block, meta, data: { documents: [] } };
+    case "GraphView":
+      return { ...block, meta, data: { nodes: [], edges: [], citations: [] } };
   }
 }
 

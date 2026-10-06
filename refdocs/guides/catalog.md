@@ -88,14 +88,14 @@ Status: **built** (P2 B1).
 
 ## GraphView
 
-Status: planned, task B2. **Must work on real data and be interactive (D-29).**
+Status: **built** (P2 B2). **Works on real data and is interactive (D-29).**
 
 - **Precondition:** at least 2 entities and 1 labelled edge after grounding; every edge is backed by a stored chunk whose
   cited quote contains both endpoint labels.
 - **Supplied by:** the graph (Graph agent `neighborhood`).
 - **Payload:** `nodes: {id, label}[]`, `edges: {source, target, relation, citationId}[]`, `citations`.
 - **Caps:** 30 nodes, 40 edges; label at most 120 characters, relation at most 80.
-- **Validator invariants:** node ids unique; every edge endpoint is a node; every node touches at least one edge; every
+- **Validator invariants:** labels 2 to 120 characters; node ids unique; every edge endpoint is a node; every node touches at least one edge; every
   edge cites a citation of this block; each cited quote contains both endpoint labels; no orphan citation.
 - **States:** all four. Ready: a deterministic radial SVG diagram with selectable nodes and edges (selecting shows the
   incident edges' relation, quote and source link), keyboard operable, and a text list of every relation.
@@ -104,6 +104,16 @@ Status: planned, task B2. **Must work on real data and be interactive (D-29).**
 - **Feasibility measured on the live graph (2026-10-06, read-only):** 83 percent of edge endpoints and 70 percent of
   edges have their labels literally in the chunk they came from, so about 30 percent of edges would fail the label
   rule and be left out.
+- **Measured through the Graph agent (B2, 2026-10-06):** on the 20 frozen benchmark questions, the agent returned 78
+  edges and 34 (44 percent) were drawable under the label rule (a verbatim quote naming both endpoints as whole
+  words or phrases, each label at least 2 characters); 16 of 20 questions had at least one drawable edge, so 16 would
+  be offered a `GraphView`. (A first run with a plain substring match gave 41 edges, 53 percent, and 17 questions: the
+  whole-word rule removed 7 edges where a label only appeared inside a longer word.) Path edges lose more than the
+  corpus-wide 70 percent suggests, and `q-contra-04` (12 neighbourhood edges) had none. A looser label match (for
+  example across a PDF hyphenation break) would raise the rate; it was not tried.
+- **Quotes and the Research agent:** every Graph agent edge now carries `quote` (or null), `page` and `doc_title`.
+  Edges without a quote stay in the payload, because the Research agent reads `chunk_ids` from it and the frozen
+  evaluation depends on that; only the Composer leaves them out of the drawing (`graph_edges` in `catalog.py`).
 
 ## ComparisonGrid
 

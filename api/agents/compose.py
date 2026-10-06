@@ -27,6 +27,7 @@ from api.genui.catalog import (
     ComposerEvidence,
     Composition,
     Spec,
+    graph_edges,
 )
 from api.genui.generated import ErrorEnvelope, UIBlock
 from api.genui.validate import validate_block
@@ -119,6 +120,38 @@ def _block_id(spec: Spec, ctx: TurnContext) -> str:
     return ctx.block_id if spec.terminal else f"{ctx.block_id}-{_KEBAB.sub('-', spec.name).lower()}"
 
 
+def _graph_data(evidence: ComposerEvidence) -> dict[str, Any]:
+    """GraphViewData from the Graph agent's drawable edges: one citation per distinct (chunk, quote), nodes only
+    where an edge ends, in first-seen order, so the same payload always gives the same block."""
+    graph = evidence.graph or {}
+    labels: dict[str, str] = graph.get("labels") or {}
+    citations: dict[tuple[str, str], dict[str, Any]] = {}
+    nodes: dict[str, dict[str, str]] = {}
+    edges: list[dict[str, str]] = []
+    for edge in graph_edges(evidence.graph):
+        key = (edge["chunk_id"], edge["quote"])
+        if key not in citations:
+            citations[key] = {
+                "id": f"c{len(citations) + 1}",
+                "chunkId": edge["chunk_id"],
+                "docId": edge["doc_id"],
+                "docTitle": edge["doc_title"],
+                "page": edge["page"],
+                "quote": edge["quote"],
+            }
+        for end in (edge["src"], edge["dst"]):
+            nodes.setdefault(end, {"id": end, "label": labels[end]})
+        edges.append(
+            {
+                "source": edge["src"],
+                "target": edge["dst"],
+                "relation": edge["relation"],
+                "citationId": citations[key]["id"],
+            }
+        )
+    return {"nodes": list(nodes.values()), "edges": edges, "citations": list(citations.values())}
+
+
 def _raw(spec: Spec, ctx: TurnContext, evidence: ComposerEvidence, *, empty: bool) -> dict[str, Any]:
     """The unvalidated block for one admitted (or, for the terminal component, empty) spec."""
     builder = BUILDERS[spec.name]
@@ -133,6 +166,8 @@ def _raw(spec: Spec, ctx: TurnContext, evidence: ComposerEvidence, *, empty: boo
             if d.status == "ready"
         ][: spec.caps["documents"]]
         return builder(block_id, "ready", documents=listed, **where)
+    if spec.name == "GraphView":
+        return builder(block_id, "ready", data=_graph_data(evidence), **where)
     raise AssertionError(f"no builder wiring for {spec.name}")  # the completeness test keeps this in step
 
 

@@ -26,25 +26,26 @@ points into the block.
 
 from __future__ import annotations
 
-import re
 from collections.abc import Mapping
 from typing import Any
 
 from pydantic import TypeAdapter, ValidationError
 
 from api.core.errors import ValidationFailed
-from api.genui.catalog import MAX_SOURCES
-from api.genui.generated import CitedSummary, FieldIssue, SourceList, UIBlock
+from api.genui.catalog import (
+    MAX_GRAPH_EDGES,
+    MAX_GRAPH_NODES,
+    MAX_LABEL_CHARS,
+    MAX_RELATION_CHARS,
+    MAX_SOURCES,
+)
+from api.genui.generated import Citation, CitedSummary, FieldIssue, GraphView, SourceList, UIBlock
+from api.genui.text import MIN_LABEL_CHARS, MIN_QUOTE_CHARS, label_in_quote
+from api.genui.text import normalise as _norm
 from api.stores.doc_store import DocStore
 
 _UI_BLOCK = TypeAdapter(UIBlock)
-_WS = re.compile(r"\s+")
 PLACEHOLDER_STATUSES = {"empty", "loading", "error"}
-MIN_QUOTE_CHARS = 20  # "a" or "." is not evidence
-
-
-def _norm(text: str) -> str:
-    return _WS.sub(" ", text).strip()
 
 
 def _path(loc: tuple[Any, ...], tag: str | None) -> str:
@@ -87,6 +88,8 @@ def _content_issues(block: UIBlock, docs: DocStore) -> list[FieldIssue]:
         issues += _cited_summary_issues(block, docs)
     elif isinstance(block, SourceList):
         issues += _source_list_issues(block, docs)
+    elif isinstance(block, GraphView):
+        issues += _graph_view_issues(block, docs)
     else:
         issues.append(FieldIssue(path="type", message="no content rules exist for this block type"))
     return issues
@@ -142,6 +145,80 @@ def _source_list_issues(block: SourceList, docs: DocStore) -> list[FieldIssue]:
     return issues
 
 
+def _graph_view_issues(block: GraphView, docs: DocStore) -> list[FieldIssue]:
+    data, status = block.data, block.meta.status
+    if status in PLACEHOLDER_STATUSES:
+        if data.nodes or data.edges or data.citations:
+            return [FieldIssue(path="data", message=f"a '{status}' block must carry no nodes, edges or citations")]
+        return []
+
+    issues: list[FieldIssue] = []
+    if status == "ready" and not data.edges:
+        issues.append(FieldIssue(path="data.edges", message="a ready block needs at least one edge"))
+    if len(data.nodes) > MAX_GRAPH_NODES:
+        issues.append(FieldIssue(path="data.nodes", message=f"at most {MAX_GRAPH_NODES} nodes may be drawn"))
+    if len(data.edges) > MAX_GRAPH_EDGES:
+        issues.append(FieldIssue(path="data.edges", message=f"at most {MAX_GRAPH_EDGES} edges may be drawn"))
+
+    labels: dict[str, str] = {}
+    for i, node in enumerate(data.nodes):
+        if node.id in labels:
+            issues.append(FieldIssue(path=f"data.nodes.{i}.id", message="node ids must be unique"))
+        labels[node.id] = node.label
+        if not MIN_LABEL_CHARS <= len(node.label.strip()) <= MAX_LABEL_CHARS:
+            issues.append(
+                FieldIssue(
+                    path=f"data.nodes.{i}.label",
+                    message=f"a label is {MIN_LABEL_CHARS} to {MAX_LABEL_CHARS} characters",
+                )
+            )
+
+    citations = {c.id: c for c in data.citations}
+    if len(citations) != len(data.citations):
+        issues.append(FieldIssue(path="data.citations", message="citation ids must be unique"))
+
+    touched: set[str] = set()
+    referenced: set[str] = set()
+    for i, edge in enumerate(data.edges):
+        if not edge.relation.strip() or len(edge.relation) > MAX_RELATION_CHARS:
+            issues.append(
+                FieldIssue(
+                    path=f"data.edges.{i}.relation", message=f"a relation is 1 to {MAX_RELATION_CHARS} characters"
+                )
+            )
+        ends_ok = True
+        for end, field_name in ((edge.source, "source"), (edge.target, "target")):
+            if end not in labels:
+                issues.append(FieldIssue(path=f"data.edges.{i}.{field_name}", message=f"no node with id {end!r}"))
+                ends_ok = False
+        if edge.source == edge.target:
+            issues.append(FieldIssue(path=f"data.edges.{i}.target", message="an edge must join two different nodes"))
+        touched.update((edge.source, edge.target))
+        citation = citations.get(edge.citationId)
+        if citation is None:
+            issues.append(
+                FieldIssue(path=f"data.edges.{i}.citationId", message=f"no citation with id {edge.citationId!r}")
+            )
+            continue
+        referenced.add(citation.id)
+        if ends_ok:
+            for end in (edge.source, edge.target):
+                if not label_in_quote(citation.quote, labels[end]):
+                    issues.append(
+                        FieldIssue(
+                            path=f"data.edges.{i}.citationId",
+                            message=f"the cited quote does not contain the label {labels[end]!r}",
+                        )
+                    )
+
+    for i, node in enumerate(data.nodes):
+        if node.id not in touched:
+            issues.append(FieldIssue(path=f"data.nodes.{i}", message="a node must be an end of at least one edge"))
+
+    issues += _citation_issues(data.citations, referenced, docs)
+    return issues
+
+
 def _cited_summary_issues(block: CitedSummary, docs: DocStore) -> list[FieldIssue]:
     issues: list[FieldIssue] = []
     status = block.meta.status
@@ -188,11 +265,19 @@ def _cited_summary_issues(block: CitedSummary, docs: DocStore) -> list[FieldIssu
                     )
                 )
 
-    chunks = docs.get_chunks([c.chunkId for c in data.citations])
+    issues += _citation_issues(data.citations, referenced, docs)
+    return issues
+
+
+def _citation_issues(citations: list[Citation], referenced: set[str], docs: DocStore) -> list[FieldIssue]:
+    """The rules every citation obeys, whichever component carries it: a stored chunk under the document it names,
+    matching title and page, a verbatim quote long enough to be evidence, and cited by something in the block."""
+    issues: list[FieldIssue] = []
+    chunks = docs.get_chunks([c.chunkId for c in citations])
     titles: dict[str, str | None] = {}
-    for i, citation in enumerate(data.citations):
+    for i, citation in enumerate(citations):
         if citation.id not in referenced:
-            issues.append(FieldIssue(path=f"data.citations.{i}", message="no segment cites this citation"))
+            issues.append(FieldIssue(path=f"data.citations.{i}", message="nothing in this block cites this citation"))
         stored = chunks.get(citation.chunkId)
         if stored is None:
             issues.append(FieldIssue(path=f"data.citations.{i}.chunkId", message="no stored chunk has this id"))

@@ -91,6 +91,35 @@ class FieldIssue(BaseModel):
     message: str
 
 
+class GraphEdge(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    source: str
+    target: str
+    relation: str
+    citationId: str
+
+
+class GraphNode(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    id: str
+    label: str
+
+
+class GraphView(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    type: Literal['GraphView']
+    id: str
+    meta: BlockMeta
+    data: GraphViewData
+
+
+class GraphViewData(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    nodes: list[GraphNode]
+    edges: list[GraphEdge]
+    citations: list[Citation]
+
+
 class IngestResponse(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
     docId: str
@@ -157,7 +186,7 @@ StreamEvent = Annotated[BlockEvent | StreamErrorEvent | DoneEvent, Field(discrim
 
 TurnOutcome = Literal['answered', 'empty', 'error']
 
-UIBlock = Annotated[CitedSummary | SourceList, Field(discriminator='type')]
+UIBlock = Annotated[CitedSummary | SourceList | GraphView, Field(discriminator='type')]
 
 AgentStep.model_rebuild()
 BlockEvent.model_rebuild()
@@ -170,6 +199,10 @@ CitedSummaryData.model_rebuild()
 DoneEvent.model_rebuild()
 ErrorEnvelope.model_rebuild()
 FieldIssue.model_rebuild()
+GraphEdge.model_rebuild()
+GraphNode.model_rebuild()
+GraphView.model_rebuild()
+GraphViewData.model_rebuild()
 IngestResponse.model_rebuild()
 SourceItem.model_rebuild()
 SourceList.model_rebuild()

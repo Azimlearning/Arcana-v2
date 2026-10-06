@@ -1,4 +1,4 @@
-import type { CitedSummary, ErrorEnvelope, SourceList, StreamEvent, TurnTrace } from "@arcana/schema";
+import type { CitedSummary, ErrorEnvelope, GraphView, SourceList, StreamEvent, TurnTrace } from "@arcana/schema";
 
 export const TITLE = "Hybrid Retrieval over Knowledge Graphs";
 
@@ -44,6 +44,41 @@ export function sourceList(
     id: "turn-1-sources",
     meta: { panel: "sources", order: 10, status, error },
     data: { documents: content ? documents : [] },
+  };
+}
+
+export function graphView(
+  status: GraphView["meta"]["status"],
+  overrides: Partial<GraphView["data"]> = {},
+  error: ErrorEnvelope | null = null,
+): GraphView {
+  const content = status === "ready" || status === "partial";
+  return {
+    type: "GraphView",
+    id: "turn-1-graph-view",
+    meta: { panel: "studio", order: 20, status, error },
+    data: {
+      nodes: content
+        ? [
+            { id: "dense", label: "Dense Retrieval" },
+            { id: "bm25", label: "BM25" },
+            { id: "rrf", label: "Reciprocal Rank Fusion" },
+          ]
+        : [],
+      edges: content
+        ? [
+            { source: "dense", target: "bm25", relation: "contrasted with", citationId: "c1" },
+            { source: "dense", target: "rrf", relation: "merged by", citationId: "c2" },
+          ]
+        : [],
+      citations: content
+        ? [
+            { id: "c1", chunkId: "d_c_1", docId: "d", docTitle: TITLE, page: 3, quote: "Dense Retrieval alone and BM25 alone are two arms." },
+            { id: "c2", chunkId: "d_c_2", docId: "d", docTitle: TITLE, page: null, quote: "Reciprocal Rank Fusion merges Dense Retrieval with the others." },
+          ]
+        : [],
+      ...overrides,
+    },
   };
 }
 

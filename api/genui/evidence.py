@@ -14,17 +14,12 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 
-from api.genui.validate import MIN_QUOTE_CHARS
+from api.genui.text import MIN_QUOTE_CHARS, label_in_quote, normalise
 
 QUOTE_CHARS = 240
-_WS = re.compile(r"\s+")
+__all__ = ["QUOTE_CHARS", "best_excerpt", "excerpt_containing", "label_in_quote", "normalise", "verified_quote"]
 _SENTENCE_BREAK = re.compile(r"(?<=[.!?])\s+")
 _WORD = re.compile(r"[a-z0-9]{3,}")
-
-
-def normalise(text: str) -> str:
-    """Collapse every run of whitespace to one space and trim: the form the validator compares quotes in."""
-    return _WS.sub(" ", text).strip()
 
 
 def _trim(span: str) -> str:
@@ -50,12 +45,6 @@ def verified_quote(chunk_text: str, proposed: object) -> str | None:
     if not quote or quote not in chunk or len(quote) < min(MIN_QUOTE_CHARS, len(chunk)):
         return None
     return _trim(quote)
-
-
-def label_in_quote(quote: str, label: str) -> bool:
-    """True if `label` occurs in `quote`, ignoring case and whitespace runs. An empty label never matches."""
-    wanted = normalise(label).lower()
-    return bool(wanted) and wanted in normalise(quote).lower()
 
 
 def _sentence_spans(text: str) -> list[tuple[int, int]]:
@@ -118,9 +107,9 @@ def excerpt_containing(chunk_text: str, labels: Sequence[str]) -> str | None:
         span = text[a:b]
         if len(span) < minimum or len(span) > QUOTE_CHARS:
             continue
-        if all(w in span.lower() for w in wanted):
+        if all(label_in_quote(span, w) for w in wanted):
             return span
     window = _window(text, lowered, wanted)
-    if window is not None and len(window) >= minimum:
+    if window is not None and len(window) >= minimum and all(label_in_quote(window, w) for w in wanted):
         return window
     return None

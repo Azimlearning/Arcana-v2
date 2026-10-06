@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 from typing import Any, Literal
 
 from api.genui.generated import UIBlock
+from api.genui.text import MIN_LABEL_CHARS, MIN_QUOTE_CHARS, label_in_quote, normalise
 from api.stores.doc_store import Document
 
 
@@ -109,6 +110,10 @@ CITED_SUMMARY = Spec(
 )
 
 MAX_SOURCES = 50
+MAX_GRAPH_NODES = 30
+MAX_GRAPH_EDGES = 40
+MAX_LABEL_CHARS = 120
+MAX_RELATION_CHARS = 80
 
 
 def _check_source_list(evidence: ComposerEvidence) -> Result:
@@ -116,6 +121,51 @@ def _check_source_list(evidence: ComposerEvidence) -> Result:
         Result(True) if any(d.status == "ready" for d in evidence.documents) else Result(False, ("no_ready_document",))
     )
 
+
+def graph_edges(graph: dict[str, Any] | None) -> list[dict[str, Any]]:
+    """The Graph agent's edges that a GraphView may draw, in the agent's order: each has a verbatim quote holding
+    both endpoint labels, two different endpoints, a label and a relation within the caps. Edges are taken while
+    the drawing stays within the node and edge caps. A pure function of the payload, shared by the check and the
+    Composer so the two cannot disagree."""
+    if not graph:
+        return []
+    labels: dict[str, str] = graph.get("labels") or {}
+    drawn: list[dict[str, Any]] = []
+    nodes: set[str] = set()
+    for edge in graph.get("edges") or []:
+        src, dst = edge.get("src"), edge.get("dst")
+        quote, page, title = edge.get("quote"), edge.get("page"), edge.get("doc_title")
+        relation = str(edge.get("relation") or "").replace("_", " ").strip()
+        if not (isinstance(quote, str) and quote and isinstance(title, str) and title and src != dst):
+            continue
+        if src not in labels or dst not in labels or not relation or len(relation) > MAX_RELATION_CHARS:
+            continue
+        if any(not MIN_LABEL_CHARS <= len(labels[n].strip()) <= MAX_LABEL_CHARS for n in (src, dst)):
+            continue
+        # The same tests the validator applies to the quote, so an edge admitted here cannot sink the whole block.
+        if len(normalise(quote)) < MIN_QUOTE_CHARS or not all(label_in_quote(quote, labels[n]) for n in (src, dst)):
+            continue
+        if len(drawn) >= MAX_GRAPH_EDGES or len(nodes | {src, dst}) > MAX_GRAPH_NODES:
+            continue
+        nodes.update((src, dst))
+        drawn.append({**edge, "relation": relation, "page": page if isinstance(page, int) else None})
+    return drawn
+
+
+def _check_graph_view(evidence: ComposerEvidence) -> Result:
+    if evidence.graph is None:
+        return Result(False, ("no_graph_result",))
+    return Result(True) if graph_edges(evidence.graph) else Result(False, ("no_grounded_edge",))
+
+
+GRAPH_VIEW = Spec(
+    name="GraphView",
+    precondition="The Graph agent returned at least one edge whose chunk holds a verbatim quote naming both endpoints.",
+    supplied_by=("graph",),
+    caps={"nodes": MAX_GRAPH_NODES, "edges": MAX_GRAPH_EDGES},
+    placement=Placement(panel="studio", priority=20),
+    check=_check_graph_view,
+)
 
 SOURCE_LIST = Spec(
     name="SourceList",
@@ -126,5 +176,5 @@ SOURCE_LIST = Spec(
     check=_check_source_list,
 )
 
-CATALOG: dict[str, Spec] = {spec.name: spec for spec in (CITED_SUMMARY, SOURCE_LIST)}
+CATALOG: dict[str, Spec] = {spec.name: spec for spec in (CITED_SUMMARY, SOURCE_LIST, GRAPH_VIEW)}
 """Every component the Composer may admit, in the order it considers them (the terminal one first)."""

@@ -99,3 +99,11 @@ def test_verified_quote_keeps_a_verbatim_span_and_rejects_the_rest():
     assert verified_quote(CHUNK, "The knowledge graph never links entities.") is None  # not in the chunk
     assert verified_quote(CHUNK, "BM25") is None  # verbatim but too short to be evidence
     assert verified_quote(CHUNK, None) is None and verified_quote(CHUNK, 42) is None and verified_quote(CHUNK, "") is None
+
+
+def test_a_label_matches_whole_words_only():
+    assert label_in_quote("AI changes search.", "AI")
+    assert not label_in_quote("A chain of events.", "AI")  # "ai" inside "chain" is not a mention
+    assert label_in_quote("Scores come from BM25, not vectors.", "BM25")
+    assert label_in_quote("The C++ library.", "C++")
+    assert excerpt_containing("A long chain of events ties the graph together in one sentence.", ["AI"]) is None

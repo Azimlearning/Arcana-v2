@@ -7,6 +7,7 @@ import type { ComponentType } from "react";
 
 import { ErrorState } from "./BlockStates";
 import { CitedSummary } from "./CitedSummary";
+import { GraphView } from "./GraphView";
 import { SourceList } from "./SourceList";
 
 /** One component per member of the block union `B`, each receiving exactly its own variant. */
@@ -17,6 +18,7 @@ export type Registry<B extends { type: string }> = {
 export const registry: Registry<UIBlock> = {
   CitedSummary,
   SourceList,
+  GraphView,
 };
 
 export function UnknownBlock({ type }: { type: string }) {

@@ -10,12 +10,12 @@ from api.core.budget import TokenBudget
 from api.fakes import fake_llm_responder
 from api.genui import generated, validate
 from api.genui.builders import BUILDERS
-from api.genui.catalog import CATALOG, CITED_SUMMARY, SOURCE_LIST, ComposerEvidence
+from api.genui.catalog import CATALOG, CITED_SUMMARY, GRAPH_VIEW, SOURCE_LIST, ComposerEvidence
 from api.llm.providers.fake import FakeProvider
 from api.stores.doc_store import Document
 
 CATALOG_DOC = Path(__file__).resolve().parents[2] / "refdocs" / "guides" / "catalog.md"
-PLANNED = {"GraphView", "ComparisonGrid", "ConceptMap", "InsightCard"}
+PLANNED = {"ComparisonGrid", "ConceptMap", "InsightCard"}
 """Components written up in catalog.md but not built yet. Each task B1 to B5 moves one name out of this set."""
 
 
@@ -47,16 +47,33 @@ async def _composed(ingested, tmp_path):
 async def test_a_turn_yields_one_cited_summary_and_one_source_list_with_two_admitted_records(ingested, tmp_path):
     _, _, _, state = await _composed(ingested, tmp_path)
     composition = state["composition"]
-    assert [b.type for b in composition.blocks] == ["CitedSummary", "SourceList"]  # the answer first
+    assert [b.type for b in composition.blocks] == ["CitedSummary", "SourceList"]  # the answer first; no graph on ctx
     assert composition.blocks[0].meta.status == "ready"
     assert state["block"] is composition.primary
     assert [(r.component, r.outcome) for r in composition.records] == [
         ("CitedSummary", "admitted"),
         ("SourceList", "admitted"),
+        ("GraphView", "refused"),  # this ctx has no graph store, so the Graph agent had nothing to draw
     ]
-    assert [r.block_id for r in composition.records] == [b.id for b in composition.blocks]
+    assert [r.block_id for r in composition.records if r.outcome == "admitted"] == [b.id for b in composition.blocks]
     listing = composition.blocks[1]
     assert listing.meta.panel == "sources" and listing.id != composition.primary.id  # its own id: no replacing
+
+
+async def test_a_comparison_with_a_graph_adds_a_grounded_graph_view(ingested, tmp_path):
+    deps, _ = ingested
+    ctx = make_ctx(deps, tmp_path)
+    ctx.graph = deps.graph
+    state = await GRAPH.ainvoke({"question": QUESTION}, context=ctx)
+    composition = state["composition"]
+    assert [b.type for b in composition.blocks] == ["CitedSummary", "SourceList", "GraphView"]
+    assert [r.outcome for r in composition.records] == ["admitted", "admitted", "admitted"]
+    view = composition.blocks[2]
+    assert view.meta.panel == "studio" and view.id == "blk-graph-view"
+    assert {n.label for n in view.data.nodes} == {"Dense Retrieval", "BM25"}  # type: ignore[union-attr]
+    (edge,) = view.data.edges  # type: ignore[union-attr]
+    quote = next(c.quote for c in view.data.citations if c.id == edge.citationId)  # type: ignore[union-attr]
+    assert "Dense Retrieval" in quote and "BM25" in quote  # the cited words name both ends
 
 
 async def test_composing_issues_no_provider_call(ingested, tmp_path):
@@ -79,6 +96,7 @@ async def test_no_evidence_is_an_empty_record_and_still_one_block(ingested, tmp_
     assert [(r.component, r.outcome, r.reasons) for r in composition.records] == [
         ("CitedSummary", "empty", ("no_grounded_answer",)),
         ("SourceList", "refused", ("no_ready_document",)),
+        ("GraphView", "refused", ("no_grounded_edge",)),
     ]
 
 
@@ -128,3 +146,27 @@ def test_every_spec_states_its_precondition_and_a_placement_hint():
         assert spec.precondition.strip() and spec.supplied_by
         assert spec.placement.panel and spec.placement.priority >= 0
     assert sum(spec.terminal for spec in CATALOG.values()) == 1  # exactly one answer component per turn
+
+
+def test_the_graph_view_check_names_why_it_refuses():
+    def evidence(graph):
+        return ComposerEvidence(answer=None, graph=graph, documents=(), intent="relate")
+
+    assert GRAPH_VIEW.check(evidence(None)).reasons == ("no_graph_result",)
+    assert GRAPH_VIEW.check(evidence({"edges": [], "labels": {}})).reasons == ("no_grounded_edge",)
+    assert GRAPH_VIEW.check(
+        evidence(
+            {
+                "edges": [{"src": "a", "dst": "b", "relation": "uses", "quote": None}],
+                "labels": {"a": "Alpha", "b": "Beta"},
+            }
+        )
+    ).reasons == ("no_grounded_edge",)
+    good = {
+        "src": "a",
+        "dst": "b",
+        "relation": "uses",
+        "quote": "A verbatim quote naming Alpha and Beta.",
+        "doc_title": "P",
+    }
+    assert GRAPH_VIEW.check(evidence({"edges": [good], "labels": {"a": "Alpha", "b": "Beta"}})).satisfied

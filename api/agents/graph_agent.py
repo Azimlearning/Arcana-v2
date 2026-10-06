@@ -4,6 +4,12 @@ Two tools over the GraphStore, never over a concrete backend (constraint 6):
   - find_path(a, b): the shortest path between two entities, and the edge that evidences each hop;
   - neighborhood(entity, hops): the entity's edges and the chunks that evidence them.
 
+Every edge also carries `quote`, `page` and `doc_title` for the GraphView component: `quote` is a verbatim span of
+the edge's chunk that contains BOTH endpoint labels, or None when the chunk never names them together (the
+extractor saw an entity in a chunk but the chunk does not literally say so, for example across a PDF hyphen).
+Such an edge stays in the payload, because the Research agent reads `chunk_ids` from it and the frozen evaluation
+depends on that; the Composer is the one that leaves it out of a graph it draws.
+
 Entities are resolved by the P0 resolver (deterministic, no model call). An edge whose chunk no longer
 resolves in the DocStore is dropped, so every edge handed on points at evidence that exists. An entity
 the graph does not know gives an explicit empty result carrying the resolution counts, not an exception:
@@ -18,6 +24,7 @@ from typing import Any
 
 from api.agents.framework import Agent, AgentOutput, tool_spec
 from api.agents.state import TurnContext
+from api.genui.evidence import excerpt_containing
 from api.retrieval.entities import resolve_query_entities
 from api.retrieval.types import ResolutionReport
 from api.stores.graph_store import Edge, GraphStore
@@ -32,7 +39,11 @@ class GraphResult:
     entities: list[str] = field(default_factory=list)
     """Node ids the result is about, in the order they were asked for."""
     nodes: list[str] = field(default_factory=list)
-    edges: list[dict[str, str]] = field(default_factory=list)
+    edges: list[dict[str, Any]] = field(default_factory=list)
+    labels: dict[str, str] = field(default_factory=dict)
+    """Display label of every node in `nodes`, by node id."""
+    unquoted: int = 0
+    """How many edges have no quote holding both endpoint labels (see the module note)."""
     chunk_ids: list[str] = field(default_factory=list)
     resolution: dict[str, Any] = field(default_factory=dict)
 
@@ -42,6 +53,8 @@ class GraphResult:
             "entities": self.entities,
             "nodes": self.nodes,
             "edges": self.edges,
+            "labels": self.labels,
+            "unquoted": self.unquoted,
             "chunk_ids": self.chunk_ids,
             "resolution": self.resolution,
         }
@@ -56,14 +69,31 @@ def _summary(report: ResolutionReport) -> dict[str, Any]:
     }
 
 
-def _edge_dict(edge: Edge) -> dict[str, str]:
-    return {
-        "src": edge.src,
-        "dst": edge.dst,
-        "relation": edge.relation,
-        "chunk_id": edge.chunk_id,
-        "doc_id": edge.doc_id,
-    }
+def _edge_dicts(edges: list[Edge], graph: GraphStore, ctx: TurnContext) -> list[dict[str, Any]]:
+    """Each edge with the verbatim quote that backs it (or None), plus the page and document title to cite it."""
+    chunks = ctx.docs.get_chunks(list({e.chunk_id for e in edges}))
+    titles: dict[str, str | None] = {}
+    out: list[dict[str, Any]] = []
+    for edge in edges:
+        chunk = chunks.get(edge.chunk_id)
+        src, dst = graph.get_node(edge.src), graph.get_node(edge.dst)
+        quote = excerpt_containing(chunk.text, [src.label, dst.label]) if chunk and src and dst else None
+        if edge.doc_id not in titles:
+            document = ctx.docs.get_document(edge.doc_id)
+            titles[edge.doc_id] = document.title if document else None
+        out.append(
+            {
+                "src": edge.src,
+                "dst": edge.dst,
+                "relation": edge.relation,
+                "chunk_id": edge.chunk_id,
+                "doc_id": edge.doc_id,
+                "quote": quote,
+                "page": getattr(chunk, "page", None),
+                "doc_title": titles[edge.doc_id],
+            }
+        )
+    return out
 
 
 def _order(edge: Edge) -> tuple[str, str, str, str]:
@@ -76,13 +106,19 @@ def _grounded(edges: list[Edge], ctx: TurnContext) -> list[Edge]:
     return [e for e in edges if e.chunk_id in found]
 
 
-def _finish(mode: str, entities: list[str], edges: list[Edge], graph: GraphStore, report: ResolutionReport) -> GraphResult:
+def _finish(
+    mode: str, entities: list[str], edges: list[Edge], graph: GraphStore, report: ResolutionReport, ctx: TurnContext
+) -> GraphResult:
     nodes = list(dict.fromkeys([*entities, *(n for e in edges for n in (e.src, e.dst))]))
+    known = [n for n in nodes if graph.get_node(n) is not None]
+    dicts = _edge_dicts(edges, graph, ctx)
     return GraphResult(
         mode=mode,
         entities=entities,
-        nodes=[n for n in nodes if graph.get_node(n) is not None],
-        edges=[_edge_dict(e) for e in edges],
+        nodes=known,
+        edges=dicts,
+        labels={n: node.label for n in known if (node := graph.get_node(n)) is not None},
+        unquoted=sum(1 for d in dicts if d["quote"] is None),
         chunk_ids=list(dict.fromkeys(e.chunk_id for e in edges)),
         resolution=_summary(report),
     )
@@ -125,13 +161,13 @@ def _path(graph: GraphStore, ctx: TurnContext, src: str, dst: str, report: Resol
         node, edge = came_from[node]
         chosen.append(edge)
     chosen.reverse()
-    return _finish("path", [src, dst], chosen, graph, report)
+    return _finish("path", [src, dst], chosen, graph, report, ctx)
 
 
 def _neighborhood(graph: GraphStore, ctx: TurnContext, node: str, hops: int, report: ResolutionReport) -> GraphResult:
     sub = graph.expand([node], hops=max(1, min(hops, MAX_HOPS)))
     edges = sorted(_grounded(sub.edges, ctx), key=_order)[:MAX_EDGES]
-    return _finish("neighborhood", [node], edges, graph, report)
+    return _finish("neighborhood", [node], edges, graph, report, ctx)
 
 
 def _none(report: ResolutionReport) -> GraphResult:
