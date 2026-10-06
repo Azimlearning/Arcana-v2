@@ -1,0 +1,2759 @@
+{
+  "run": {
+    "timestamp": "2026-10-06T18:46:43.634006+00:00",
+    "label": "bound",
+    "mode": {
+      "llm": "live",
+      "embed": "live"
+    },
+    "code": {
+      "commit": "c906c4d5e68dac8c562fcf1dc2410d0fd6841793",
+      "dirty": false,
+      "changed_files": []
+    },
+    "study": {
+      "layers": {
+        "flat": [
+          "dense",
+          "sparse"
+        ],
+        "hybrid": [
+          "dense",
+          "graph",
+          "sparse"
+        ]
+      },
+      "graph_agent_run_on_every_question": true,
+      "research_agent": false,
+      "fact_checker": false,
+      "model_calls": 0,
+      "answer_component_proxy": "retrieval returned at least one passage"
+    },
+    "templates": {
+      "CitedSummary": {
+        "version": 1,
+        "caps": {
+          "segments": 40,
+          "citations": 40
+        }
+      },
+      "SourceList": {
+        "version": 1,
+        "caps": {
+          "documents": 50
+        }
+      },
+      "GraphView": {
+        "version": 1,
+        "caps": {
+          "nodes": 30,
+          "edges": 40,
+          "label_chars": 120,
+          "relation_chars": 80
+        }
+      },
+      "ComparisonGrid": {
+        "version": 1,
+        "caps": {
+          "documents": 6,
+          "entities": 8,
+          "label_chars": 120
+        }
+      },
+      "ConceptMap": {
+        "version": 1,
+        "caps": {
+          "min_steps": 2,
+          "steps": 6,
+          "label_chars": 120,
+          "relation_chars": 80
+        }
+      }
+    },
+    "hashes": {
+      "questions_sha256": "732e48cc7f28d4f5eaced2eae33150299c0c2142b09e259cf42c39cec25de6a6",
+      "graph_sha256": "00454fd3afb00e63ab82f7e1f2c00a1551991707f9d91dc942830ad955c1f830",
+      "vectors_sha256": "3cd9426dca9160f6e377252fb95288a841d625258c29c39fa42e418d7d348f0e",
+      "chunks_sha256": "20fd0ba62ee5a5657d488c9916c85f856497a276c1c6f4386973bb12147cddfb"
+    },
+    "query_embeddings_computed": 20,
+    "ledger": {
+      "before_usd": 6.10942904,
+      "after_usd": 6.10949482,
+      "delta_usd": 6.6e-05,
+      "new_entries": 20,
+      "new_purposes": [
+        "embed"
+      ]
+    },
+    "questions": [
+      "q-cross-01",
+      "q-cross-02",
+      "q-cross-03",
+      "q-cross-04",
+      "q-cross-05",
+      "q-cross-06",
+      "q-cross-07",
+      "q-cross-08",
+      "q-cross-09",
+      "q-cross-10",
+      "q-cross-11",
+      "q-cross-12",
+      "q-single-01",
+      "q-single-02",
+      "q-single-03",
+      "q-single-04",
+      "q-contra-01",
+      "q-contra-02",
+      "q-contra-03",
+      "q-contra-04"
+    ],
+    "limits": "An admission rate over 20 questions on one ingestion. Not a quality score; not a proof of the paper's claim (X(flat) being inside X(hybrid) holds by how the preconditions are written); nothing about questions unlike these 20. The answer component's admission is a proxy (retrieval returned a passage)."
+  },
+  "results": [
+    {
+      "question_id": "q-cross-01",
+      "category": "cross_document",
+      "layers": {
+        "flat": {
+          "retrieved": 10,
+          "resolution": null,
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "drawable_edges": 0
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "documents": 0,
+                "entities": 0,
+                "cells": 0
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        },
+        "hybrid": {
+          "retrieved": 10,
+          "resolution": {
+            "content_tokens": 17,
+            "covered_tokens": 12,
+            "hit_rate": 0.7059,
+            "exact_hit_rate": 0.5882,
+            "n_exact": 6,
+            "n_approx": 2,
+            "entities": [
+              {
+                "node_id": "hybrid_retrieval",
+                "match": "exact"
+              },
+              {
+                "node_id": "dense_vector",
+                "match": "exact"
+              },
+              {
+                "node_id": "graph_traversal",
+                "match": "exact"
+              },
+              {
+                "node_id": "vector_search",
+                "match": "exact"
+              },
+              {
+                "node_id": "bm25",
+                "match": "exact"
+              },
+              {
+                "node_id": "evidence",
+                "match": "exact"
+              },
+              {
+                "node_id": "source_document",
+                "match": "approximate"
+              },
+              {
+                "node_id": "a_search",
+                "match": "approximate"
+              }
+            ]
+          },
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "drawable_edges": 2
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "documents": 6,
+                "entities": 7,
+                "cells": 27
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "ungrounded_hop"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "question_id": "q-cross-02",
+      "category": "cross_document",
+      "layers": {
+        "flat": {
+          "retrieved": 10,
+          "resolution": null,
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "drawable_edges": 0
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "documents": 0,
+                "entities": 0,
+                "cells": 0
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        },
+        "hybrid": {
+          "retrieved": 10,
+          "resolution": {
+            "content_tokens": 8,
+            "covered_tokens": 5,
+            "hit_rate": 0.625,
+            "exact_hit_rate": 0.5,
+            "n_exact": 3,
+            "n_approx": 1,
+            "entities": [
+              {
+                "node_id": "knowledge_graph",
+                "match": "exact"
+              },
+              {
+                "node_id": "concept",
+                "match": "exact"
+              },
+              {
+                "node_id": "corpus",
+                "match": "exact"
+              },
+              {
+                "node_id": "definition_step",
+                "match": "approximate"
+              }
+            ]
+          },
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "drawable_edges": 3
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "documents": 6,
+                "entities": 7,
+                "cells": 36
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "ungrounded_hop"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "question_id": "q-cross-03",
+      "category": "cross_document",
+      "layers": {
+        "flat": {
+          "retrieved": 10,
+          "resolution": null,
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "drawable_edges": 0
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "documents": 0,
+                "entities": 0,
+                "cells": 0
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        },
+        "hybrid": {
+          "retrieved": 10,
+          "resolution": {
+            "content_tokens": 9,
+            "covered_tokens": 7,
+            "hit_rate": 0.7778,
+            "exact_hit_rate": 0.5556,
+            "n_exact": 2,
+            "n_approx": 2,
+            "entities": [
+              {
+                "node_id": "retrieval_augmented_generation_system",
+                "match": "exact"
+              },
+              {
+                "node_id": "hallucination",
+                "match": "exact"
+              },
+              {
+                "node_id": "rag_method",
+                "match": "approximate"
+              },
+              {
+                "node_id": "multiple_sampling",
+                "match": "approximate"
+              }
+            ]
+          },
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "drawable_edges": 2
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "documents": 6,
+                "entities": 7,
+                "cells": 36
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "ungrounded_hop"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "question_id": "q-cross-04",
+      "category": "cross_document",
+      "layers": {
+        "flat": {
+          "retrieved": 10,
+          "resolution": null,
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "drawable_edges": 0
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "documents": 0,
+                "entities": 0,
+                "cells": 0
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        },
+        "hybrid": {
+          "retrieved": 10,
+          "resolution": {
+            "content_tokens": 10,
+            "covered_tokens": 7,
+            "hit_rate": 0.7,
+            "exact_hit_rate": 0.6,
+            "n_exact": 4,
+            "n_approx": 1,
+            "entities": [
+              {
+                "node_id": "evaluation_metric",
+                "match": "exact"
+              },
+              {
+                "node_id": "retrieval_quality",
+                "match": "exact"
+              },
+              {
+                "node_id": "corpus",
+                "match": "exact"
+              },
+              {
+                "node_id": "benchmark",
+                "match": "exact"
+              },
+              {
+                "node_id": "f_measure",
+                "match": "approximate"
+              }
+            ]
+          },
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "drawable_edges": 2
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "documents": 6,
+                "entities": 8,
+                "cells": 28
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "ungrounded_hop"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "question_id": "q-cross-05",
+      "category": "cross_document",
+      "layers": {
+        "flat": {
+          "retrieved": 10,
+          "resolution": null,
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "drawable_edges": 0
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "documents": 0,
+                "entities": 0,
+                "cells": 0
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        },
+        "hybrid": {
+          "retrieved": 10,
+          "resolution": {
+            "content_tokens": 10,
+            "covered_tokens": 8,
+            "hit_rate": 0.8,
+            "exact_hit_rate": 0.5,
+            "n_exact": 3,
+            "n_approx": 3,
+            "entities": [
+              {
+                "node_id": "multi_hop_reasoning",
+                "match": "exact"
+              },
+              {
+                "node_id": "retrieval",
+                "match": "exact"
+              },
+              {
+                "node_id": "finding",
+                "match": "exact"
+              },
+              {
+                "node_id": "generation_technique",
+                "match": "approximate"
+              },
+              {
+                "node_id": "multi_document_summarization",
+                "match": "approximate"
+              },
+              {
+                "node_id": "common_crawl",
+                "match": "approximate"
+              }
+            ]
+          },
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "drawable_edges": 1
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "documents": 6,
+                "entities": 8,
+                "cells": 31
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "ungrounded_hop"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "question_id": "q-cross-06",
+      "category": "cross_document",
+      "layers": {
+        "flat": {
+          "retrieved": 10,
+          "resolution": null,
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "drawable_edges": 0
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "documents": 0,
+                "entities": 0,
+                "cells": 0
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        },
+        "hybrid": {
+          "retrieved": 10,
+          "resolution": {
+            "content_tokens": 11,
+            "covered_tokens": 5,
+            "hit_rate": 0.4545,
+            "exact_hit_rate": 0.3636,
+            "n_exact": 3,
+            "n_approx": 1,
+            "entities": [
+              {
+                "node_id": "dense_vector",
+                "match": "exact"
+              },
+              {
+                "node_id": "bm25",
+                "match": "exact"
+              },
+              {
+                "node_id": "retrieval",
+                "match": "exact"
+              },
+              {
+                "node_id": "rag_method",
+                "match": "approximate"
+              }
+            ]
+          },
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": false,
+              "reasons": [
+                "no_grounded_edge"
+              ],
+              "detail": {
+                "drawable_edges": 0
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "documents": 6,
+                "entities": 7,
+                "cells": 29
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "ungrounded_hop"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "question_id": "q-cross-07",
+      "category": "cross_document",
+      "layers": {
+        "flat": {
+          "retrieved": 10,
+          "resolution": null,
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "drawable_edges": 0
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "documents": 0,
+                "entities": 0,
+                "cells": 0
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        },
+        "hybrid": {
+          "retrieved": 10,
+          "resolution": {
+            "content_tokens": 11,
+            "covered_tokens": 4,
+            "hit_rate": 0.3636,
+            "exact_hit_rate": 0.0909,
+            "n_exact": 1,
+            "n_approx": 3,
+            "entities": [
+              {
+                "node_id": "retrieval",
+                "match": "exact"
+              },
+              {
+                "node_id": "relevant_document",
+                "match": "approximate"
+              },
+              {
+                "node_id": "source_document",
+                "match": "approximate"
+              },
+              {
+                "node_id": "vector_database",
+                "match": "approximate"
+              }
+            ]
+          },
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "drawable_edges": 3
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "documents": 6,
+                "entities": 7,
+                "cells": 29
+              }
+            },
+            "ConceptMap": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "hops": 3
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "question_id": "q-cross-08",
+      "category": "cross_document",
+      "layers": {
+        "flat": {
+          "retrieved": 10,
+          "resolution": null,
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "drawable_edges": 0
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "documents": 0,
+                "entities": 0,
+                "cells": 0
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        },
+        "hybrid": {
+          "retrieved": 10,
+          "resolution": {
+            "content_tokens": 11,
+            "covered_tokens": 7,
+            "hit_rate": 0.6364,
+            "exact_hit_rate": 0.3636,
+            "n_exact": 2,
+            "n_approx": 3,
+            "entities": [
+              {
+                "node_id": "citation_accuracy",
+                "match": "exact"
+              },
+              {
+                "node_id": "generated_answer",
+                "match": "exact"
+              },
+              {
+                "node_id": "open_ai",
+                "match": "approximate"
+              },
+              {
+                "node_id": "generation_technique",
+                "match": "approximate"
+              },
+              {
+                "node_id": "rag_method",
+                "match": "approximate"
+              }
+            ]
+          },
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "drawable_edges": 2
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "documents": 6,
+                "entities": 8,
+                "cells": 29
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "ungrounded_hop"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "question_id": "q-cross-09",
+      "category": "cross_document",
+      "layers": {
+        "flat": {
+          "retrieved": 10,
+          "resolution": null,
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "drawable_edges": 0
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "documents": 0,
+                "entities": 0,
+                "cells": 0
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        },
+        "hybrid": {
+          "retrieved": 10,
+          "resolution": {
+            "content_tokens": 12,
+            "covered_tokens": 9,
+            "hit_rate": 0.75,
+            "exact_hit_rate": 0.5833,
+            "n_exact": 5,
+            "n_approx": 2,
+            "entities": [
+              {
+                "node_id": "knowledge_graph",
+                "match": "exact"
+              },
+              {
+                "node_id": "relation_type",
+                "match": "exact"
+              },
+              {
+                "node_id": "text",
+                "match": "exact"
+              },
+              {
+                "node_id": "corpus",
+                "match": "exact"
+              },
+              {
+                "node_id": "entity",
+                "match": "exact"
+              },
+              {
+                "node_id": "global_approach",
+                "match": "approximate"
+              },
+              {
+                "node_id": "unstructured_corpora",
+                "match": "approximate"
+              }
+            ]
+          },
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "drawable_edges": 2
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "documents": 6,
+                "entities": 7,
+                "cells": 33
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "ungrounded_hop"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "question_id": "q-cross-10",
+      "category": "cross_document",
+      "layers": {
+        "flat": {
+          "retrieved": 10,
+          "resolution": null,
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "drawable_edges": 0
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "documents": 0,
+                "entities": 0,
+                "cells": 0
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        },
+        "hybrid": {
+          "retrieved": 10,
+          "resolution": {
+            "content_tokens": 9,
+            "covered_tokens": 7,
+            "hit_rate": 0.7778,
+            "exact_hit_rate": 0.3333,
+            "n_exact": 2,
+            "n_approx": 3,
+            "entities": [
+              {
+                "node_id": "retrieval_system",
+                "match": "exact"
+              },
+              {
+                "node_id": "latency",
+                "match": "exact"
+              },
+              {
+                "node_id": "helpfulness_honesty_trade_off",
+                "match": "approximate"
+              },
+              {
+                "node_id": "generation_performance",
+                "match": "approximate"
+              },
+              {
+                "node_id": "dependency_constraint",
+                "match": "approximate"
+              }
+            ]
+          },
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "drawable_edges": 3
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "documents": 6,
+                "entities": 6,
+                "cells": 21
+              }
+            },
+            "ConceptMap": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "hops": 3
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "question_id": "q-cross-11",
+      "category": "cross_document",
+      "layers": {
+        "flat": {
+          "retrieved": 10,
+          "resolution": null,
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "drawable_edges": 0
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "documents": 0,
+                "entities": 0,
+                "cells": 0
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        },
+        "hybrid": {
+          "retrieved": 10,
+          "resolution": {
+            "content_tokens": 16,
+            "covered_tokens": 9,
+            "hit_rate": 0.5625,
+            "exact_hit_rate": 0.3125,
+            "n_exact": 4,
+            "n_approx": 3,
+            "entities": [
+              {
+                "node_id": "fixed_size",
+                "match": "exact"
+              },
+              {
+                "node_id": "chunking",
+                "match": "exact"
+              },
+              {
+                "node_id": "rag",
+                "match": "exact"
+              },
+              {
+                "node_id": "sentence",
+                "match": "exact"
+              },
+              {
+                "node_id": "helpfulness_honesty_trade_off",
+                "match": "approximate"
+              },
+              {
+                "node_id": "semantic_similarity",
+                "match": "approximate"
+              },
+              {
+                "node_id": "chunking_strategy",
+                "match": "approximate"
+              }
+            ]
+          },
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "drawable_edges": 2
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "documents": 6,
+                "entities": 7,
+                "cells": 30
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "ungrounded_hop"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "question_id": "q-cross-12",
+      "category": "cross_document",
+      "layers": {
+        "flat": {
+          "retrieved": 10,
+          "resolution": null,
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "drawable_edges": 0
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "documents": 0,
+                "entities": 0,
+                "cells": 0
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        },
+        "hybrid": {
+          "retrieved": 10,
+          "resolution": {
+            "content_tokens": 10,
+            "covered_tokens": 7,
+            "hit_rate": 0.7,
+            "exact_hit_rate": 0.4,
+            "n_exact": 3,
+            "n_approx": 3,
+            "entities": [
+              {
+                "node_id": "knowledge_graph",
+                "match": "exact"
+              },
+              {
+                "node_id": "rag",
+                "match": "exact"
+              },
+              {
+                "node_id": "retrieval",
+                "match": "exact"
+              },
+              {
+                "node_id": "open_ai",
+                "match": "approximate"
+              },
+              {
+                "node_id": "biomedical_research",
+                "match": "approximate"
+              },
+              {
+                "node_id": "compositionality_gap",
+                "match": "approximate"
+              }
+            ]
+          },
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": false,
+              "reasons": [
+                "no_grounded_edge"
+              ],
+              "detail": {
+                "drawable_edges": 0
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "documents": 6,
+                "entities": 8,
+                "cells": 37
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "single_hop"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "question_id": "q-single-01",
+      "category": "single_document",
+      "layers": {
+        "flat": {
+          "retrieved": 10,
+          "resolution": null,
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "drawable_edges": 0
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "documents": 0,
+                "entities": 0,
+                "cells": 0
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        },
+        "hybrid": {
+          "retrieved": 10,
+          "resolution": {
+            "content_tokens": 14,
+            "covered_tokens": 7,
+            "hit_rate": 0.5,
+            "exact_hit_rate": 0.2143,
+            "n_exact": 2,
+            "n_approx": 3,
+            "entities": [
+              {
+                "node_id": "retrieval_system",
+                "match": "exact"
+              },
+              {
+                "node_id": "calibration",
+                "match": "exact"
+              },
+              {
+                "node_id": "page_rank_score",
+                "match": "approximate"
+              },
+              {
+                "node_id": "mean_reciprocal_rank_at_k",
+                "match": "approximate"
+              },
+              {
+                "node_id": "embedding_fusion",
+                "match": "approximate"
+              }
+            ]
+          },
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "drawable_edges": 4
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "documents": 6,
+                "entities": 4,
+                "cells": 15
+              }
+            },
+            "ConceptMap": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "hops": 4
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "question_id": "q-single-02",
+      "category": "single_document",
+      "layers": {
+        "flat": {
+          "retrieved": 10,
+          "resolution": null,
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "drawable_edges": 0
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "documents": 0,
+                "entities": 0,
+                "cells": 0
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        },
+        "hybrid": {
+          "retrieved": 10,
+          "resolution": {
+            "content_tokens": 17,
+            "covered_tokens": 12,
+            "hit_rate": 0.7059,
+            "exact_hit_rate": 0.5294,
+            "n_exact": 7,
+            "n_approx": 3,
+            "entities": [
+              {
+                "node_id": "sparse_retrieval",
+                "match": "exact"
+              },
+              {
+                "node_id": "dense_retrieval",
+                "match": "exact"
+              },
+              {
+                "node_id": "e",
+                "match": "exact"
+              },
+              {
+                "node_id": "g",
+                "match": "exact"
+              },
+              {
+                "node_id": "bm25",
+                "match": "exact"
+              },
+              {
+                "node_id": "embedding",
+                "match": "exact"
+              },
+              {
+                "node_id": "query",
+                "match": "exact"
+              },
+              {
+                "node_id": "a_search",
+                "match": "approximate"
+              },
+              {
+                "node_id": "to_g",
+                "match": "approximate"
+              },
+              {
+                "node_id": "embedding_based_search",
+                "match": "approximate"
+              }
+            ]
+          },
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "drawable_edges": 3
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "documents": 6,
+                "entities": 8,
+                "cells": 31
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "ungrounded_hop"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "question_id": "q-single-03",
+      "category": "single_document",
+      "layers": {
+        "flat": {
+          "retrieved": 10,
+          "resolution": null,
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "drawable_edges": 0
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "documents": 0,
+                "entities": 0,
+                "cells": 0
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        },
+        "hybrid": {
+          "retrieved": 10,
+          "resolution": {
+            "content_tokens": 10,
+            "covered_tokens": 9,
+            "hit_rate": 0.9,
+            "exact_hit_rate": 0.8,
+            "n_exact": 5,
+            "n_approx": 1,
+            "entities": [
+              {
+                "node_id": "embedding_model",
+                "match": "exact"
+              },
+              {
+                "node_id": "semantic_search",
+                "match": "exact"
+              },
+              {
+                "node_id": "retrieval_accuracy",
+                "match": "exact"
+              },
+              {
+                "node_id": "qu_ality",
+                "match": "exact"
+              },
+              {
+                "node_id": "embedding",
+                "match": "exact"
+              },
+              {
+                "node_id": "examinee_role",
+                "match": "approximate"
+              }
+            ]
+          },
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": false,
+              "reasons": [
+                "no_grounded_edge"
+              ],
+              "detail": {
+                "drawable_edges": 0
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "documents": 6,
+                "entities": 8,
+                "cells": 31
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "ungrounded_hop"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "question_id": "q-single-04",
+      "category": "single_document",
+      "layers": {
+        "flat": {
+          "retrieved": 10,
+          "resolution": null,
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "drawable_edges": 0
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "documents": 0,
+                "entities": 0,
+                "cells": 0
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        },
+        "hybrid": {
+          "retrieved": 10,
+          "resolution": {
+            "content_tokens": 10,
+            "covered_tokens": 8,
+            "hit_rate": 0.8,
+            "exact_hit_rate": 0.5,
+            "n_exact": 3,
+            "n_approx": 3,
+            "entities": [
+              {
+                "node_id": "domain_specific_terminology",
+                "match": "exact"
+              },
+              {
+                "node_id": "bm25",
+                "match": "exact"
+              },
+              {
+                "node_id": "query",
+                "match": "exact"
+              },
+              {
+                "node_id": "f1_score",
+                "match": "approximate"
+              },
+              {
+                "node_id": "technical_capability",
+                "match": "approximate"
+              },
+              {
+                "node_id": "token_limitation",
+                "match": "approximate"
+              }
+            ]
+          },
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "drawable_edges": 1
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "documents": 6,
+                "entities": 8,
+                "cells": 32
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "ungrounded_hop"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "question_id": "q-contra-01",
+      "category": "contradiction",
+      "layers": {
+        "flat": {
+          "retrieved": 10,
+          "resolution": null,
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "drawable_edges": 0
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "documents": 0,
+                "entities": 0,
+                "cells": 0
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        },
+        "hybrid": {
+          "retrieved": 10,
+          "resolution": {
+            "content_tokens": 13,
+            "covered_tokens": 5,
+            "hit_rate": 0.3846,
+            "exact_hit_rate": 0.3077,
+            "n_exact": 2,
+            "n_approx": 1,
+            "entities": [
+              {
+                "node_id": "chunk_size",
+                "match": "exact"
+              },
+              {
+                "node_id": "retrieval_accuracy",
+                "match": "exact"
+              },
+              {
+                "node_id": "source_document",
+                "match": "approximate"
+              }
+            ]
+          },
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "drawable_edges": 1
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "documents": 6,
+                "entities": 7,
+                "cells": 20
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "ungrounded_hop"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "question_id": "q-contra-02",
+      "category": "contradiction",
+      "layers": {
+        "flat": {
+          "retrieved": 10,
+          "resolution": null,
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "drawable_edges": 0
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "documents": 0,
+                "entities": 0,
+                "cells": 0
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        },
+        "hybrid": {
+          "retrieved": 10,
+          "resolution": {
+            "content_tokens": 18,
+            "covered_tokens": 8,
+            "hit_rate": 0.4444,
+            "exact_hit_rate": 0.3889,
+            "n_exact": 5,
+            "n_approx": 1,
+            "entities": [
+              {
+                "node_id": "knowledge_graph",
+                "match": "exact"
+              },
+              {
+                "node_id": "vector_search",
+                "match": "exact"
+              },
+              {
+                "node_id": "corpus",
+                "match": "exact"
+              },
+              {
+                "node_id": "augmentation",
+                "match": "exact"
+              },
+              {
+                "node_id": "retrieval",
+                "match": "exact"
+              },
+              {
+                "node_id": "case_study",
+                "match": "approximate"
+              }
+            ]
+          },
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "drawable_edges": 1
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "documents": 6,
+                "entities": 7,
+                "cells": 36
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "ungrounded_hop"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "question_id": "q-contra-03",
+      "category": "contradiction",
+      "layers": {
+        "flat": {
+          "retrieved": 10,
+          "resolution": null,
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "drawable_edges": 0
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "documents": 0,
+                "entities": 0,
+                "cells": 0
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        },
+        "hybrid": {
+          "retrieved": 10,
+          "resolution": {
+            "content_tokens": 9,
+            "covered_tokens": 6,
+            "hit_rate": 0.6667,
+            "exact_hit_rate": 0.6667,
+            "n_exact": 4,
+            "n_approx": 0,
+            "entities": [
+              {
+                "node_id": "vector_based_retrieval",
+                "match": "exact"
+              },
+              {
+                "node_id": "recommendation",
+                "match": "exact"
+              },
+              {
+                "node_id": "graph",
+                "match": "exact"
+              },
+              {
+                "node_id": "retrieval",
+                "match": "exact"
+              }
+            ]
+          },
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "drawable_edges": 2
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "documents": 6,
+                "entities": 7,
+                "cells": 26
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "ungrounded_hop"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "question_id": "q-contra-04",
+      "category": "contradiction",
+      "layers": {
+        "flat": {
+          "retrieved": 10,
+          "resolution": null,
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "drawable_edges": 0
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "documents": 0,
+                "entities": 0,
+                "cells": 0
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "no_graph_result"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        },
+        "hybrid": {
+          "retrieved": 10,
+          "resolution": {
+            "content_tokens": 11,
+            "covered_tokens": 8,
+            "hit_rate": 0.7273,
+            "exact_hit_rate": 0.5455,
+            "n_exact": 4,
+            "n_approx": 2,
+            "entities": [
+              {
+                "node_id": "knowledge_graph_construction",
+                "match": "exact"
+              },
+              {
+                "node_id": "contradictory",
+                "match": "exact"
+              },
+              {
+                "node_id": "claim",
+                "match": "exact"
+              },
+              {
+                "node_id": "scalability",
+                "match": "exact"
+              },
+              {
+                "node_id": "t5_large",
+                "match": "approximate"
+              },
+              {
+                "node_id": "static_corpora",
+                "match": "approximate"
+              }
+            ]
+          },
+          "admission": {
+            "CitedSummary": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {}
+            },
+            "SourceList": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "ready_documents": 16
+              }
+            },
+            "GraphView": {
+              "admitted": false,
+              "reasons": [
+                "no_grounded_edge"
+              ],
+              "detail": {
+                "drawable_edges": 0
+              }
+            },
+            "ComparisonGrid": {
+              "admitted": true,
+              "reasons": [],
+              "detail": {
+                "documents": 6,
+                "entities": 7,
+                "cells": 32
+              }
+            },
+            "ConceptMap": {
+              "admitted": false,
+              "reasons": [
+                "not_a_path"
+              ],
+              "detail": {
+                "hops": 0
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "summary": {
+    "per_layer": {
+      "flat": {
+        "questions": 20,
+        "components": {
+          "CitedSummary": {
+            "admitted": 20,
+            "rate": 1.0,
+            "refusal_reasons": {}
+          },
+          "SourceList": {
+            "admitted": 20,
+            "rate": 1.0,
+            "refusal_reasons": {}
+          },
+          "GraphView": {
+            "admitted": 0,
+            "rate": 0.0,
+            "refusal_reasons": {
+              "no_graph_result": 20
+            }
+          },
+          "ComparisonGrid": {
+            "admitted": 0,
+            "rate": 0.0,
+            "refusal_reasons": {
+              "no_graph_result": 20
+            }
+          },
+          "ConceptMap": {
+            "admitted": 0,
+            "rate": 0.0,
+            "refusal_reasons": {
+              "no_graph_result": 20
+            }
+          }
+        },
+        "X": [
+          "CitedSummary",
+          "SourceList"
+        ]
+      },
+      "hybrid": {
+        "questions": 20,
+        "components": {
+          "CitedSummary": {
+            "admitted": 20,
+            "rate": 1.0,
+            "refusal_reasons": {}
+          },
+          "SourceList": {
+            "admitted": 20,
+            "rate": 1.0,
+            "refusal_reasons": {}
+          },
+          "GraphView": {
+            "admitted": 16,
+            "rate": 0.8,
+            "refusal_reasons": {
+              "no_grounded_edge": 4
+            }
+          },
+          "ComparisonGrid": {
+            "admitted": 20,
+            "rate": 1.0,
+            "refusal_reasons": {}
+          },
+          "ConceptMap": {
+            "admitted": 3,
+            "rate": 0.15,
+            "refusal_reasons": {
+              "not_a_path": 1,
+              "single_hop": 1,
+              "ungrounded_hop": 15
+            }
+          }
+        },
+        "X": [
+          "CitedSummary",
+          "ComparisonGrid",
+          "ConceptMap",
+          "GraphView",
+          "SourceList"
+        ]
+      }
+    },
+    "hybrid_only": [
+      "ComparisonGrid",
+      "ConceptMap",
+      "GraphView"
+    ],
+    "flat_not_in_hybrid": [],
+    "flat_graph_components_admitted": 0,
+    "entity_resolution": {
+      "mean_hit_rate": 0.6491,
+      "questions_with_no_entity": 0
+    }
+  }
+}
