@@ -3,7 +3,7 @@
 > Written in P2 task A1, before any component's schema type exists (hard constraint 7: a component joins the
 > catalog on evidence, with a written structural precondition that retrieval can satisfy). Plan:
 > `refdocs/plans/2026-10-06-p2-genui-catalog-dashboard.md`. Decisions: D-27 (layout), D-28 (Composer), D-29 (scope),
-> D-31 (pipeline). Status of each component is stated in its section; only `CitedSummary` is built today.
+> D-31 (pipeline). Status of each component is stated in its section; five are built (`CitedSummary`, `SourceList`, `GraphView`, `ComparisonGrid`, `ConceptMap`) and `InsightCard` is deferred.
 
 ## The bound
 
@@ -65,7 +65,7 @@ Status: **built** (P0).
 - **Precondition:** ranked passages with sources; the answer's segments each cite at least one citation.
 - **Supplied by:** flat retrieval (dense plus BM25), checked by the Fact Checker.
 - **Payload:** `segments: {text, citationIds}[]`, `citations: Citation[]`.
-- **Caps:** none beyond the citation rules.
+- **Caps:** 40 segments and 40 citations (the Fences line below; `api/genui/validate.py` enforces them).
 - **Fences:** caps `segments=40 citations=40`; grounding `citation_verbatim_quote`; a11y `region:Sources`. Slots: none. Template version 1; reusable without Research: no.
 - **Validator invariants:** as in `api/genui/validate.py` (citations unique and resolvable, no orphan citation, a ready
   block has a segment, every segment cites).
@@ -80,11 +80,11 @@ Status: **built** (P2 B1).
 - **Precondition:** at least one document with status `ready` in the document store.
 - **Supplied by:** the document store (metadata only).
 - **Payload:** `documents: {docId, title, chunkCount}[]`.
-- **Caps:** 50 documents (`MAX_SOURCES` in `api/genui/catalog.py`, shared with the validator); title as stored.
+- **Caps:** 50 documents (the `documents` cap in this component's fences, read through `cap()` by the validator); title as stored.
 - **Fences:** caps `documents=50`; grounding `stored_document_metadata`; a11y `region:Documents`. Slots: none. Template version 1; reusable without Research: yes.
 - **Validator invariants:** unique ids; every `docId` exists and is `ready`; `title` and `chunkCount` equal the stored
   values; placeholder statuses carry no documents. It asserts existence only, so it carries no citations.
-- **States:** `loading`; `error`; ready list. `empty` is implemented by the component, but the Composer never sends it: with no ready document the component is refused (`no_ready_document`) and no block is sent.
+- **States:** `loading`; `error`; ready list. `empty` is implemented by the component. The turn Composer never sends it (with no ready document the component is refused, `no_ready_document`), but `GET /workspace` sends an empty list so the sources panel can say there is nothing yet.
 - **Placement hint:** sources panel, priority 10.
 - **Admissible with flat retrieval:** yes (it needs no retrieval at all, which is why it can be shown before any question).
 
@@ -169,7 +169,7 @@ Status: **built** (P2 B4).
 
 ## InsightCard (stretch)
 
-Status: planned only if the phase has room, task B5.
+Status: **deferred** (task B5 was a stretch and was not built in P2; it needs Azim's agreement to start). Nothing below exists in code.
 
 - **Precondition:** a path of at least 2 hops whose two endpoint entities are evidenced only in different documents
   (their document sets are disjoint).
@@ -214,7 +214,7 @@ placement is shown in chat in arrival order. `validate_layout` (`api/genui/valid
 the prebuilt origin goes with the basic mode, whole-number widths summing to 100, chat present and at least 25, a hidden
 panel holds nothing, each block placed once, unique orders within a panel, only blocks the turn produced. A layout that
 fails is not sent; the client applies the same rules (`web/lib/layout.ts`) and ignores one that does not pass. A new
-*component* needs no edit to `layout.py`; a new *panel* is a change to `layout.py`, `layout.ts` and the shell together.
+*component* needs no edit to `layout.py`; a new *panel* or *mode* is a change to the schema (`PanelId`, `LayoutMode` are closed unions), `layout.py`, `layout.ts` and the shell together (D-27, amended 2026-10-07).
 
 ## How to add a component
 

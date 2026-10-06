@@ -10,6 +10,7 @@
 import type { CitedSummary as CitedSummaryBlock } from "@arcana/schema";
 
 import { EmptyState, ErrorState, LoadingState, PartialState, Frame } from "./BlockStates";
+import { safeId } from "./ids";
 
 export function CitedSummary({ block }: { block: CitedSummaryBlock }) {
   const { meta } = block;
@@ -44,7 +45,7 @@ export function CitedSummary({ block }: { block: CitedSummaryBlock }) {
 function Body({ block }: { block: CitedSummaryBlock }) {
   const { segments, citations } = block.data;
   const byId = new Map(citations.map((c) => [c.id, c]));
-  const anchor = (citationId: string) => `${block.id}-${citationId}`;
+  const anchor = (citationId: string) => `${safeId(block.id)}-${safeId(citationId)}`;
 
   return (
     <div className="space-y-4">

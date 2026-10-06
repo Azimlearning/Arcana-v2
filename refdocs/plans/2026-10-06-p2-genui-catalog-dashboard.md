@@ -2,7 +2,7 @@
 
 > Phase P2 of `refdocs/arcana-v2-PRD.md` §6. Execution doc: `refdocs/execution/2026-10-06-p2-genui-catalog-dashboard.md`.
 > A plan says **what and why**. The execution doc says **how and in what order**.
-> Status: **Approved by Azim 2026-10-06** with the refinements recorded in ADRs D-27 to D-31 (an extensible layout, a prebuilt Basic layout first, a working graph output, a small roster of core agents, and a GenUI generation pipeline: template, fences, checking, save, reuse). Nothing in this plan is built.
+> Status: **Done 2026-10-07** (built and checked; see the check under Definition of done; B5 deferred). **Approved by Azim 2026-10-06** with the refinements recorded in ADRs D-27 to D-31 (an extensible layout, a prebuilt Basic layout first, a working graph output, a small roster of core agents, and a GenUI generation pipeline: template, fences, checking, save, reuse).
 
 ## Why this exists
 
@@ -258,45 +258,67 @@ nothing.
 
 ## Definition of done
 
-- [ ] `packages/schema` defines `SourceList`, `GraphView`, `ConceptMap` and `ComparisonGrid` blocks, `LayoutSpec`
+- [x] `packages/schema` defines `SourceList`, `GraphView`, `ConceptMap` and `ComparisonGrid` blocks, `LayoutSpec`
   (with `version`, `origin`, `mode`, a panel list and placements), `LayoutEvent`, the workspace response and the
   composition record; `pnpm codegen:check` exits 0. `BlockMeta` no longer carries placement.
-- [ ] `refdocs/guides/catalog.md` states every component's precondition, supplier, caps and invariants, and a
+- [x] `refdocs/guides/catalog.md` states every component's precondition, supplier, caps and invariants, and a
   completeness test fails if the schema union, the server builders, the catalog and the web registry disagree.
-- [ ] For each component there is a test where the evidence satisfies the precondition (the block is built,
+- [x] For each component there is a test where the evidence satisfies the precondition (the block is built,
   validated and streamed) and a test where it does not (the component is not offered, the answer still renders
   as a `CitedSummary`, and the composition record names the unmet precondition).
-- [ ] For each component there are tamper tests: an edge, step or cell whose chunk does not exist, whose quote
+- [x] For each component there are tamper tests: an edge, step or cell whose chunk does not exist, whose quote
   is not a verbatim span of the chunk, whose quote lacks an entity label, or whose chunk belongs to a different
   document than the row is rejected by `validate_block`.
-- [ ] The Composer makes zero provider calls (test), and in a live run the spend ledger shows no entry for the
+- [x] The Composer makes zero provider calls (test), and in a live run the spend ledger shows no entry for the
   composition step.
-- [ ] A cross-document question on two real papers, in a real browser, renders a dashboard from a `LayoutSpec`:
+- [x] A cross-document question on two real papers, in a real browser, renders a dashboard from a `LayoutSpec`:
   the sources panel lists the documents, the chat panel holds the cited summary and the comparison grid, the
   studio panel holds the graph; a relationship question changes the layout; with the layout event removed the
   same blocks render in the default layout; screenshots are committed.
-- [ ] The workspace opens in the prebuilt Basic layout with a source list before any question is asked; after an
+- [x] The workspace opens in the prebuilt Basic layout with a source list before any question is asked; after an
   answer the Adaptive layout applies unless Basic is pinned; the header control switches between them; a missing
   or invalid adaptive layout leaves the prebuilt layout in place (browser run and tests).
-- [ ] **The graph output works on real data:** in a real browser, for at least three real benchmark questions on
+- [x] **The graph output works on real data:** in a real browser, for at least three real benchmark questions on
   the ingested corpus, `GraphView` draws the question's real extracted neighbourhood, selecting a node shows its
   edges with their grounded quotes and source links, and keyboard focus reaches every node; screenshots committed.
-- [ ] **Extensibility is demonstrated, not claimed:** a test registers a toy component through the documented
+- [x] **Extensibility is demonstrated, not claimed:** a test registers a toy component through the documented
   recipe and it is admitted, validated, laid out and rendered with no change to the layout module, the layout
   schema or the shell.
-- [ ] **The pipeline exists end to end for typed UI:** a template cannot register unless its mutation suite
+- [x] **The pipeline exists end to end for typed UI:** a template cannot register unless its mutation suite
   rejects every planted defect (a test registers a template with a deliberate validator hole and asserts the
   refusal); a verified adaptive view can be saved as a pattern, listed with the prebuilt layouts, and applied
   later with no model call; applying fails closed with a reason when a document it needs is gone or the template
   version changed (tests and a browser capture).
-- [ ] `refdocs/guides/agents.md` maps each of v1's agents to a v2 core agent and tool group (or to a stated drop),
+- [x] `refdocs/guides/agents.md` maps each of v1's agents to a v2 core agent and tool group (or to a stated drop),
   and states the rule for when something may become an agent (D-30).
-- [ ] The trace panel shows, for a turn, which components were offered and which were refused and why.
-- [ ] The admission-rate study is run on the frozen stores with a protocol written before the run; its results
+- [x] The trace panel shows, for a turn, which components were offered and which were refused and why.
+- [x] The admission-rate study is run on the frozen stores with a protocol written before the run; its results
   JSON (per component, per layer, per question, with the code commit and store hashes) is committed and
   reported as measured, including components that are rarely admitted.
-- [ ] No agent module imports another agent module and only the Composer imports the builders and the layout
+- [x] No agent module imports another agent module and only the Composer imports the builders and the layout
   function (tests); no retrieval pin or frozen asset changed (`eval/tests` green).
-- [ ] `schema-guardian` has reviewed every wire change; `test-runner` is green on the full suite, lint, types,
+- [x] `schema-guardian` has reviewed every wire change; `test-runner` is green on the full suite, lint, types,
   codegen check and build; STATUS, CHANGELOG, ADRs D-27 to D-31, the file structure guide and the indexes are
   current.
+
+### Check against the build (2026-10-07, P2 D4)
+
+Each item above is ticked because it was met; the notes say how far, and what was not shown. Nothing is rounded up.
+
+1. Schema types: **met.** `BlockMeta` is `{status, error}` only; `pnpm codegen:check` OK.
+2. Catalog guide and completeness test: **met** (`api/agents/test_catalog.py`; `fence_mismatches` parses `catalog.md` against `CATALOG`).
+3. Precondition met and unmet tests per component: **met** for the five built components.
+4. Tamper tests: **met** for GraphView, ComparisonGrid and ConceptMap. `SourceList` and `CitedSummary` have no quote to tamper with; their tests tamper with stored metadata and citation ids.
+5. Composer makes no provider call: **met** (a call-count test; the D1 live ledger delta for composition and layout was $0.0000; the cost audit read every call site).
+6. Cross-document question in a real browser: **met** (screenshots 03, 04, 08), with two caveats. The comparison and relationship layouts were shown with a fake model on two real papers, and a real model on the 16-paper store was used for three further questions. The dashboard is **cramped at 1440 px and was not tried at phone width**.
+7. Prebuilt Basic first, Adaptive layered on, a missing layout leaves Basic: **met** (screenshots 01, 02, 06, 08 and the tests). The default (the first answer applies Adaptive unless Basic is pinned) is recorded as ASSUMED 6.
+8. Graph output on real data: **met** for three real questions (screenshots 10 to 12, 17), node selection by click, Enter and Space. **Not shown:** a graph near the 30-node cap on real data (the real graphs had 3 or 4 concepts), and every node reached by Tab on real data (covered by a component test only).
+9. Extensibility demonstrated: **met** for components (toy component, source-scan test). **Partly met for the layout:** a new panel or mode is a schema change (D-27 amended 2026-10-07).
+10. Pipeline end to end for typed UI: **met** (registration refuses a template with a planted hole; save, list, apply with no model call and refusals in tests; browser capture 07 for save and apply after a reload). A refusal was not captured in the browser.
+11. Agent map: **met** (`refdocs/guides/agents.md`).
+12. Trace panel offered and refused: **met** (capture 09).
+13. Admission-rate study: **met**, reported as measured: ConceptMap admitted on 3 of 20 questions, GraphView 16 of 20, ComparisonGrid 20 of 20; `refdocs/evidence/20261006T184643Z-bound.md`.
+14. Import rules and frozen assets: **met** (tests; `eval/tests/test_frozen_assets.py` 7 passed). `api/genui/templates.py` also imports the builders, for registration fixtures only; the rule is enforced as "Composer and templates".
+15. Reviews and docs: **met.** The reviewers were general-purpose agents given the `schema-guardian` and `cost-auditor` checklists (the named agent types were unavailable). The wire review's one blocking item was a documentation conflict (D-27), now amended. The rest of its findings are listed in the changelog entry of 2026-10-07 (D3), with what was fixed and what is open.
+
+**Not done in P2, by decision:** `InsightCard` (B5, a stretch; needs Azim's agreement). **New direction from Azim, not planned yet:** the Studio output area and split panes in the middle (DECISIONS working assumptions 4 and 5).

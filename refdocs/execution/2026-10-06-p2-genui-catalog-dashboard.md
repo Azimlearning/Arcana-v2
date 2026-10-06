@@ -2,7 +2,7 @@
 
 > Plan: `refdocs/plans/2026-10-06-p2-genui-catalog-dashboard.md`. Tasks run in order within each track. A task is not done until its **Verify** passes, not when the code compiles.
 > If reality diverges from this doc, **edit this doc** (CLAUDE.md rule 4) and note it in the changelog's Deviations line.
-> Status: approved by Azim 2026-10-06 with ADRs D-27 to D-31 already recorded. **A1, A1b and A2 are done (2026-10-06); everything after them is not started.**
+> Status: approved by Azim 2026-10-06 with ADRs D-27 to D-31 already recorded. **Done 2026-10-07 except B5 (stretch, deferred).** Tasks A1 to D4 are complete; the Reality notes below record what was built.
 
 ## Before starting
 
@@ -301,11 +301,15 @@ Runs after Track C (it needs the composition record and the layout). Cut line: i
 
 **Verify:** the three reports are in the changelog; no blocking finding remains; every finding fixed has a test; the full suite is green on two consecutive runs.
 
+**Reality (D3 done 2026-10-07):** The three reviews ran as general-purpose agents with the checklists in `.claude/agents/` (the named types were unavailable); the first schema-guardian run died on a rate limit and was run again from scratch. **Cost audit:** no blocking finding; no provider call is reachable from the Composer, layout, patterns, `GET /workspace` or the Graph agent's tools; the seam, ledger, embedder and agents are byte-identical to pre-P2; the ledger shows only the known purposes; P2's own spend was $0.062926 against a plan of "no paid call, about $0.05 to $0.10 live". Its one test gap (the study's live-mode guard) is closed (`test_a_live_configuration_is_refused_without_allow_paid`). **Wire review:** no safety blocker; every path to the client re-validates. One blocking documentation conflict (D-27 and the PRD row claimed a new panel never changes the schema; the build made panels and modes closed unions): amended. Fixed with tests: the pattern refusal reason is now a schema type (`PatternRefusalReason`, generated into Python and imported by the web), the web's hand-written lists of pattern states, layout modes, origins and panels are `Record`s keyed by the schema unions (so a new member fails typecheck), the anchor helper `safeId` is one module used by all five components (`CitedSummary` was the one without it), and seven stale statements in `catalog.md`. **Open, not fixed (recorded in the changelog):** the fixture store builds a concrete SQLite store in production start-up (constraint 6); the saveable kinds in `Workspace.tsx` are string keys not tied to the catalog's `reusable` flag; `ADAPTIVE_MODES`, `TurnContext.layout_mode` and `WIDTHS` are typed `str`; a layout failure has no trace reason; no React error boundary; `GET /patterns` returns 500 for the whole list if one stored row is damaged; `validate_layout`'s `known_block_ids` is optional. **Test-runner results**, run by me: `uv run pytest` 779 passed twice and 780 passed after the fixes; ruff and pyright clean; `pnpm codegen:check` OK; typecheck and lint clean; web 199 passed; `pnpm --filter web build` exit 0; `eval/tests/test_frozen_assets.py` 7 passed.
+
 ### Task D4: Wrap-up
 
 1. Update `refdocs/STATUS.md` (phase row, what works and what was measured, the verification ledger with the real commands and results), `refdocs/changelog/CHANGELOG.md`, the ADRs D-27 to D-30 with any amendment the build forced, the PRD §7 rows, `refdocs/guides/file_structure.md` (new modules and the removed fields), and both index tables (plan: Done; execution: Done).
 2. Check the plan's definition of done item by item in the plan file, with a note for any item met partly; an unmet item is stated, never rounded up.
 3. Run `/session-end`.
+
+**Reality (D4 done 2026-10-07):** STATUS, CHANGELOG, DECISIONS (D-27 amended, D-31 built-versus-deferred note, working assumptions 4 to 6), the PRD row, `file_structure.md`, `catalog.md` and both indexes are updated; the plan's definition of done is checked item by item with notes.
 
 **Verify:** every box in the plan's definition of done is ticked with a note or explicitly marked partly met or unmet; the index rows match; `git status` is clean after the commit; no unresolved `ASSUMED:` item introduced by this phase is left unrecorded.
 

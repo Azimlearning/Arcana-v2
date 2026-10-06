@@ -2,7 +2,7 @@
 // checks the shape of whatever it receives, because it must never apply something it cannot read. A layout that
 // fails the check is ignored and the client keeps the one it has, so a newer server cannot break an older client.
 
-import type { LayoutSpec, PanelId, UIBlock } from "@arcana/schema";
+import type { LayoutMode, LayoutOrigin, LayoutSpec, PanelId, UIBlock } from "@arcana/schema";
 
 /** The only layout version this client understands. */
 export const SUPPORTED_LAYOUT_VERSION = 1;
@@ -10,16 +10,19 @@ export const SUPPORTED_LAYOUT_VERSION = 1;
 /** The chat panel is never narrower than this (the server enforces the same). */
 export const MIN_CHAT_WIDTH = 25;
 
-const PANELS: readonly PanelId[] = ["sources", "chat", "studio"];
-const isPanel = (value: unknown): value is PanelId => PANELS.includes(value as PanelId);
+// Records, not arrays, so a member added to the schema's union fails typecheck until it is added here.
+const PANELS: Record<PanelId, true> = { sources: true, chat: true, studio: true };
+const MODES: Record<LayoutMode, true> = { basic: true, research: true, exploration: true };
+const ORIGINS: Record<LayoutOrigin, true> = { prebuilt: true, adaptive: true };
+const isKey = (set: Record<string, true>, value: unknown) => typeof value === "string" && Object.hasOwn(set, value);
+const isPanel = (value: unknown): value is PanelId => isKey(PANELS, value);
 const isWhole = (value: unknown): value is number => typeof value === "number" && Number.isInteger(value);
 
 export function isLayoutSpec(value: unknown): value is LayoutSpec {
   if (typeof value !== "object" || value === null) return false;
   const layout = value as Record<string, unknown>;
   if (layout.version !== SUPPORTED_LAYOUT_VERSION) return false;
-  if (layout.origin !== "prebuilt" && layout.origin !== "adaptive") return false;
-  if (layout.mode !== "basic" && layout.mode !== "research" && layout.mode !== "exploration") return false;
+  if (!isKey(ORIGINS, layout.origin) || !isKey(MODES, layout.mode)) return false;
   if ((layout.origin === "prebuilt") !== (layout.mode === "basic")) return false; // the two go together
   if (!Array.isArray(layout.panels) || !Array.isArray(layout.placements)) return false;
 

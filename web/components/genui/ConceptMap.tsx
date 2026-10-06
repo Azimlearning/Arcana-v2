@@ -12,9 +12,7 @@
 import type { ConceptMap as ConceptMapBlock, PathStep } from "@arcana/schema";
 
 import { EmptyState, ErrorState, Frame, LoadingState, PartialState } from "./BlockStates";
-
-/** An id usable in a fragment: anything but letters, digits, "_" and "-" becomes "_". */
-const safeId = (id: string) => id.replace(/[^A-Za-z0-9_-]/g, "_");
+import { safeId } from "./ids";
 
 export function ConceptMap({ block }: { block: ConceptMapBlock }) {
   const { meta } = block;

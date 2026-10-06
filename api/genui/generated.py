@@ -315,6 +315,8 @@ LayoutOrigin = Literal['prebuilt', 'adaptive']
 
 PanelId = Literal['sources', 'chat', 'studio']
 
+PatternRefusalReason = Literal['precondition_not_met', 'template_changed', 'document_missing']
+
 PatternState = Literal['generated', 'verified', 'saved']
 
 StepStatus = Literal['ok', 'partial', 'failed', 'refused']

@@ -4,7 +4,9 @@
 
 **Build philosophy:** walking skeleton first. One PDF, one chunk, one embedding, one hybrid call, one `CitedSummary`, one streamed block, one rendered component, end to end, before building the second of anything. Evidence is measured, never asserted.
 
-**Right now (2026-10-06):** Azim chose to move on to P1 with task 10 and the RAGAS install deferred. He approved the P1 plan (roster: Orchestrator, Research, Graph, Fact Checker, plus the Composer stub; gold drafted by the assistant, approved by him per file). **Track A (the agent layer, on fakes) is built and tested: tasks A1 to A9** (see the P1 table below). P0 tasks 1 to 9 are built and verified on fakes, and task 11's eval harness is built and tested on v1's real 16-paper corpus in fake mode. No paid call has ever been made. Two things block the rest of P0: **task 10** (real providers behind the cap) waits for Azim's Anthropic and OpenRouter keys, and **task 11's Verify** is not fully met until RAGAS is installed (it needs about 94 packages and the development drive is nearly full). Decided: monthly cap $5 and reuse of v1's questions and manifest (D-21). The execution doc is `refdocs/execution/2026-10-05-p0-walking-skeleton.md`; its **Reality** notes say where the build diverged from the plan.
+**Right now (2026-10-07):** **P2 is built and checked** (everything except the stretch component B5, deferred): five evidence-admitted GenUI components, the Composer, an extensible `LayoutSpec` with a prebuilt Basic layout and an Adaptive layer, the saved-view pipeline for typed UI, the admission-rate study, a real-browser run, and three independent reviews. Azim has given early UI direction on the screenshots (a Studio output area under the graph in the right column, NotebookLM-style; the middle section splitting vertically or horizontally with the generated component): recorded as ASSUMED 4 and 5 in `DECISIONS.md`, not planned or built. The next phase is P3 (trained tools) or a P2 follow-on for that UI direction; Azim decides which. Nothing is pushed. About $3.83 of the $10 cap remains.
+
+**Earlier (2026-10-06):** Azim chose to move on to P1 with task 10 and the RAGAS install deferred. He approved the P1 plan (roster: Orchestrator, Research, Graph, Fact Checker, plus the Composer stub; gold drafted by the assistant, approved by him per file). **Track A (the agent layer, on fakes) is built and tested: tasks A1 to A9** (see the P1 table below). P0 tasks 1 to 9 are built and verified on fakes, and task 11's eval harness is built and tested on v1's real 16-paper corpus in fake mode. No paid call has ever been made. Two things block the rest of P0: **task 10** (real providers behind the cap) waits for Azim's Anthropic and OpenRouter keys, and **task 11's Verify** is not fully met until RAGAS is installed (it needs about 94 packages and the development drive is nearly full). Decided: monthly cap $5 and reuse of v1's questions and manifest (D-21). The execution doc is `refdocs/execution/2026-10-05-p0-walking-skeleton.md`; its **Reality** notes say where the build diverged from the plan.
 
 ---
 
@@ -14,7 +16,7 @@
 |---|---|---|
 | P0 | Walking skeleton + eval harness | 🔶 Closed by Azim's decision on 2026-10-06 with two deferrals, not fully done: task 10 (live providers) and the RAGAS install, both moved to P1 task B2. Tasks 1 to 9 and 11 are done on fakes |
 | P1 | Agent core with super tools; first full graph-vs-flat benchmark | 🔶 **Built and measured 2026-10-06; the definition of done is met except one declared item** (RAGAS metrics null, deferred to the end). `q-single-01` resolved as an approved control (D-26). Result: inconclusive. Earlier status text follows. 🔶 Plan approved by Azim on 2026-10-06 (roster as proposed; gold drafted by the assistant and approved by him). Track A (agent layer, fakes only) built and tested, A1 to A9; Track B (gold, live corpus, benchmark) waits on keys, cap, disk and his gold review |
-| P2 | GenUI catalog (level 1) + adaptive dashboard (level 2 LayoutSpec) | ⬜ Not started |
+| P2 | GenUI catalog (level 1) + adaptive dashboard (level 2 LayoutSpec) | 🔶 **Built, verified and reviewed 2026-10-07; definition of done met item by item with stated limits** (see the P2 section). Open: B5 `InsightCard` (stretch, deferred), the dashboard is cramped at 1440 px and untried at phone width, and ConceptMap is admitted on 3 of 20 questions on this corpus. Marked 🔶, not ✅, because the UI direction Azim gave after seeing it is not yet reflected |
 | P3 | Trained tools: router distillation, Re-Rank, Mastery (optional) | ⬜ Not started |
 | P4 | VerifiedLab (level 3) + governed lifecycle | ⬜ Not started |
 | P5 | Learning/writing depth, final eval runs, report evidence | ⬜ Not started |
@@ -61,6 +63,22 @@ Status vocabulary: use these exactly, and never round up:
 
 ---
 
+## P2: GenUI catalog, adaptive dashboard, UI pipeline spine (built 2026-10-07)
+
+| Item | Approach | Status |
+|---|---|---|
+| Catalog and Composer | Five components as templates (precondition, supplier, fences, placement hint, check): `CitedSummary`, `SourceList`, `GraphView`, `ComparisonGrid`, `ConceptMap`. The Composer is deterministic, admits by evidence, drops and never repairs (D-28, D-29) | ✅ Tests, tamper tests, a real browser on real papers |
+| Layout | `LayoutSpec` is the only placement (D-27); a prebuilt Basic layout first, an Adaptive layer on top, a header switch; `GET /workspace` serves the source list before any question | ✅ Tests and a real browser. Panels and modes are closed unions (a new one is a schema change) |
+| Pipeline (D-31) | Registration refuses a template unless its planted-defect suite is rejected; saved patterns (save, list, delete, apply with no model call, re-verify); refusals with a reason | ✅ for typed UI; provenance, the `generated` state and reuse by evidence shape are deferred to P4 |
+| Trace | Offered and refused components with a closed reason list | ✅ |
+| Admission-rate study | `eval/bound.py`, 20 questions by two layers, protocol frozen before the run. Flat admits only CitedSummary and SourceList on 20 of 20; hybrid admits GraphView 16 of 20, ComparisonGrid 20 of 20, ConceptMap 3 of 20 | ✅ Measured (a count of admission, not a quality score) |
+| `InsightCard` (B5) | Stretch | ⬜ Deferred; needs Azim's agreement |
+| Studio area and split panes | Azim's 2026-10-07 UI direction | ⬜ Not planned (ASSUMED 4 and 5) |
+
+**Not verified:** a graph near the 30-node cap on real data; the dashboard at phone width; a pattern refusal in a real browser (tests only); how the Adaptive default (first answer applies Adaptive unless Basic is pinned) feels to use.
+
+---
+
 ## Verification ledger
 
 What has actually been run, not what has been written. A row here needs a real command and a real result.
@@ -82,6 +100,11 @@ What has actually been run, not what has been written. A row here needs a real c
 | 2026-10-06 | q-single-01 cannot be answered from the corpus | PyMuPDF text search of all 16 PDFs for "RRF", "rank fusion", "reciprocal" | 0, 0, 2 (both Mean Reciprocal Rank); ADR D-21 |
 | 2026-10-05 | Web in a real browser (task 9) | Playwright: upload the fixture, ask a question; then a stand-in API reset the TCP connection after the loading block; then no API | Cited answer rendered with the document title, page and quote; connection-lost error alert, no skeleton left; "Could not reach the server." alert. Screenshots in `refdocs/evidence/` |
 
+| 2026-10-07 | P2 wire change, independent review (D3) | A general-purpose agent with the `schema-guardian` checklist, read-only, over `e421e0b..HEAD` (the first run died on a rate limit; run again) | No safety blocker; one blocking documentation conflict (D-27) amended; findings fixed with tests or recorded in the changelog |
+| 2026-10-07 | P2 cost audit (D3) | A general-purpose agent with the `cost-auditor` checklist, read-only, plus a read-only SELECT on `data/ledger.db` | No new paid call or unledgered path; P2's spend $0.062926; month total $6.172354 of $10; only known purposes |
+| 2026-10-07 | Full suite after the D3 fixes | `uv run pytest` (twice before, once after), `uv run ruff check api eval scripts`, `uv run pyright api eval`, `pnpm codegen:check`, `pnpm -r typecheck`, `pnpm -r lint`, `pnpm -r test`, `pnpm --filter web build`, `uv run pytest eval/tests/test_frozen_assets.py` | 779 passed twice, then 780; ruff clean; pyright 0 errors; codegen OK; typecheck and lint clean; web 199 passed; build exit 0; frozen assets 7 passed |
+| 2026-10-07 | P2 in a real browser (D1) | Playwright at 1440 by 900: fake model on two real papers, then the real model on the 16-paper store for four turns; 17 screenshots in `refdocs/evidence/` | Dashboard, graph, grid, saved views, fallback and trace seen; five UI defects found and fixed with tests |
+| 2026-10-07 | Admission-rate study (D2) | `eval/bound.py` on the frozen stores, 20 questions by two layers, `--allow-paid` for 20 query embeddings | Results in `eval/results/20261006T184643Z-bound.json`; ledger delta $0.000066 |
 | 2026-10-06 | P1 Track A, Python and web suites | `uv run pytest`, `uv run ruff check api eval scripts`, `uv run pyright api eval`, `pnpm --filter web test`, `pnpm -r typecheck`, `pnpm -r lint`, `pnpm codegen:check`, `pnpm --filter web build`, run by me | 443 Python tests pass (then 444 with the one-hop test), web 63 pass, all others exit 0. Independent `test-runner` (separate agent, after the last code change): `uv run pytest` 444 passed on two runs (no order leakage), ruff, pyright, `pnpm codegen:check`, `pnpm -r typecheck`, `pnpm -r lint` clean, `pnpm -r test` 63 web tests, `pnpm --filter web build`, and the mutation suite (same figures) all exit 0 |
 | 2026-10-06 | Fact Checker mutation suite | `uv run python eval/mutation_factcheck.py --corpus-dir ../Arcana/eval/corpus`, 50 seeded cases, lexical rule only | Clean kept 50/50; non-verbatim quote, wrong chunk, wrong document 50/50 each; invented claims 49/50 and 48/50; **negated claim 0/50** |
 | 2026-10-06 | TurnTrace wire change | `schema-guardian` (separate agent) plus its own `codegen:check`, API and web test runs | No blocking defects; four small ones fixed (trace hidden after a stream error, shallow client check, one replace, an unlogged corrupt row) |
@@ -109,7 +132,8 @@ What has actually been run, not what has been written. A row here needs a real c
 - Trace rows are never pruned (fine at this scale).
 - Extraction has no seed, so each ingest gives a different graph; the benchmark must treat the ingested graph as a fixed artefact.
 - Request bodies are bounded by declared `Content-Length` only; a chunked body without it is not capped. Favicon is missing (cosmetic).
-- **Open:** RAGAS at the end of the project (then `uv add ragas rapidfuzz`, re-run on the same stores with `--expect-*` hashes); P2 is next. About $3.9 of the $10 cap remains.
+- **P2 open items (2026-10-07):** `fixture_store` builds a concrete SQLite store in production start-up (breaks the storage-abstraction constraint in a small way); the saveable kinds in the web are string keys, not tied to the catalog's `reusable` flag; a layout that fails to build leaves no reason in the trace; no React error boundary; `GET /patterns` is all-or-nothing if one stored row is damaged; real relations can be bare co-mentions, so some edges say little; the comparison grid is not selective (it shows every concept it can ground); the dashboard is cramped at 1440 px and untested on a phone.
+- **Open:** RAGAS at the end of the project (then `uv add ragas rapidfuzz`, re-run on the same stores with `--expect-*` hashes). About $3.83 of the $10 cap remains.
 - **Benchmark protocol (D-24):** a live run is refused on any change to the pinned question set, manifest, approved gold or the whole protocol stamp, and on an uncommitted tree; it runs the 19 approved questions. Open for Azim: the graph arm's cross-document tie-break is a hash order (adds noise to hybrid); keep it, or amend before the run.
 - **Cost controls (pre-live audit, D-23):** the ledger is one file in a live mode, a cap is required for any live mode, calls are priced by the requested model, and ingestion refuses an over-size or over-budget document up front. Still unverified until the first live call: the Sonnet 5.5 and Opus 5.5 prices, the OpenAI embedding price (all in `api/llm/pricing.py`), and whether the API echoes a dated model id. The live API has no per-user rate limit (single-user tool, D-04): do not expose it. Extraction results are not cached per chunk, so a failed document is paid for again.
 - Disk: the development machine's C: drive was 100 percent full during this session; `uv cache prune` freed 8.6 GiB and it was still within about 800 MB of full afterwards. Tell Azim if tests start failing with `No space left on device`.

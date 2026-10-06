@@ -22,6 +22,7 @@ import { useState } from "react";
 
 import { EmptyState, ErrorState, Frame, LoadingState, PartialState } from "./BlockStates";
 import { radialLayout } from "./graphLayout";
+import { safeId } from "./ids";
 
 type Selection = { kind: "node"; id: string } | { kind: "edge"; index: number } | null;
 
@@ -54,9 +55,6 @@ export function GraphView({ block }: { block: GraphViewBlock }) {
       );
   }
 }
-
-/** An id usable inside url(#...) and a fragment: anything but letters, digits, "_" and "-" becomes "_". */
-const safeId = (id: string) => id.replace(/[^A-Za-z0-9_-]/g, "_");
 
 const shorten = (label: string, max = 18) => (label.length > max ? `${label.slice(0, max - 1)}…` : label);
 

@@ -3,6 +3,8 @@
 import type {
   ErrorEnvelope,
   IngestResponse,
+  LayoutMode,
+  PatternState,
   SavedPattern,
   SavePatternRequest,
   TurnTrace,
@@ -150,8 +152,10 @@ export type PatternsResult = { ok: true; patterns: SavedPattern[] } | { ok: fals
 export type SaveResult = { ok: true; pattern: SavedPattern } | { ok: false; error: ErrorEnvelope };
 export type DeleteResult = { ok: true } | { ok: false; error: ErrorEnvelope };
 
-const PATTERN_STATES = ["generated", "verified", "saved"];
-const LAYOUT_MODES = ["basic", "research", "exploration"];
+// Records, not arrays, so adding a member to the schema's union fails typecheck until it is added here.
+const PATTERN_STATES: Record<PatternState, true> = { generated: true, verified: true, saved: true };
+const LAYOUT_MODES: Record<LayoutMode, true> = { basic: true, research: true, exploration: true };
+const isIn = (set: Record<string, true>, value: unknown) => typeof value === "string" && Object.hasOwn(set, value);
 
 export function isSavedPattern(value: unknown): value is SavedPattern {
   if (typeof value !== "object" || value === null) return false;
@@ -167,9 +171,9 @@ export function isSavedPattern(value: unknown): value is SavedPattern {
       (q) => typeof q === "object" && q !== null && typeof q.key === "string" && Array.isArray(q.values) && q.values.every((v) => typeof v === "string"),
     ) &&
     typeof p.layoutMode === "string" &&
-    LAYOUT_MODES.includes(p.layoutMode) &&
+    isIn(LAYOUT_MODES, p.layoutMode) &&
     typeof p.state === "string" &&
-    PATTERN_STATES.includes(p.state) &&
+    isIn(PATTERN_STATES, p.state) &&
     Number.isInteger(p.useCount) &&
     typeof p.createdAt === "string" &&
     (p.lastUsedAt === null || typeof p.lastUsedAt === "string")

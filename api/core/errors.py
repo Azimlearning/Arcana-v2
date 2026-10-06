@@ -8,11 +8,8 @@ detail goes to the log, never to the client.
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Literal
 
-from api.genui.generated import ErrorCode, ErrorEnvelope, FieldIssue
-
-PatternRefusalReason = Literal["precondition_not_met", "template_changed", "document_missing"]
+from api.genui.generated import ErrorCode, ErrorEnvelope, FieldIssue, PatternRefusalReason
 
 
 class ArcanaError(Exception):

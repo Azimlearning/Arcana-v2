@@ -16,11 +16,9 @@ import type { ComparisonGrid as ComparisonGridBlock } from "@arcana/schema";
 import { useState } from "react";
 
 import { EmptyState, ErrorState, Frame, LoadingState, PartialState } from "./BlockStates";
+import { safeId } from "./ids";
 
 const PREVIEW_CHARS = 110;
-
-/** An id usable in a fragment: anything but letters, digits, "_" and "-" becomes "_". */
-const safeId = (id: string) => id.replace(/[^A-Za-z0-9_-]/g, "_");
 
 export function ComparisonGrid({ block }: { block: ComparisonGridBlock }) {
   const { meta } = block;

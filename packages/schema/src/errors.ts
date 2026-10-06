@@ -11,11 +11,14 @@ export type ErrorCode =
   | "internal";
 
 /**
- * `pattern_refused` is the answer to applying a saved view that can no longer be shown. Each issue's `path` is one of the
- * reason codes: `precondition_not_met` (the evidence no longer supports the view), `template_changed` (the view was made
- * with another version of its template, so it is stale until re-verified) or `document_missing` (a document it names is
- * gone). The `message` is a plain sentence. Nothing is shown from a refused view.
+ * Why a saved view cannot be shown: `precondition_not_met` (the evidence no longer supports the view), `template_changed`
+ * (the view was made with another version of its template, so it is stale until re-verified) or `document_missing` (a
+ * document it names is gone).
  */
+export type PatternRefusalReason = "precondition_not_met" | "template_changed" | "document_missing";
+
+// `pattern_refused` is the answer to applying a saved view that can no longer be shown. The one issue's `path` is a
+// PatternRefusalReason and its `message` is a plain sentence. Nothing is shown from a refused view.
 
 /**
  * One violation, located by a dotted path into the offending payload. For a block the path is

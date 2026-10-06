@@ -460,6 +460,15 @@ adds components.
 later). Rejected: keeping both placements and validating they agree; fixed `sources/chat/studio` width keys (a
 fourth panel would change the schema).
 
+**Amended 2026-10-07 (P2 D3 review, what the build forced).** The claim above is true of *components* only. A new
+component is laid out with no edit to the layout types, the layout module or the shell (a source-scan test and a toy
+component enforce it). `PanelId`, `LayoutMode` and `LayoutOrigin` are closed unions in `packages/schema/src/layout.ts`,
+so a new panel or mode is a schema change plus `layout.py` (WIDTHS), `layout.ts` and the shell's `Record<PanelId, ...>`
+sites. That is deliberate: an open string would let a client accept a panel it cannot draw. "Fall back to the prebuilt
+layout" is built as "ignore an unreadable layout and keep the one in force" (a new turn starts from the prebuilt layout, so
+the effect is the same). Azim's 2026-10-07 UI comments (a Studio output area under the graph; vertical or horizontal
+splits inside the middle section) need exactly this growth: see Working assumptions 4 and 5.
+
 ## D-28: The Composer is deterministic and admits components by evidence; a prebuilt layout comes first (2026-10-06)
 
 **Decision.** (1) In P2 no model chooses components or layout: the Composer runs each catalog component's
@@ -470,7 +479,7 @@ workspace opens in a fixed `prebuilt` layout (sources, chat, and a studio panel 
 available before any question is asked (served by a new `GET /workspace`, validated like any block); every turn
 the Composer also produces an `adaptive` layout; a header control switches between **Basic** and **Adaptive**;
 the first answer applies Adaptive automatically unless the user has pinned Basic. The prebuilt layout is also the
-safe fallback whenever an adaptive layout is missing or invalid.
+safe fallback whenever an adaptive layout is missing or invalid. (Amended 2026-10-07: the layout mode is chosen by a deterministic rule over the turn's intent, and the Orchestrator's light-model fallback can set that intent; no model chooses components or layout directly.)
 
 **Why.** Azim 2026-10-06: agrees a deterministic rule should decide, "but also user is presented initially with
 basic version and prebuild version they can use before having the custom adaptive version". A deterministic
@@ -557,6 +566,10 @@ properly in the P5 plan; D-22's separate Tutor and Writer are superseded as a pl
    the current evidence and fails closed with a reason if they no longer hold or the template version changed
    (stale until re-verified). No model call is needed to apply a pattern.
 
+**Built in P2 versus deferred (2026-10-07 review).** Not built, and deferred to P4: provenance on a saved pattern, the
+`generated` state being produced (the state exists on the wire), the accessibility fence checked at registration (a test
+checks it today), and reuse selected by evidence shape (reuse is chosen by the user today).
+
 **Staging.** P2 builds the whole pipeline for **typed (data) UI**: the five catalog components as templates, the
 fences, the checks, the saved-pattern store and the reuse flow. P4 adds the **generated-code** stage (the Lab
 Builder, the verifier, the delivery gate and the sandbox) to the same pipeline. Hard constraint 3 is unchanged: no
@@ -597,5 +610,9 @@ load-bearing is built on it. When one is resolved, delete it here and write a re
 1. **ASSUMED:** the VerifiedLab tier targets STEM content in the user's corpus; the physics contract covers its checkable subset (Q-06). Resolve in the P4 plan.
 2. **ASSUMED:** OpenRouter model ids follow its dotted naming (`anthropic/claude-sonnet-5.5`, `-opus-5.5`, `-haiku-4.5`). Its public model list did not show the sonnet and haiku entries on 2026-10-05. Confirm in P0 task 10.
 3. **ASSUMED:** `text-embedding-3-large` costs $0.13 per million tokens (`api/llm/pricing.py`). The OpenAI reference page does not state a price. Confirm against the pricing page before the first live embedding run (P0 task 10); the cap check depends on it.
+
+4. **ASSUMED (Azim 2026-10-07, early comments on the D1 screenshots, not yet planned):** v1's **Studio** returns in the right column below the graph, NotebookLM-style: generators for slides, quizzes and the like, with each generated output kept as a saved item below it. This is the P5 Studio agent (D-30) plus a Studio panel region and an output shelf. Needs a plan and an execution doc before any code; the saved items would reuse the D-31 pattern store.
+5. **ASSUMED (same source):** the adaptive layout's middle section may **split** (vertically or horizontally) according to what the Composer generates (a quiz, a study session, and so on). This is a growth of `LayoutSpec` (nested regions with a direction), a breaking wire change, so it needs its own decision and the schema-guardian review before it is built; D-27's closed `PanelId` is the reason it is not free.
+6. **ASSUMED:** D-28's default "the first answer applies Adaptive unless Basic is pinned" is built (`web/lib/store.ts`). It is sticky: once Basic is pinned, Adaptive does not auto-apply until the user chooses it. Confirm or change at the next checkpoint.
 
 Resolved and removed from this list: Q-02 (D-17), Q-03 (D-18), Q-04 (D-22), Q-05 and Q-01 (D-21), Q-08 (Tailwind v4 and LangGraph 1.x read from current docs at install: `@tailwindcss/postcss` with `@import "tailwindcss"` and no config file; `StateGraph(State, context_schema=...)`, `runtime: Runtime[Context]` in nodes, `graph.ainvoke(..., context=...)`).

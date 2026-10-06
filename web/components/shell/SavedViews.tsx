@@ -5,7 +5,7 @@
 // that can no longer be shown says why in plain words and shows nothing; any can be deleted. The list holds names and
 // kinds only: a saved view carries no evidence, it is re-checked against your documents each time it is shown.
 
-import type { ErrorEnvelope, SavedPattern } from "@arcana/schema";
+import type { ErrorEnvelope, PatternRefusalReason, SavedPattern } from "@arcana/schema";
 
 /** What each kind of view is called to a reader. A template not listed is shown under its own name. */
 const KIND_WORDS: Record<string, string> = {
@@ -16,7 +16,7 @@ const KIND_WORDS: Record<string, string> = {
 };
 
 /** Why a saved view could not be shown. Typed over the reasons the server names; anything else gets a generic sentence. */
-const REFUSAL_WORDS: Record<"precondition_not_met" | "template_changed" | "document_missing", string> = {
+const REFUSAL_WORDS: Record<PatternRefusalReason, string> = {
   precondition_not_met: "Your documents no longer support this view.",
   template_changed: "This view was made with an older version of its layout and needs to be checked again before it can be shown.",
   document_missing: "A document this view needs is no longer in your library.",

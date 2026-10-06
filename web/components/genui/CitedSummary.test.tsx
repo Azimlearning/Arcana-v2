@@ -108,3 +108,15 @@ describe("CitedSummary: citations name their source document", () => {
   });
 });
 
+describe("CitedSummary: anchors", () => {
+  it("builds every fragment from ids with only letters, digits, underscores and hyphens", () => {
+    const odd = block("ready");
+    odd.id = "turn 1/x";
+    odd.data.segments = [{ text: "Dense retrieval embeds passages.", citationIds: ["c 1"] }];
+    odd.data.citations = [{ ...odd.data.citations[0]!, id: "c 1" }];
+    const { container } = render(<CitedSummary block={odd} />);
+    const href = container.querySelector("a[href^='#']")!.getAttribute("href")!;
+    expect(href).toBe("#turn_1_x-c_1");
+    expect(container.querySelector("[id='turn_1_x-c_1']")).not.toBeNull();
+  });
+});

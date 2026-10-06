@@ -173,6 +173,15 @@ def test_a_run_on_a_dirty_tree_is_refused(bench, monkeypatch, capsys):
     assert "committed, clean tree" in capsys.readouterr().err
 
 
+def test_a_live_configuration_is_refused_without_allow_paid(bench, monkeypatch, capsys):
+    argv, tmp = bench
+    real = bound.load_settings()
+    monkeypatch.setattr(bound, "load_settings", lambda: real.model_copy(update={"arcana_embed_mode": "live"}))
+    assert main(study_argv(argv, tmp, "--allow-dirty", "--allow-unpinned", "--allow-unfrozen")) == 2
+    assert "--allow-paid" in capsys.readouterr().err
+    assert not (tmp / "data").exists() or not list((tmp / "data").glob("*.json"))
+
+
 def test_a_run_without_pinned_store_hashes_is_refused(bench, capsys):
     argv, tmp = bench
     assert main(study_argv(argv, tmp, "--allow-dirty", "--allow-unfrozen")) == 2
