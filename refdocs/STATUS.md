@@ -4,7 +4,7 @@
 
 **Build philosophy:** walking skeleton first. One PDF, one chunk, one embedding, one hybrid call, one `CitedSummary`, one streamed block, one rendered component, end to end, before building the second of anything. Evidence is measured, never asserted.
 
-**Right now (2026-10-06):** P0 tasks 1 to 9 are built and verified on fakes, and task 11's eval harness is built and tested on v1's real 16-paper corpus in fake mode. No paid call has ever been made. Two things block the rest of P0: **task 10** (real providers behind the cap) waits for Azim's Anthropic and OpenRouter keys, and **task 11's Verify** is not fully met until RAGAS is installed (it needs about 94 packages and the development drive is nearly full). Decided: monthly cap $5 and reuse of v1's questions and manifest (D-21). The execution doc is `refdocs/execution/2026-10-05-p0-walking-skeleton.md`; its **Reality** notes say where the build diverged from the plan.
+**Right now (2026-10-06):** Azim chose to move on to P1 with task 10 and the RAGAS install deferred. He approved the P1 plan (roster: Orchestrator, Research, Graph, Fact Checker, plus the Composer stub; gold drafted by the assistant, approved by him per file). Track A is next: P0 tasks 1 to 9 are built and verified on fakes, and task 11's eval harness is built and tested on v1's real 16-paper corpus in fake mode. No paid call has ever been made. Two things block the rest of P0: **task 10** (real providers behind the cap) waits for Azim's Anthropic and OpenRouter keys, and **task 11's Verify** is not fully met until RAGAS is installed (it needs about 94 packages and the development drive is nearly full). Decided: monthly cap $5 and reuse of v1's questions and manifest (D-21). The execution doc is `refdocs/execution/2026-10-05-p0-walking-skeleton.md`; its **Reality** notes say where the build diverged from the plan.
 
 ---
 
@@ -12,8 +12,8 @@
 
 | Phase | Scope | Status |
 |---|---|---|
-| P0 | Walking skeleton + eval harness | 🔶 Tasks 1 to 9 done on fakes; task 11 built, RAGAS metrics pending install; task 10 (live providers) not started |
-| P1 | Agent core with super tools; first full graph-vs-flat benchmark | ⬜ Not started |
+| P0 | Walking skeleton + eval harness | 🔶 Closed by Azim's decision on 2026-10-06 with two deferrals, not fully done: task 10 (live providers) and the RAGAS install, both moved to P1 task B2. Tasks 1 to 9 and 11 are done on fakes |
+| P1 | Agent core with super tools; first full graph-vs-flat benchmark | 🔶 Plan approved by Azim on 2026-10-06 (roster as proposed; gold drafted by the assistant and approved by him). Track A (agent layer, fakes only) in progress; Track B waits on keys, cap, disk and his gold review |
 | P2 | GenUI catalog (level 1) + adaptive dashboard (level 2 LayoutSpec) | ⬜ Not started |
 | P3 | Trained tools: router distillation, Re-Rank, Mastery (optional) | ⬜ Not started |
 | P4 | VerifiedLab (level 3) + governed lifecycle | ⬜ Not started |
