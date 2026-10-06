@@ -67,7 +67,12 @@ function Body({ block }: { block: ComparisonGridBlock }) {
   return (
     <div className="space-y-4">
       <div className="overflow-x-auto" role="region" aria-label="Comparison table" tabIndex={0}>
-        <table className="w-full min-w-[32rem] border-collapse text-left text-sm">
+        <table
+          className="w-full break-normal border-collapse text-left text-sm"
+          // Each column keeps room to read (about 9rem) and the table scrolls sideways instead of squeezing: with seven or
+          // eight columns in a narrow panel, squeezed columns were a few characters wide (seen on real data, task D1).
+          style={{ minWidth: `${9 + 9 * dimensions.length}rem` }}
+        >
           <caption className="sr-only">
             {`Comparison of ${rows.length} documents on ${dimensions.length} shared concepts`}
           </caption>
@@ -90,7 +95,7 @@ function Body({ block }: { block: ComparisonGridBlock }) {
           <tbody>
             {rows.map((row) => (
               <tr key={row.docId} className="align-top">
-                <th scope="row" className="border-b border-stone-200 p-2 font-medium text-stone-900">
+                <th scope="row" className="border-b border-stone-200 p-2 font-medium text-stone-900 [overflow-wrap:anywhere]">
                   {row.docTitle}
                 </th>
                 {dimensions.map((dimension) => {
@@ -132,7 +137,7 @@ function Body({ block }: { block: ComparisonGridBlock }) {
         <ul className="space-y-3 text-sm">
           {citations.map((citation) => (
             <li key={citation.id} id={anchor(citation.id)} className="flex gap-2">
-              <span className="pt-0.5 font-mono text-xs text-emerald-700">[{citation.id}]</span>
+              <span className="shrink-0 pt-0.5 font-mono text-xs text-emerald-700">[{citation.id}]</span>
               <div>
                 <div className="text-stone-900">
                   {citation.docTitle}

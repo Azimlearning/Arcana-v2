@@ -32,6 +32,13 @@ describe("Shell", () => {
     expect(chat).not.toHaveAttribute("inert");
   });
 
+  it("contains absolutely positioned text inside its panel, so a panel's hidden text cannot make the page scroll, and lets long unbroken titles wrap", () => {
+    shell(layout([]));
+    for (const id of ["sources", "chat", "studio"]) {
+      expect(document.querySelector(`[data-panel="${id}"]`)).toHaveClass("relative", "overflow-y-auto", "[overflow-wrap:anywhere]");
+    }
+  });
+
   it("uses a landmark for each panel and says which layout is in force", () => {
     shell(layout([]));
     expect(screen.getByRole("complementary", { name: "Sources" })).toBeInTheDocument();

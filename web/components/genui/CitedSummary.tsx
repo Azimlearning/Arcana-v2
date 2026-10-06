@@ -78,7 +78,7 @@ function Body({ block }: { block: CitedSummaryBlock }) {
           <ul className="space-y-3 text-sm">
             {citations.map((citation) => (
               <li key={citation.id} id={anchor(citation.id)} className="flex gap-2">
-                <span className="pt-0.5 font-mono text-xs text-emerald-700">[{citation.id}]</span>
+                <span className="shrink-0 pt-0.5 font-mono text-xs text-emerald-700">[{citation.id}]</span>
                 <div>
                   <div className="text-stone-900">
                     {citation.docTitle}

@@ -99,4 +99,12 @@ describe("CitedSummary: citations name their source document", () => {
     expect(screen.queryByRole("link", { name: /ghost/ })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /^Source c1/ })).toBeInTheDocument();
   });
+
+  it("keeps a source's id on one line, however narrow the column and however long the title", () => {
+    render(<CitedSummary block={block("ready")} />);
+    const ids = screen.getAllByText(/^\[c\d\]$/);
+    expect(ids.length).toBeGreaterThan(0);
+    for (const id of ids) expect(id).toHaveClass("shrink-0"); // a squeezed flex child would otherwise break between letters
+  });
 });
+

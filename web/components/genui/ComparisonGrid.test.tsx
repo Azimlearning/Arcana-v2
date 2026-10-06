@@ -109,4 +109,13 @@ describe("ComparisonGrid: ready", () => {
     expect(container.querySelector("img, b, script")).toBeNull();
     expect(screen.getByRole("columnheader", { name: hostile })).toBeInTheDocument();
   });
+
+  it("gives every column room to read and scrolls sideways, rather than squeezing words apart", () => {
+    render(<ComparisonGrid block={comparisonGrid("ready")} />);
+    const table = screen.getByRole("table");
+    expect(table).toHaveClass("break-normal"); // words are not broken mid-way in a cell
+    expect(table.style.minWidth).toBe("27rem"); // 9rem for the document plus 9rem for each of the two columns
+    expect(screen.getByRole("region", { name: "Comparison table" })).toHaveClass("overflow-x-auto");
+  });
 });
+

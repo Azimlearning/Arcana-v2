@@ -198,6 +198,14 @@ describe("Workspace", () => {
     expect(screen.getByText("Adaptive is available after your first answer.")).toBeInTheDocument();
   });
 
+  it("explains in Basic where graphs go, rather than promising them in an empty studio panel", async () => {
+    routes["/workspace"] = () => jsonResponse(workspace());
+    render(<Workspace />);
+    const studio = document.querySelector('[data-panel="studio"]') as HTMLElement;
+    expect(studio).toHaveTextContent("In Basic, graphs and connections appear below the answer");
+    expect(studio).not.toHaveTextContent("appear here when your question needs them");
+  });
+
   it("opens on the fixed fallback layout when /workspace cannot be read, still usable for uploads and questions", async () => {
     routes["/workspace"] = () => jsonResponse({ nonsense: true });
     render(<Workspace />);

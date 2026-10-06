@@ -262,7 +262,11 @@ export function Workspace() {
     studio: (
       <div className="space-y-4 p-1">
         {placed.studio.length === 0 ? (
-          <p className="text-sm text-stone-500">Graphs and connections appear here when your question needs them.</p>
+          <p className="text-sm text-stone-500">
+            {layout.origin === "prebuilt"
+              ? "In Basic, graphs and connections appear below the answer. Adaptive gives them this space."
+              : "Graphs and connections appear here when your question needs them."}
+          </p>
         ) : (
           placed.studio.map(withSave)
         )}
