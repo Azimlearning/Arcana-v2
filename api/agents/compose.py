@@ -27,6 +27,7 @@ from api.genui.catalog import (
     ComposerEvidence,
     Composition,
     Spec,
+    alignment_grid,
     graph_edges,
 )
 from api.genui.generated import ErrorEnvelope, UIBlock
@@ -152,6 +153,31 @@ def _graph_data(evidence: ComposerEvidence) -> dict[str, Any]:
     return {"nodes": list(nodes.values()), "edges": edges, "citations": list(citations.values())}
 
 
+def _grid_data(evidence: ComposerEvidence) -> dict[str, Any]:
+    """ComparisonGridData from the settled alignment: one citation per distinct (chunk, quote), a cell per
+    (document, entity) with evidence and none where there is none."""
+    documents, dimensions, cells = alignment_grid(evidence.graph)
+    citations: dict[tuple[str, str], dict[str, Any]] = {}
+    by_row: dict[str, list[dict[str, str]]] = {d["doc_id"]: [] for d in documents}
+    for cell in cells:
+        key = (cell["chunk_id"], cell["quote"])
+        if key not in citations:
+            citations[key] = {
+                "id": f"c{len(citations) + 1}",
+                "chunkId": cell["chunk_id"],
+                "docId": cell["doc_id"],
+                "docTitle": cell["doc_title"],
+                "page": cell["page"],
+                "quote": cell["quote"],
+            }
+        by_row[cell["doc_id"]].append({"dimensionId": cell["dimension_id"], "citationId": citations[key]["id"]})
+    return {
+        "dimensions": [{"id": d["id"], "label": d["label"]} for d in dimensions],
+        "rows": [{"docId": d["doc_id"], "docTitle": d["title"], "cells": by_row[d["doc_id"]]} for d in documents],
+        "citations": list(citations.values()),
+    }
+
+
 def _raw(spec: Spec, ctx: TurnContext, evidence: ComposerEvidence, *, empty: bool) -> dict[str, Any]:
     """The unvalidated block for one admitted (or, for the terminal component, empty) spec."""
     builder = BUILDERS[spec.name]
@@ -168,6 +194,8 @@ def _raw(spec: Spec, ctx: TurnContext, evidence: ComposerEvidence, *, empty: boo
         return builder(block_id, "ready", documents=listed, **where)
     if spec.name == "GraphView":
         return builder(block_id, "ready", data=_graph_data(evidence), **where)
+    if spec.name == "ComparisonGrid":
+        return builder(block_id, "ready", data=_grid_data(evidence), **where)
     raise AssertionError(f"no builder wiring for {spec.name}")  # the completeness test keeps this in step
 
 

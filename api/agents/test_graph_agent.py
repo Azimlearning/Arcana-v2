@@ -14,7 +14,15 @@ from api.stores.local.networkx_graph import NetworkXGraphStore
 
 # dense_retrieval -- vector_index -- cosine_similarity       bm25 -- inverted_index
 #        \_______ embedding _______/   (a longer way round)        lonely_concept (no edges)
-NODES = ["dense_retrieval", "vector_index", "cosine_similarity", "embedding", "bm25", "inverted_index", "lonely_concept"]
+NODES = [
+    "dense_retrieval",
+    "vector_index",
+    "cosine_similarity",
+    "embedding",
+    "bm25",
+    "inverted_index",
+    "lonely_concept",
+]
 EDGES = [
     ("dense_retrieval", "vector_index", "uses", "c1", "d1"),
     ("vector_index", "cosine_similarity", "ranks_by", "c2", "d1"),
@@ -22,7 +30,10 @@ EDGES = [
     ("embedding", "cosine_similarity", "compared_with", "c4", "d1"),
     ("bm25", "inverted_index", "uses", "c5", "d2"),
 ]
-CHUNKS = {f"c{i}": SimpleNamespace(id=f"c{i}", doc_id="d1" if i < 5 else "d2", page=i, text=f"Chunk {i} text.") for i in range(1, 6)}
+CHUNKS = {
+    f"c{i}": SimpleNamespace(id=f"c{i}", doc_id="d1" if i < 5 else "d2", page=i, text=f"Chunk {i} text.")
+    for i in range(1, 6)
+}
 
 
 def make_graph(tmp_path: Path) -> NetworkXGraphStore:
@@ -185,7 +196,8 @@ async def test_the_agent_is_partial_when_the_turn_has_no_graph(tmp_path: Path):
 
 def test_the_agents_tools_have_schemas_without_the_injected_context():
     schemas = {t.name: t.input_schema for t in GRAPH_AGENT.tools}
-    assert set(schemas) == {"find_path", "neighborhood"}
+    assert set(schemas) == {"find_path", "neighborhood", "align_documents"}
+    assert schemas["align_documents"]["required"] == ["entities"]
     assert schemas["find_path"]["required"] == ["a", "b"]
     assert schemas["neighborhood"]["properties"]["hops"] == {"type": "integer"}
     assert "ctx" not in schemas["neighborhood"]["properties"]
@@ -233,7 +245,10 @@ def test_without_a_graph_result_there_is_no_graph_evidence(tmp_path: Path):
 LABELLED = {
     **CHUNKS,
     "c1": SimpleNamespace(
-        id="c1", doc_id="d1", page=3, text="Dense retrieval uses a vector index to find passages quickly. It scales well."
+        id="c1",
+        doc_id="d1",
+        page=3,
+        text="Dense retrieval uses a vector index to find passages quickly. It scales well.",
     ),
 }
 
@@ -254,3 +269,176 @@ async def test_an_edge_whose_chunk_does_not_name_both_labels_stays_but_has_no_qu
     assert by_chunk["c3"]["quote"] is None  # "Chunk 3 text." names neither entity
     assert result.unquoted == 1
     assert "c3" in result.chunk_ids  # still evidence for the Research agent: chunk_ids is unchanged
+
+
+# ── align_documents: entities several documents all discuss ───────────────────
+
+from api.agents.graph_agent import align_documents  # noqa: E402
+
+
+def two_paper_world(tmp_path: Path, *, drop: tuple[str, ...] = (), third_paper: bool = False):
+    """Dense retrieval and BM25 appear in papers d1 and d2 (and, optionally, dense retrieval alone in d3)."""
+    texts = {
+        "k1": ("d1", 1, "Paper one studies dense retrieval with learned embeddings. It is fast."),
+        "k2": ("d2", 4, "In paper two, dense retrieval is compared against sparse baselines."),
+        "k3": ("d1", 2, "The first paper also reports BM25 as its sparse baseline."),
+        "k4": ("d2", 5, "Paper two treats BM25 as the strongest sparse method."),
+        "k5": ("d3", 7, "The third paper only discusses dense retrieval at length."),
+        "k6": ("d1", 3, "Louvain communities are mentioned once, in paper one only."),
+    }
+    chunks = {i: SimpleNamespace(id=i, doc_id=d, page=p, text=t) for i, (d, p, t) in texts.items() if i not in drop}
+    graph = NetworkXGraphStore(tmp_path / "align.json")
+    graph.upsert_node(
+        Node(
+            "dense",
+            "dense retrieval",
+            doc_ids=("d1", "d2", "d3") if third_paper else ("d1", "d2"),
+            chunk_ids=("k1", "k2", "k5") if third_paper else ("k1", "k2"),
+        )
+    )
+    graph.upsert_node(Node("bm25", "BM25", doc_ids=("d1", "d2"), chunk_ids=("k3", "k4")))
+    graph.upsert_node(Node("louvain", "Louvain communities", doc_ids=("d1",), chunk_ids=("k6",)))
+    graph.upsert_edge(Edge("dense", "bm25", "compared_with", "k2", "d2"))
+    graph.upsert_edge(Edge("dense", "louvain", "unrelated", "k6", "d1"))
+    docs: Any = SimpleNamespace(
+        get_chunks=lambda ids: {i: chunks[i] for i in ids if i in chunks},
+        get_document=lambda d: SimpleNamespace(id=d, title=f"Paper {d}", status="ready"),
+    )
+    none: Any = None
+    return TurnContext(docs, none, none, TokenBudget(), "blk", graph=graph)
+
+
+async def test_two_papers_sharing_two_entities_align_with_a_verbatim_quote_in_each_cell(tmp_path: Path):
+    ctx = two_paper_world(tmp_path)
+    result = await align_documents(["dense retrieval", "bm25"], ctx)
+    assert [d["doc_id"] for d in result.documents] == ["d1", "d2"]
+    assert [d["label"] for d in result.dimensions] == ["dense retrieval", "BM25"]  # the question's order
+    assert len(result.cells) == 4
+    chunks = ctx.docs.get_chunks(["k1", "k2", "k3", "k4"])
+    for cell in result.cells:
+        label = next(d["label"] for d in result.dimensions if d["id"] == cell["dimension_id"])
+        chunk = chunks[cell["chunk_id"]]
+        assert chunk.doc_id == cell["doc_id"] and cell["quote"] in chunk.text  # of that paper, verbatim
+        assert label.lower() in cell["quote"].lower()
+        assert cell["doc_title"] == f"Paper {cell['doc_id']}" and cell["page"] == chunk.page
+
+
+async def test_an_entity_in_one_paper_only_is_never_a_dimension(tmp_path: Path):
+    result = await align_documents(["dense retrieval", "bm25", "louvain communities"], two_paper_world(tmp_path))
+    assert [d["id"] for d in result.dimensions] == ["dense", "bm25"]
+
+
+async def test_an_entity_whose_chunks_never_name_it_has_no_cell_and_can_fall_away(tmp_path: Path):
+    # Without k4, BM25 is evidenced in one paper only, so it stops being a dimension: one entity is not a comparison.
+    result = await align_documents(["dense retrieval", "bm25"], two_paper_world(tmp_path, drop=("k4",)))
+    assert result.cells == []
+
+
+async def test_a_paper_that_covers_only_some_entities_gets_cells_only_for_those(tmp_path: Path):
+    result = await align_documents(["dense retrieval", "bm25"], two_paper_world(tmp_path, third_paper=True))
+    assert [d["doc_id"] for d in result.documents] == ["d1", "d2", "d3"]
+    d3 = [c for c in result.cells if c["doc_id"] == "d3"]
+    assert all(c["dimension_id"] == "dense" for c in d3)  # BM25 is not in d3: no cell, and no placeholder
+
+
+async def test_alignment_is_the_same_every_time_and_comes_with_the_agent_payload(tmp_path: Path):
+    first = await align_documents(["dense retrieval", "bm25"], two_paper_world(tmp_path))
+    again = await align_documents(["dense retrieval", "bm25"], two_paper_world(tmp_path))
+    assert first == again
+    output = await GRAPH_AGENT.run("How does dense retrieval compare with BM25?", two_paper_world(tmp_path))
+    assert output.payload["alignment"]["dimensions"] == first.dimensions
+
+
+async def test_whatever_the_graph_looks_like_every_cell_is_that_papers_own_verbatim_words(tmp_path: Path):
+    """Property test over random handmade graphs: a cell the evidence does not support is never produced."""
+    import random
+
+    from api.genui.alignment import MAX_GRID_DIMS, MAX_GRID_DOCS
+    from api.genui.text import label_in_quote, normalise
+
+    rng = random.Random(11)
+    labels = ["Dense retrieval", "BM25", "Louvain", "Reciprocal rank fusion", "Knowledge graph", "Chunking", "HyDE"]
+    produced = 0
+    key = lambda n: labels[n].lower().replace(" ", "_")  # noqa: E731 - the resolver matches on the normalised name
+    for trial in range(40):
+        docs_n = rng.randint(1, 5)
+        graph = NetworkXGraphStore(tmp_path / f"p{trial}.json")
+        chunks: dict[str, Any] = {}
+        node_chunks: dict[int, list[str]] = {n: [] for n in range(len(labels))}
+        node_docs: dict[int, set[str]] = {n: set() for n in range(len(labels))}
+        for d in range(docs_n):
+            for k in range(rng.randint(1, 4)):
+                named = [n for n in range(len(labels)) if rng.random() < 0.4]
+                text = " ".join(f"The paper discusses {labels[n]} here." for n in named) or "Nothing relevant is said."
+                cid = f"t{trial}_d{d}_k{k}"
+                chunks[cid] = SimpleNamespace(id=cid, doc_id=f"d{d}", page=k + 1, text=text)
+                for n in named + [n for n in range(len(labels)) if rng.random() < 0.1]:  # sometimes mis-attributed
+                    node_chunks[n].append(cid)
+                    node_docs[n].add(f"d{d}")
+        for n, label in enumerate(labels):
+            graph.upsert_node(Node(key(n), label, doc_ids=tuple(sorted(node_docs[n])), chunk_ids=tuple(node_chunks[n])))
+        for n in range(len(labels) - 1):
+            graph.upsert_edge(Edge(key(n), key(n + 1), "related", next(iter(chunks)), "d0"))
+        docs: Any = SimpleNamespace(
+            get_chunks=lambda ids, c=chunks: {i: c[i] for i in ids if i in c},
+            get_document=lambda d: SimpleNamespace(id=d, title=f"Paper {d}", status="ready"),
+        )
+        none: Any = None
+        ctx = TurnContext(docs, none, none, TokenBudget(), "blk", graph=graph)
+        seeds = rng.sample(labels, rng.randint(1, 4))
+        result = await align_documents(seeds, ctx)
+        produced += bool(result.cells)
+
+        assert len(result.documents) <= MAX_GRID_DOCS and len(result.dimensions) <= MAX_GRID_DIMS
+        shown_docs = {d["doc_id"] for d in result.documents}
+        by_dim: dict[str, set[str]] = {}
+        for cell in result.cells:
+            chunk = chunks[cell["chunk_id"]]
+            label = next(d["label"] for d in result.dimensions if d["id"] == cell["dimension_id"])
+            assert chunk.doc_id == cell["doc_id"] in shown_docs
+            assert cell["quote"] in normalise(chunk.text) and label_in_quote(cell["quote"], label)
+            by_dim.setdefault(cell["dimension_id"], set()).add(cell["doc_id"])
+        assert {d["id"] for d in result.dimensions} == set(by_dim)
+        assert all(len(docs_) >= 2 for docs_ in by_dim.values())  # every entity shown is evidenced twice
+        assert shown_docs == {c["doc_id"] for c in result.cells}  # every paper shown has a cell
+        assert len(result.documents) in (0, *range(2, MAX_GRID_DOCS + 1))
+    assert produced >= 8  # the property was exercised on real alignments, not only on empty ones
+
+
+async def test_a_hub_entity_does_not_lose_papers_ingested_after_hundreds_of_other_chunks(tmp_path: Path):
+    chunks: dict[str, Any] = {}
+    for k in range(450):  # paper d1 mentions the hub in ingestion order first, but only in passing filler
+        chunks[f"f{k}"] = SimpleNamespace(
+            id=f"f{k}", doc_id="d1", page=1, text=f"Filler passage number {k} says little."
+        )
+    chunks["h1"] = SimpleNamespace(
+        id="h1", doc_id="d1", page=9, text="Paper one finally discusses retrieval pipelines."
+    )
+    chunks["h2"] = SimpleNamespace(
+        id="h2", doc_id="d2", page=2, text="Paper two builds on retrieval pipelines directly."
+    )
+    chunks["h3"] = SimpleNamespace(
+        id="h3", doc_id="d3", page=3, text="Paper three also evaluates retrieval pipelines here."
+    )
+    chunks["s2"] = SimpleNamespace(id="s2", doc_id="d2", page=4, text="Paper two reports sparse indexes as a baseline.")
+    chunks["s3"] = SimpleNamespace(id="s3", doc_id="d3", page=5, text="Paper three reports sparse indexes as well.")
+    graph = NetworkXGraphStore(tmp_path / "hub.json")
+    graph.upsert_node(
+        Node(
+            "retrieval_pipelines",
+            "retrieval pipelines",
+            doc_ids=("d1", "d2", "d3"),
+            chunk_ids=(*[f"f{k}" for k in range(450)], "h1", "h2", "h3"),
+        )
+    )
+    graph.upsert_node(Node("sparse_indexes", "sparse indexes", doc_ids=("d2", "d3"), chunk_ids=("s2", "s3")))
+    graph.upsert_edge(Edge("retrieval_pipelines", "sparse_indexes", "uses", "s2", "d2"))
+    docs: Any = SimpleNamespace(
+        get_chunks=lambda ids: {i: chunks[i] for i in ids if i in chunks},
+        get_document=lambda d: SimpleNamespace(id=d, title=f"Paper {d}", status="ready"),
+    )
+    none: Any = None
+    ctx = TurnContext(docs, none, none, TokenBudget(), "blk", graph=graph)
+    result = await align_documents(["retrieval pipelines", "sparse indexes"], ctx)
+    hub_docs = {c["doc_id"] for c in result.cells if c["dimension_id"] == "retrieval_pipelines"}
+    assert hub_docs == {"d1", "d2", "d3"}  # d2 and d3 sit beyond a 200-chunk window and are still found

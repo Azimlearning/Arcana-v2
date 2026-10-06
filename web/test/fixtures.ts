@@ -1,4 +1,4 @@
-import type { CitedSummary, ErrorEnvelope, GraphView, SourceList, StreamEvent, TurnTrace } from "@arcana/schema";
+import type { CitedSummary, ComparisonGrid, ErrorEnvelope, GraphView, SourceList, StreamEvent, TurnTrace } from "@arcana/schema";
 
 export const TITLE = "Hybrid Retrieval over Knowledge Graphs";
 
@@ -75,6 +75,58 @@ export function graphView(
         ? [
             { id: "c1", chunkId: "d_c_1", docId: "d", docTitle: TITLE, page: 3, quote: "Dense Retrieval alone and BM25 alone are two arms." },
             { id: "c2", chunkId: "d_c_2", docId: "d", docTitle: TITLE, page: null, quote: "Reciprocal Rank Fusion merges Dense Retrieval with the others." },
+          ]
+        : [],
+      ...overrides,
+    },
+  };
+}
+
+export function comparisonGrid(
+  status: ComparisonGrid["meta"]["status"],
+  overrides: Partial<ComparisonGrid["data"]> = {},
+  error: ErrorEnvelope | null = null,
+): ComparisonGrid {
+  const content = status === "ready" || status === "partial";
+  return {
+    type: "ComparisonGrid",
+    id: "turn-1-comparison-grid",
+    meta: { panel: "chat", order: 20, status, error },
+    data: {
+      dimensions: content
+        ? [
+            { id: "dense", label: "Dense Retrieval" },
+            { id: "bm25", label: "BM25" },
+          ]
+        : [],
+      rows: content
+        ? [
+            {
+              docId: "d1",
+              docTitle: TITLE,
+              cells: [
+                { dimensionId: "dense", citationId: "c1" },
+                { dimensionId: "bm25", citationId: "c2" },
+              ],
+            },
+            { docId: "d2", docTitle: "Second Paper", cells: [{ dimensionId: "dense", citationId: "c3" }] },
+            { docId: "d3", docTitle: "Third Paper", cells: [{ dimensionId: "bm25", citationId: "c4" }, { dimensionId: "dense", citationId: "c5" }] },
+          ]
+        : [],
+      citations: content
+        ? [
+            { id: "c1", chunkId: "k1", docId: "d1", docTitle: TITLE, page: 1, quote: "Dense Retrieval embeds queries." },
+            { id: "c2", chunkId: "k2", docId: "d1", docTitle: TITLE, page: 2, quote: "BM25 scores exact terms." },
+            {
+              id: "c3",
+              chunkId: "k3",
+              docId: "d2",
+              docTitle: "Second Paper",
+              page: null,
+              quote: "In this second paper, Dense Retrieval underpins the baseline pipeline and is described at considerable length across many sentences.",
+            },
+            { id: "c4", chunkId: "k4", docId: "d3", docTitle: "Third Paper", page: 5, quote: "BM25 is the sparse arm of the third paper." },
+            { id: "c5", chunkId: "k5", docId: "d3", docTitle: "Third Paper", page: 6, quote: "Dense Retrieval is also used in the third paper." },
           ]
         : [],
       ...overrides,

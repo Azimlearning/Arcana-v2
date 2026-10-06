@@ -82,3 +82,39 @@ export interface GraphViewData {
   edges: GraphEdge[];
   citations: Citation[];
 }
+
+/** A column of the comparison: one entity the compared documents all discuss. `label` is its display name. */
+export interface GridDimension {
+  id: string;
+  label: string;
+}
+
+/**
+ * What one document says about one dimension: `citationId` names a citation of this block whose chunk belongs to
+ * the row's document and whose quote contains the dimension's label. A dimension with no evidence in a row simply
+ * has no cell: there is no text cell and no placeholder.
+ */
+export interface GridCell {
+  dimensionId: string;
+  citationId: string;
+}
+
+/** One document of the comparison. `docTitle` is the stored title. */
+export interface GridRow {
+  docId: string;
+  docTitle: string;
+  cells: GridCell[];
+}
+
+/**
+ * Documents as rows and shared entities as columns. In a `ready` block there are at least 2 rows (at most 6) and 2
+ * dimensions (at most 8), ids are unique, every row exists in the store under its title, every row has a cell, every
+ * dimension has cells in at least 2 rows, each document and dimension has at most one cell per row, and every
+ * citation is cited. Placeholders carry no rows, dimensions or citations. The schema cannot say so; the server
+ * validator does.
+ */
+export interface ComparisonGridData {
+  dimensions: GridDimension[];
+  rows: GridRow[];
+  citations: Citation[];
+}

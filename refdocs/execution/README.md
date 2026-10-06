@@ -30,4 +30,4 @@ If reality diverges from the doc mid-build, **edit the doc** and note it in the 
 |---|---|---|
 | [2026-10-05-p0-walking-skeleton.md](2026-10-05-p0-walking-skeleton.md) | [../plans/2026-10-05-p0-walking-skeleton.md](../plans/2026-10-05-p0-walking-skeleton.md) | Closed with deferrals (tasks 1 to 9 and 11 done on fakes; task 10 and the RAGAS install deferred to P1 task B2) |
 | [2026-10-06-p1-agent-core.md](2026-10-06-p1-agent-core.md) | [../plans/2026-10-06-p1-agent-core.md](../plans/2026-10-06-p1-agent-core.md) | Done 2026-10-06 (A1 to A9 and B1 to B6) |
-| [2026-10-06-p2-genui-catalog-dashboard.md](2026-10-06-p2-genui-catalog-dashboard.md) | [../plans/2026-10-06-p2-genui-catalog-dashboard.md](../plans/2026-10-06-p2-genui-catalog-dashboard.md) | In progress (tracks A to E, 21 tasks; A1, A1b, A2, A3, B1 and B2 done 2026-10-06, B3 next) |
+| [2026-10-06-p2-genui-catalog-dashboard.md](2026-10-06-p2-genui-catalog-dashboard.md) | [../plans/2026-10-06-p2-genui-catalog-dashboard.md](../plans/2026-10-06-p2-genui-catalog-dashboard.md) | In progress (tracks A to E, 21 tasks; A1, A1b, A2, A3, B1, B2 and B3 done 2026-10-06, B4 next) |

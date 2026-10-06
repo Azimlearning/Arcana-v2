@@ -15,6 +15,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
+from api.genui.alignment import MAX_GRID_DIMS, MAX_GRID_DOCS, settle
 from api.genui.generated import UIBlock
 from api.genui.text import MIN_LABEL_CHARS, MIN_QUOTE_CHARS, label_in_quote, normalise
 from api.stores.doc_store import Document
@@ -152,6 +153,69 @@ def graph_edges(graph: dict[str, Any] | None) -> list[dict[str, Any]]:
     return drawn
 
 
+def alignment_grid(
+    graph: dict[str, Any] | None,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+    """(documents, dimensions, cells) a ComparisonGrid may show, from the Graph agent's alignment, or three empty
+    lists when there is no comparison. Each cell must carry a verbatim quote of at least the minimum length that
+    names its dimension's label (the tests the validator applies), then the documents and dimensions are settled
+    again (see `settle`): every dimension in two or more rows, every row with a cell, both within the caps. A pure
+    function of the payload, shared by the check and the Composer."""
+    alignment = (graph or {}).get("alignment") or {}
+    labels: dict[str, str] = {}
+    seen_labels: set[str] = set()
+    for d in alignment.get("dimensions") or []:
+        label = d.get("label")
+        if isinstance(d.get("id"), str) and isinstance(label, str) and normalise(label).lower() not in seen_labels:
+            seen_labels.add(normalise(label).lower())  # two columns with one label would say the same thing twice
+            labels[d["id"]] = label
+    titles = {
+        d["doc_id"]: d["title"]
+        for d in alignment.get("documents") or []
+        if isinstance(d.get("doc_id"), str) and isinstance(d.get("title"), str)
+    }
+    cells: dict[tuple[str, str], dict[str, Any]] = {}
+    for cell in alignment.get("cells") or []:
+        doc_id, dim_id, quote = cell.get("doc_id"), cell.get("dimension_id"), cell.get("quote")
+        if doc_id not in titles or dim_id not in labels or not isinstance(quote, str):
+            continue
+        if not MIN_LABEL_CHARS <= len(labels[dim_id].strip()) <= MAX_LABEL_CHARS:
+            continue
+        if len(normalise(quote)) < MIN_QUOTE_CHARS or not label_in_quote(quote, labels[dim_id]):
+            continue
+        if cell.get("doc_title") != titles[doc_id]:
+            continue
+        cells.setdefault((doc_id, dim_id), cell)
+    docs, dims = settle(list(titles), list(labels), set(cells), max_docs=MAX_GRID_DOCS, max_dims=MAX_GRID_DIMS)
+    if len(docs) < 2 or len(dims) < 2:
+        return [], [], []
+    return (
+        [{"doc_id": d, "title": titles[d]} for d in docs],
+        [{"id": n, "label": labels[n]} for n in dims],
+        [cells[(d, n)] for d in docs for n in dims if (d, n) in cells],
+    )
+
+
+def _check_comparison_grid(evidence: ComposerEvidence) -> Result:
+    if evidence.graph is None:
+        return Result(False, ("no_graph_result",))
+    documents, dimensions, _ = alignment_grid(evidence.graph)
+    return Result(True) if documents and dimensions else Result(False, ("no_shared_entities",))
+
+
+COMPARISON_GRID = Spec(
+    name="ComparisonGrid",
+    precondition=(
+        "At least two documents and two entities remain after alignment, every entity evidenced in two or more of "
+        "the documents by a verbatim quote naming it."
+    ),
+    supplied_by=("graph",),
+    caps={"documents": MAX_GRID_DOCS, "entities": MAX_GRID_DIMS},
+    placement=Placement(panel="chat", priority=20),
+    check=_check_comparison_grid,
+)
+
+
 def _check_graph_view(evidence: ComposerEvidence) -> Result:
     if evidence.graph is None:
         return Result(False, ("no_graph_result",))
@@ -176,5 +240,5 @@ SOURCE_LIST = Spec(
     check=_check_source_list,
 )
 
-CATALOG: dict[str, Spec] = {spec.name: spec for spec in (CITED_SUMMARY, SOURCE_LIST, GRAPH_VIEW)}
+CATALOG: dict[str, Spec] = {spec.name: spec for spec in (CITED_SUMMARY, SOURCE_LIST, GRAPH_VIEW, COMPARISON_GRID)}
 """Every component the Composer may admit, in the order it considers them (the terminal one first)."""

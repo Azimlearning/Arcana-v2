@@ -32,6 +32,7 @@ from typing import Any
 from pydantic import TypeAdapter, ValidationError
 
 from api.core.errors import ValidationFailed
+from api.genui.alignment import MAX_GRID_DIMS, MAX_GRID_DOCS
 from api.genui.catalog import (
     MAX_GRAPH_EDGES,
     MAX_GRAPH_NODES,
@@ -39,7 +40,15 @@ from api.genui.catalog import (
     MAX_RELATION_CHARS,
     MAX_SOURCES,
 )
-from api.genui.generated import Citation, CitedSummary, FieldIssue, GraphView, SourceList, UIBlock
+from api.genui.generated import (
+    Citation,
+    CitedSummary,
+    ComparisonGrid,
+    FieldIssue,
+    GraphView,
+    SourceList,
+    UIBlock,
+)
 from api.genui.text import MIN_LABEL_CHARS, MIN_QUOTE_CHARS, label_in_quote
 from api.genui.text import normalise as _norm
 from api.stores.doc_store import DocStore
@@ -90,6 +99,8 @@ def _content_issues(block: UIBlock, docs: DocStore) -> list[FieldIssue]:
         issues += _source_list_issues(block, docs)
     elif isinstance(block, GraphView):
         issues += _graph_view_issues(block, docs)
+    elif isinstance(block, ComparisonGrid):
+        issues += _comparison_grid_issues(block, docs)
     else:
         issues.append(FieldIssue(path="type", message="no content rules exist for this block type"))
     return issues
@@ -142,6 +153,103 @@ def _source_list_issues(block: SourceList, docs: DocStore) -> list[FieldIssue]:
             issues.append(
                 FieldIssue(path=f"data.documents.{i}.chunkCount", message="does not match the stored passage count")
             )
+    return issues
+
+
+def _comparison_grid_issues(block: ComparisonGrid, docs: DocStore) -> list[FieldIssue]:
+    data, status = block.data, block.meta.status
+    if status in PLACEHOLDER_STATUSES:
+        if data.dimensions or data.rows or data.citations:
+            return [FieldIssue(path="data", message=f"a '{status}' block must carry no rows, dimensions or citations")]
+        return []
+
+    issues: list[FieldIssue] = []
+    if status == "ready" and (len(data.rows) < 2 or len(data.dimensions) < 2):
+        issues.append(FieldIssue(path="data", message="a ready grid compares at least two documents on two entities"))
+    if len(data.rows) > MAX_GRID_DOCS:
+        issues.append(FieldIssue(path="data.rows", message=f"at most {MAX_GRID_DOCS} documents may be compared"))
+    if len(data.dimensions) > MAX_GRID_DIMS:
+        issues.append(FieldIssue(path="data.dimensions", message=f"at most {MAX_GRID_DIMS} entities may be compared"))
+
+    labels: dict[str, str] = {}
+    seen_labels: set[str] = set()
+    for i, dimension in enumerate(data.dimensions):
+        if dimension.id in labels:
+            issues.append(FieldIssue(path=f"data.dimensions.{i}.id", message="dimension ids must be unique"))
+        if _norm(dimension.label).lower() in seen_labels:
+            issues.append(FieldIssue(path=f"data.dimensions.{i}.label", message="two columns may not share a label"))
+        seen_labels.add(_norm(dimension.label).lower())
+        labels[dimension.id] = dimension.label
+        if not MIN_LABEL_CHARS <= len(dimension.label.strip()) <= MAX_LABEL_CHARS:
+            issues.append(
+                FieldIssue(
+                    path=f"data.dimensions.{i}.label",
+                    message=f"a label is {MIN_LABEL_CHARS} to {MAX_LABEL_CHARS} characters",
+                )
+            )
+
+    citations = {c.id: c for c in data.citations}
+    if len(citations) != len(data.citations):
+        issues.append(FieldIssue(path="data.citations", message="citation ids must be unique"))
+
+    rows_with: dict[str, int] = dict.fromkeys(labels, 0)
+    referenced: set[str] = set()
+    seen_docs: set[str] = set()
+    for i, row in enumerate(data.rows):
+        if row.docId in seen_docs:
+            issues.append(FieldIssue(path=f"data.rows.{i}.docId", message="a document is listed twice"))
+        seen_docs.add(row.docId)
+        stored = docs.get_document(row.docId)
+        if stored is None:
+            issues.append(FieldIssue(path=f"data.rows.{i}.docId", message="no stored document has this id"))
+        else:
+            if stored.status != "ready":
+                issues.append(FieldIssue(path=f"data.rows.{i}.docId", message="the document is not ready to be cited"))
+            if row.docTitle != stored.title:
+                issues.append(
+                    FieldIssue(path=f"data.rows.{i}.docTitle", message="does not match the stored document's title")
+                )
+        if not row.cells:
+            issues.append(FieldIssue(path=f"data.rows.{i}.cells", message="a row needs at least one cell"))
+        in_row: set[str] = set()
+        for j, cell in enumerate(row.cells):
+            where = f"data.rows.{i}.cells.{j}"
+            if cell.dimensionId not in labels:
+                issues.append(
+                    FieldIssue(path=f"{where}.dimensionId", message=f"no dimension with id {cell.dimensionId!r}")
+                )
+                continue
+            if cell.dimensionId in in_row:
+                issues.append(FieldIssue(path=f"{where}.dimensionId", message="a row has one cell per dimension"))
+            else:
+                rows_with[cell.dimensionId] += 1
+            in_row.add(cell.dimensionId)
+            citation = citations.get(cell.citationId)
+            if citation is None:
+                issues.append(
+                    FieldIssue(path=f"{where}.citationId", message=f"no citation with id {cell.citationId!r}")
+                )
+                continue
+            referenced.add(citation.id)
+            if citation.docId != row.docId:
+                issues.append(
+                    FieldIssue(path=f"{where}.citationId", message="the cited chunk belongs to a different document")
+                )
+            if not label_in_quote(citation.quote, labels[cell.dimensionId]):
+                issues.append(
+                    FieldIssue(
+                        path=f"{where}.citationId",
+                        message=f"the cited quote does not contain the label {labels[cell.dimensionId]!r}",
+                    )
+                )
+
+    for i, dimension in enumerate(data.dimensions):
+        if rows_with.get(dimension.id, 0) < 2 and dimension.id in labels:
+            issues.append(
+                FieldIssue(path=f"data.dimensions.{i}", message="an entity must be evidenced in at least two documents")
+            )
+
+    issues += _citation_issues(data.citations, referenced, docs)
     return issues
 
 

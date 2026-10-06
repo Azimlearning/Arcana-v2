@@ -57,7 +57,7 @@ D-30 merges them into Studio (ASSUMED, settled in the P5 plan).
 |---|---|---|
 | `find_path` | built | grounded edges only, deterministic search |
 | `neighborhood` | built | one to two hops, capped |
-| `align_documents` | P2 | entity-by-document alignment, supplies `ComparisonGrid` |
+| `align_documents` | built (P2 B3) | entity-by-document alignment with a verbatim quote per cell, supplies `ComparisonGrid` |
 | `cross_document_paths` | P2 stretch | supplies `InsightCard` |
 | `communities`, `central_entities` | P5 | structure summaries; the store already has communities |
 | `entity_timeline` | needs re-extraction, not planned | absorbs v1's Timeline; extraction records no dates (D-29) |

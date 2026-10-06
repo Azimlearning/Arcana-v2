@@ -72,6 +72,21 @@ class CitedSummaryData(BaseModel):
     citations: list[Citation]
 
 
+class ComparisonGrid(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    type: Literal['ComparisonGrid']
+    id: str
+    meta: BlockMeta
+    data: ComparisonGridData
+
+
+class ComparisonGridData(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    dimensions: list[GridDimension]
+    rows: list[GridRow]
+    citations: list[Citation]
+
+
 class DoneEvent(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
     type: Literal['done']
@@ -118,6 +133,25 @@ class GraphViewData(BaseModel):
     nodes: list[GraphNode]
     edges: list[GraphEdge]
     citations: list[Citation]
+
+
+class GridCell(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    dimensionId: str
+    citationId: str
+
+
+class GridDimension(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    id: str
+    label: str
+
+
+class GridRow(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    docId: str
+    docTitle: str
+    cells: list[GridCell]
 
 
 class IngestResponse(BaseModel):
@@ -186,7 +220,7 @@ StreamEvent = Annotated[BlockEvent | StreamErrorEvent | DoneEvent, Field(discrim
 
 TurnOutcome = Literal['answered', 'empty', 'error']
 
-UIBlock = Annotated[CitedSummary | SourceList | GraphView, Field(discriminator='type')]
+UIBlock = Annotated[CitedSummary | SourceList | GraphView | ComparisonGrid, Field(discriminator='type')]
 
 AgentStep.model_rebuild()
 BlockEvent.model_rebuild()
@@ -196,6 +230,8 @@ ChatRequest.model_rebuild()
 Citation.model_rebuild()
 CitedSummary.model_rebuild()
 CitedSummaryData.model_rebuild()
+ComparisonGrid.model_rebuild()
+ComparisonGridData.model_rebuild()
 DoneEvent.model_rebuild()
 ErrorEnvelope.model_rebuild()
 FieldIssue.model_rebuild()
@@ -203,6 +239,9 @@ GraphEdge.model_rebuild()
 GraphNode.model_rebuild()
 GraphView.model_rebuild()
 GraphViewData.model_rebuild()
+GridCell.model_rebuild()
+GridDimension.model_rebuild()
+GridRow.model_rebuild()
 IngestResponse.model_rebuild()
 SourceItem.model_rebuild()
 SourceList.model_rebuild()

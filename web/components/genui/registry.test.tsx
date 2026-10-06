@@ -2,9 +2,10 @@ import type { CitedSummary as CitedSummaryBlock, UIBlock } from "@arcana/schema"
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { block, graphView, sourceList } from "@/test/fixtures";
+import { block, comparisonGrid, graphView, sourceList } from "@/test/fixtures";
 
 import { CitedSummary } from "./CitedSummary";
+import { ComparisonGrid } from "./ComparisonGrid";
 import { GraphView } from "./GraphView";
 import { SourceList } from "./SourceList";
 import { registry, renderBlock, type Registry } from "./registry";
@@ -12,11 +13,12 @@ import { registry, renderBlock, type Registry } from "./registry";
 describe("block registry", () => {
   it("registers a component for every block type in the wire union", () => {
     // Compile-time too: `registry: Registry<UIBlock>` fails to typecheck if a variant is missing.
-    const types: UIBlock["type"][] = ["CitedSummary", "SourceList", "GraphView"];
+    const types: UIBlock["type"][] = ["CitedSummary", "SourceList", "GraphView", "ComparisonGrid"];
     for (const type of types) expect(registry[type]).toBeTypeOf("function");
     expect(registry.CitedSummary).toBe(CitedSummary);
     expect(registry.SourceList).toBe(SourceList);
     expect(registry.GraphView).toBe(GraphView);
+    expect(registry.ComparisonGrid).toBe(ComparisonGrid);
   });
 
   it("renders a known block through its registered component", () => {
@@ -32,6 +34,11 @@ describe("block registry", () => {
   it("renders a GraphView block through the registry", () => {
     render(<>{renderBlock(graphView("ready"))}</>);
     expect(screen.getByRole("group", { name: /Graph of 3 concepts and 2 relations/ })).toBeInTheDocument();
+  });
+
+  it("renders a ComparisonGrid block through the registry", () => {
+    render(<>{renderBlock(comparisonGrid("ready"))}</>);
+    expect(screen.getByRole("table")).toBeInTheDocument();
   });
 
   it("an unregistered block type renders an error state, never a crash or a blank", () => {

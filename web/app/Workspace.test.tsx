@@ -4,7 +4,7 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { TITLE, block, envelope, frame, jsonResponse, sseResponse, trace } from "@/test/fixtures";
+import { TITLE, block, comparisonGrid, envelope, frame, jsonResponse, sseResponse, trace } from "@/test/fixtures";
 import { useWorkspace } from "@/lib/store";
 
 import { Workspace } from "./Workspace";
@@ -143,6 +143,22 @@ describe("Workspace", () => {
     expect(await screen.findByText(/1\. orchestrator/)).toBeInTheDocument();
     expect(screen.getByText(/2\. research/)).toBeInTheDocument();
     expect(screen.getByText(/3\. fact checker/)).toBeInTheDocument();
+  });
+
+  it("shows a comparison beneath the answer and still opens the trace of the turn, not of the extra block", async () => {
+    routes["/chat"] = () =>
+      sseResponse([
+        frame({ type: "block", block: block("loading") }),
+        frame({ type: "block", block: block("ready") }),
+        frame({ type: "block", block: comparisonGrid("ready") }),
+        frame({ type: "done" }),
+      ]);
+    routes["/turns/turn-1/trace"] = () => jsonResponse(trace());
+    render(<Workspace />);
+    ask();
+    expect(await screen.findByRole("table")).toBeInTheDocument();
+    fireEvent.click(await screen.findByRole("button", { name: "Show how this was answered" }));
+    expect(await screen.findByText(/1\. orchestrator/)).toBeInTheDocument(); // the trace of "turn-1", the answer's id
   });
 
   it("offers the trace of a turn that ended in an error too, and says so if the server has none", async () => {

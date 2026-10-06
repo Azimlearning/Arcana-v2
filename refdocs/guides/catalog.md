@@ -117,7 +117,7 @@ Status: **built** (P2 B2). **Works on real data and is interactive (D-29).**
 
 ## ComparisonGrid
 
-Status: planned, task B3 (with the Graph agent tool `align_documents`).
+Status: **built** (P2 B3, with the Graph agent tool `align_documents`).
 
 - **Precondition:** at least 2 documents and 2 entities remain after alignment; every shown entity is evidenced in at
   least 2 of the shown documents; each present cell is grounded.
@@ -125,13 +125,18 @@ Status: planned, task B3 (with the Graph agent tool `align_documents`).
 - **Payload:** `dimensions: {id, label}[]`, `rows: {docId, docTitle, cells: {dimensionId, citationId}[]}[]`, `citations`.
   A dimension with no evidence in a row has no cell; there is no text cell.
 - **Caps:** 6 documents, 8 entities.
-- **Validator invariants:** unique dimension and row ids; a cell's dimension exists; a cell's citation exists, its chunk
+- **Validator invariants:** unique dimension and row ids; two columns may not share a label; at most one cell per dimension in a row; a cell's dimension exists; a cell's citation exists, its chunk
   belongs to **the row's document**, and its quote contains the dimension's label; every dimension has cells in at least 2
   rows; every row has at least 1 cell; no orphan citation.
 - **States:** all four. Ready: a table, documents as rows and entities as columns with headers; an empty cell is
   rendered as an explicit "no evidence in this paper" mark in text.
 - **Placement hint:** chat panel, priority 20 (beneath the summary).
 - **Admissible with flat retrieval:** no. Aligning documents on shared entities needs the graph.
+- **Measured through the Graph agent (B3, 2026-10-06, read-only on a copy of the live data):** on the 20 frozen
+  questions a grid was offered for all 20, each with the 6-document cap reached and 4 to 8 entity columns; 589 of the 858
+  (document, entity) cells had evidence (69 percent), the rest render as "No evidence in this paper". The columns are
+  the question's own entities first (for example `hybrid retrieval`, `graph traversal`, `BM25`) and then shared
+  neighbours, which on this corpus include the hubs `LLM` and `RAG`.
 - **Known weakness:** shared entities include generic hubs (`LLM`, `RAG` occur in 12 to 15 of 16 papers). Dimensions are the
   question's resolved entities plus their shared neighbours, capped at 8; grounding is guaranteed, usefulness is not.
 

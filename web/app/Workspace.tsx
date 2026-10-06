@@ -48,10 +48,11 @@ export function Workspace() {
   }, [question]);
 
   const chatBlocks = order.map((id) => blocks[id]).filter((b) => b?.meta.panel === "chat");
-  // The block's id is the turn's id. Offer the trace once the turn has ended, including a turn that
+  // The answer block's id is the turn's id (other blocks of the turn have derived ids). Offer the trace once the turn has ended, including a turn that
   // ended in an error (the trace of a failure is the one most worth reading). A turn whose connection
   // died may have no trace on the server; opening the panel then shows the server's not-found message.
-  const traced = turn !== "streaming" ? chatBlocks[chatBlocks.length - 1] : undefined;
+  const traced =
+    turn !== "streaming" ? chatBlocks.find((b) => b?.type === "CitedSummary") : undefined;
 
   return (
     <div className="mx-auto grid max-w-5xl gap-6 p-6 md:grid-cols-[18rem_1fr]">
