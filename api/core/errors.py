@@ -22,9 +22,7 @@ class ArcanaError(Exception):
         self.issues = list(issues)
 
     def to_envelope(self) -> ErrorEnvelope:
-        return ErrorEnvelope(
-            code=self.code, message=self.message, issues=self.issues, retryable=self.retryable
-        )
+        return ErrorEnvelope(code=self.code, message=self.message, issues=self.issues, retryable=self.retryable)
 
 
 class ValidationFailed(ArcanaError):
@@ -37,6 +35,17 @@ class BadRequest(ArcanaError):
 
 class NotFound(ArcanaError):
     code = "not_found"
+
+
+class PatternRefused(ArcanaError):
+    """A saved view cannot be applied. `reason` is `precondition_not_met`, `template_changed` or `document_missing`;
+    it travels as the path of the one issue, with a plain sentence as its message."""
+
+    code = "pattern_refused"
+
+    def __init__(self, reason: str, message: str):
+        super().__init__("This saved view cannot be shown.", [FieldIssue(path=reason, message=message)])
+        self.reason = reason
 
 
 class IngestFailed(BadRequest):
@@ -69,9 +78,7 @@ def envelope_from_exception(exc: BaseException) -> ErrorEnvelope:
     """Map any exception to the wire envelope without leaking internals."""
     if isinstance(exc, ArcanaError):
         return exc.to_envelope()
-    return ErrorEnvelope(
-        code="internal", message="An internal error occurred.", issues=[], retryable=False
-    )
+    return ErrorEnvelope(code="internal", message="An internal error occurred.", issues=[], retryable=False)
 
 
 # Transport mapping for non-stream endpoints. In a stream the envelope itself carries the failure.
@@ -82,5 +89,6 @@ HTTP_STATUS: dict[str, int] = {
     "budget_exhausted": 429,
     "spend_cap_exceeded": 402,
     "provider_unavailable": 503,
+    "pattern_refused": 409,
     "internal": 500,
 }

@@ -1,7 +1,7 @@
 // Client state for the workspace (Zustand). Blocks are stored by id: a block event whose id is
 // already present REPLACES that block in place (loading -> ready), which is the wire's update model.
 
-import type { ErrorEnvelope, IngestResponse, LayoutSpec, UIBlock, WorkspaceResponse } from "@arcana/schema";
+import type { ErrorEnvelope, IngestResponse, LayoutSpec, SavedPattern, UIBlock, WorkspaceResponse } from "@arcana/schema";
 import { create } from "zustand";
 
 import { FALLBACK_LAYOUT, isLayoutSpec } from "./layout";
@@ -53,11 +53,14 @@ interface WorkspaceState {
   pinned: boolean;
   turn: TurnStatus;
   turnError: ErrorEnvelope | null;
+  /** The user's saved views, as the server last listed them. */
+  patterns: SavedPattern[];
 
   addDocument: (doc: IngestResponse) => void;
   startTurn: () => void;
   upsertBlock: (block: UIBlock) => void;
   /** Apply `/workspace`: its prebuilt layout and blocks. A layout this client cannot read is ignored. */
+  setPatterns: (patterns: SavedPattern[]) => void;
   setWorkspace: (workspace: WorkspaceResponse) => void;
   /** An adaptive layout from the stream. Anything that is not a readable adaptive layout is ignored. */
   setLayout: (layout: LayoutSpec) => void;
@@ -78,6 +81,7 @@ export const useWorkspace = create<WorkspaceState>()((set) => ({
   pinned: false,
   turn: "idle",
   turnError: null,
+  patterns: [],
 
   addDocument: (doc) =>
     set((s) => ({ documents: [...s.documents.filter((d) => d.docId !== doc.docId), doc] })),
@@ -99,6 +103,8 @@ export const useWorkspace = create<WorkspaceState>()((set) => ({
       order: s.order.includes(block.id) ? s.order : [...s.order, block.id],
       blocks: { ...s.blocks, [block.id]: block },
     })),
+
+  setPatterns: (patterns) => set({ patterns }),
 
   setWorkspace: (workspace) =>
     set((s) => ({

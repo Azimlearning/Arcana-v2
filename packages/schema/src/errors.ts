@@ -7,7 +7,15 @@ export type ErrorCode =
   | "budget_exhausted"
   | "spend_cap_exceeded"
   | "provider_unavailable"
+  | "pattern_refused"
   | "internal";
+
+/**
+ * `pattern_refused` is the answer to applying a saved view that can no longer be shown. Each issue's `path` is one of the
+ * reason codes: `precondition_not_met` (the evidence no longer supports the view), `template_changed` (the view was made
+ * with another version of its template, so it is stale until re-verified) or `document_missing` (a document it names is
+ * gone). The `message` is a plain sentence. Nothing is shown from a refused view.
+ */
 
 /**
  * One violation, located by a dotted path into the offending payload. For a block the path is

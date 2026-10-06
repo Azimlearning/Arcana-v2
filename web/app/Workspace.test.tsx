@@ -4,25 +4,26 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { TITLE, block, comparisonGrid, envelope, frame, graphView, jsonResponse, layout, sourceList, sseResponse, trace, workspace } from "@/test/fixtures";
+import { TITLE, block, comparisonGrid, envelope, frame, graphView, jsonResponse, layout, savedPattern, sourceList, sseResponse, trace, workspace } from "@/test/fixtures";
 import { useWorkspace } from "@/lib/store";
 
 import { Workspace } from "./Workspace";
 
 const INGESTED = { docId: "d", title: TITLE, status: "ready", chunkCount: 4, error: null };
 
-let routes: Record<string, () => Response>;
+/** Mocked routes by path, or by `METHOD path` when the method matters. */
+let routes: Record<string, (init?: RequestInit) => Response>;
 
 beforeEach(() => {
   useWorkspace.setState(useWorkspace.getInitialState(), true);
   routes = {};
   vi.stubGlobal(
     "fetch",
-    vi.fn(async (url: string) => {
+    vi.fn(async (url: string, init?: RequestInit) => {
       const path = new URL(url).pathname;
-      const route = routes[path];
+      const route = routes[`${init?.method ?? "GET"} ${path}`] ?? routes[path];
       if (!route) throw new TypeError(`no mock for ${path}`);
-      return route();
+      return route(init);
     }),
   );
 });
@@ -383,4 +384,130 @@ describe("Workspace", () => {
     const chatCalls = vi.mocked(fetch).mock.calls.filter(([url]) => String(url).includes("/chat"));
     expect(chatCalls).toEqual([]); // but no question was sent
   });
+
+  describe("saved views", () => {
+    const openList = async () => {
+      fireEvent.click(await screen.findByText(/Saved views \(/));
+    };
+
+    /** The apply stream the server sends for a saved graph: one block (an apply id) and its layout. */
+    const appliedStream = () =>
+      sseResponse([
+        frame({ type: "block", block: { ...graphView("ready"), id: "apply-9-graph-view" } }),
+        frame({
+          type: "layout",
+          layout: layout([{ blockId: "apply-9-graph-view", panel: "studio", order: 0 }], {
+            panels: [
+              { id: "sources", width: 0 },
+              { id: "chat", width: 40 },
+              { id: "studio", width: 60 },
+            ],
+            mode: "exploration",
+          }),
+        }),
+        frame({ type: "done" }),
+      ]);
+
+    it("lists the user's saved views, with their names and kinds", async () => {
+      routes["/patterns"] = () => jsonResponse({ patterns: [savedPattern(), savedPattern({ id: "p-2", name: "Comparison", templateId: "ComparisonGrid" })] });
+      render(<Workspace />);
+      await openList();
+      const items = within(await screen.findByRole("list", { name: "Saved views" })).getAllByRole("listitem");
+      expect(items).toHaveLength(2);
+      expect(items[0]).toHaveTextContent("Dense vs BM25");
+      expect(items[0]).toHaveTextContent("Connection graph");
+      expect(items[1]).toHaveTextContent("Document comparison");
+    });
+
+    it("shows a saved view again through the usual block and layout path, asking no question", async () => {
+      routes["/patterns"] = () => jsonResponse({ patterns: [savedPattern()] });
+      routes["POST /patterns/p-1/apply"] = appliedStream;
+      render(<Workspace />);
+      await openList();
+      fireEvent.click(await screen.findByRole("button", { name: "Show Dense vs BM25" }));
+      const studio = document.querySelector('[data-panel="studio"]') as HTMLElement;
+      expect(await within(studio).findByRole("group", { name: /Graph of/ })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Adaptive" })).toHaveAttribute("aria-pressed", "true"); // its layout took over
+      const calls = vi.mocked(fetch).mock.calls.map(([url]) => new URL(String(url)).pathname);
+      expect(calls).toContain("/patterns/p-1/apply");
+      expect(calls).not.toContain("/chat");
+    });
+
+    it("says in plain words why a refused view cannot be shown, and shows nothing from it", async () => {
+      routes["/patterns"] = () => jsonResponse({ patterns: [savedPattern()] });
+      const refusal = envelope({ code: "pattern_refused", message: "This saved view cannot be shown.", retryable: false, issues: [{ path: "document_missing", message: "x" }] });
+      routes["POST /patterns/p-1/apply"] = () => jsonResponse(refusal, 409);
+      render(<Workspace />);
+      await openList();
+      fireEvent.click(await screen.findByRole("button", { name: "Show Dense vs BM25" }));
+      expect(await screen.findByRole("alert")).toHaveTextContent("A document this view needs is no longer in your library.");
+      expect(screen.queryByRole("group", { name: /Graph of/ })).not.toBeInTheDocument();
+      expect(useWorkspace.getState().order).toEqual([]);
+    });
+
+    it("deletes a saved view and refreshes the list", async () => {
+      let items = [savedPattern(), savedPattern({ id: "p-2", name: "Second" })];
+      routes["GET /patterns"] = () => jsonResponse({ patterns: items });
+      routes["DELETE /patterns/p-1"] = () => {
+        items = items.filter((p) => p.id !== "p-1");
+        return new Response(null, { status: 204 });
+      };
+      render(<Workspace />);
+      await openList();
+      fireEvent.click(await screen.findByRole("button", { name: "Delete Dense vs BM25" }));
+      await waitFor(() => expect(screen.queryByRole("button", { name: "Show Dense vs BM25" })).not.toBeInTheDocument());
+      expect(screen.getByRole("button", { name: "Show Second" })).toBeInTheDocument();
+    });
+
+    it("offers Save this view on a finished answer's graph, and sends the turn and the kind to the server", async () => {
+      routes["/chat"] = () => answerWith(layout(places(), { panels: researchPanels(20, 45, 35) }));
+      let body: unknown = null;
+      routes["POST /patterns"] = (init) => {
+        body = JSON.parse(String(init?.body));
+        return jsonResponse(savedPattern());
+      };
+      routes["GET /patterns"] = () => jsonResponse({ patterns: [] });
+      render(<Workspace />);
+      ask();
+      const studio = document.querySelector('[data-panel="studio"]') as HTMLElement;
+      await within(studio).findByRole("group", { name: /Graph of/ });
+      fireEvent.click(await within(studio).findByRole("button", { name: "Save this view" }));
+      fireEvent.change(within(studio).getByLabelText("Name"), { target: { value: "My graph" } });
+      fireEvent.click(within(studio).getByRole("button", { name: "Save" }));
+      expect(await within(studio).findByText(/Saved\. You will find it under Saved views/)).toBeInTheDocument();
+      expect(body).toEqual({ turnId: "turn-1", templateId: "GraphView", name: "My graph" });
+    });
+
+    it("shows the server's reason when a view cannot be saved", async () => {
+      routes["/chat"] = () => answerWith(layout(places(), { panels: researchPanels(20, 45, 35) }));
+      routes["POST /patterns"] = () => jsonResponse(envelope({ code: "bad_request", message: "That view was not verified, so it cannot be saved.", retryable: false }), 400);
+      render(<Workspace />);
+      ask();
+      const studio = document.querySelector('[data-panel="studio"]') as HTMLElement;
+      fireEvent.click(await within(studio).findByRole("button", { name: "Save this view" }));
+      fireEvent.click(within(studio).getByRole("button", { name: "Save" }));
+      expect(await within(studio).findByRole("alert")).toHaveTextContent("That view was not verified, so it cannot be saved.");
+    });
+
+    it("does not offer to save the answer itself, a loading block, or a view that was applied from a saved one", async () => {
+      routes["/chat"] = () => answerWith(layout(places(), { panels: researchPanels(20, 45, 35) }));
+      render(<Workspace />);
+      ask();
+      await screen.findByText(/Dense retrieval embeds passages/);
+      const answer = screen.getByLabelText("Answer");
+      await waitFor(() => expect(within(answer).getAllByRole("button", { name: "Save this view" })).toHaveLength(1)); // the grid, in chat
+      cleanup();
+
+      useWorkspace.setState(useWorkspace.getInitialState(), true);
+      routes["/patterns"] = () => jsonResponse({ patterns: [savedPattern()] });
+      routes["POST /patterns/p-1/apply"] = appliedStream;
+      render(<Workspace />);
+      await openList();
+      fireEvent.click(await screen.findByRole("button", { name: "Show Dense vs BM25" }));
+      const studio = document.querySelector('[data-panel="studio"]') as HTMLElement;
+      await within(studio).findByRole("group", { name: /Graph of/ });
+      expect(within(studio).queryByRole("button", { name: "Save this view" })).not.toBeInTheDocument();
+    });
+  });
 });
+

@@ -83,10 +83,35 @@ export function parseFrame(raw: string): StreamEvent | null {
   throw new Error("unrecognised event");
 }
 
-export async function streamChat(
-  request: ChatRequest,
+/** Ask a question: POST /chat, a stream of blocks, a layout, then done. */
+export function streamChat(request: ChatRequest, handlers: StreamHandlers, options: StreamOptions = {}): Promise<void> {
+  return streamFrom(
+    "/chat",
+    { method: "POST", headers: { "Content-Type": "application/json", Accept: "text/event-stream" }, body: JSON.stringify(request) },
+    handlers,
+    options,
+  );
+}
+
+/**
+ * Apply a saved view: POST /patterns/{id}/apply streams its block and layout the same way. A view that can no longer be
+ * shown is refused before anything streams, as an HTTP 409 `pattern_refused` envelope: `onError` receives it and no
+ * block is delivered.
+ */
+export function streamApply(patternId: string, handlers: StreamHandlers, options: StreamOptions = {}): Promise<void> {
+  return streamFrom(
+    `/patterns/${encodeURIComponent(patternId)}/apply`,
+    { method: "POST", headers: { Accept: "text/event-stream" } },
+    handlers,
+    options,
+  );
+}
+
+async function streamFrom(
+  path: string,
+  init: RequestInit,
   handlers: StreamHandlers,
-  options: StreamOptions = {},
+  options: StreamOptions,
 ): Promise<void> {
   const { signal, baseUrl = API_BASE, fetchImpl = fetch } = options;
   let finished = false;
@@ -99,12 +124,7 @@ export async function streamChat(
 
   let response: Response;
   try {
-    response = await fetchImpl(`${baseUrl}/chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
-      body: JSON.stringify(request),
-      signal,
-    });
+    response = await fetchImpl(`${baseUrl}${path}`, { ...init, signal });
   } catch {
     if (signal?.aborted) return;
     return fail(clientError("Could not reach the server."));

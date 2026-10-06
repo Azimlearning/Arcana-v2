@@ -18,6 +18,7 @@ from api.agents.framework import route_to_agent
 from api.agents.state import TurnContext, TurnState
 from api.core.errors import envelope_from_exception
 from api.core.logging import get_logger
+from api.genui.catalog import Composition
 from api.genui.generated import (
     BlockEvent,
     DoneEvent,
@@ -66,6 +67,27 @@ def _checked(block: UIBlock, ctx: TurnContext) -> BlockEvent:
     return BlockEvent(type="block", block=validate_block(block.model_dump(), ctx.docs))
 
 
+async def stream_composition(
+    composition: Composition, ctx: TurnContext
+) -> AsyncIterator[BlockEvent | LayoutEvent | StreamErrorEvent | DoneEvent]:
+    """Stream an already-composed result (a saved view applied): its blocks, each through the last gate, then its
+    layout through the last gate, then done. No loading block: nothing is awaited. A block that fails the gate ends the
+    stream with the error event instead of a partial view."""
+    try:
+        finals = [_checked(block, ctx) for block in composition.blocks]
+    except Exception as exc:
+        log.error("applied_view_failed", error=type(exc).__name__)
+        yield StreamErrorEvent(type="error", error=envelope_from_exception(exc))
+        yield DoneEvent(type="done")
+        return
+    for event in finals:
+        yield event
+    layout_event = _checked_layout(composition.layout, {e.block.id for e in finals})
+    if layout_event is not None:
+        yield layout_event
+    yield DoneEvent(type="done")
+
+
 async def run_turn(
     graph, question: str, ctx: TurnContext
 ) -> AsyncIterator[BlockEvent | LayoutEvent | StreamErrorEvent | DoneEvent]:
@@ -88,7 +110,9 @@ async def run_turn(
         state = await graph.ainvoke({"question": question}, context=ctx)
         composition = state["composition"]
         finals = [_checked(block, ctx) for block in composition.blocks]
-        ctx.composition = composition.records  # recorded only once the blocks passed the last gate: "offered" means sent
+        ctx.composition = (
+            composition.records
+        )  # recorded only once the blocks passed the last gate: "offered" means sent
     except Exception as exc:
         log.error("turn_failed", error=type(exc).__name__)
         envelope = envelope_from_exception(exc)

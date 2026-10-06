@@ -17,9 +17,9 @@ from typing import Any
 
 from langgraph.runtime import Runtime
 
-from api.agents.framework import AgentResult
+from api.agents.framework import AgentResult, route_to_agent
 from api.agents.state import TurnContext, TurnState
-from api.core.errors import ValidationFailed
+from api.core.errors import PatternRefused, ValidationFailed
 from api.core.logging import get_logger
 from api.genui.builders import BUILDERS, cited_summary
 from api.genui.catalog import (
@@ -35,8 +35,9 @@ from api.genui.catalog import (
     concept_path,
     graph_edges,
 )
-from api.genui.generated import ErrorEnvelope, LayoutSpec, UIBlock
+from api.genui.generated import ErrorEnvelope, LayoutSpec, SavedPattern, UIBlock
 from api.genui.layout import compose_layout, prebuilt_layout
+from api.genui.patterns import params_of, validate_params
 from api.genui.validate import validate_block, validate_layout
 from api.stores.doc_store import DocStore, Document
 
@@ -317,6 +318,57 @@ def compose(ctx: TurnContext) -> Composition:
         log.error("layout_failed", error=type(exc).__name__)
         return replace(composition, layout_failure=("internal",))
     return replace(composition, layout=layout)
+
+
+async def compose_from_pattern(ctx: TurnContext, pattern: SavedPattern) -> Composition:
+    """Apply a saved pattern (D-31, stage 5): re-bind its evidence with the Graph agent's deterministic tools, run its
+    template through admission, build, validation and layout, and return the one block. **No Research, no Fact Checker
+    and no model call.** Fails closed with a reason, never a partial block:
+      - `template_changed`: the template is gone, or its version is not the one the pattern was made with, or the
+        pattern's parameters are no longer the template's slots (it is stale until re-verified);
+      - `document_missing`: a document the parameters name is gone or not ready;
+      - `precondition_not_met`: the evidence of the day no longer satisfies the template (or its block no longer
+        validates, or the question's entities no longer resolve)."""
+    template = CATALOG.get(pattern.templateId)
+    params = params_of(pattern)
+    if template is None or template.version != pattern.templateVersion or not template.reusable:
+        raise PatternRefused("template_changed", "This view was made with an older version of its template.")
+    if validate_params(template, params):
+        raise PatternRefused("template_changed", "This view no longer matches the shape of its template.")
+    for doc_id in params.get("documents", []):
+        document = ctx.docs.get_document(doc_id)
+        if document is None or document.status != "ready":
+            raise PatternRefused("document_missing", "A document this view needs is no longer in your library.")
+
+    graph: dict[str, Any] | None = None
+    entities = params.get("entities", [])
+    if entities:
+        result = await route_to_agent(ctx, "graph", " ".join(entities))
+        graph = result.payload if result.status in ("ok", "partial") else None
+        resolved = {s.get("label", "").strip().lower() for s in (graph or {}).get("seeds") or []}
+        if not graph or not {e.strip().lower() for e in entities} <= resolved:
+            raise PatternRefused(
+                "precondition_not_met", "The concepts this view is about could not be found in your documents."
+            )
+    documents, chunk_counts = _documents(ctx)
+    evidence = ComposerEvidence(
+        answer=None, graph=graph, documents=documents, intent="relate", chunk_counts=chunk_counts
+    )
+    check = template.check(evidence)
+    if not check.satisfied:
+        raise PatternRefused("precondition_not_met", "Your documents no longer support this view.")
+    try:
+        block = validate_block(_raw(template, ctx, evidence, empty=False), ctx.docs)
+    except ValidationFailed as exc:
+        log.warning("applied_block_rejected", component=template.name, issues=[i.path for i in exc.issues])
+        raise PatternRefused("precondition_not_met", "Your documents no longer support this view.") from exc
+    mode_intent = "relate" if pattern.layoutMode == "exploration" else "single"
+    layout = validate_layout(compose_layout([(block.id, template.name)], mode_intent), {block.id})
+    return Composition(
+        (block,),
+        (ComponentRecord(template.name, "admitted", (), block.id),),
+        layout=layout,
+    )
 
 
 WORKSPACE_SOURCES_ID = "workspace-sources"

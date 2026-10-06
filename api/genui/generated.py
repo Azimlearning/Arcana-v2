@@ -307,7 +307,7 @@ ChatRole = Literal['user', 'assistant']
 
 DecisionReason = Literal['no_grounded_answer', 'no_ready_document', 'no_graph_result', 'no_grounded_edge', 'no_shared_entities', 'not_a_path', 'single_hop', 'path_too_long', 'broken_path', 'ungrounded_hop', 'repeated_concept', 'block_failed_validation', 'answer_unavailable', 'not_considered', 'unspecified']
 
-ErrorCode = Literal['validation_failed', 'bad_request', 'not_found', 'budget_exhausted', 'spend_cap_exceeded', 'provider_unavailable', 'internal']
+ErrorCode = Literal['validation_failed', 'bad_request', 'not_found', 'budget_exhausted', 'spend_cap_exceeded', 'provider_unavailable', 'pattern_refused', 'internal']
 
 LayoutMode = Literal['basic', 'research', 'exploration']
 

@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { block, envelope, frame, jsonResponse, layout, sseResponse } from "@/test/fixtures";
 
-import { parseFrame, streamChat } from "./stream";
+import { parseFrame, streamApply, streamChat } from "./stream";
 
 const REQUEST = { message: "q", history: [] };
 
@@ -161,3 +161,31 @@ describe("parseFrame", () => {
     expect(() => parseFrame(`data: ${JSON.stringify({ type: "block", block: {} })}`)).toThrow();
   });
 });
+
+describe("streamApply", () => {
+  it("posts to the pattern's apply endpoint (encoded), with no body, and delivers blocks, layout and done", async () => {
+    const placed = layout([{ blockId: "turn-1", panel: "chat", order: 0 }]);
+    const body = frame({ type: "block", block: block("ready") }) + frame({ type: "layout", layout: placed }) + frame({ type: "done" });
+    const { calls, handlers } = collect();
+    const fetchImpl = vi.fn(async () => sseResponse([body]));
+    await streamApply("a/b", handlers, { fetchImpl: fetchImpl as unknown as typeof fetch, baseUrl: "http://api" });
+    const [url, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("http://api/patterns/a%2Fb/apply");
+    expect(init.method).toBe("POST");
+    expect(init.body).toBeUndefined();
+    expect(calls.blocks).toHaveLength(1);
+    expect(calls.layouts).toEqual([placed]);
+    expect(calls.done).toBe(1);
+  });
+
+  it("delivers a refusal as an error and no block", async () => {
+    const refusal = envelope({ code: "pattern_refused", message: "This saved view cannot be shown.", retryable: false, issues: [{ path: "template_changed", message: "m" }] });
+    const { calls, handlers } = collect();
+    const fetchImpl = vi.fn(async () => jsonResponse(refusal, 409));
+    await streamApply("p-1", handlers, { fetchImpl: fetchImpl as unknown as typeof fetch, baseUrl: "http://api" });
+    expect(calls.errors).toEqual([refusal]);
+    expect(calls.blocks).toEqual([]);
+    expect(calls.done).toBe(0);
+  });
+});
+

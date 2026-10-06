@@ -11,18 +11,21 @@ import type { ErrorEnvelope, PanelId, UIBlock } from "@arcana/schema";
 
 import { renderBlock } from "@/components/genui/registry";
 import { LayoutSwitch } from "@/components/shell/LayoutSwitch";
+import { SaveView, type SaveOutcome } from "@/components/shell/SaveView";
+import { SavedViews, refusalWords } from "@/components/shell/SavedViews";
 import { Shell } from "@/components/shell/Shell";
 import { TracePanel } from "@/components/TracePanel";
-import { fetchWorkspace, uploadPdf } from "@/lib/api";
+import { deletePattern, fetchWorkspace, listPatterns, savePattern, uploadPdf } from "@/lib/api";
 import { placeBlocks } from "@/lib/layout";
-import { streamChat } from "@/lib/stream";
+import { streamApply, streamChat } from "@/lib/stream";
 import { activeLayout, useWorkspace } from "@/lib/store";
 
 export function Workspace() {
-  const { documents, order, blocks, workspaceBlocks, layouts, layoutChoice, turn, turnError } = useWorkspace();
+  const { documents, order, blocks, workspaceBlocks, layouts, layoutChoice, turn, turnError, patterns } = useWorkspace();
   const [question, setQuestion] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<ErrorEnvelope | null>(null);
+  const [savedMessage, setSavedMessage] = useState<string | null>(null);
   const abort = useRef<AbortController | null>(null);
 
   const loadWorkspace = useCallback(async () => {
@@ -31,9 +34,51 @@ export function Workspace() {
     // If it fails the fallback layout stays and the sources panel shows only what was uploaded in this session.
   }, []);
 
+  const loadPatterns = useCallback(async () => {
+    const result = await listPatterns();
+    if (result.ok) useWorkspace.getState().setPatterns(result.patterns);
+  }, []);
+
   useEffect(() => {
     void loadWorkspace();
-  }, [loadWorkspace]);
+    void loadPatterns();
+  }, [loadWorkspace, loadPatterns]);
+
+  // Show a saved view again. It streams like an answer (so it goes through the same block and layout path) but asks
+  // no question and calls no model; a refusal arrives as an error and shows nothing.
+  const showView = useCallback(async (id: string) => {
+    if (useWorkspace.getState().turn === "streaming") return;
+    setSavedMessage(null);
+    abort.current?.abort();
+    abort.current = new AbortController();
+    useWorkspace.getState().startTurn();
+    await streamApply(
+      id,
+      {
+        onBlock: (block) => useWorkspace.getState().upsertBlock(block),
+        onLayout: (next) => useWorkspace.getState().setLayout(next),
+        onError: (error) => {
+          useWorkspace.getState().finishTurn();
+          setSavedMessage(refusalWords(error));
+        },
+        onDone: () => {
+          useWorkspace.getState().finishTurn();
+          void loadPatterns(); // its use count moved
+        },
+      },
+      { signal: abort.current.signal },
+    );
+  }, [loadPatterns]);
+
+  const removeView = useCallback(
+    async (id: string) => {
+      setSavedMessage(null);
+      const result = await deletePattern(id);
+      if (!result.ok) setSavedMessage(result.error.message);
+      await loadPatterns();
+    },
+    [loadPatterns],
+  );
 
   const onFile = useCallback(
     async (file: File | undefined) => {
@@ -91,6 +136,32 @@ export function Workspace() {
   // has ended, including a turn that ended in an error (the trace of a failure is the one most worth reading). A turn
   // whose connection died may have no trace on the server; opening the panel then shows the server's not-found message.
   const traced = turn !== "streaming" ? placed.chat.find((b) => b.type === "CitedSummary") : undefined;
+
+  // A view can be saved from a finished, answered turn (its id is the answer block's id) and not from a view that was itself
+  // applied from a saved one. Which kinds the server will accept is the server's decision; it says why if it refuses.
+  const turnId = turn === "idle" ? placed.chat.find((b) => b.type === "CitedSummary")?.id : undefined;
+  const SAVEABLE = ["GraphView", "ComparisonGrid", "ConceptMap"];
+  const KIND_NAMES: Record<string, string> = {
+    GraphView: "Connection graph",
+    ComparisonGrid: "Document comparison",
+    ConceptMap: "Connection path",
+  };
+  const withSave = (block: UIBlock) => (
+    <div key={block.id}>
+      {renderBlock(block)}
+      {turnId && block.meta.status === "ready" && SAVEABLE.includes(block.type) && block.id.startsWith(turnId) && (
+        <SaveView
+          defaultName={KIND_NAMES[block.type] ?? block.type}
+          onSave={async (name): Promise<SaveOutcome> => {
+            const result = await savePattern({ turnId, templateId: block.type, name });
+            if (!result.ok) return { ok: false, message: result.error.message };
+            await loadPatterns();
+            return { ok: true };
+          }}
+        />
+      )}
+    </div>
+  );
 
   const panels: Record<PanelId, React.ReactNode> = {
     sources: (
@@ -159,9 +230,7 @@ export function Workspace() {
         </form>
 
         <section aria-label="Answer" className="space-y-4">
-          {placed.chat.map((block) => (
-            <div key={block.id}>{renderBlock(block)}</div>
-          ))}
+          {placed.chat.map(withSave)}
           {traced && traced.meta.status !== "loading" && <TracePanel key={traced.id} turnId={traced.id} />}
           {turn === "failed" && placed.chat.length === 0 && turnError && (
             <p role="alert" className="text-sm text-red-700">
@@ -176,7 +245,7 @@ export function Workspace() {
         {placed.studio.length === 0 ? (
           <p className="text-sm text-stone-500">Graphs and connections appear here when your question needs them.</p>
         ) : (
-          placed.studio.map((block) => <div key={block.id}>{renderBlock(block)}</div>)
+          placed.studio.map(withSave)
         )}
       </div>
     ),
@@ -188,11 +257,20 @@ export function Workspace() {
       header={
         <>
           <span className="text-lg font-semibold text-stone-900">Arcana</span>
-          <LayoutSwitch
-            choice={layoutChoice}
-            adaptiveAvailable={layouts.adaptive !== null}
-            onChoose={(choice) => useWorkspace.getState().chooseLayout(choice)}
-          />
+          <div className="flex items-start gap-3">
+            <LayoutSwitch
+              choice={layoutChoice}
+              adaptiveAvailable={layouts.adaptive !== null}
+              onChoose={(choice) => useWorkspace.getState().chooseLayout(choice)}
+            />
+            <SavedViews
+              patterns={patterns}
+              busy={turn === "streaming"}
+              message={savedMessage}
+              onApply={(id) => void showView(id)}
+              onDelete={(id) => void removeView(id)}
+            />
+          </div>
         </>
       }
       panels={panels}

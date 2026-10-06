@@ -18,6 +18,7 @@ from api.stores.local.sqlite_doc import SqliteDocStore
 from api.test_api import (  # noqa: F401  (fixtures and helpers)
     chat,
     client,
+    events,
     ready_client,
     turn_id_of,
 )
@@ -255,3 +256,134 @@ def test_the_endpoints_make_no_model_call(ready_client: TestClient):
     listing(ready_client)
     ready_client.delete(f"/patterns/{saved.id}")
     assert provider.calls == []
+
+
+# ── apply (P2 E3): reuse without a model call ─────────────────────────────────
+
+
+def apply(app_client: TestClient, pattern_id: str):
+    return app_client.post(f"/patterns/{pattern_id}/apply")
+
+
+def block_of(stream: list, template: str):
+    return next(e.block for e in stream if e.type == "block" and e.block.type == template)  # pyright: ignore[reportAttributeAccessIssue]
+
+
+def test_a_saved_view_applied_on_the_same_corpus_gives_the_original_blocks_data(ready_client: TestClient):
+    turn = chat(ready_client, QUESTION)
+    original = block_of(events(turn), "GraphView")
+    turn_id = turn_id_of(chat(ready_client, QUESTION))
+    pattern = SavedPattern.model_validate(save(ready_client, turn_id).json())
+
+    response = apply(ready_client, pattern.id)
+    assert response.status_code == 200 and response.headers["content-type"].startswith("text/event-stream")
+    stream = events(response)  # every event parsed against the generated schema
+    assert [e.type for e in stream] == ["block", "layout", "done"]  # no loading block: nothing is awaited
+    applied = block_of(stream, "GraphView")
+    assert applied.data == original.data and applied.meta.status == "ready"  # same evidence, same words, same graph
+    assert applied.id.startswith("apply-") and applied.id.endswith("-graph-view")
+    layout = stream[1].layout  # pyright: ignore[reportAttributeAccessIssue]
+    assert layout.origin == "adaptive" and [(p.blockId, p.panel) for p in layout.placements] == [(applied.id, "studio")]
+
+
+def test_applying_makes_no_model_call_and_leaves_the_ledger_unchanged(ready_client: TestClient):
+    container = ready_client.app.state.container  # pyright: ignore[reportAttributeAccessIssue]
+    pattern = SavedPattern.model_validate(save(ready_client, saved_turn(ready_client)).json())
+    provider = FakeProvider(fail_with="timeout")
+    container.llm = LLMService(provider, None, container.ledger)
+    before = (container.ledger.month_total(), len(container.ledger.rows()))
+    assert apply(ready_client, pattern.id).status_code == 200
+    assert provider.calls == []  # no Research, no Fact Checker, no routing call
+    assert (container.ledger.month_total(), len(container.ledger.rows())) == before
+
+
+def test_applying_counts_the_use(ready_client: TestClient):
+    pattern = SavedPattern.model_validate(save(ready_client, saved_turn(ready_client)).json())
+    apply(ready_client, pattern.id)
+    apply(ready_client, pattern.id)
+    (after,) = listing(ready_client)
+    assert after.useCount == 2 and after.lastUsedAt is not None
+
+
+def test_a_saved_source_list_applies_too(ready_client: TestClient):
+    pattern = SavedPattern.model_validate(save(ready_client, saved_turn(ready_client), "SourceList", "Sources").json())
+    stream = events(apply(ready_client, pattern.id))
+    listing_block = block_of(stream, "SourceList")
+    assert listing_block.meta.status == "ready" and len(listing_block.data.documents) == 1  # pyright: ignore[reportAttributeAccessIssue]
+
+
+def refusal(response, reason: str):
+    assert response.status_code == 409 and response.headers["content-type"].startswith("application/json")
+    envelope = ErrorEnvelope.model_validate(response.json())  # a plain envelope: nothing streamed, no partial block
+    assert envelope.code == "pattern_refused" and [i.path for i in envelope.issues] == [reason]
+    assert "block" not in response.text.replace("pattern_refused", "")  # no block of any kind came back
+    return envelope
+
+
+def test_deleting_the_evidence_makes_the_apply_refuse_with_precondition_not_met(ready_client: TestClient):
+    docs = ready_client.app.state.container.docs  # pyright: ignore[reportAttributeAccessIssue]
+    pattern = SavedPattern.model_validate(save(ready_client, saved_turn(ready_client)).json())
+    for document in docs.list_documents():
+        docs.delete_document(document.id)
+    refusal(apply(ready_client, pattern.id), "precondition_not_met")
+    assert listing(ready_client)[0].useCount == 0  # a refused apply is not a use
+
+
+def test_a_document_the_view_names_that_is_gone_refuses_with_document_missing(ready_client: TestClient):
+    from api.stores.doc_store import StoredPattern
+
+    docs = ready_client.app.state.container.docs  # pyright: ignore[reportAttributeAccessIssue]
+    doc_id = docs.list_documents()[0].id
+    params = json.dumps(
+        [{"key": "documents", "values": [doc_id]}, {"key": "entities", "values": ["Dense Retrieval", "BM25"]}]
+    )
+    docs.put_pattern(StoredPattern("grid", "Grid", "ComparisonGrid", 1, params, "research", "saved", 0, "t", None))
+    docs.delete_document(doc_id)
+    refusal(apply(ready_client, "grid"), "document_missing")
+
+
+def test_a_template_that_moved_on_refuses_with_template_changed(
+    ready_client: TestClient, monkeypatch: pytest.MonkeyPatch
+):
+    from dataclasses import replace
+
+    pattern = SavedPattern.model_validate(save(ready_client, saved_turn(ready_client)).json())
+    monkeypatch.setitem(CATALOG, "GraphView", replace(CATALOG["GraphView"], version=2))
+    refusal(apply(ready_client, pattern.id), "template_changed")
+
+
+def test_a_template_that_no_longer_exists_refuses_with_template_changed(ready_client: TestClient):
+    from api.stores.doc_store import StoredPattern
+
+    docs = ready_client.app.state.container.docs  # pyright: ignore[reportAttributeAccessIssue]
+    params = json.dumps([{"key": "entities", "values": ["A"]}])
+    docs.put_pattern(StoredPattern("gone", "n", "RemovedThing", 1, params, "research", "saved", 0, "t", None))
+    refusal(apply(ready_client, "gone"), "template_changed")
+
+
+def test_concepts_that_no_longer_resolve_refuse_with_precondition_not_met(ready_client: TestClient):
+    from api.stores.doc_store import StoredPattern
+
+    docs = ready_client.app.state.container.docs  # pyright: ignore[reportAttributeAccessIssue]
+    params = json.dumps([{"key": "entities", "values": ["Quantum Chromodynamics", "Basket Weaving"]}])
+    docs.put_pattern(StoredPattern("lost", "n", "GraphView", 1, params, "research", "saved", 0, "t", None))
+    refusal(apply(ready_client, "lost"), "precondition_not_met")
+
+
+def test_an_exploration_pattern_is_laid_out_in_exploration_mode(ready_client: TestClient):
+    from api.stores.doc_store import StoredPattern
+
+    pattern = SavedPattern.model_validate(save(ready_client, saved_turn(ready_client)).json())
+    docs = ready_client.app.state.container.docs  # pyright: ignore[reportAttributeAccessIssue]
+    stored = docs.get_pattern(pattern.id)
+    docs.put_pattern(
+        StoredPattern("explore", "n", stored.template_id, 1, stored.params_json, "exploration", "saved", 0, "t", None)
+    )
+    stream = events(apply(ready_client, "explore"))
+    assert stream[1].layout.mode == "exploration"  # pyright: ignore[reportAttributeAccessIssue]
+
+
+def test_an_unknown_pattern_is_not_found_and_apply_is_post_only(ready_client: TestClient):
+    refused(apply(ready_client, "no-such-pattern"), "not_found", 404)
+    refused(apply(ready_client, "x" * 65), "not_found", 404)
+    assert ready_client.get("/patterns/anything/apply").status_code == 405
