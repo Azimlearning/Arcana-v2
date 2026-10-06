@@ -18,9 +18,11 @@ from api.agents.framework import AgentResult
 from api.agents.state import TurnContext, TurnState
 from api.core.errors import ValidationFailed
 from api.core.logging import get_logger
-from api.genui.builders import cited_summary
+from api.genui.builders import BUILDERS, cited_summary
+from api.genui.catalog import CATALOG, ComponentRecord, ComposerEvidence, Composition, Spec
 from api.genui.generated import ErrorEnvelope, UIBlock
 from api.genui.validate import validate_block
+from api.stores.doc_store import Document
 
 log = get_logger(__name__)
 
@@ -49,40 +51,96 @@ def _failure(ctx: TurnContext) -> ErrorEnvelope | None:
     return None
 
 
-def compose_block(ctx: TurnContext) -> UIBlock:
+def _gate(ctx: TurnContext) -> tuple[dict[str, Any] | None, ErrorEnvelope | None]:
+    """The answer the Composer may show, or the error that replaces it. Fail closed: an agent that failed, a
+    missing Research result, or (with a checker on the roster) a checker that did not run or did not pass,
+    is an error, never the unchecked answer."""
     failure = _failure(ctx)
     if failure is not None:
-        return error_block(ctx, failure)
-
+        return None, failure
     research = ctx.results.get("research")
     if research is None:
-        return error_block(
-            ctx, ErrorEnvelope(code="internal", message="No agent produced an answer.", issues=[], retryable=False)
-        )
+        return None, ErrorEnvelope(code="internal", message="No agent produced an answer.", issues=[], retryable=False)
     answer = research.payload.get("answer")
     if ctx.roster.get("fact_checker"):
-        # Fail closed: with a checker on the roster, only what it passed is shown. A checker that was
-        # never run, failed or was refused is an error block, never the unchecked answer.
         checker = ctx.results.get("fact_checker")
         if checker is None or checker.status in ("failed", "refused"):
-            error = checker.error if checker else None
-            return error_block(
-                ctx,
-                error
-                or ErrorEnvelope(code="internal", message="The answer could not be checked.", issues=[], retryable=False),
+            return None, (
+                checker.error
+                if checker and checker.error
+                else ErrorEnvelope(
+                    code="internal",
+                    message="The answer could not be checked.",
+                    issues=[],
+                    retryable=False,
+                )
             )
         answer = checker.payload.get("answer")
-    raw: dict[str, Any] = (
-        cited_summary(ctx.block_id, "empty")
-        if answer is None
-        else cited_summary(ctx.block_id, "ready", data=answer.data)
-    )
+    return (answer.data if answer is not None else None), None
+
+
+def _documents(ctx: TurnContext) -> tuple[Document, ...]:
+    """The corpus listing. Every turn must end at the Composer (constraint 4), so a store that cannot list is
+    treated as an empty corpus here, and any component that needs documents is simply not admitted."""
     try:
-        return validate_block(raw, ctx.docs)
-    except ValidationFailed as exc:
-        log.warning("composed_block_rejected", issues=[i.path for i in exc.issues])
-        return error_block(ctx, exc.to_envelope())
+        return tuple(ctx.docs.list_documents())
+    except Exception as exc:
+        log.warning("document_listing_failed", error=type(exc).__name__)
+        return ()
+
+
+def _evidence(ctx: TurnContext, answer: dict[str, Any] | None) -> ComposerEvidence:
+    graph = ctx.results.get("graph")
+    return ComposerEvidence(
+        answer=answer,
+        graph=graph.payload if graph is not None and graph.status in ("ok", "partial") else None,
+        documents=_documents(ctx),
+        intent=ctx.intent,
+    )
+
+
+def _raw(spec: Spec, ctx: TurnContext, evidence: ComposerEvidence, *, empty: bool) -> dict[str, Any]:
+    builder = BUILDERS[spec.name]
+    if spec.name == "CitedSummary":
+        return builder(ctx.block_id, "empty") if empty else builder(ctx.block_id, "ready", data=evidence.answer)
+    raise AssertionError(f"no builder wiring for {spec.name}")  # unreachable while the catalog holds CitedSummary only
+
+
+def compose(ctx: TurnContext) -> Composition:
+    """Walk the catalog and build every block whose precondition the evidence satisfies. Never raises and never
+    returns nothing: the terminal component is always present, as an error or empty block if it must be."""
+    answer, failure = _gate(ctx)
+    if failure is not None:
+        record = ComponentRecord("CitedSummary", "error", (failure.code,), ctx.block_id)
+        return Composition((error_block(ctx, failure),), (record,))
+
+    evidence = _evidence(ctx, answer)
+    blocks: list[UIBlock] = []
+    records: list[ComponentRecord] = []
+    for spec in CATALOG.values():
+        result = spec.check(evidence)
+        if not result.satisfied and not spec.terminal:
+            records.append(ComponentRecord(spec.name, "refused", result.reasons))
+            continue
+        empty = not result.satisfied
+        try:
+            block = validate_block(_raw(spec, ctx, evidence, empty=empty), ctx.docs)
+        except ValidationFailed as exc:
+            log.warning("composed_block_rejected", component=spec.name, issues=[i.path for i in exc.issues])
+            if spec.terminal:
+                blocks.insert(0, error_block(ctx, exc.to_envelope()))
+            records.append(ComponentRecord(spec.name, "error", tuple(i.path for i in exc.issues), ctx.block_id))
+            continue
+        blocks.append(block)
+        records.append(ComponentRecord(spec.name, "empty" if empty else "admitted", result.reasons, block.id))
+    return Composition(tuple(blocks), tuple(records))
+
+
+def compose_block(ctx: TurnContext) -> UIBlock:
+    """The terminal block alone (the P0/P1 entry point, kept for callers that only need the answer)."""
+    return compose(ctx).primary
 
 
 def compose_node(state: TurnState, runtime: Runtime[TurnContext]) -> dict[str, Any]:
-    return {"block": compose_block(runtime.context)}
+    composition = compose(runtime.context)
+    return {"block": composition.primary, "composition": composition}

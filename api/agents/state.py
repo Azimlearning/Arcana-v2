@@ -11,6 +11,7 @@ from typing import Any, TypedDict
 
 from api.agents.framework import AgentResult, Roster, TurnLimits
 from api.core.budget import TokenBudget
+from api.genui.catalog import Composition
 from api.genui.generated import AgentStep, TurnOutcome, TurnTrace, UIBlock
 from api.llm.service import LLMService
 from api.retrieval.types import RetrievalResult
@@ -29,7 +30,9 @@ class Answer:
 class TurnState(TypedDict, total=False):
     question: str
     block: UIBlock
-    """The validated block, written only by the Composer."""
+    """The terminal block (the answer), validated, written only by the Composer."""
+    composition: Composition
+    """Every block the Composer chose, with a record per component, written only by the Composer."""
 
 
 @dataclass

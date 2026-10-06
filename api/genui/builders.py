@@ -3,6 +3,7 @@ validate_block: nothing built here reaches the wire without passing the validato
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
 from api.genui.generated import ErrorEnvelope
@@ -28,3 +29,7 @@ def cited_summary(
         },
         "data": data if data is not None else {"segments": [], "citations": []},
     }
+
+
+BUILDERS: dict[str, Callable[..., dict[str, Any]]] = {"CitedSummary": cited_summary}
+"""One builder per catalog component, keyed by block type. A test keeps this in step with the catalog and the schema."""

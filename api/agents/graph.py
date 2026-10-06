@@ -46,11 +46,9 @@ def _checked(block: UIBlock, ctx: TurnContext) -> BlockEvent:
     return BlockEvent(type="block", block=validate_block(block.model_dump(), ctx.docs))
 
 
-async def run_turn(
-    graph, question: str, ctx: TurnContext
-) -> AsyncIterator[BlockEvent | StreamErrorEvent | DoneEvent]:
-    """Stream one turn: a loading block at once, then the final block (same id, so it replaces the
-    loading one), then done.
+async def run_turn(graph, question: str, ctx: TurnContext) -> AsyncIterator[BlockEvent | StreamErrorEvent | DoneEvent]:
+    """Stream one turn: a loading block at once, then every block the Composer chose (the answer has the
+    loading block's id, so it replaces it), then done.
 
     If the graph itself fails, the Composer still terminates the turn: an error-state block with the
     same id replaces the loading one, then the stream carries the error event, then done. The client
@@ -66,7 +64,7 @@ async def run_turn(
 
     try:
         state = await graph.ainvoke({"question": question}, context=ctx)
-        final = _checked(state["block"], ctx)
+        finals = [_checked(block, ctx) for block in state["composition"].blocks]
     except Exception as exc:
         log.error("turn_failed", error=type(exc).__name__)
         envelope = envelope_from_exception(exc)
@@ -75,5 +73,6 @@ async def run_turn(
         yield DoneEvent(type="done")
         return
 
-    yield final
+    for event in finals:
+        yield event
     yield DoneEvent(type="done")

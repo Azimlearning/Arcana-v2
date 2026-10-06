@@ -28,8 +28,16 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-06: P2 task A3 (catalog spine and a multi-block Composer)
+- **Changed:** `api/genui/catalog.py` (new: `ComposerEvidence`, `Spec` with a `(panel, priority)` placement hint, `Result`, `ComponentRecord`, `Composition`, and the one registered component, `CitedSummary`), `api/agents/compose.py` (`compose(ctx)` walks the catalog and returns a `Composition`; `compose_block` kept as a thin wrapper for the primary block; the fail-closed gate on agent failure and the Fact Checker is unchanged and now sits in `_gate`), `api/agents/state.py` (`composition` state key beside `block`), `api/agents/graph.py` (`run_turn` streams every block of the composition), `api/genui/builders.py` (`BUILDERS` dispatch), `api/agents/test_catalog.py` (new, 6 tests), `api/agents/test_agents.py` (the tamper test's fake graph now returns a composition).
+- **Decided:** none new. A `terminal` spec (the answer component) is never omitted: a failed precondition yields its empty-state block, so every turn still ends with a visible result. A store that cannot list documents counts as an empty corpus for the catalog (the turn must still reach the Composer).
+- **Deviations:** the spec said "expected 524 plus the new tests"; the suite was already at 553, now 559. The placement hint lives on the `Spec` only; nothing on the wire carries it until C1.
+- **Verified:** `uv run pytest -q` 559 passed (including `api/test_api.py` end to end); `uv run pytest eval/tests/test_frozen_assets.py -q` 7 passed; ruff and pyright clean; `pnpm codegen:check` OK. New tests assert a turn yields exactly one `CitedSummary` with one `admitted` record, that `compose` adds zero provider calls and is repeatable, that no evidence gives one `empty` record with reason `no_grounded_answer`, and that the schema's block tags, the catalog, `BUILDERS` and the sections of `catalog.md` agree (planned components are listed explicitly and must be moved out of that list as B1 to B5 land).
+- **Noted, not changed:** an accidental `ruff format` run reformatted about twenty files at the default width; all were restored with `git checkout` before committing (the repo is not ruff-formatted, so do not run `ruff format` over it).
+- **Known issues / next steps:** B1 (`SourceList`, and `validate_block` dispatching on block type); `_raw` in `compose.py` has one hard-wired branch that B1 generalises.
+
 ### 2026-10-06: P2 task A2 (shared quote helpers)
-- **Changed:** `api/genui/evidence.py` (new; `best_excerpt` and `verified_quote` moved from `research.py` unchanged, plus `normalise`, `excerpt_containing`, `label_in_quote`), `api/agents/research.py` (imports them), `api/genui/test_evidence.py` (11 tests). A refactor with no behaviour change plus two new helpers for the relational grounding rule.
+- **Changed:** `api/genui/evidence.py` (new; `best_excerpt` and `verified_quote` moved from `research.py` unchanged, plus `normalise`, `excerpt_containing`, `label_in_quote`), `api/agents/research.py` (imports them), `api/genui/test_evidence.py` (12 test functions, 16 cases). A refactor with no behaviour change plus two new helpers for the relational grounding rule.
 - **Verified:** `uv run pytest api/genui api/agents -q` 204 passed; ruff and pyright clean. **Not verified:** nothing yet uses the new helpers (A3 and B2 do).
 - **Known issues / next steps:** A3 (the catalog spine and a multi-block Composer).
 

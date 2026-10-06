@@ -14,6 +14,7 @@ from api.agents.roster import default_roster
 from api.agents.state import TurnContext
 from api.core.budget import TokenBudget
 from api.fakes import fake_llm_responder
+from api.genui.catalog import Composition
 from api.genui.generated import BlockEvent, DoneEvent, StreamErrorEvent
 from api.llm.ledger import SpendLedger
 from api.llm.providers.fake import FakeProvider
@@ -236,7 +237,7 @@ async def test_a_block_built_around_the_validator_is_never_streamed(ingested, tm
 
     class Sneaky:
         async def ainvoke(self, *args, **kwargs):
-            return {"block": sneaky}
+            return {"block": sneaky, "composition": Composition((sneaky,))}
 
     events = [e async for e in run_turn(Sneaky(), QUESTION, make_ctx(deps, tmp_path))]
     streamed = [e.block for e in events if isinstance(e, BlockEvent)]
