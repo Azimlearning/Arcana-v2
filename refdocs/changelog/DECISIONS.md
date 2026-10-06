@@ -575,6 +575,12 @@ these are design intentions, not measured claims): templates as the starting poi
 evidence; mutation testing applied at template registration, not only to artifacts; versioned staleness; reuse
 selected by evidence shape; crystallisation into typed components (P4).
 
+**Expected to change.** Azim (2026-10-06): the pipeline as planned is fine for now, and he may change it or
+experiment with it after testing. So the stage interfaces are kept small and replaceable (a template record, a fence
+set, an ordered list of checks, a pattern store with a state field), and no later phase may assume the stages are
+fixed. "Generative UI" in this project is the MCAIT paper's full idea: typed composition now (P2), verified
+generated interfaces later (P4), with Synapse as the reference for the second.
+
 **Trade-offs / rejected.** P2 grows (four more tasks); the cut line is that the reuse and re-verification tasks may
 slip to the start of P4 if P2 runs long, with the template, fence and store tasks kept. Rejected: pulling generated
 code into P2 (it is the safety-critical path and needs the verifier, so it stays P4); saving evidence with a pattern
