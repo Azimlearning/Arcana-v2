@@ -306,6 +306,32 @@ defines RRF) or keep it deliberately as a "should find nothing" grounding test. 
 format and exercise the runner, from passages read in the papers, and is labelled "NOT the benchmark
 gold". The benchmark gold is annotated by hand in P1 before any benchmark arm is run.
 
+## D-22: P1 agent roster and where routing lives (2026-10-06, resolves Q-04)
+
+**Decision.**
+- **Built in P1:** Orchestrator, Research, Graph and Fact Checker, plus the Composer stub from P0.
+  **Deferred, still in the roster:** Lab Builder (P4), Tutor and Writer (P5). Seven agents plus the Composer
+  at the end of the build, per D-05 (fewer, deeper), each earning its place with tools that do real work.
+- **Routing lives in `route_to_agent`, not in graph topology.** The turn graph stays linear
+  (orchestrate, then compose). `route_to_agent` charges a hop, enforces the hop and token budgets,
+  refuses an unknown agent and a hop back to an agent already on the call stack, and records a trace step.
+  LangGraph's `Command` and `Send` are not used in P1; revisit `Send` if parallel fan-out is needed.
+- **The roster is an explicit object** carried in the turn context. v1's process-wide global registry
+  is not ported: it is hidden state, and it let any code register or reach any agent.
+- **Agents return payloads and verdicts; only the Composer builds blocks** (constraint 4). The Fact
+  Checker does not edit the answer; it returns a verdict per segment and the Composer applies it.
+- **The Fact Checker fails closed.** v1's checker failed open (on a provider outage it treated every
+  citation as supported). v2 must not: if the model judge is unavailable a deterministic lexical check
+  runs, and if no check can run the answer is not shipped.
+
+**Why.** Hop budgets, loop guards and traces are the safety properties of the agent layer, so they belong
+in code that is plain Python and unit-testable, not in graph wiring. A global registry contradicts the rule
+that agents compose only through `route_to_agent`. Failing open contradicts "ground before generating".
+
+**Rejected.** Dynamic routing through `Command` per agent: spreads budget and trace logic across graph
+nodes. Building Tutor and Writer now: nothing in P1's definition of done needs them, and a roster of
+prompt variants is what D-05 rejected. Porting v1's registry and fail-open checker: see above.
+
 ---
 
 ## Working assumptions (`ASSUMED:`)
@@ -313,9 +339,8 @@ gold". The benchmark gold is annotated by hand in P1 before any benchmark arm is
 Not decisions; guesses made to keep moving. Each one must be confirmed or killed before anything
 load-bearing is built on it. When one is resolved, delete it here and write a real ADR above.
 
-1. **ASSUMED:** the agent roster in PRD §3.1 (Q-04). Resolve in the P1 plan.
-2. **ASSUMED:** the VerifiedLab tier targets STEM content in the user's corpus; the physics contract covers its checkable subset (Q-06). Resolve in the P4 plan.
-3. **ASSUMED:** OpenRouter model ids follow its dotted naming (`anthropic/claude-sonnet-5.5`, `-opus-5.5`, `-haiku-4.5`). Its public model list did not show the sonnet and haiku entries on 2026-10-05. Confirm in P0 task 10.
-4. **ASSUMED:** `text-embedding-3-large` costs $0.13 per million tokens (`api/llm/pricing.py`). The OpenAI reference page does not state a price. Confirm against the pricing page before the first live embedding run (P0 task 10); the cap check depends on it.
+1. **ASSUMED:** the VerifiedLab tier targets STEM content in the user's corpus; the physics contract covers its checkable subset (Q-06). Resolve in the P4 plan.
+2. **ASSUMED:** OpenRouter model ids follow its dotted naming (`anthropic/claude-sonnet-5.5`, `-opus-5.5`, `-haiku-4.5`). Its public model list did not show the sonnet and haiku entries on 2026-10-05. Confirm in P0 task 10.
+3. **ASSUMED:** `text-embedding-3-large` costs $0.13 per million tokens (`api/llm/pricing.py`). The OpenAI reference page does not state a price. Confirm against the pricing page before the first live embedding run (P0 task 10); the cap check depends on it.
 
-Resolved and removed from this list: Q-02 (D-17), Q-03 (D-18), Q-05 and Q-01 (D-21), Q-08 (Tailwind v4 and LangGraph 1.x read from current docs at install: `@tailwindcss/postcss` with `@import "tailwindcss"` and no config file; `StateGraph(State, context_schema=...)`, `runtime: Runtime[Context]` in nodes, `graph.ainvoke(..., context=...)`).
+Resolved and removed from this list: Q-02 (D-17), Q-03 (D-18), Q-04 (D-22), Q-05 and Q-01 (D-21), Q-08 (Tailwind v4 and LangGraph 1.x read from current docs at install: `@tailwindcss/postcss` with `@import "tailwindcss"` and no config file; `StateGraph(State, context_schema=...)`, `runtime: Runtime[Context]` in nodes, `graph.ainvoke(..., context=...)`).

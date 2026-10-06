@@ -212,6 +212,7 @@ under the same id.
 | D-19 | Generated wire models are strict and forbid extras; five block statuses; `BlockMeta.error`; upsert by block id | `schema-guardian` found lax coercion accepting `"1"` for an int; fail closed means no coercion |
 | D-20 | Graph retrieval scoring is frozen before gold annotation: deterministic entity resolution, evidence-based tie-break, version-stamped results | `retrieval-auditor`: hash-order ties would make the graph arm noise; free constants invite test-set tuning |
 | D-21 | v1's question set and manifest reused unchanged and pinned by hash; monthly cap $5; q-single-01 found unanswerable from the corpus | Azim 2026-10-06; comparability with the pilot; constraint 9 |
+| D-22 | P1 roster: Orchestrator, Research, Graph, Fact Checker (+ Composer stub); routing in `route_to_agent`, explicit roster, fail-closed Fact Checker | Q-04 resolved; hops and budgets must be plain testable code; v1's global registry and fail-open checker not ported |
 
 ---
 
@@ -225,7 +226,7 @@ anything load-bearing is built on it.
 | Q-01 | RESOLVED 2026-10-06 by D-21: $5 per month to start | n/a |
 | Q-02 | RESOLVED 2026-10-05 by D-17: exact numpy store in one `.npz` | n/a |
 | Q-03 | RESOLVED 2026-10-05 by D-18: Python 3.13 | n/a |
-| Q-04 | ASSUMED: the agent roster in §3.1 | P1 plan |
+| Q-04 | RESOLVED 2026-10-06 by D-22 | n/a |
 | Q-05 | RESOLVED 2026-10-06 by D-21: v1's 20 questions and 16-paper manifest reused unchanged (q-single-01 is unanswerable from the corpus: open for Azim) | Azim, before the P1 benchmark |
 | Q-06 | ASSUMED: the VerifiedLab tier targets STEM content in the user's corpus, with the physics contract covering the checkable subset | P4 plan |
 | Q-07 | Where to deploy, if anywhere | Later (D-13) |

@@ -22,3 +22,8 @@ def fake_research_responder(request: LLMRequest) -> str:
         first = _SENTENCE.split(_WS.sub(" ", body).strip())[0][:160]
         segments.append({"text": f"The document states: {first}", "cites": [int(number)]})
     return json.dumps({"segments": segments})
+
+
+def fake_route_responder(request: LLMRequest) -> str:
+    """Routes everything to the single-question plan, so fake mode never needs a real router."""
+    return json.dumps({"intent": "single"})

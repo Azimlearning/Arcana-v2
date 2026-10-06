@@ -65,6 +65,8 @@
 
 **Verify:** `uv run pytest api/agents` passes: a cross-document question on a two-paper fixture yields citations from both papers; a model-chosen quote that is not verbatim is replaced, never shown; a verbatim one is kept.
 
+**Reality (done 2026-10-06):** The tools live in `api/agents/research.py` itself, not a separate `tools/research_tools.py`; two small functions did not justify a package. `compare_documents` takes one hybrid retrieval and pools it with every signal's deeper ranking, then takes up to two passages per document round-robin (cap 8), rather than issuing one retrieval per document: the same cost, and no per-document query to invent. The prompt groups passages by document and passage numbers follow the prompt order. Cites are `{"passage": n, "quote": "..."}`; bare integers are still accepted (server quote). A quote is kept only if it is a whitespace-normalised verbatim span of the cited chunk of at least 20 characters (the validator's own minimum), else the server's best-matching sentence replaces it. A comparison that cites one document when several were available returns `partial` with the note "comparison cites one document". Verified by `api/agents/test_research.py` (11 tests, a stubbed two-paper corpus rather than a second PDF) and the full suite (380 passed, ruff and pyright clean). The live-model quote rate (`quotes_model` vs `quotes_server` in the step stats) is not measured until Track B.
+
 ### Task A6: Graph agent
 
 **Files:** `api/agents/graph_agent.py`, `api/agents/tools/graph_tools.py`, tests.

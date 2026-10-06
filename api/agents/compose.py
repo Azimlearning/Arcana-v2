@@ -1,10 +1,10 @@
 """The Composer, P0 stub: the only place a block is made, and the terminal step of every turn.
 
-It always produces a block, even when research failed or found nothing: a failure becomes an
-error-state block carrying its reason, no evidence becomes an empty block. Whatever it builds must
-pass validate_block; if the validator rejects it, the Composer replaces it with an error-state block
-carrying the violation's field paths (fail closed). Choosing among several components and a layout
-arrives in P2; the contract (agents return payloads, only the Composer returns blocks) is fixed now.
+It always produces a block, even when an agent failed or a hop was refused: a failure becomes an
+error-state block carrying its reason, no evidence becomes an empty block. Whatever it builds must pass
+validate_block; if the validator rejects it, the Composer replaces it with an error-state block carrying
+the violation's field paths (fail closed). Choosing among several components and a layout arrives in P2;
+the contract (agents return payloads, only the Composer returns blocks) is fixed now.
 
 This module is the ONLY importer of api.genui.builders (a test enforces it): no other code can
 construct a block, so nothing reaches the wire that the Composer did not build and validate.
@@ -14,6 +14,7 @@ from typing import Any
 
 from langgraph.runtime import Runtime
 
+from api.agents.framework import AgentResult
 from api.agents.state import TurnContext, TurnState
 from api.core.errors import ValidationFailed
 from api.core.logging import get_logger
@@ -22,6 +23,9 @@ from api.genui.generated import ErrorEnvelope, UIBlock
 from api.genui.validate import validate_block
 
 log = get_logger(__name__)
+
+# Agents whose failure ends the turn. Their errors become the error block.
+DECISIVE = ("orchestrator", "research")
 
 
 def loading_block(ctx: TurnContext) -> UIBlock:
@@ -34,17 +38,38 @@ def error_block(ctx: TurnContext, error: ErrorEnvelope) -> UIBlock:
     return validate_block(cited_summary(ctx.block_id, "error", error=error), ctx.docs)
 
 
-def compose_node(state: TurnState, runtime: Runtime[TurnContext]) -> dict[str, Any]:
-    ctx = runtime.context
-    error, answer = state.get("error"), state.get("answer")
+def _failure(ctx: TurnContext) -> ErrorEnvelope | None:
+    for name in DECISIVE:
+        result: AgentResult | None = ctx.results.get(name)
+        if result is not None and result.status in ("failed", "refused"):
+            return result.error or ErrorEnvelope(
+                code="internal", message="An agent could not finish.", issues=[], retryable=False
+            )
+    return None
 
-    if error is not None:
-        return {"block": error_block(ctx, error)}
-    raw = cited_summary(ctx.block_id, "empty") if answer is None else cited_summary(
-        ctx.block_id, "ready", data=answer.data
+
+def compose_block(ctx: TurnContext) -> UIBlock:
+    failure = _failure(ctx)
+    if failure is not None:
+        return error_block(ctx, failure)
+
+    research = ctx.results.get("research")
+    if research is None:
+        return error_block(
+            ctx, ErrorEnvelope(code="internal", message="No agent produced an answer.", issues=[], retryable=False)
+        )
+    answer = research.payload.get("answer")
+    raw: dict[str, Any] = (
+        cited_summary(ctx.block_id, "empty")
+        if answer is None
+        else cited_summary(ctx.block_id, "ready", data=answer.data)
     )
     try:
-        return {"block": validate_block(raw, ctx.docs)}
+        return validate_block(raw, ctx.docs)
     except ValidationFailed as exc:
         log.warning("composed_block_rejected", issues=[i.path for i in exc.issues])
-        return {"block": error_block(ctx, exc.to_envelope())}
+        return error_block(ctx, exc.to_envelope())
+
+
+def compose_node(state: TurnState, runtime: Runtime[TurnContext]) -> dict[str, Any]:
+    return {"block": compose_block(runtime.context)}

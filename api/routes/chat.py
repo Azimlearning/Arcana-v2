@@ -13,6 +13,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
 
 from api.agents.graph import build_turn_graph, run_turn
+from api.agents.roster import default_roster
 from api.agents.state import TurnContext
 from api.core.budget import TokenBudget
 from api.core.errors import BadRequest
@@ -51,6 +52,7 @@ async def chat(body: ChatRequest, request: Request) -> StreamingResponse:
         llm=container.llm,
         budget=TokenBudget(),
         block_id=f"turn-{uuid.uuid4().hex[:12]}",
+        roster=default_roster(),
     )
 
     async def events() -> AsyncIterator[str]:

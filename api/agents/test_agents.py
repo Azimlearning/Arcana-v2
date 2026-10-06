@@ -8,6 +8,7 @@ from sqlalchemy import create_engine
 from api.agents.fakes import fake_research_responder
 from api.agents.graph import build_turn_graph, run_turn
 from api.agents.research import best_excerpt
+from api.agents.roster import default_roster
 from api.agents.state import TurnContext
 from api.core.budget import TokenBudget
 from api.fakes import fake_llm_responder
@@ -40,7 +41,7 @@ def retrieve_for(deps):
 def make_ctx(deps, tmp_path, responder=fake_llm_responder, *, provider=None, budget=None) -> TurnContext:
     ledger = SpendLedger(create_engine(f"sqlite:///{tmp_path / 'turn.db'}"), None)
     llm = LLMService(provider or FakeProvider(responder), None, ledger)
-    return TurnContext(deps.docs, retrieve_for(deps), llm, budget or TokenBudget(), "blk")
+    return TurnContext(deps.docs, retrieve_for(deps), llm, budget or TokenBudget(), "blk", roster=default_roster())
 
 
 async def run(deps, tmp_path, **kw):

@@ -58,3 +58,65 @@ def test_stream_event_rejects_an_unknown_tag():
     with pytest.raises(ValidationError) as exc:
         TypeAdapter(StreamEvent).validate_python({"type": "nope"})
     assert exc.value.errors()[0]["type"] == "union_tag_invalid"
+
+
+# ── TurnTrace (P1 task A2) ────────────────────────────────────────────────────
+
+from api.genui.generated import AgentStep, TurnTrace  # noqa: E402
+
+
+def step(**overrides: object) -> dict:
+    return {"hop": 0, "agent": "orchestrator", "status": "ok", "tokens": 12, "latencyMs": 3, "note": None, **overrides}
+
+
+def trace(**overrides: object) -> dict:
+    return {"turnId": "t1", "steps": [step(), step(hop=1, agent="research")], "hopsUsed": 2, "tokensUsed": 24, "outcome": "answered", **overrides}
+
+
+def test_a_valid_trace_validates_from_dict_and_json():
+    assert len(TurnTrace.model_validate(trace()).steps) == 2
+    assert TurnTrace.model_validate_json(json.dumps(trace())).outcome == "answered"
+
+
+@pytest.mark.parametrize("field", ["hop", "tokens", "latencyMs"])
+@pytest.mark.parametrize("bad", ["1", True, 1.0])
+def test_step_numbers_do_not_coerce(field: str, bad: object):
+    with pytest.raises(ValidationError):
+        AgentStep.model_validate(step(**{field: bad}))
+
+
+@pytest.mark.parametrize("field", ["hopsUsed", "tokensUsed"])
+def test_trace_totals_do_not_coerce(field: str):
+    with pytest.raises(ValidationError):
+        TurnTrace.model_validate(trace(**{field: "3"}))
+
+
+@pytest.mark.parametrize(
+    ("overrides", "where"),
+    [({"agent": "wizard"}, "agent"), ({"status": "great"}, "status")],
+)
+def test_step_enums_are_closed(overrides: dict, where: str):
+    with pytest.raises(ValidationError) as exc:
+        AgentStep.model_validate(step(**overrides))
+    assert exc.value.errors()[0]["loc"] == (where,)
+
+
+def test_every_roster_role_is_a_valid_agent_name():
+    for name in ("orchestrator", "research", "graph", "fact_checker", "composer", "tutor", "writer", "lab_builder"):
+        AgentStep.model_validate(step(agent=name))
+
+
+def test_trace_outcome_is_closed_and_extras_are_rejected():
+    with pytest.raises(ValidationError):
+        TurnTrace.model_validate(trace(outcome="maybe"))
+    with pytest.raises(ValidationError) as exc:
+        TurnTrace.model_validate({**trace(), "surprise": 1})
+    assert exc.value.errors()[0]["type"] == "extra_forbidden"
+
+
+def test_a_step_note_may_be_null_or_text_but_not_missing():
+    assert AgentStep.model_validate(step(note="hop budget reached")).note == "hop budget reached"
+    missing = step()
+    del missing["note"]
+    with pytest.raises(ValidationError):
+        AgentStep.model_validate(missing)

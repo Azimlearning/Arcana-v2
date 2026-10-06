@@ -12,6 +12,16 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 
+class AgentStep(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    hop: int
+    agent: AgentName
+    status: StepStatus
+    tokens: int
+    latencyMs: int
+    note: str | None
+
+
 class BlockEvent(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
     type: Literal['block']
@@ -102,6 +112,17 @@ class SummarySegment(BaseModel):
     citationIds: list[str]
 
 
+class TurnTrace(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    turnId: str
+    steps: list[AgentStep]
+    hopsUsed: int
+    tokensUsed: int
+    outcome: TurnOutcome
+
+
+AgentName = Literal['orchestrator', 'research', 'graph', 'fact_checker', 'composer', 'tutor', 'writer', 'lab_builder']
+
 BlockStatus = Literal['empty', 'loading', 'partial', 'ready', 'error']
 
 ChatRole = Literal['user', 'assistant']
@@ -110,10 +131,15 @@ ErrorCode = Literal['validation_failed', 'bad_request', 'not_found', 'budget_exh
 
 Panel = Literal['sources', 'chat', 'studio']
 
+StepStatus = Literal['ok', 'partial', 'failed', 'refused']
+
 StreamEvent = Annotated[BlockEvent | StreamErrorEvent | DoneEvent, Field(discriminator='type')]
+
+TurnOutcome = Literal['answered', 'empty', 'error']
 
 UIBlock = CitedSummary
 
+AgentStep.model_rebuild()
 BlockEvent.model_rebuild()
 BlockMeta.model_rebuild()
 ChatMessage.model_rebuild()
@@ -127,3 +153,4 @@ FieldIssue.model_rebuild()
 IngestResponse.model_rebuild()
 StreamErrorEvent.model_rebuild()
 SummarySegment.model_rebuild()
+TurnTrace.model_rebuild()
