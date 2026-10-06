@@ -28,6 +28,13 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-07: P2b proposed (Studio shell and split regions), docs only
+- **Changed:** `refdocs/plans/2026-10-07-p2b-studio-shell-split-regions.md` and `refdocs/execution/2026-10-07-p2b-studio-shell-split-regions.md` (new); ADR D-32 (proposed) and a pointer from working assumptions 4 and 5 in `DECISIONS.md`; both index tables.
+- **Decided:** Nothing is decided. D-32 proposes layout v2 (regions `main`, `secondary`, `shelf` inside a panel, with a direction), a Studio shell with inert generator tiles and an Outputs shelf that holds saved views first, and generators left to P5. It waits for Azim's approval.
+- **Deviations:** None. This follows the project rule that a plan and an execution doc exist before code.
+- **Verified:** nothing verified this session (documents only; no command was run for this entry).
+- **Known issues / next steps:** Azim approves, amends or rejects the plan; then tasks F1 to F5 in order. The PRD §7 row for D-32 is added when it is accepted.
+
 ### 2026-10-07: P2 tasks D3 (independent reviews) and D4 (wrap-up); P2 closed
 - **Changed:** `packages/schema/src/errors.ts` (new `PatternRefusalReason` type, regenerated into `api/genui/generated.py`; `api/core/errors.py` imports it instead of defining its own); `web/lib/api.ts`, `web/lib/layout.ts` and `web/components/shell/SavedViews.tsx` (hand-written lists of pattern states, layout modes, origins, panels and refusal reasons are now `Record`s keyed by the schema unions, so a new member fails typecheck); `web/components/genui/ids.ts` (one `safeId`, used by all five components; `CitedSummary` built its anchors without it); `eval/tests/test_bound.py` (a test that a live configuration is refused without `--allow-paid`); `web/components/genui/CitedSummary.test.tsx` (an anchor test). Docs: `refdocs/guides/catalog.md` (seven stale statements), `DECISIONS.md` (D-27 amended; D-31 built-versus-deferred note; working assumptions 4 to 6), the PRD D-27 row, `STATUS.md`, `file_structure.md`, the plan (definition of done checked item by item, status Done), the execution doc (D3 and D4 Reality notes), both indexes.
 - **Decided:** Nothing new. D-27 is **amended to match the build**: components are open, panels and modes are closed unions (a new panel or mode is a schema, `layout.py`, `layout.ts` and shell change), and "fall back to the prebuilt layout" is built as "ignore an unreadable layout and keep the one in force". D-31 notes what is deferred to P4. Azim's UI comments on the screenshots are recorded as **ASSUMED 4 and 5** (a Studio area with an output shelf under the graph; split panes in the middle section), not planned. The D-28 auto-apply default is **ASSUMED 6**.
