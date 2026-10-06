@@ -15,6 +15,7 @@ from api.genui.generated import AgentStep, TurnOutcome, TurnTrace, UIBlock
 from api.llm.service import LLMService
 from api.retrieval.types import RetrievalResult
 from api.stores.doc_store import DocStore
+from api.stores.graph_store import GraphStore
 
 
 @dataclass(frozen=True)
@@ -40,6 +41,8 @@ class TurnContext:
     budget: TokenBudget
     block_id: str
     roster: Roster = field(default_factory=Roster)
+    graph: GraphStore | None = None
+    """The knowledge graph, for the Graph agent. None when a turn is built without one."""
     limits: TurnLimits = field(default_factory=TurnLimits)
     # What happened this turn:
     results: dict[str, AgentResult] = field(default_factory=dict)

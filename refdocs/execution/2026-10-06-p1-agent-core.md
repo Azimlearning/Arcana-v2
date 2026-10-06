@@ -76,6 +76,8 @@
 
 **Verify:** `uv run pytest api/agents` passes: a path on a handmade graph is the expected one; every edge in every result has a chunk id that resolves in the DocStore; an unresolvable entity gives an explicit empty result with the resolution report, not an exception.
 
+**Reality (done 2026-10-06):** One module, `api/agents/graph_agent.py` (tools included, as in A5). `TurnContext` gained an optional `graph: GraphStore`, which `chat.py` fills from the container; the default roster is now Orchestrator, Graph, Research. Path search is **not** `GraphStore.shortest_path`: a test showed it can pick a route through an edge whose chunk no longer exists while an equally short grounded route exists, so the agent searches breadth-first over grounded edges (sorted, direction ignored, deterministic) using only `GraphStore.edges()`. Entities come from the P0 resolver (exact before approximate). Two entities give a path, a path-less pair or one entity gives a one-hop neighbourhood (hops clamped to 2, at most 12 edges), nothing resolved gives `mode: "none"` with the resolution counts and a `partial` step. Research reads `chunk_ids` from `ctx.results["graph"]` (at most 3, placed first) rather than importing the agent. `api/agents/test_graph_agent.py` (20 tests); full suite 400 passed, ruff and pyright clean. Not yet seen on a real extracted graph: the fixture graph is handmade, and real node ids depend on the live extractor (Track B).
+
 ### Task A7: Fact Checker and its mutation tests
 
 **Files:** `api/agents/fact_checker.py`, `api/agents/tools/check_tools.py`, `eval/mutation_factcheck.py`, tests.

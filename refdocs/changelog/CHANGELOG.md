@@ -28,7 +28,9 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
-### 2026-10-06: P1 Track A, tasks A1 to A5 (agent framework, Orchestrator, Research super tools)
+### 2026-10-06: P1 Track A, tasks A1 to A6 (agent framework, Orchestrator, Research and Graph agents)
+- **A6 addendum:** `api/agents/graph_agent.py` (`find_path`, `neighborhood`, the agent), `TurnContext.graph`, the default roster, Research leading with the graph's evidence chunks for a relationship question. Diagnosed by a failing test: `GraphStore.shortest_path` can choose a route through an edge whose chunk is gone while an equally short grounded route exists, so the agent now searches grounded edges itself (deterministic breadth-first, sorted). Verified: `uv run pytest` 400 passed, ruff clean, pyright 0 errors. Not verified on a real extracted graph.
+
 - **Changed:** P1 plan and execution docs. `packages/schema/src/trace.ts` (`TurnTrace`, `AgentStep`, regenerated into `api/genui/generated.py`). `api/agents/framework.py` (explicit `Roster`, `route_to_agent` with hop and token budgets, loop guard, trace steps, tool schemas from signatures), `orchestrator.py` (intent rules, one light-tier model call only when the rules are unsure, safe default plan), `roster.py`, and a rewritten `research.py` with `retrieve_evidence` and `compare_documents`. `TurnContext` carries the roster, limits, results, steps and intent; `compose.py` and `graph.py` dispatch through the framework; `chat.py` passes the roster. New tests: `test_framework.py` (20), `test_orchestrator.py` (25), `test_research.py` (11), `TurnTrace` strictness in `test_generated.py`.
 - **Decided:** D-22 (P1 roster and routing: an explicit roster, `route_to_agent` as the only composition path, rules before a model for routing, no LangGraph `Command`/`Send`).
 - **Deviations:** The Research tools live in `research.py`, not `tools/research_tools.py`. `compare_documents` pools one hybrid retrieval with every signal's deeper ranking instead of one retrieval per document. See the A5 Reality note.

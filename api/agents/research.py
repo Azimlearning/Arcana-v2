@@ -32,6 +32,7 @@ log = get_logger(__name__)
 
 PASSAGES = 8
 PER_DOCUMENT = 2
+GRAPH_PASSAGES = 3
 QUOTE_CHARS = 240
 _WS = re.compile(r"\s+")
 _SENTENCE = re.compile(r"(?<=[.!?])\s+")
@@ -60,9 +61,28 @@ def _norm(text: str) -> str:
 # ── evidence tools ────────────────────────────────────────────────────────────
 
 
+def graph_evidence(ctx: TurnContext) -> list[RetrievedChunk]:
+    """Chunks behind the connections the Graph agent found this turn, if it ran. Read from the turn's
+    results, never by importing that agent. Chunks that no longer exist are skipped."""
+    result = ctx.results.get("graph")
+    ids = result.payload.get("chunk_ids", []) if result and result.status in ("ok", "partial") else []
+    if not ids:
+        return []
+    found = ctx.docs.get_chunks(ids[:GRAPH_PASSAGES])
+    return [
+        RetrievedChunk(i, c.doc_id, c.text, c.page, 0.0, ("graph",)) for i in ids[:GRAPH_PASSAGES] if (c := found.get(i))
+    ]
+
+
 async def retrieve_evidence(query: str, ctx: TurnContext) -> list[RetrievedChunk]:
-    """Hybrid retrieval: the best passages for the query across the whole corpus."""
-    return (await ctx.retrieve(query)).chunks[:PASSAGES]
+    """Hybrid retrieval: the best passages across the corpus, led by the graph's evidence for a relationship."""
+    chunks = graph_evidence(ctx)
+    seen = {c.id for c in chunks}
+    for chunk in (await ctx.retrieve(query)).chunks:
+        if chunk.id not in seen:
+            seen.add(chunk.id)
+            chunks.append(chunk)
+    return chunks[:PASSAGES]
 
 
 async def compare_documents(query: str, ctx: TurnContext) -> list[RetrievedChunk]:

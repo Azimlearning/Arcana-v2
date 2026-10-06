@@ -53,6 +53,7 @@ async def chat(body: ChatRequest, request: Request) -> StreamingResponse:
         budget=TokenBudget(),
         block_id=f"turn-{uuid.uuid4().hex[:12]}",
         roster=default_roster(),
+        graph=container.graph,
     )
 
     async def events() -> AsyncIterator[str]:
