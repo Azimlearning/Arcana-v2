@@ -1,0 +1,33 @@
+question_id: q-cross-06
+status: benchmark
+note: 'BM25 versus dense retrieval: what each captures that the other misses, and their complementarity.
+  Drafted by the assistant on 2026-10-06 from the papers'' text only: keyword and phrase search of the
+  extracted PDF text, passages copied verbatim (whitespace collapsed). Retrieval output was never consulted.
+  Pending approval by Azim.'
+annotated_on: '2026-10-06'
+approved_by: null
+reference_contexts:
+- doc_id: 2312.10997v5
+  page: 9
+  text: Sparse and dense embedding approaches capture different relevance features and can ben- efit from
+    each other by leveraging complementary relevance information.
+- doc_id: 2312.10997v5
+  page: 9
+  text: sparse retrieval models can enhance the zero-shot retrieval capability of dense retrieval models
+    and assist dense retrievers in handling queries containing rare entities, thereby improving robustness.
+- doc_id: 2005.11401v4
+  page: 7
+  text: For FEVER, BM25 performs best, perhaps since FEVER claims are heavily entity-centric and thus
+    well-suited for word overlap-based retrieval.
+- doc_id: 2501.00309v2
+  page: 9
+  text: Methods like BM25 and TF-IDF [337, 333] primarily focus on lexical signals, and deep-learning-based
+    retrievers [196] usually capture semantic signals, both of which overlook the graph structure signals.
+- doc_id: 2410.13070v1
+  page: 8
+  text: Keyword-specific queries tend to favor lexical search, which can de- grade the performance of
+    semantic search meth- ods.
+- doc_id: 2212.10496v1
+  page: 5
+  text: While unsupervised Contriever can underperform the classical BM25 approach, HyDE outperforms BM25
+    by large margins.

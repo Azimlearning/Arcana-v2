@@ -1,0 +1,30 @@
+question_id: q-cross-08
+status: benchmark
+note: 'Techniques for improving citation accuracy in generated answers. WEAKLY ANSWERABLE ACROSS PAPERS:
+  only Self-RAG (2310.11511) treats citation accuracy as a method goal and metric (citation precision
+  and recall); no other paper in the corpus proposes a citation technique. These are the passages that
+  exist. Flagged for review (see eval/gold/README.md). Drafted by the assistant on 2026-10-06 from the
+  papers'' text only: keyword and phrase search of the extracted PDF text, passages copied verbatim (whitespace
+  collapsed). Retrieval output was never consulted. Pending approval by Azim.'
+annotated_on: '2026-10-06'
+approved_by: null
+reference_contexts:
+- doc_id: 2310.11511v1
+  page: 1
+  text: it shows significant gains in improving factuality and citation accuracy for long-form generations
+    relative to these models.
+- doc_id: 2310.11511v1
+  page: 3
+  text: In contrast, common RAG approaches retrieve passages indiscriminately, without ensuring complete
+    support from cited sources.
+- doc_id: 2310.11511v1
+  page: 8
+  text: We also observe that most baselines with retrieval struggle to improve citation accuracy.
+- doc_id: 2310.11511v1
+  page: 8
+  text: Our SELF-RAG bridges this performance gap, even outperforming ChatGPT in citation precision, which
+    measures whether the model-generated claim is fully supported by cited evidence.
+- doc_id: 2310.11511v1
+  page: 9
+  text: As the figure shows, increasing the weight leads to positive effects on the models’ citation precision
+    since this puts more emphasis on whether model generation is supported by the evidence.

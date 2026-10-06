@@ -1,0 +1,36 @@
+question_id: q-contra-04
+status: benchmark
+note: 'Claims about the scalability of knowledge-graph construction over large corpora: cost and time
+  of LLM extraction, schema size, and incremental updates. Drafted by the assistant on 2026-10-06 from
+  the papers'' text only: keyword and phrase search of the extracted PDF text, passages copied verbatim
+  (whitespace collapsed). Retrieval output was never consulted. Pending approval by Azim.'
+annotated_on: '2026-10-06'
+approved_by: null
+reference_contexts:
+- doc_id: 2404.16130v2
+  page: 9
+  text: Graph indexing with a 600 token window (explained in Section A.2) took 281 minutes for the Podcast
+    dataset, running on a virtual machine (16GB RAM, Intel(R) Xeon(R) Platinum 8171M CPU @ 2.60GHz) and
+    using a public OpenAI endpoint for gpt-4-turbo (2M TPM, 10k RPM).
+- doc_id: 2404.03868v2
+  page: 1
+  text: Despite successes on small domain-specific datasets, these models face difficulties scaling up
+    to text common in many real-world applications. A principal is- sue is that, in prior methods, the
+    KG schema has to be included in the LLM prompt to gen- erate valid triplets; larger and more complex
+    schemas easily exceed the LLMs’ context win- dow length.
+- doc_id: 2410.05779v3
+  page: 2
+  text: By eliminating the need to rebuild the entire index, LightRAG reduces computational costs and
+    accelerates adaptation,
+- doc_id: 2410.05779v3
+  page: 5
+  text: During this phase, we use the large language model (LLM) to extract entities and relationships
+    from each chunk of text. As a result, the LLM needs to be called total tokens chunk size times.
+- doc_id: 2408.04948v1
+  page: 2
+  text: However, building and maintaining KGs and integrating data from different sources, such as documents,
+    news articles, and other external sources, into a coherent knowledge graph poses significant challenges.
+- doc_id: 2405.14831v3
+  page: 10
+  text: This is evident in the error analysis discussed in Appendix F, which shows most errors made by
+    our system are due to NER and OpenIE and thus could benefit from direct fine-tuning.

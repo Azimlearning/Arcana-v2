@@ -1,0 +1,33 @@
+question_id: q-cross-04
+status: benchmark
+note: 'Evaluation metrics used to measure retrieval quality across the papers, how consistently, and whether
+  the benchmarks are comparable. The papers use different metric sets (Hit Rate/MRR/NDCG/MAP, recall@k
+  with EM and F1, RAGAS-style faithfulness and context precision/recall) on different datasets. Drafted
+  by the assistant on 2026-10-06 from the papers'' text only: keyword and phrase search of the extracted
+  PDF text, passages copied verbatim (whitespace collapsed). Retrieval output was never consulted. Pending
+  approval by Azim.'
+annotated_on: '2026-10-06'
+approved_by: null
+reference_contexts:
+- doc_id: 2312.10997v5
+  page: 12
+  text: Metrics such as Hit Rate, MRR, and NDCG are commonly utilized for this purpose [161], [162].
+- doc_id: 2401.15391v1
+  page: 3
+  text: Assuming the top- K chunks are retrieved, i.e., |Rq| = K, we use retrieval evaluation metrics
+    including Mean Aver- age Precision at K (MAP@K), Mean Reciprocal Rank at K (MRR@K), and Hit Rate at
+    K (Hit@K).
+- doc_id: 2405.14831v3
+  page: 5
+  text: We report retrieval and QA performance on the datasets above using recall@2 and recall@5 (R@2
+    and R@5 below) for retrieval and exact match (EM) and F1 scores for QA performance.
+- doc_id: 2408.04948v1
+  page: 7
+  text: 'For each Q&A pair in our dataset, we compute all three metrics: faithfulness, answer relevance,
+    context precision and context recall.'
+- doc_id: 2309.15217v2
+  page: 5
+  text: We have highlighted the need for automated reference-free evaluation of RAG systems. In par- ticular,
+    we have argued the need for an evaluation framework that can assess faithfulness (i.e. is the answer
+    grounded in the retrieved context), answer relevance (i.e. does the answer address the ques- tion)
+    and context relevance (i.e. is the retrieved context sufficiently focused).

@@ -1,0 +1,28 @@
+question_id: q-single-04
+status: benchmark
+note: 'How BM25 scores documents and where it is limited. PARTLY ANSWERABLE: the corpus never gives BM25''s
+  scoring formula (term frequency, inverse document frequency, length normalisation); it only describes
+  BM25 as a word-overlap, lexical method and reports where it does and does not work. These passages are
+  the evidence that exists. Flagged for review (see eval/gold/README.md). Drafted by the assistant on
+  2026-10-06 from the papers'' text only: keyword and phrase search of the extracted PDF text, passages
+  copied verbatim (whitespace collapsed). Retrieval output was never consulted. Pending approval by Azim.'
+annotated_on: '2026-10-06'
+approved_by: null
+reference_contexts:
+- doc_id: 2005.11401v4
+  page: 7
+  text: We compare RAG’s dense retriever to a word overlap-based BM25 retriever [53]. Here, we replace
+    RAG’s retriever with a ﬁxed BM25 system, and use BM25 retrieval scores as logits when calculating
+    p(z|x).
+- doc_id: 2005.11401v4
+  page: 7
+  text: For FEVER, BM25 performs best, perhaps since FEVER claims are heavily entity-centric and thus
+    well-suited for word overlap-based retrieval.
+- doc_id: 2501.00309v2
+  page: 9
+  text: Methods like BM25 and TF-IDF [337, 333] primarily focus on lexical signals, and deep-learning-based
+    retrievers [196] usually capture semantic signals, both of which overlook the graph structure signals.
+- doc_id: 2312.10997v5
+  page: 9
+  text: sparse retrieval models can enhance the zero-shot retrieval capability of dense retrieval models
+    and assist dense retrievers in handling queries containing rare entities, thereby improving robustness.

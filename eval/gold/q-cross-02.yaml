@@ -1,0 +1,41 @@
+question_id: q-cross-02
+status: benchmark
+note: 'How a knowledge graph is defined and used across the papers; where the definitions converge (entities
+  as nodes, relations as edges) and diverge (a curated, schema-defined structure versus a schemaless graph
+  built by an LLM, and graphs whose nodes are text passages). Drafted by the assistant on 2026-10-06 from
+  the papers'' text only: keyword and phrase search of the extracted PDF text, passages copied verbatim
+  (whitespace collapsed). Retrieval output was never consulted. Pending approval by Azim.'
+annotated_on: '2026-10-06'
+approved_by: null
+reference_contexts:
+- doc_id: 2408.04948v1
+  page: 2
+  text: A KG is a structured representation of real-world entities, their attributes, and their relations,
+    usually stored in a graph database or a triplet store, i.e., a KG consists of nodes that represent
+    entities and edges that represent relations, as well as labels and attributes for both.
+- doc_id: 2501.00309v2
+  page: 18
+  text: A knowledge graph is a structured database that connects entities through well-defined relationships.
+- doc_id: 2404.16130v2
+  page: 2
+  text: GraphRAG first uses an LLM to construct a knowledge graph, where nodes correspond to key entities
+    in the corpus and edges represent relationships between those entities.
+- doc_id: 2405.14831v3
+  page: 3
+  text: Our offline indexing phase, analogous to memory encoding, starts by leveraging a strong instruction-tuned
+    LLM, our artificial neocortex, to extract knowledge graph (KG) triples. The KG is schemaless and this
+    process is known as open information extraction (OpenIE) [3, 5, 60, 98].
+- doc_id: 2410.05779v3
+  page: 3
+  text: This function prompts a LLM to identify entities (nodes) and their relationships (edges) within
+    the text data.
+- doc_id: 2312.10997v5
+  page: 8
+  text: This KG consists of nodes (representing paragraphs or structures in the documents, such as pages
+    and tables) and edges (indicating semantic/lexical similarity between paragraphs or relationships
+    within the document structure), effectively addressing knowl- edge retrieval and reasoning problems
+    in a multi-document environment.
+- doc_id: 2404.03868v2
+  page: 4
+  text: 'Self Canonicalization: Absent a target schema, the goal is to consolidate semanti- cally similar
+    schema components, standardiz- ing them to a singular representation to stream- line the KG.'

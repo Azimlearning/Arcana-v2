@@ -1,0 +1,37 @@
+question_id: q-cross-05
+status: benchmark
+note: 'Papers addressing multi-hop reasoning or multi-document retrieval and the techniques and findings
+  they share. Drafted by the assistant on 2026-10-06 from the papers'' text only: keyword and phrase search
+  of the extracted PDF text, passages copied verbatim (whitespace collapsed). Retrieval output was never
+  consulted. Pending approval by Azim.'
+annotated_on: '2026-10-06'
+approved_by: null
+reference_contexts:
+- doc_id: 2401.15391v1
+  page: 1
+  text: However, we find that existing RAG sys- tems are inadequate in answering multi-hop queries, which
+    require retrieving and reasoning over multiple pieces of supporting evidence.
+- doc_id: 2405.14831v3
+  page: 1
+  text: We compare HippoRAG with existing RAG methods on multi-hop question answering (QA) and show that
+    our method outperforms the state-of-the-art methods remarkably, by up to 20%.
+- doc_id: 2405.14831v3
+  page: 1
+  text: Single-step retrieval with HippoRAG achieves comparable or better performance than iterative retrieval
+    like IRCoT while being 10-20 times cheaper and 6-13 times faster, and integrating HippoRAG into IRCoT
+    brings further substantial gains.
+- doc_id: 2405.14831v3
+  page: 8
+  text: In this example, even though Alhandra was not mentioned in Vila de Xira’s passage, HippoRAG can
+    directly leverage Vila de Xira’s connection to Alhandra as his place of birth to determine its importance,
+    something that standard RAG methods would be unable to do directly.
+- doc_id: 2501.00309v2
+  page: 3
+  text: This independence prevents the retrieval from capturing chunk relations, which hinders performance
+    on tasks requiring multi-hop reasoning and long-form planning. However, GraphRAG stores chunks as
+    interconnected nodes with edges denoting their relations, which can benefit retrieval, organization,
+    and generation.
+- doc_id: 2312.10997v5
+  page: 11
+  text: In contrast, multi-hop retrieval is designed to delve deeper into graph-structured data sources,
+    extracting interconnected information [106].

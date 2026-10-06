@@ -1,0 +1,40 @@
+question_id: q-cross-12
+status: benchmark
+note: 'Open problems and identified gaps in RAG and knowledge-graph retrieval research mentioned across
+  the papers. Drafted by the assistant on 2026-10-06 from the papers'' text only: keyword and phrase search
+  of the extracted PDF text, passages copied verbatim (whitespace collapsed). Retrieval output was never
+  consulted. Pending approval by Azim.'
+annotated_on: '2026-10-06'
+approved_by: null
+reference_contexts:
+- doc_id: 2312.10997v5
+  page: 14
+  text: Despite the considerable progress in RAG technology, sev- eral challenges persist that warrant
+    in-depth research.
+- doc_id: 2312.10997v5
+  page: 14
+  text: Developing new RAG methods in the context of super-long contexts is one of the future research
+    trends.
+- doc_id: 2312.10997v5
+  page: 14
+  text: Improving RAG’s resistance to such adversarial or counterfactual inputs is gain- ing research
+    momentum and has become a key performance metric [48], [50], [82].
+- doc_id: 2404.16130v2
+  page: 11
+  text: Our evaluation to date has focused on sensemaking questions specific to two corpora each containing
+    approximately 1 million tokens. More work is needed to understand how performance generalizes to datasets
+    from various domains with different use cases.
+- doc_id: 2408.04948v1
+  page: 8
+  text: Future directions for this research include expanding the system to handle multi-modal inputs,
+    incorporating numerical data analysis capabilities, and developing more sophisticated evaluation metrics
+    that capture the nuances of financial language
+- doc_id: 2405.14831v3
+  page: 9
+  text: However, the viability of this future remains largely uncertain given the many engineering hurdles
+    involved and the apparent limitations of long-context LLMs, even within current context lengths [41,
+    45, 96, 21].
+- doc_id: 2501.00309v2
+  page: 3
+  text: GraphRAG research primarily focuses on knowledge and document graphs as surveyed in Figure 2,
+    often overlooking broader applications in other domains like infrastructure graphs.

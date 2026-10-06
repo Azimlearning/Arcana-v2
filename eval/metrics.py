@@ -46,6 +46,12 @@ class Gold:
     """"smoke" (format demonstration), "benchmark" (the real annotation) or "unanswerable"."""
     passages: tuple[GoldPassage, ...]
     reason: str | None = None
+    approved_by: str | None = None
+    """Who approved this file. None means a draft: not frozen, and no live benchmark may run against it."""
+
+    @property
+    def approved(self) -> bool:
+        return bool(self.approved_by)
 
 
 def rule_stamp() -> dict[str, object]:
@@ -61,7 +67,7 @@ def load_gold(directory: Path, question_id: str) -> Gold | None:
         GoldPassage(doc_id=p["doc_id"], page=p.get("page"), text=p["text"])
         for p in data.get("reference_contexts") or []
     )
-    return Gold(data["question_id"], data["status"], passages, data.get("reason"))
+    return Gold(data["question_id"], data["status"], passages, data.get("reason"), data.get("approved_by"))
 
 
 def shingles(text: str, n: int = SHINGLE_N) -> frozenset[tuple[str, ...]]:

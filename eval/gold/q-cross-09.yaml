@@ -1,0 +1,40 @@
+question_id: q-cross-09
+status: benchmark
+note: 'Approaches to constructing knowledge graphs from unstructured text, and the entity and relation
+  types that recur. The papers describe LLM-prompted extraction pipelines (open information extraction,
+  entity and relationship tuples, a define-and-canonicalize step) and a taxonomy of document-graph construction.
+  Drafted by the assistant on 2026-10-06 from the papers'' text only: keyword and phrase search of the
+  extracted PDF text, passages copied verbatim (whitespace collapsed). Retrieval output was never consulted.
+  Pending approval by Azim.'
+annotated_on: '2026-10-06'
+approved_by: null
+reference_contexts:
+- doc_id: 2404.03868v2
+  page: 1
+  text: 'To address these problems, we propose a three-phase framework named Extract-Define-Canonicalize
+    (EDC): open in- formation extraction followed by schema def- inition and post-hoc canonicalization.'
+- doc_id: 2408.04948v1
+  page: 3
+  text: We implement a two-tiered LLM chain for content refinement and information extraction. The first
+    tier employs an LLM to gen- erate an abstract representation of each document chunk.
+- doc_id: 2404.16130v2
+  page: 18
+  text: We do this using a multipart LLM prompt that first identifies all entities in the text, including
+    their name, type, and description, before identifying all relationships between clearly related entities,
+    including the source and target entities and a description of their relationship.
+- doc_id: 2404.16130v2
+  page: 8
+  text: The graph index supporting conditions C0-C3 was created using our generic prompts for entity and
+    relationship extraction, with entity types and few-shot examples tailored to the domain of the data.
+- doc_id: 2405.14831v3
+  page: 4
+  text: we first use L to extract a set of noun phrase nodes N and relation edges E from each passage
+    in P via OpenIE.
+- doc_id: 2410.05779v3
+  page: 3
+  text: This function prompts a LLM to identify entities (nodes) and their relationships (edges) within
+    the text data.
+- doc_id: 2501.00309v2
+  page: 25
+  text: 'There are primarily two approaches to constructing a document graph: explicit construction and
+    implicit construction.'

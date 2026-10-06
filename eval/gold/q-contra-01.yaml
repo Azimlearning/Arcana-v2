@@ -1,0 +1,34 @@
+question_id: q-contra-01
+status: benchmark
+note: 'Do the papers agree on whether larger chunk sizes improve retrieval accuracy? CAUTION: no paper
+  states a head-to-head chunk-size versus retrieval-accuracy result. The passages that exist qualify the
+  claim from different directions (more context but more noise; fewer extracted entities from larger chunks;
+  chunking strategy overshadowed by embedding quality). Flagged for review (see eval/gold/README.md).
+  Drafted by the assistant on 2026-10-06 from the papers'' text only: keyword and phrase search of the
+  extracted PDF text, passages copied verbatim (whitespace collapsed). Retrieval output was never consulted.
+  Pending approval by Azim.'
+annotated_on: '2026-10-06'
+approved_by: null
+reference_contexts:
+- doc_id: 2312.10997v5
+  page: 8
+  text: The most common method is to split the document into chunks on a fixed number of tokens (e.g.,
+    100, 256, 512) [88]. Larger chunks can capture more context, but they also generate more noise, requiring
+    longer processing time and higher costs. While smaller chunks may not fully convey the necessary context,
+    they do have less noise.
+- doc_id: 2404.16130v2
+  page: 18
+  text: For example, in a sample dataset (HotPotQA, Yang et al., 2018), GPT-4 extracted almost twice as
+    many entity references when the chunk size was 600 tokens than when it was 2400.
+- doc_id: 2404.16130v2
+  page: 18
+  text: Using larger chunk size is less costly in terms of calls to the LLM. However, the LLM tends to
+    extract few entities from chunks of larger size.
+- doc_id: 2410.13070v1
+  page: 4
+  text: The impact of chunk- ing strategy was often overshadowed by other fac- tors, such as the quality
+    of embeddings,
+- doc_id: 2410.13070v1
+  page: 3
+  text: Table 1 shows varied chunker performance, with Fixed-size Chunker excelling on non-stitched datasets
+    and Semantic Chunkers performing better on stitched datasets.

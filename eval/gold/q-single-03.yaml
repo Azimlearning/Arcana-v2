@@ -1,0 +1,34 @@
+question_id: q-single-03
+status: benchmark
+note: 'The role of embedding models in semantic search and how embedding quality affects retrieval. Drafted
+  by the assistant on 2026-10-06 from the papers'' text only: keyword and phrase search of the extracted
+  PDF text, passages copied verbatim (whitespace collapsed). Retrieval output was never consulted. Pending
+  approval by Azim.'
+annotated_on: '2026-10-06'
+approved_by: null
+reference_contexts:
+- doc_id: 2312.10997v5
+  page: 3
+  text: Chunks are then encoded into vector representations using an embedding model and stored in vector
+    database. This step is crucial for enabling efficient similarity searches in the subsequent retrieval
+    phase.
+- doc_id: 2312.10997v5
+  page: 9
+  text: In RAG, retrieval is achieved by calculating the similarity (e.g. cosine similarity) between the
+    embeddings of the ques- tion and document chunks, where the semantic representation capability of
+    embedding models plays a key role.
+- doc_id: 2312.10997v5
+  page: 9
+  text: In instances where the context significantly deviates from pre-training corpus, partic- ularly
+    within highly specialized disciplines such as healthcare, legal practice, and other sectors replete
+    with proprietary jargon, fine-tuning the embedding model on your own domain dataset becomes essential
+    to mitigate such discrepancies.
+- doc_id: 2408.04948v1
+  page: 6
+  text: This vectorization process enables semantic similarity searches, significantly enhancing the relevance
+    and ac- curacy of retrieved information.
+- doc_id: 2212.10496v1
+  page: 3
+  text: 'of zero-shot dense retrieval lies precisely in Equation 1: it requires learning of two embedding
+    functions (for query and document re- spectively) into the same embedding space where inner product
+    captures relevance.'

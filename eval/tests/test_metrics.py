@@ -1,5 +1,4 @@
 import math
-import re
 from pathlib import Path
 
 import pytest
@@ -95,39 +94,47 @@ def test_relevant_count_scans_the_corpus():
 # ── the real gold files ──────────────────────────────────────────────────────
 
 
-def test_the_gold_files_load_with_the_statuses_they_claim():
-    cross = metrics.load_gold(GOLD_DIR, "q-cross-01")
-    single = metrics.load_gold(GOLD_DIR, "q-single-02")
-    unanswerable = metrics.load_gold(GOLD_DIR, "q-single-01")
-    assert cross and cross.status == "smoke" and len(cross.passages) == 3
-    assert single and single.status == "smoke" and len(single.passages) == 3
-    assert unanswerable and unanswerable.status == "unanswerable" and unanswerable.passages == ()
+def test_every_question_has_a_gold_file_with_a_status_it_can_defend():
+    import yaml
+
+    questions = yaml.safe_load((GOLD_DIR.parent / "questions.yaml").read_text(encoding="utf-8"))
+    ids = [q["id"] for q in (questions["questions"] if isinstance(questions, dict) else questions)]
+    assert len(ids) == 20
+    statuses = {}
+    for qid in ids:
+        g = metrics.load_gold(GOLD_DIR, qid)
+        assert g is not None, f"{qid} has no gold file"
+        statuses[qid] = g
+    assert not [q for q, g in statuses.items() if g.status == "smoke"]  # the smoke files were replaced
+    unanswerable = statuses["q-single-01"]
+    assert unanswerable.status == "unanswerable" and unanswerable.passages == ()
     assert unanswerable.reason and "Reciprocal Rank Fusion" in unanswerable.reason
+    for qid, g in statuses.items():
+        if qid != "q-single-01":
+            assert g.status == "benchmark" and len(g.passages) >= 3, qid
+            assert all(p.page and p.doc_id and len(p.text) >= 40 for p in g.passages), qid
     assert metrics.load_gold(GOLD_DIR, "q-cross-99") is None
 
 
-def test_smoke_gold_is_labelled_as_not_the_benchmark_gold():
-    for qid in ("q-cross-01", "q-single-02"):
-        text = (GOLD_DIR / f"{qid}.yaml").read_text(encoding="utf-8")
-        assert "NOT the benchmark gold" in text
+def test_benchmark_gold_records_its_method_and_whether_it_is_approved():
+    import yaml
+
+    for path in sorted(GOLD_DIR.glob("q-*.yaml")):
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        if data["status"] != "benchmark":
+            continue
+        assert "approved_by" in data, path.name  # None means a draft, a name means approved
+        assert "Retrieval output was never consulted" in data["note"], path.name
 
 
 V1_CORPUS = Path(__file__).resolve().parents[2].parent / "Arcana" / "eval" / "corpus"
 
 
 @pytest.mark.skipif(not V1_CORPUS.exists(), reason="v1 corpus PDFs are not on this machine")
-def test_every_smoke_gold_passage_is_verbatim_in_its_paper():
+def test_every_gold_passage_is_verbatim_in_its_paper_and_reachable_by_a_chunk():
     import json
 
-    import pymupdf
+    from eval.verify_gold import verify
 
-    manifest = {m["arxiv_id"]: m["file"] for m in json.loads((GOLD_DIR.parent / "corpus" / "MANIFEST.json").read_text(encoding="utf-8"))}
-    for qid in ("q-cross-01", "q-single-02"):
-        g = metrics.load_gold(GOLD_DIR, qid)
-        assert g is not None
-        for p in g.passages:
-            assert p.page is not None
-            doc = pymupdf.open(V1_CORPUS / manifest[p.doc_id])
-            page = re.sub(r"\s+", " ", str(doc[p.page - 1].get_text("text")))
-            doc.close()
-            assert p.text in page, f"{qid}: passage is not verbatim on {p.doc_id} p{p.page}"
+    manifest = json.loads((GOLD_DIR.parent / "corpus" / "MANIFEST.json").read_text(encoding="utf-8"))
+    assert verify(GOLD_DIR, manifest, V1_CORPUS, None) == []

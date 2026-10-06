@@ -260,3 +260,41 @@ def test_the_gate_does_not_apply_when_the_graph_arm_was_not_run():
 def test_run_invalid_is_the_refusal_type():
     with pytest.raises(RunInvalid):
         run_ablation.select_arms("nonsense")
+
+
+# ── constraint 9: no live benchmark against gold that is not approved ─────────
+
+
+def _gold(approved_by: str | None, status: str = "benchmark"):
+    from eval.metrics import Gold
+
+    return Gold("q", status, (), None, approved_by)
+
+
+def test_a_live_run_is_refused_while_any_gold_is_a_draft_or_missing():
+    from eval.run_ablation import require_approved_gold
+
+    golds = {"q-a": _gold("Azim"), "q-b": _gold(None), "q-c": None}
+    with pytest.raises(RunInvalid, match="q-b, q-c"):
+        require_approved_gold(golds, live=True)
+
+
+def test_a_live_run_proceeds_when_every_gold_is_approved():
+    from eval.run_ablation import require_approved_gold
+
+    require_approved_gold({"q-a": _gold("Azim"), "q-b": _gold("Azim", "unanswerable")}, live=True)
+
+
+def test_a_fake_run_may_use_drafts_because_it_only_checks_plumbing():
+    from eval.run_ablation import require_approved_gold
+
+    require_approved_gold({"q-a": _gold(None), "q-b": None}, live=False)
+
+
+def test_gold_files_read_the_approver_and_default_to_a_draft(tmp_path: Path):
+    from eval import metrics
+
+    (tmp_path / "q-1.yaml").write_text("question_id: q-1\nstatus: benchmark\nreference_contexts: []\n", encoding="utf-8")
+    (tmp_path / "q-2.yaml").write_text("question_id: q-2\nstatus: benchmark\napproved_by: Azim\nreference_contexts: []\n", encoding="utf-8")
+    one, two = metrics.load_gold(tmp_path, "q-1"), metrics.load_gold(tmp_path, "q-2")
+    assert one is not None and not one.approved and two is not None and two.approved and two.approved_by == "Azim"

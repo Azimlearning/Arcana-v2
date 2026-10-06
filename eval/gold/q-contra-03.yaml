@@ -1,0 +1,38 @@
+question_id: q-contra-03
+status: benchmark
+note: 'How the papers differ in their recommendations for when graph-based retrieval should be preferred
+  over vector-based retrieval. Drafted by the assistant on 2026-10-06 from the papers'' text only: keyword
+  and phrase search of the extracted PDF text, passages copied verbatim (whitespace collapsed). Retrieval
+  output was never consulted. Pending approval by Azim.'
+annotated_on: '2026-10-06'
+approved_by: null
+reference_contexts:
+- doc_id: 2408.04948v1
+  page: 7
+  text: Overall GraphRAG performs better in extractive questions com- pared to VectorRAG. And VectorRAG
+    does better in abstractive questions where information is not explicitly mentioned in the raw data.
+- doc_id: 2404.16130v2
+  page: 2
+  text: The challenge, however, arises when the volume of data requires a RAG approach, since vector RAG
+    approaches are unable to support sensemaking over an entire corpus.
+- doc_id: 2405.14831v3
+  page: 2
+  text: standard multi-hop question answering (QA) also requires integrating information between passages
+    in a retrieval corpus.
+- doc_id: 2410.05779v3
+  page: 7
+  text: When handling large token counts and complex queries that require a thorough understanding of
+    the dataset’s context, graph-based RAG systems like LightRAG and GraphRAG consistently outperform
+    purely chunk- based retrieval methods such as NaiveRAG, HyDE, and RQRAG.
+- doc_id: 2501.00309v2
+  page: 3
+  text: This independence prevents the retrieval from capturing chunk relations, which hinders performance
+    on tasks requiring multi-hop reasoning and long-form planning.
+- doc_id: 2401.15391v1
+  page: 1
+  text: However, we find that existing RAG sys- tems are inadequate in answering multi-hop queries, which
+    require retrieving and reasoning over multiple pieces of supporting evidence.
+- doc_id: 2501.00309v2
+  page: 2
+  text: blindly executing the existing BM25 or embedding-based search that relies solely on semantic/lexical
+    similarity ignores relational knowledge encoded in graph structure.

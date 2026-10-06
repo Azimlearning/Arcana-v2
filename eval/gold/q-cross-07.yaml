@@ -1,0 +1,33 @@
+question_id: q-cross-07
+status: benchmark
+note: 'Failure modes of vector-only retrieval named across the papers. Drafted by the assistant on 2026-10-06
+  from the papers'' text only: keyword and phrase search of the extracted PDF text, passages copied verbatim
+  (whitespace collapsed). Retrieval output was never consulted. Pending approval by Azim.'
+annotated_on: '2026-10-06'
+approved_by: null
+reference_contexts:
+- doc_id: 2312.10997v5
+  page: 3
+  text: 'However, Naive RAG encounters notable drawbacks: Retrieval Challenges. The retrieval phase often
+    struggles with precision and recall, leading to the selection of misaligned or irrelevant chunks,
+    and the missing of crucial information.'
+- doc_id: 2404.16130v2
+  page: 2
+  text: The challenge, however, arises when the volume of data requires a RAG approach, since vector RAG
+    approaches are unable to support sensemaking over an entire corpus.
+- doc_id: 2405.14831v3
+  page: 8
+  text: In this example, even though Alhandra was not mentioned in Vila de Xira’s passage, HippoRAG can
+    directly leverage Vila de Xira’s connection to Alhandra as his place of birth to determine its importance,
+    something that standard RAG methods would be unable to do directly.
+- doc_id: 2501.00309v2
+  page: 2
+  text: blindly executing the existing BM25 or embedding-based search that relies solely on semantic/lexical
+    similarity ignores relational knowledge encoded in graph structure.
+- doc_id: 2408.04948v1
+  page: 7
+  text: Overall GraphRAG performs better in extractive questions com- pared to VectorRAG.
+- doc_id: 2408.04948v1
+  page: 7
+  text: So HybridRAG does a good job overall, as whenever VectorRAG fails to fetch correct context in
+    extractive questions it falls back to GraphRAG to generate the answer.

@@ -1,0 +1,41 @@
+question_id: q-contra-02
+status: benchmark
+note: 'Is there consensus that knowledge-graph augmentation always improves retrieval over pure vector
+  search? Cases where papers report otherwise (abstractive questions, directness, context precision, noise).
+  Drafted by the assistant on 2026-10-06 from the papers'' text only: keyword and phrase search of the
+  extracted PDF text, passages copied verbatim (whitespace collapsed). Retrieval output was never consulted.
+  Pending approval by Azim.'
+annotated_on: '2026-10-06'
+approved_by: null
+reference_contexts:
+- doc_id: 2408.04948v1
+  page: 2
+  text: But GraphRAG generally underperforms in abstractive Q&A tasks or when there is not explicit entity
+    mentioned in the question.
+- doc_id: 2408.04948v1
+  page: 7
+  text: Overall GraphRAG performs better in extractive questions com- pared to VectorRAG. And VectorRAG
+    does better in abstractive questions where information is not explicitly mentioned in the raw data.
+- doc_id: 2404.16130v2
+  page: 9
+  text: Our use of directness as a validity test confirmed that vector RAG produces the most direct responses
+    across all comparisons.
+- doc_id: 2408.04948v1
+  page: 7
+  text: The relatively lower context precision observed for HybridRAG (0.79) can be attributed to its
+    unique approach of combining con- texts from both VectorRAG and GraphRAG methods. While this integration
+    allows for more comprehensive information retrieval, it also introduces additional content that may
+    not align precisely with the ground truth, thus affecting the context precision met- ric.
+- doc_id: 2501.00309v2
+  page: 14
+  text: For example, when graph traversal methods are applied in retrieval, the size of the retrieved
+    subgraph exponentially increases with the number of hops. Large subgraph sizes not only increase computational
+    costs but can also reduce generation quality due to the inclusion of noisy information.
+- doc_id: 2410.05779v3
+  page: 7
+  text: graph-based RAG systems like LightRAG and GraphRAG consistently outperform purely chunk- based
+    retrieval methods such as NaiveRAG, HyDE, and RQRAG.
+- doc_id: 2404.16130v2
+  page: 9
+  text: global approaches signifi- cantly outperformed conventional vector RAG (SS) in both comprehensiveness
+    and diversity criteria across datasets.

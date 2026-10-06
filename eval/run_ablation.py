@@ -62,6 +62,17 @@ FAKE_WARNING = (
 )
 
 
+def require_approved_gold(golds: dict[str, metrics.Gold | None], live: bool) -> None:
+    """Constraint 9: gold is written and approved BEFORE any benchmark arm is run. A live (paid) run
+    against a draft, a smoke file or a missing file is refused; a fake-mode run only checks plumbing and
+    is allowed (its results say which gold it used)."""
+    if not live:
+        return
+    unapproved = sorted(q for q, g in golds.items() if g is None or not g.approved)
+    if unapproved:
+        raise RunInvalid(f"gold is not approved for: {', '.join(unapproved)}")
+
+
 class RunInvalid(Exception):
     """The run must not proceed or must not be reported (exit code 2)."""
 
@@ -201,6 +212,7 @@ async def run(args: argparse.Namespace) -> tuple[Path, dict[str, Any]]:
     arms = select_arms(args.arms)
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     golds = {q["id"]: metrics.load_gold(gold_dir, q["id"]) for q in questions}
+    require_approved_gold(golds, live)
 
     container = build_container(settings)
     ingestion = await ensure_corpus(container, manifest, Path(args.corpus_dir), args.reingest)
@@ -229,7 +241,8 @@ async def run(args: argparse.Namespace) -> tuple[Path, dict[str, Any]]:
                                        bool(ragas["available"])) for arm in arms}
         results.append({
             "question_id": q["id"], "category": q["category"],
-            "gold_status": gold.status if gold else "missing", "n_gold_passages": len(gold.passages) if gold else 0,
+            "gold_status": gold.status if gold else "missing", "gold_approved": bool(gold and gold.approved),
+            "n_gold_passages": len(gold.passages) if gold else 0,
             "relevant_chunks_in_corpus": n_rel, "arms": arm_rows,
         })
 

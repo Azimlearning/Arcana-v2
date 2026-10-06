@@ -1,0 +1,42 @@
+question_id: q-cross-10
+status: benchmark
+note: 'Latency constraints and performance trade-offs in retrieval systems. The corpus speaks mostly of
+  cost (LLM calls, tokens, retrieval overhead) and speed of retrieval methods rather than production latency
+  as such. Drafted by the assistant on 2026-10-06 from the papers'' text only: keyword and phrase search
+  of the extracted PDF text, passages copied verbatim (whitespace collapsed). Retrieval output was never
+  consulted. Pending approval by Azim.'
+annotated_on: '2026-10-06'
+approved_by: null
+reference_contexts:
+- doc_id: 2312.10997v5
+  page: 5
+  text: RAG excels in dynamic environments by offering real- time knowledge updates and effective utilization
+    of external knowledge sources with high interpretability. However, it comes with higher latency and
+    ethical considerations regarding data retrieval.
+- doc_id: 2405.14831v3
+  page: 1
+  text: Single-step retrieval with HippoRAG achieves comparable or better performance than iterative retrieval
+    like IRCoT while being 10-20 times cheaper and 6-13 times faster, and integrating HippoRAG into IRCoT
+    brings further substantial gains.
+- doc_id: 2410.05779v3
+  page: 5
+  text: This approach markedly reduces retrieval overhead compared to the community-based traversal method
+    used in GraphRAG.
+- doc_id: 2410.05779v3
+  page: 2
+  text: By eliminating the need to rebuild the entire index, LightRAG reduces computational costs and
+    accelerates adaptation,
+- doc_id: 2501.00309v2
+  page: 14
+  text: For example, when graph traversal methods are applied in retrieval, the size of the retrieved
+    subgraph exponentially increases with the number of hops. Large subgraph sizes not only increase computational
+    costs but can also reduce generation quality due to the inclusion of noisy information.
+- doc_id: 2404.16130v2
+  page: 12
+  text: For situations requiring many global queries over the same dataset, summaries of root-level communities
+    in the entity-based graph index provide a data index that is both superior to vector RAG and achieves
+    competitive performance to other global methods at a fraction of the token cost.
+- doc_id: 2410.13070v1
+  page: 1
+  text: The results show that the computational costs associated with seman- tic chunking are not justified
+    by consistent per- formance gains.

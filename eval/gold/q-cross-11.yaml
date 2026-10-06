@@ -1,0 +1,33 @@
+question_id: q-cross-11
+status: benchmark
+note: 'How papers approach chunking in RAG pipelines (fixed-size, semantic, sentence-level, other) and
+  what they report. Drafted by the assistant on 2026-10-06 from the papers'' text only: keyword and phrase
+  search of the extracted PDF text, passages copied verbatim (whitespace collapsed). Retrieval output
+  was never consulted. Pending approval by Azim.'
+annotated_on: '2026-10-06'
+approved_by: null
+reference_contexts:
+- doc_id: 2312.10997v5
+  page: 8
+  text: The most common method is to split the document into chunks on a fixed number of tokens (e.g.,
+    100, 256, 512) [88]. Larger chunks can capture more context, but they also generate more noise, requiring
+    longer processing time and higher costs. While smaller chunks may not fully convey the necessary context,
+    they do have less noise.
+- doc_id: 2312.10997v5
+  page: 8
+  text: Therefore, methods like Small2Big have been proposed, where sentences (small) are used as the
+    retrieval unit, and the preceding and following sentences are provided as (big) context to LLMs
+- doc_id: 2410.13070v1
+  page: 4
+  text: Semantic chunking occasionally improved performance, particularly on stitched datasets with high
+    topic diversity. However, these benefits were highly context-dependent and did not consistently justify
+    the additional computational cost. On non- synthetic datasets that better reflect real-world doc-
+    uments, fixed-size chunking often performed better.
+- doc_id: 2404.16130v2
+  page: 18
+  text: Using larger chunk size is less costly in terms of calls to the LLM. However, the LLM tends to
+    extract few entities from chunks of larger size.
+- doc_id: 2408.04948v1
+  page: 5
+  text: This chunking strategy employs a size of 2024 characters with an overlap of 204 characters, ensuring
+    comprehensive coverage while maintaining context across segment boundaries.

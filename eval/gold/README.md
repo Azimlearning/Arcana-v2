@@ -7,6 +7,7 @@ One file per question: `eval/gold/<question-id>.yaml`.
 ```yaml
 question_id: q-cross-01
 status: smoke | benchmark | unanswerable
+approved_by: null              # set to the approver's name once the file is approved
 note: free text (smoke files say they are not the benchmark gold)
 annotated_on: 2026-10-05
 reference_contexts:            # the gold passages: the evidence an answer must be built from
@@ -40,14 +41,59 @@ supports part of the answer. Copy the text from the paper; do not paraphrase.
 
 | Status | Meaning |
 |---|---|
-| `smoke` | Written by the assistant to demonstrate the format and exercise the runner. Not the benchmark gold. |
-| `benchmark` | Hand-annotated for the real benchmark (P1). Nothing has this status yet. |
+| `smoke` | Written to demonstrate the format and exercise the runner. Not the benchmark gold. No file has this status now: the two smoke files were replaced by benchmark drafts on 2026-10-06. |
+| `benchmark` | Annotated for the real benchmark (P1). **Drafted** until `approved_by` is set; a draft is not frozen and no arm may be run against it. |
 | `unanswerable` | No passage in the corpus supports an answer. Has an empty `reference_contexts` and a `reason`. |
+
+## Approval and the guard
+
+A file is **approved** when its `approved_by` field is set. The ablation runner refuses a live (paid) run if
+any selected question's gold is not approved (`require_approved_gold`, tested); a fake-mode run may use
+drafts because it only checks plumbing, and its results record `gold_approved`. Once approved, a file is
+frozen: changing it is a declared amendment (constraint 9). `q-single-01` stays unapproved until its
+amendment is decided (ADR D-21).
+
+## How the 2026-10-06 drafts were made (method)
+
+By the assistant, from the papers' text only, never from retrieval output (so the gold cannot be shaped by
+the system it will judge):
+
+1. Extract every paper's text per page with the pipeline's own PDF parser (`api.ingestion.parse`).
+2. For each question, search that text by phrase and keyword (`BM25`, `hybrid`, `chunk size`, `multi-hop`, ...), read the hits in context, and choose passages of one to three sentences that support part of the
+   answer. Copy them verbatim, keeping the PDF's hyphenation artefacts ("ben- efit"), whitespace collapsed.
+3. Cover several papers for the cross-document and contradiction questions, and include passages that
+   qualify a claim, not only ones that support it.
+4. Check with `eval/verify_gold.py` (needs the PDFs): every passage is a verbatim span of its paper on the
+   stated page, and at least one corpus chunk covers it under the relevance rule above (so every passage is
+   reachable by some arm). It prints `0 problem(s)` for all 19 files.
+
+What this does **not** establish: that the passage list is complete (a question can have supporting text
+the search did not surface), or that the passages are the best ones. Review is the check on both.
 
 ## Current files
 
-| Question | Status | Passages |
-|---|---|---|
-| `q-cross-01` | smoke | 3 (HybridRAG twice, LightRAG once) |
-| `q-single-01` | unanswerable | 0: no paper in the corpus defines Reciprocal Rank Fusion (see ADR D-21) |
-| `q-single-02` | smoke | 3 (HyDE once, the RAG survey twice) |
+R is the number of corpus chunks that are relevant under the rule (the benchmark's ideal-ranking size for
+nDCG). Questions flagged **review** are ones where the corpus answers only part of the question.
+
+| Question | Status | Passages | Papers | R | Note |
+|---|---|---|---|---|---|
+| `q-cross-01` | benchmark (draft) | 7 | 4 | 8 | no paper combines dense, BM25 and graph together; evidence is vector+graph, graph vs chunk, sparse+dense |
+| `q-cross-02` | benchmark (draft) | 7 | 7 | 9 | |
+| `q-cross-03` | benchmark (draft) | 7 | 6 | 9 | |
+| `q-cross-04` | benchmark (draft) | 5 | 5 | 7 | |
+| `q-cross-05` | benchmark (draft) | 6 | 4 | 5 | |
+| `q-cross-06` | benchmark (draft) | 6 | 5 | 6 | |
+| `q-cross-07` | benchmark (draft) | 6 | 5 | 7 | |
+| `q-cross-08` | benchmark (draft) | 5 | **1** | 5 | **review:** only Self-RAG treats citation accuracy; not really a cross-document question in this corpus |
+| `q-cross-09` | benchmark (draft) | 7 | 6 | 7 | |
+| `q-cross-10` | benchmark (draft) | 7 | 6 | 8 | the corpus speaks of cost and speed more than production latency |
+| `q-cross-11` | benchmark (draft) | 5 | 4 | 6 | |
+| `q-cross-12` | benchmark (draft) | 7 | 5 | 7 | |
+| `q-single-01` | unanswerable | 0 | 0 | 0 | no paper defines Reciprocal Rank Fusion (ADR D-21); amendment pending |
+| `q-single-02` | benchmark (draft) | 5 | 3 | 4 | |
+| `q-single-03` | benchmark (draft) | 5 | 3 | 7 | |
+| `q-single-04` | benchmark (draft) | 4 | 3 | 3 | **review:** the corpus never gives BM25's scoring formula; passages cover only the word-overlap description and where it does and does not work |
+| `q-contra-01` | benchmark (draft) | 5 | 3 | 6 | **review:** no paper compares chunk sizes head to head on retrieval accuracy; passages qualify the claim from different sides |
+| `q-contra-02` | benchmark (draft) | 7 | 4 | 6 | |
+| `q-contra-03` | benchmark (draft) | 7 | 6 | 8 | |
+| `q-contra-04` | benchmark (draft) | 6 | 5 | 7 | |
