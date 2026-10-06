@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { block, comparisonGrid, conceptMap, envelope, graphView, layout, sourceList } from "@/test/fixtures";
+import { block, comparisonGrid, conceptMap, envelope, graphView, layout, sourceList, workspace } from "@/test/fixtures";
 
-import { toErrorBlock, useWorkspace } from "./store";
+import { FALLBACK_LAYOUT } from "./layout";
+import { activeLayout, toErrorBlock, useWorkspace } from "./store";
 
 beforeEach(() => useWorkspace.setState(useWorkspace.getInitialState(), true));
 
@@ -64,13 +65,65 @@ describe("workspace store", () => {
     expect(s().documents).toEqual([{ docId: "d", title: "Again", status: "ready", chunkCount: 2, error: null }]);
   });
 
-  it("holds the layout of the turn, and a new question starts without one", () => {
-    expect(s().layout).toBeNull();
-    const placed = layout([{ blockId: "turn-1", panel: "chat", order: 0 }]);
-    s().setLayout(placed);
-    expect(s().layout).toEqual(placed);
+  it("starts on the prebuilt fallback layout with no adaptive one", () => {
+    expect(s().layouts).toEqual({ prebuilt: FALLBACK_LAYOUT, adaptive: null });
+    expect(s().layoutChoice).toBe("basic");
+    expect(activeLayout(s())).toEqual(FALLBACK_LAYOUT);
+  });
+
+  it("applies /workspace: its blocks by id and its prebuilt layout", () => {
+    s().setWorkspace(workspace());
+    expect(Object.keys(s().workspaceBlocks)).toEqual(["workspace-sources"]);
+    expect(s().layouts.prebuilt.origin).toBe("prebuilt");
+  });
+
+  it("ignores a workspace layout it cannot read, but keeps its blocks", () => {
+    const damaged = { ...workspace(), layout: { ...workspace().layout, version: 9 } };
+    s().setWorkspace(damaged);
+    expect(s().layouts.prebuilt).toEqual(FALLBACK_LAYOUT);
+    expect(Object.keys(s().workspaceBlocks)).toEqual(["workspace-sources"]);
+  });
+
+  it("takes an adaptive layout and switches to it unless Basic is pinned", () => {
+    const adaptive = layout([{ blockId: "turn-1", panel: "chat", order: 0 }]);
+    s().setLayout(adaptive);
+    expect(s().layoutChoice).toBe("adaptive");
+    expect(activeLayout(s())).toEqual(adaptive);
+
+    s().chooseLayout("basic");
+    expect(s().pinned).toBe(true);
+    expect(activeLayout(s())).toEqual(FALLBACK_LAYOUT);
+    s().setLayout(adaptive); // a later layout does not override a pinned Basic
+    expect(s().layoutChoice).toBe("basic");
+    expect(s().layouts.adaptive).toEqual(adaptive);
+
+    s().chooseLayout("adaptive");
+    expect(s().pinned).toBe(false);
+    expect(activeLayout(s())).toEqual(adaptive);
+  });
+
+  it("ignores anything that is not a readable adaptive layout", () => {
+    s().setLayout(layout([], { version: 2 }));
+    s().setLayout(FALLBACK_LAYOUT); // a prebuilt layout is not an adaptive one
+    expect(s().layouts.adaptive).toBeNull();
+    expect(s().layoutChoice).toBe("basic");
+  });
+
+  it("choosing Adaptive does nothing while there is no adaptive layout", () => {
+    s().chooseLayout("adaptive");
+    expect(s().layoutChoice).toBe("basic");
+  });
+
+  it("a new question clears the adaptive layout and returns to Basic, keeping the workspace and a pinned choice", () => {
+    s().setWorkspace(workspace());
+    s().setLayout(layout([{ blockId: "turn-1", panel: "chat", order: 0 }]));
     s().startTurn();
-    expect(s().layout).toBeNull();
+    expect(s().layouts.adaptive).toBeNull();
+    expect(s().layoutChoice).toBe("basic");
+    expect(Object.keys(s().workspaceBlocks)).toEqual(["workspace-sources"]);
+    s().chooseLayout("basic");
+    s().startTurn();
+    expect(s().pinned).toBe(true);
   });
 
   it("toErrorBlock keeps identity and panel, clears content", () => {

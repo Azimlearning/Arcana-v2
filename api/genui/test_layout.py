@@ -320,3 +320,12 @@ def test_every_hint_names_a_panel_the_layout_has():
     panels = {panel for panel, _ in WIDTHS["research"]}
     assert {spec.placement.panel for spec in CATALOG.values()} <= panels
     assert all({p for p, _ in table} == panels for table in WIDTHS.values())
+
+
+def test_the_prebuilt_layout_equals_the_committed_fixture_the_web_client_falls_back_to():
+    """The web client keeps a constant copy (web/lib/layout.ts) for when /workspace cannot be reached, and its own test
+    compares it with this same file, so the two cannot drift apart."""
+    import json
+
+    fixture = pathlib.Path(__file__).resolve().parents[2] / "packages" / "schema" / "fixtures" / "prebuilt-layout.json"
+    assert json.loads(fixture.read_text(encoding="utf-8")) == prebuilt_layout("workspace-sources").model_dump()

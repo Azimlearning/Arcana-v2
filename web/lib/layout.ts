@@ -2,7 +2,7 @@
 // checks the shape of whatever it receives, because it must never apply something it cannot read. A layout that
 // fails the check is ignored and the client keeps the one it has, so a newer server cannot break an older client.
 
-import type { LayoutSpec, PanelId } from "@arcana/schema";
+import type { LayoutSpec, PanelId, UIBlock } from "@arcana/schema";
 
 /** The only layout version this client understands. */
 export const SUPPORTED_LAYOUT_VERSION = 1;
@@ -52,4 +52,55 @@ export function isLayoutSpec(value: unknown): value is LayoutSpec {
 /** The panel a block is shown in: where the layout places it, else the chat panel (arrival order). */
 export function panelOf(layout: LayoutSpec | null, blockId: string): PanelId {
   return layout?.placements.find((p) => p.blockId === blockId)?.panel ?? "chat";
+}
+
+/** The id of the source list the server shows before any question (the prebuilt layout places it in `sources`). */
+export const WORKSPACE_SOURCES_ID = "workspace-sources";
+
+/**
+ * The layout used until `/workspace` answers, and whenever it cannot be reached or read. It must equal the server's
+ * `prebuilt_layout("workspace-sources")`: a test compares it with the committed fixture the server's test also reads
+ * (`packages/schema/fixtures/prebuilt-layout.json`), so the two cannot drift apart.
+ */
+export const FALLBACK_LAYOUT: LayoutSpec = {
+  version: 1,
+  origin: "prebuilt",
+  mode: "basic",
+  panels: [
+    { id: "sources", width: 20 },
+    { id: "chat", width: 60 },
+    { id: "studio", width: 20 },
+  ],
+  placements: [{ blockId: WORKSPACE_SOURCES_ID, panel: "sources", order: 0 }],
+};
+
+export type PlacedBlocks = Record<PanelId, UIBlock[]>;
+
+/**
+ * Which blocks each panel shows. The rules (all tested):
+ *  - a panel shows the blocks the layout places in it, in `order`;
+ *  - a placement for a block the client does not have is ignored;
+ *  - a turn block with no placement is shown in chat, after the placed ones, in arrival order;
+ *  - a workspace block (the source list from `/workspace`) is shown only where a layout places it;
+ *  - in the prebuilt (Basic) layout the turn's own source list is not shown: the workspace's is already in the
+ *    sources panel and would only repeat it.
+ */
+export function placeBlocks(
+  layout: LayoutSpec,
+  turnBlocks: readonly UIBlock[],
+  workspaceBlocks: readonly UIBlock[] = [],
+): PlacedBlocks {
+  const placed: PlacedBlocks = { sources: [], chat: [], studio: [] };
+  const turn = layout.origin === "prebuilt" ? turnBlocks.filter((b) => b.type !== "SourceList") : turnBlocks;
+  const byId = new Map<string, UIBlock>([...workspaceBlocks, ...turn].map((b) => [b.id, b]));
+
+  const positions = new Map(layout.placements.map((p) => [p.blockId, p]));
+  for (const placement of [...layout.placements].sort((a, b) => a.order - b.order)) {
+    const block = byId.get(placement.blockId);
+    if (block) placed[placement.panel].push(block);
+  }
+  for (const block of turn) {
+    if (!positions.has(block.id)) placed.chat.push(block);
+  }
+  return placed;
 }

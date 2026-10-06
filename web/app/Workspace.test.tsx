@@ -4,7 +4,7 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { TITLE, block, comparisonGrid, envelope, frame, jsonResponse, layout, sourceList, sseResponse, trace } from "@/test/fixtures";
+import { TITLE, block, comparisonGrid, envelope, frame, graphView, jsonResponse, layout, sourceList, sseResponse, trace, workspace } from "@/test/fixtures";
 import { useWorkspace } from "@/lib/store";
 
 import { Workspace } from "./Workspace";
@@ -31,6 +31,31 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
 });
+
+/** The turn's blocks as the server sends them, with an optional layout after them (null: no layout is sent). */
+const answerWith = (adaptive: ReturnType<typeof layout> | null) =>
+  sseResponse([
+    frame({ type: "block", block: block("loading") }),
+    frame({ type: "block", block: block("ready") }),
+    frame({ type: "block", block: sourceList("ready") }),
+    frame({ type: "block", block: graphView("ready") }),
+    frame({ type: "block", block: comparisonGrid("ready") }),
+    ...(adaptive ? [frame({ type: "layout", layout: adaptive })] : []),
+    frame({ type: "done" }),
+  ]);
+
+const places = () => [
+  { blockId: "turn-1", panel: "chat" as const, order: 0 },
+  { blockId: "turn-1-comparison-grid", panel: "chat" as const, order: 1 },
+  { blockId: "turn-1-sources", panel: "sources" as const, order: 0 },
+  { blockId: "turn-1-graph-view", panel: "studio" as const, order: 0 },
+];
+
+const researchPanels = (sources: number, chat: number, studio: number) => [
+  { id: "sources" as const, width: sources },
+  { id: "chat" as const, width: chat },
+  { id: "studio" as const, width: studio },
+];
 
 const okStream = () =>
   sseResponse([
@@ -161,39 +186,156 @@ describe("Workspace", () => {
     expect(await screen.findByText(/1\. orchestrator/)).toBeInTheDocument(); // the trace of "turn-1", the answer's id
   });
 
-  it("shows in the answer column only what the layout places in chat; the rest is held for its own panel", async () => {
-    routes["/chat"] = () =>
-      sseResponse([
-        frame({ type: "block", block: block("loading") }),
-        frame({ type: "block", block: block("ready") }),
-        frame({ type: "block", block: sourceList("ready") }),
-        frame({
-          type: "layout",
-          layout: layout([
-            { blockId: "turn-1", panel: "chat", order: 0 },
-            { blockId: "turn-1-sources", panel: "sources", order: 0 },
-          ]),
-        }),
-        frame({ type: "done" }),
-      ]);
+  it("opens on Basic with the source list before any question", async () => {
+    routes["/workspace"] = () => jsonResponse(workspace());
+    render(<Workspace />);
+    const sources = screen.getByRole("complementary", { name: "Sources" });
+    expect(await within(sources).findByText("Stored Paper")).toBeInTheDocument();
+    expect(within(sources).getByText("7 passages")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Basic" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Adaptive" })).toBeDisabled();
+    expect(screen.getByText("Adaptive is available after your first answer.")).toBeInTheDocument();
+  });
+
+  it("opens on the fixed fallback layout when /workspace cannot be read, still usable for uploads and questions", async () => {
+    routes["/workspace"] = () => jsonResponse({ nonsense: true });
+    render(<Workspace />);
+    await waitFor(() => expect(fetch).toHaveBeenCalled());
+    expect(screen.getByLabelText("Upload a PDF")).toBeInTheDocument();
+    expect(screen.getByRole("main", { name: "Chat" })).toHaveStyle({ flexGrow: "60" });
+  });
+
+  it("applies the layout's widths as flex-grow values, and a hidden panel is aria-hidden and inert", async () => {
+    routes["/workspace"] = () => jsonResponse(workspace());
+    const allInChat = places().map((p, i) => ({ ...p, panel: "chat" as const, order: i }));
+    routes["/chat"] = () => answerWith(layout(allInChat, { panels: researchPanels(0, 100, 0) }));
     render(<Workspace />);
     ask();
     await screen.findByText(/Dense retrieval embeds passages/);
-    expect(screen.queryByText("BM25 in Practice")).not.toBeInTheDocument(); // placed in sources, not chat
-    expect(useWorkspace.getState().blocks["turn-1-sources"]).toBeDefined(); // still held, for the sources panel
+    await waitFor(() => expect(screen.getByRole("button", { name: "Adaptive" })).toHaveAttribute("aria-pressed", "true"));
+    const chat = screen.getByRole("main", { name: "Chat" });
+    expect(chat).toHaveStyle({ flexGrow: "100" });
+    const sources = document.querySelector('[data-panel="sources"]')!;
+    expect(sources).toHaveStyle({ flexGrow: "0" });
+    expect(sources).toHaveAttribute("aria-hidden", "true");
+    expect(sources).toHaveAttribute("inert");
+    expect(chat).not.toHaveAttribute("aria-hidden");
+    expect(chat).not.toHaveAttribute("inert");
   });
 
-  it("without a layout every block is shown in the answer column in arrival order", async () => {
+  it("shows each block in the panel the adaptive layout places it in, and in order within a panel", async () => {
+    routes["/workspace"] = () => jsonResponse(workspace());
+    routes["/chat"] = () => answerWith(layout(places(), { panels: researchPanels(20, 45, 35) }));
+    render(<Workspace />);
+    ask();
+    await screen.findByText(/Dense retrieval embeds passages/);
+    const studio = document.querySelector('[data-panel="studio"]') as HTMLElement;
+    expect(await within(studio).findByRole("group", { name: /Graph of 3 concepts/ })).toBeInTheDocument();
+    const sources = document.querySelector('[data-panel="sources"]') as HTMLElement;
+    expect(within(sources).getByText("BM25 in Practice")).toBeInTheDocument(); // the turn's list replaced the workspace's
+    expect(within(sources).queryByText("Stored Paper")).not.toBeInTheDocument();
+    const chat = screen.getByLabelText("Answer");
+    const text = chat.textContent ?? "";
+    expect(text.indexOf("Dense retrieval embeds passages")).toBeLessThan(text.indexOf("Comparison of"));
+    expect(within(chat).queryByRole("group", { name: /Graph of/ })).not.toBeInTheDocument();
+  });
+
+  it("in Basic every turn block is stacked in the answer column, and the turn's source list is not repeated", async () => {
+    routes["/workspace"] = () => jsonResponse(workspace());
+    routes["/chat"] = () => answerWith(null);
+    render(<Workspace />);
+    ask();
+    await screen.findByText(/Dense retrieval embeds passages/);
+    const chat = screen.getByLabelText("Answer");
+    expect(await within(chat).findByRole("group", { name: /Graph of/ })).toBeInTheDocument();
+    expect(within(chat).queryByText("BM25 in Practice")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Basic" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("ignores a layout it cannot read, an unknown version included, and stays on Basic", async () => {
+    routes["/workspace"] = () => jsonResponse(workspace());
+    for (const bad of [layout(places(), { version: 2 }), layout(places(), { panels: researchPanels(20, 45, 30) })]) {
+      cleanup();
+      useWorkspace.setState(useWorkspace.getInitialState(), true);
+      routes["/chat"] = () => answerWith(bad);
+      render(<Workspace />);
+      ask();
+      await screen.findByText(/Dense retrieval embeds passages/);
+      expect(screen.getByRole("button", { name: "Adaptive" })).toBeDisabled();
+      expect(within(screen.getByLabelText("Answer")).getByRole("group", { name: /Graph of/ })).toBeInTheDocument();
+    }
+  });
+
+  it("a placement for a block the client does not have is ignored, and an unplaced block is shown in chat", async () => {
+    routes["/workspace"] = () => jsonResponse(workspace());
+    const partial = layout(
+      [
+        { blockId: "turn-1", panel: "chat", order: 0 },
+        { blockId: "nobody", panel: "studio", order: 0 },
+      ],
+      { panels: researchPanels(20, 45, 35) },
+    );
+    routes["/chat"] = () => answerWith(partial);
+    render(<Workspace />);
+    ask();
+    await screen.findByText(/Dense retrieval embeds passages/);
+    const chat = screen.getByLabelText("Answer");
+    // the graph view was not placed by the layout, so it falls to the answer column; "nobody" shows nothing anywhere
+    expect(await within(chat).findByRole("group", { name: /Graph of/ })).toBeInTheDocument();
+  });
+
+  it("adaptive takes over by itself after the first answer; the user can pin Basic, and a later answer does not override it", async () => {
+    routes["/workspace"] = () => jsonResponse(workspace());
+    routes["/chat"] = () => answerWith(layout(places(), { panels: researchPanels(20, 45, 35) }));
+    render(<Workspace />);
+    ask();
+    await waitFor(() => expect(screen.getByRole("button", { name: "Adaptive" })).toHaveAttribute("aria-pressed", "true"));
+
+    fireEvent.click(screen.getByRole("button", { name: "Basic" })); // pins Basic
+    expect(screen.getByRole("button", { name: "Basic" })).toHaveAttribute("aria-pressed", "true");
+    expect(useWorkspace.getState().pinned).toBe(true);
+    expect(within(screen.getByLabelText("Answer")).getByRole("group", { name: /Graph of/ })).toBeInTheDocument();
+
+    ask("A second question?");
+    await waitFor(() => expect(useWorkspace.getState().layouts.adaptive).not.toBeNull());
+    expect(screen.getByRole("button", { name: "Basic" })).toHaveAttribute("aria-pressed", "true"); // not overridden
+    expect(screen.getByRole("button", { name: "Adaptive" })).toBeEnabled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Adaptive" })); // un-pins
+    expect(screen.getByRole("button", { name: "Adaptive" })).toHaveAttribute("aria-pressed", "true");
+    expect(useWorkspace.getState().pinned).toBe(false);
+  });
+
+  it("a layout that arrives before the blocks is applied to them as they arrive", async () => {
+    routes["/workspace"] = () => jsonResponse(workspace());
     routes["/chat"] = () =>
       sseResponse([
+        frame({ type: "layout", layout: layout(places(), { panels: researchPanels(20, 45, 35) }) }),
         frame({ type: "block", block: block("loading") }),
         frame({ type: "block", block: block("ready") }),
-        frame({ type: "block", block: sourceList("ready") }),
+        frame({ type: "block", block: graphView("ready") }),
         frame({ type: "done" }),
       ]);
     render(<Workspace />);
     ask();
-    expect(await screen.findByText("BM25 in Practice")).toBeInTheDocument();
+    const studio = document.querySelector('[data-panel="studio"]') as HTMLElement;
+    expect(await within(studio).findByRole("group", { name: /Graph of/ })).toBeInTheDocument();
+  });
+
+  it("uploading refreshes the source list from the server", async () => {
+    let stored = [{ docId: "d0", title: "Stored Paper", chunkCount: 7 }];
+    routes["/workspace"] = () => jsonResponse(workspace(stored));
+    routes["/ingest"] = () => {
+      stored = [...stored, { docId: "d", title: TITLE, chunkCount: 4 }];
+      return jsonResponse(INGESTED);
+    };
+    render(<Workspace />);
+    const sources = screen.getByRole("complementary", { name: "Sources" });
+    await within(sources).findByText("Stored Paper");
+    await upload();
+    await waitFor(() => expect(within(sources).getAllByText(TITLE)).toHaveLength(1)); // listed once, not also as a local row
+    expect(within(sources).getByText("4 passages")).toBeInTheDocument();
+    expect(within(sources).getByText("Stored Paper")).toBeInTheDocument();
   });
 
   it("offers the trace of a turn that ended in an error too, and says so if the server has none", async () => {
@@ -237,6 +379,8 @@ describe("Workspace", () => {
     expect(screen.getByRole("button", { name: "Ask" })).toBeDisabled();
     fireEvent.change(screen.getByLabelText("Question"), { target: { value: "   " } });
     expect(screen.getByRole("button", { name: "Ask" })).toBeDisabled();
-    await waitFor(() => expect(fetch).not.toHaveBeenCalled());
+    await waitFor(() => expect(fetch).toHaveBeenCalled()); // the workspace loads on open
+    const chatCalls = vi.mocked(fetch).mock.calls.filter(([url]) => String(url).includes("/chat"));
+    expect(chatCalls).toEqual([]); // but no question was sent
   });
 });

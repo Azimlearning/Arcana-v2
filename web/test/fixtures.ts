@@ -1,4 +1,4 @@
-import type { CitedSummary, ComparisonGrid, ConceptMap, ErrorEnvelope, GraphView, LayoutSpec, SourceList, StreamEvent, TurnTrace } from "@arcana/schema";
+import type { CitedSummary, ComparisonGrid, ConceptMap, ErrorEnvelope, GraphView, LayoutSpec, SourceList, WorkspaceResponse, StreamEvent, TurnTrace } from "@arcana/schema";
 
 export const TITLE = "Hybrid Retrieval over Knowledge Graphs";
 
@@ -179,6 +179,25 @@ export function layout(placements: LayoutSpec["placements"], overrides: Partial<
     ...overrides,
   };
 }
+
+/** What GET /workspace returns: the prebuilt layout and the source list it places. */
+export function workspace(documents: SourceList["data"]["documents"] = [{ docId: "d0", title: "Stored Paper", chunkCount: 7 }]): WorkspaceResponse {
+  const prebuilt = JSON.parse(JSON.stringify(FALLBACK)) as LayoutSpec;
+  const list = sourceList(documents.length ? "ready" : "empty", documents);
+  return { layout: prebuilt, blocks: [{ ...list, id: "workspace-sources" }] };
+}
+
+const FALLBACK: LayoutSpec = {
+  version: 1,
+  origin: "prebuilt",
+  mode: "basic",
+  panels: [
+    { id: "sources", width: 20 },
+    { id: "chat", width: 60 },
+    { id: "studio", width: 20 },
+  ],
+  placements: [{ blockId: "workspace-sources", panel: "sources", order: 0 }],
+};
 
 export function envelope(overrides: Partial<ErrorEnvelope> = {}): ErrorEnvelope {
   return { code: "provider_unavailable", message: "The model is unavailable.", issues: [], retryable: true, ...overrides };

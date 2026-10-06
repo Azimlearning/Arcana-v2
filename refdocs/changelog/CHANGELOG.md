@@ -28,6 +28,14 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-07: P2 task C3 (the web shell: Basic first, Adaptive on top)
+- **Changed:** web `components/shell/{Panel,Shell,LayoutSwitch}.tsx` (new; `Shell.tsx` ported from v1 with a provenance header), `lib/layout.ts` (`FALLBACK_LAYOUT`, `WORKSPACE_SOURCES_ID`, `placeBlocks`), `lib/store.ts` (workspace blocks, the two layouts, the choice, pinning), `app/Workspace.tsx` (rebuilt on the shell; fetches `/workspace` on open and after an upload), `app/page.tsx`, fixtures; `packages/schema/fixtures/prebuilt-layout.json` (new, shared with the server test); tests (`Shell.test.tsx`, `layout.test.ts`, `store.test.ts`, `Workspace.test.tsx`); `api/genui/test_layout.py` (the fixture equality test).
+- **Decided:** none new. The D-28 ASSUMED default stands and is now built: an adaptive layout takes over by itself unless the user has pinned Basic.
+- **Deviations:** in Basic the turn's own source list is not shown (it would repeat the workspace's); uploads the list does not show stay in a small list in the sources panel so the earlier upload tests pass unchanged.
+- **Verified:** `uv run pytest -q` 680 passed; `pnpm --filter web test` 159 passed; `pnpm -r typecheck` and `pnpm -r lint` clean; `pnpm --filter web build` exits 0; ruff, pyright, `pnpm codegen:check` and `uv run pytest eval/tests/test_frozen_assets.py -q` pass. **Not verified:** any of it in a real browser (task D1).
+- **Noted, not changed:** the panels are a fixed three-column row with no small-screen layout; `inert` and `aria-hidden` on collapsed panels are asserted in jsdom only. A `GraphView` or `ConceptMap` appears in the answer column in Basic mode, by design, until an adaptive layout takes over.
+- **Known issues / next steps:** C4 (the composition record on the wire and in the trace panel, with the whole-P2 wire review; the `schema-guardian` agent type is unavailable in this session, so the review needs another reviewer given the same checklist).
+
 ### 2026-10-07: P2 task C2 (GET /workspace: the prebuilt version before any question)
 - **Changed:** `packages/schema/src/api.ts` (`WorkspaceResponse`; regenerated `generated.py`); `api/agents/compose.py` (`compose_workspace`, `WORKSPACE_SOURCES_ID`, `_source_items` shared with the turn's source list); `api/routes/workspace.py` (new) and `api/main.py`; `api/test_api.py` (6 tests); web `lib/api.ts` (`fetchWorkspace` with a structural check) and `lib/api.test.ts` (new); `refdocs/execution/...` (reality note).
 - **Decided:** none new (D-28). The workspace fails closed where a turn does not: a store or validation failure is an error envelope, never a partial workspace, because there is no answer to protect.
