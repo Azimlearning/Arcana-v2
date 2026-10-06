@@ -31,6 +31,15 @@ export interface IngestResponse {
   error: string | null;
 }
 
+/**
+ * GET /workspace response: the workspace as it is before any question (D-28). `layout` is the fixed prebuilt layout and
+ * `blocks` the blocks it places (a source list of the stored documents). Validated like every other block and layout.
+ */
+export interface WorkspaceResponse {
+  layout: LayoutSpec;
+  blocks: UIBlock[];
+}
+
 // ── SSE stream (POST /chat) ─────────────────────────────────────────────────
 // Each SSE message carries exactly one StreamEvent as JSON in `data:`.
 // A BlockEvent whose block.id was already seen REPLACES that block (upsert by id): this is how a

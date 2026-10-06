@@ -253,6 +253,12 @@ class TurnTrace(BaseModel):
     outcome: TurnOutcome
 
 
+class WorkspaceResponse(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    layout: LayoutSpec
+    blocks: list[UIBlock]
+
+
 AgentName = Literal['orchestrator', 'research', 'graph', 'fact_checker', 'composer', 'tutor', 'writer', 'lab_builder']
 
 BlockStatus = Literal['empty', 'loading', 'partial', 'ready', 'error']
@@ -309,3 +315,4 @@ SourceListData.model_rebuild()
 StreamErrorEvent.model_rebuild()
 SummarySegment.model_rebuild()
 TurnTrace.model_rebuild()
+WorkspaceResponse.model_rebuild()

@@ -11,7 +11,7 @@ construct a block, so nothing reaches the wire that the Composer did not build a
 """
 
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import replace
 from typing import Any
 
@@ -33,10 +33,10 @@ from api.genui.catalog import (
     concept_path,
     graph_edges,
 )
-from api.genui.generated import ErrorEnvelope, UIBlock
-from api.genui.layout import compose_layout
+from api.genui.generated import ErrorEnvelope, LayoutSpec, UIBlock
+from api.genui.layout import compose_layout, prebuilt_layout
 from api.genui.validate import validate_block, validate_layout
-from api.stores.doc_store import Document
+from api.stores.doc_store import DocStore, Document
 
 log = get_logger(__name__)
 _KEBAB = re.compile(r"(?<!^)(?=[A-Z])")
@@ -217,12 +217,17 @@ def _raw_cited_summary(spec: Spec, ctx: TurnContext, evidence: ComposerEvidence,
     return builder(_block_id(spec, ctx), "ready", data=evidence.answer)
 
 
-def _raw_source_list(spec: Spec, ctx: TurnContext, evidence: ComposerEvidence, empty: bool) -> dict[str, Any]:
-    listed = [
-        {"docId": d.id, "title": d.title, "chunkCount": evidence.chunk_counts.get(d.id, 0)}
-        for d in evidence.documents
+def _source_items(documents: Iterable[Document], chunk_counts: Mapping[str, int], cap: int) -> list[dict[str, Any]]:
+    """The ready documents as SourceList items, at most `cap`, with their stored titles and passage counts."""
+    return [
+        {"docId": d.id, "title": d.title, "chunkCount": chunk_counts.get(d.id, 0)}
+        for d in documents
         if d.status == "ready"
-    ][: spec.caps["documents"]]
+    ][:cap]
+
+
+def _raw_source_list(spec: Spec, ctx: TurnContext, evidence: ComposerEvidence, empty: bool) -> dict[str, Any]:
+    listed = _source_items(evidence.documents, evidence.chunk_counts, spec.caps["documents"])
     return BUILDERS[spec.name](_block_id(spec, ctx), "ready", documents=listed)
 
 
@@ -301,6 +306,24 @@ def compose(ctx: TurnContext) -> Composition:
         log.error("layout_failed", error=type(exc).__name__)
         return replace(composition, layout_failure=("internal",))
     return replace(composition, layout=layout)
+
+
+WORKSPACE_SOURCES_ID = "workspace-sources"
+"""The id of the source list shown before any question. Fixed, so the prebuilt layout can place it."""
+
+
+def compose_workspace(docs: DocStore) -> tuple[LayoutSpec, list[UIBlock]]:
+    """The workspace before any question (D-28): the prebuilt layout and a validated source list of the stored
+    documents (an `empty` one when there are none). No model call. Unlike a turn, this does not swallow a store
+    failure or a validation failure: the caller gets the exception and answers with an error envelope, so a
+    half-built workspace is never sent."""
+    ready = [d for d in docs.list_documents() if d.status == "ready"][: CATALOG["SourceList"].caps["documents"]]
+    counts = {d.id: len(docs.chunks_for_document(d.id)) for d in ready}
+    items = _source_items(ready, counts, len(ready))
+    builder = BUILDERS["SourceList"]
+    raw = builder(WORKSPACE_SOURCES_ID, "ready", documents=items) if items else builder(WORKSPACE_SOURCES_ID, "empty")
+    block = validate_block(raw, docs)
+    return validate_layout(prebuilt_layout(WORKSPACE_SOURCES_ID), {block.id}), [block]
 
 
 def compose_block(ctx: TurnContext) -> UIBlock:

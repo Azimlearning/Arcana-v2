@@ -1,7 +1,8 @@
 // Non-streaming calls. Failures are returned as the shared ErrorEnvelope, never thrown as strings.
 
-import type { ErrorEnvelope, IngestResponse, TurnTrace } from "@arcana/schema";
+import type { ErrorEnvelope, IngestResponse, TurnTrace, UIBlock, WorkspaceResponse } from "@arcana/schema";
 
+import { isLayoutSpec } from "./layout";
 import { API_BASE, clientError, envelopeFromResponse } from "./stream";
 
 export type UploadResult =
@@ -70,6 +71,54 @@ export async function fetchTrace(
   try {
     const body: unknown = await response.json();
     if (isTurnTrace(body)) return { ok: true, trace: body };
+  } catch {
+    // not JSON
+  }
+  return { ok: false, error: clientError("The server sent an unreadable response.", false) };
+}
+
+export type WorkspaceResult = { ok: true; workspace: WorkspaceResponse } | { ok: false; error: ErrorEnvelope };
+
+function isBlockShape(value: unknown): value is UIBlock {
+  if (typeof value !== "object" || value === null) return false;
+  const b = value as { type?: unknown; id?: unknown; meta?: unknown; data?: unknown };
+  const meta = b.meta as { status?: unknown } | null;
+  return (
+    typeof b.type === "string" &&
+    typeof b.id === "string" &&
+    b.id !== "" &&
+    typeof meta === "object" &&
+    meta !== null &&
+    typeof meta.status === "string" &&
+    typeof b.data === "object" &&
+    b.data !== null
+  );
+}
+
+function isWorkspace(value: unknown): value is WorkspaceResponse {
+  if (typeof value !== "object" || value === null) return false;
+  const w = value as { layout?: unknown; blocks?: unknown };
+  return isLayoutSpec(w.layout) && Array.isArray(w.blocks) && w.blocks.every(isBlockShape);
+}
+
+/**
+ * The workspace before any question: the prebuilt layout and its blocks. The server validates both; this only refuses a
+ * body that is not one, so an unreadable response is an error and never a half-rendered workspace.
+ */
+export async function fetchWorkspace(
+  options: { baseUrl?: string; fetchImpl?: typeof fetch } = {},
+): Promise<WorkspaceResult> {
+  const { baseUrl = API_BASE, fetchImpl = fetch } = options;
+  let response: Response;
+  try {
+    response = await fetchImpl(`${baseUrl}/workspace`);
+  } catch {
+    return { ok: false, error: clientError("Could not reach the server.") };
+  }
+  if (!response.ok) return { ok: false, error: await envelopeFromResponse(response) };
+  try {
+    const body: unknown = await response.json();
+    if (isWorkspace(body)) return { ok: true, workspace: body };
   } catch {
     // not JSON
   }

@@ -281,7 +281,9 @@ def test_the_trace_endpoint_is_get_only(client: TestClient):
     assert client.post("/turns/anything/trace").status_code == 405
 
 
-def test_a_turn_forced_to_one_hop_still_ends_with_a_block_and_a_trace(ready_client: TestClient, monkeypatch: pytest.MonkeyPatch):
+def test_a_turn_forced_to_one_hop_still_ends_with_a_block_and_a_trace(
+    ready_client: TestClient, monkeypatch: pytest.MonkeyPatch
+):
     from api.agents.framework import TurnLimits
     from api.agents.state import TurnContext
     from api.routes import chat as chat_route
@@ -297,3 +299,76 @@ def test_a_turn_forced_to_one_hop_still_ends_with_a_block_and_a_trace(ready_clie
     assert trace.hopsUsed == 1 and trace.outcome == "error"
     assert trace.steps[0].agent == "orchestrator" and trace.steps[0].status == "ok"
     assert {s.status for s in trace.steps[1:]} == {"refused"}  # every later hop is recorded as refused
+
+
+# ── /workspace: the prebuilt version, before any question ─────────────────────
+
+
+def workspace(client: TestClient):
+    from api.genui.generated import WorkspaceResponse
+
+    response = client.get("/workspace")
+    assert response.status_code == 200
+    return WorkspaceResponse.model_validate(response.json())  # the generated, strict wire type
+
+
+def test_an_empty_corpus_gets_the_prebuilt_layout_and_an_empty_source_list(client: TestClient):
+    result = workspace(client)
+    assert result.layout.origin == "prebuilt" and result.layout.mode == "basic"
+    (block,) = result.blocks
+    assert block.type == "SourceList" and block.meta.status == "empty" and block.data.documents == []  # pyright: ignore[reportAttributeAccessIssue]
+    assert [(p.blockId, p.panel) for p in result.layout.placements] == [(block.id, "sources")]
+
+
+def test_after_an_ingest_the_source_list_names_the_document_with_its_stored_title_and_count(
+    client: TestClient, pdf_bytes: bytes
+):
+    ingested = client.post("/ingest", files={"file": ("hybrid_retrieval.pdf", pdf_bytes, "application/pdf")}).json()
+    (block,) = workspace(client).blocks
+    assert block.meta.status == "ready"
+    (item,) = block.data.documents  # pyright: ignore[reportAttributeAccessIssue]
+    assert (item.docId, item.title, item.chunkCount) == (ingested["docId"], ingested["title"], ingested["chunkCount"])
+
+
+def test_the_workspace_makes_no_model_call(ready_client: TestClient):
+    container = ready_client.app.state.container  # pyright: ignore[reportAttributeAccessIssue]
+    provider = FakeProvider(fail_with="timeout")
+    container.llm = LLMService(provider, None, container.ledger)
+    workspace(ready_client)
+    assert provider.calls == []
+
+
+def test_a_workspace_that_fails_validation_is_an_error_envelope_never_half_a_workspace(
+    ready_client: TestClient, monkeypatch: pytest.MonkeyPatch
+):
+    from api.agents import compose as compose_module
+    from api.core.errors import ValidationFailed
+    from api.genui.generated import FieldIssue
+
+    def refuse(raw, docs):
+        raise ValidationFailed(
+            "The block failed content validation.", [FieldIssue(path="data.documents.0.title", message="x")]
+        )
+
+    monkeypatch.setattr(compose_module, "validate_block", refuse)
+    response = ready_client.get("/workspace")
+    assert response.status_code >= 400
+    body = response.json()
+    assert body["code"] == "validation_failed" and "layout" not in body and "blocks" not in body
+
+
+def test_a_store_that_cannot_be_read_is_an_internal_error_envelope(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    container = client.app.state.container  # pyright: ignore[reportAttributeAccessIssue]
+
+    def broken():
+        raise RuntimeError("secret internal detail")
+
+    monkeypatch.setattr(container.docs, "list_documents", broken)
+    quiet = TestClient(client.app, raise_server_exceptions=False)  # let the app's own handler answer, as a browser sees it
+    response = quiet.get("/workspace")
+    assert response.status_code == 500 and response.json()["code"] == "internal"
+    assert "secret" not in response.text
+
+
+def test_the_workspace_is_get_only(client: TestClient):
+    assert client.post("/workspace").status_code == 405

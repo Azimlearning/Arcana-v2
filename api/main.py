@@ -22,7 +22,7 @@ from api.core.errors import HTTP_STATUS, ArcanaError, envelope_from_exception
 from api.core.logging import configure_logging, get_logger
 from api.core.settings import Settings, load_settings
 from api.genui.generated import ErrorCode, ErrorEnvelope, FieldIssue
-from api.routes import chat, ingest, trace
+from api.routes import chat, ingest, trace, workspace
 
 log = get_logger(__name__)
 
@@ -118,6 +118,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(chat.router)
     app.include_router(ingest.router)
     app.include_router(trace.router)
+    app.include_router(workspace.router)
     return app
 
 
