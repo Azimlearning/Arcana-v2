@@ -13,7 +13,7 @@
 | Phase | Scope | Status |
 |---|---|---|
 | P0 | Walking skeleton + eval harness | 🔶 Closed by Azim's decision on 2026-10-06 with two deferrals, not fully done: task 10 (live providers) and the RAGAS install, both moved to P1 task B2. Tasks 1 to 9 and 11 are done on fakes |
-| P1 | Agent core with super tools; first full graph-vs-flat benchmark | 🔶 Plan approved by Azim on 2026-10-06 (roster as proposed; gold drafted by the assistant and approved by him). Track A (agent layer, fakes only) built and tested, A1 to A9; Track B (gold, live corpus, benchmark) waits on keys, cap, disk and his gold review |
+| P1 | Agent core with super tools; first full graph-vs-flat benchmark | 🔶 **Built and measured 2026-10-06; the definition of done is met except two declared items** (`q-single-01` unapproved so 19 of 20 questions; RAGAS metrics null). Result: inconclusive. Earlier status text follows. 🔶 Plan approved by Azim on 2026-10-06 (roster as proposed; gold drafted by the assistant and approved by him). Track A (agent layer, fakes only) built and tested, A1 to A9; Track B (gold, live corpus, benchmark) waits on keys, cap, disk and his gold review |
 | P2 | GenUI catalog (level 1) + adaptive dashboard (level 2 LayoutSpec) | ⬜ Not started |
 | P3 | Trained tools: router distillation, Re-Rank, Mastery (optional) | ⬜ Not started |
 | P4 | VerifiedLab (level 3) + governed lifecycle | ⬜ Not started |
@@ -56,7 +56,8 @@ Status vocabulary: use these exactly, and never round up:
 | End to end (A9) | A comparison runs Orchestrator, Graph, Research, Fact Checker, ends at the Composer, cites two papers, trace lists four hops | ✅ In a real browser on two real papers with the fake LLM (evidence screenshots); not with a real model |
 | B1 Gold | 19 answerable questions drafted from the PDFs (109 passages), verified verbatim and reachable; the runner refuses a live run on unapproved gold | ✅ for the 19 answerable questions: **approved by Azim 2026-10-06** and hash-pinned (the three flagged questions approved as annotated). 🔶 `q-single-01` still unapproved: its amendment is open |
 | B2 and B4 live ingestion | One real paper with real embeddings, then all 16 papers, once | ✅ **Done 2026-10-06**: 1,570 chunks, 15 extraction failures (0.95 percent), parity clean, $5.8056 (about $0.0037 per chunk); stores hashed; full record in `refdocs/evidence/2026-10-06-live-ingestion.md`. Not yet viewed in a browser |
-| B5 benchmark and Wilcoxon, B6 wrap-up | Keys, cap, one live ingestion, five arms over 20 questions | ⬜ Waits on Azim: keys in his own `.env`, cap raise (about $10), free disk, gold approval, the q-single-01 amendment. RAGAS install moves to the very end (his call, 2026-10-06) |
+| B5 benchmark and Wilcoxon | Five arms over the 19 approved questions on the one-shot stores; paired Wilcoxon, hybrid versus flat pre-registered | ✅ **Done 2026-10-06**, result **inconclusive**: hybrid best numerically (Recall@10 0.212, nDCG@10 0.208) but hybrid versus flat is not significant (Recall p 0.44, nDCG p 0.15, Holm 0.29; mostly ties). Gate passed; RAGAS metrics null (deferred). `eval/results/20261006T093813Z-benchmark*.json` |
+| B6 wrap-up | Keys, cap, one live ingestion, five arms over 20 questions | ⬜ Waits on Azim: keys in his own `.env`, cap raise (about $10), free disk, gold approval, the q-single-01 amendment. RAGAS install moves to the very end (his call, 2026-10-06) |
 
 ---
 
@@ -97,7 +98,7 @@ What has actually been run, not what has been written. A row here needs a real c
 
 ## Known gaps
 
-- No benchmark numbers. Gold for the 19 answerable questions is approved and pinned; `q-single-01` is not, so a live run must select the 19 (`--questions`) until its amendment is decided. The runner refuses a live run on unapproved gold.
+- The first benchmark exists (inconclusive, 19 questions, one ingestion). Gold for the 19 answerable questions is approved and pinned; `q-single-01` is not, so a live run must select the 19 (`--questions`) until its amendment is decided. The runner refuses a live run on unapproved gold.
 - **Question set defect (open for Azim):** q-single-01 ("What is Reciprocal Rank Fusion...") cannot be answered from the 16-paper corpus. It is handled as `unanswerable` (metrics `null`, excluded from aggregates) and was not edited; amending it (replace the question, add a paper that defines RRF, or keep it as a grounding test) is a declared amendment before the P1 benchmark (D-21).
 - RAGAS is not installed (about 94 packages; the drive is nearly full). Azim chose to do this at the very end of the project (2026-10-06): then `uv add ragas rapidfuzz` and a re-run. The two RAGAS context metrics stay `null` until then.
 - Task 10 waits for the API keys. Two assumptions to confirm then: OpenRouter's model ids, and the `text-embedding-3-large` price.
@@ -108,7 +109,7 @@ What has actually been run, not what has been written. A row here needs a real c
 - Trace rows are never pruned (fine at this scale).
 - Extraction has no seed, so each ingest gives a different graph; the benchmark must treat the ingested graph as a fixed artefact.
 - Request bodies are bounded by declared `Content-Length` only; a chunked body without it is not capped. Favicon is missing (cosmetic).
-- **Next:** the benchmark (B5). It waits on one decision from Azim (the graph arm's cross-document tie-break, D-24) and a clean commit. About $3.9 of the $10 cap remains, and the benchmark itself makes only query embeddings (cents).
+- **Open for Azim:** the `q-single-01` amendment; RAGAS at the end of the project (then `uv add ragas rapidfuzz`, re-run on the same stores with `--expect-*` hashes); P2 is next. `refdocs/guides/file_structure.md` does not yet list the files P1 added. About $3.9 of the $10 cap remains.
 - **Benchmark protocol (D-24):** a live run is refused on any change to the pinned question set, manifest, approved gold or the whole protocol stamp, and on an uncommitted tree; it runs the 19 approved questions. Open for Azim: the graph arm's cross-document tie-break is a hash order (adds noise to hybrid); keep it, or amend before the run.
 - **Cost controls (pre-live audit, D-23):** the ledger is one file in a live mode, a cap is required for any live mode, calls are priced by the requested model, and ingestion refuses an over-size or over-budget document up front. Still unverified until the first live call: the Sonnet 5.5 and Opus 5.5 prices, the OpenAI embedding price (all in `api/llm/pricing.py`), and whether the API echoes a dated model id. The live API has no per-user rate limit (single-user tool, D-04): do not expose it. Extraction results are not cached per chunk, so a failed document is paid for again.
 - Disk: the development machine's C: drive was 100 percent full during this session; `uv cache prune` freed 8.6 GiB and it was still within about 800 MB of full afterwards. Tell Azim if tests start failing with `No space left on device`.

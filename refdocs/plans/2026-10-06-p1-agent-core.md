@@ -114,13 +114,13 @@ before any paid run.
 
 ## Definition of done
 
-- [ ] A multi-agent request (a cross-document comparison) runs Orchestrator, Research, Graph and Fact Checker through `route_to_agent`, ends at the Composer, renders one cited `CitedSummary` in the browser, and its trace shows each hop with tokens and outcome.
-- [ ] A turn that exhausts its hop or token budget still ends at the Composer with a block, not a hang or an exception.
-- [ ] No agent module imports another agent module (an import-boundary test proves it).
-- [ ] The Fact Checker removes a planted unsupported claim and a planted non-verbatim quote; the mutation suite records its detection rates.
-- [ ] Every graph edge an agent returns resolves to a stored chunk.
-- [ ] `TurnTrace` is defined in `packages/schema`, generated, validated, served, and rendered; `schema-guardian` has reviewed it.
-- [ ] All 20 questions have gold files, each approved by Azim, written before any benchmark arm was run; q-single-01 is resolved by ADR.
-- [ ] The corpus is ingested once with live providers; `check_corpus_parity` is clean; the ledger total is below the cap.
-- [ ] The benchmark results JSON for 5 arms × 20 questions and the paired Wilcoxon statistics are committed, with the protocol stamp, and the empty-graph gate passed or the defect is documented.
-- [ ] The result is reported as measured, whatever it is.
+- [x] A multi-agent request (a cross-document comparison) runs Orchestrator, Research, Graph and Fact Checker through `route_to_agent`, ends at the Composer, renders one cited `CitedSummary` in the browser, and its trace shows each hop with tokens and outcome. Verified in a real browser on two real papers (fake LLM) and with a real model by script; trace lists four hops (A9, B2).
+- [x] A turn that exhausts its hop or token budget still ends at the Composer with a block, not a hang or an exception. A forced one-hop budget ends with an error block and a trace of refused hops (browser and `api/test_api.py`).
+- [x] No agent module imports another agent module (an import-boundary test proves it). `api/agents/test_framework.py`.
+- [x] The Fact Checker removes a planted unsupported claim and a planted non-verbatim quote; the mutation suite records its detection rates. Measured on the real corpus: planted non-verbatim quotes, wrong chunks and wrong documents caught 50 of 50; invented claims 49 and 48 of 50; **negated claims 0 of 50** (the lexical rule's blind spot; the model judge is unmeasured).
+- [x] Every graph edge an agent returns resolves to a stored chunk. `api/agents/test_graph_agent.py` (dangling chunks are dropped).
+- [x] `TurnTrace` is defined in `packages/schema`, generated, validated, served, and rendered; `schema-guardian` has reviewed it. `schema-guardian` reviewed; four small findings fixed.
+- [~] All 20 questions have gold files, each approved by Azim, written before any benchmark arm was run; q-single-01 is resolved by ADR. **Partly met.** The 19 answerable questions have gold, drafted from the PDFs and approved by Azim on 2026-10-06 (hash-pinned) before any arm ran. `q-single-01` is unanswerable from the corpus and **unapproved**; its amendment is still Azim's decision, and the benchmark declares its exclusion (ADR D-24).
+- [x] The corpus is ingested once with live providers; `check_corpus_parity` is clean; the ledger total is below the cap. 16 papers, 1,570 chunks, parity clean, $5.81 of the $10 cap (month total $6.10); record in `refdocs/evidence/2026-10-06-live-ingestion.md`.
+- [~] The benchmark results JSON for 5 arms × 20 questions and the paired Wilcoxon statistics are committed, with the protocol stamp, and the empty-graph gate passed or the defect is documented. **Partly met.** Five arms over **19** questions (declared, D-24), with the paired Wilcoxon statistics, protocol stamp, relevance rule and hashes, committed (`eval/results/20261006T093813Z-benchmark.json`, `eval/results/20261006T093813Z-benchmark-stats.json`); the empty-graph gate passed (0 of 19 empty). The RAGAS metrics are `null`: RAGAS is deferred to the end of the project (Azim).
+- [x] The result is reported as measured, whatever it is. Hybrid beat flat numerically but not significantly (Recall@10 p 0.44, nDCG@10 p 0.15, Holm 0.29); reported as inconclusive.

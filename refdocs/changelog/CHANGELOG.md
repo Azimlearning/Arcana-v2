@@ -28,6 +28,16 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-06: P1 tasks B5 and B6, the first benchmark and the phase wrap-up
+- **Changed:** results `eval/results/20261006T093813Z-benchmark.json` and `eval/results/20261006T093813Z-benchmark-stats.json`; the plan's definition of done ticked item by item; STATUS, indexes, execution doc.
+- **Decided:** nothing new. On the one open question (the graph arm's cross-document tie-break) Azim said "proceed" without choosing, so I kept the frozen protocol as my recommendation stated: changing it after seeing results would not be legitimate. Recorded as a limitation (D-24, eval README).
+- **Run:** clean committed tree (`f931457`), stores checked against the ingestion hashes, five arms over the 19 approved questions, then the paired test. All runner checks passed; 0 invalid question-arms; empty-graph gate 0 of 19; entity resolution mean hit rate 0.657 (exact 0.47). Cost $0.000062.
+- **Measured (mean of 19):** hybrid Recall@10 0.212 and nDCG@10 0.208; dense 0.192 and 0.183; flat 0.186 and 0.169; graph 0.169 and 0.113; sparse 0.142 and 0.114. **Hybrid versus flat (pre-registered): Recall@10 +0.027, 4 wins, 1 loss, 14 ties, exact p 0.44; nDCG@10 +0.039, 7 wins, 4 losses, 8 ties, p 0.15 (Holm 0.29). Not significant. No secondary pair survives Holm correction.** Inconclusive: the direction favours the graph, the test cannot distinguish it from no effect.
+- **Diagnosed:** absolute recall is low for every arm because each question has only 4 to 7 annotated passages (3 to 9 relevant chunks) in 1,570 overlapping chunks, so Recall@10 asks whether the retriever found the specific annotated passages, not whether it found good evidence. Most questions tie between hybrid and flat, which is why the test has little power.
+- **Deviations (declared):** 19 questions, not 20 (D-24); RAGAS metrics null (deferred to the end by Azim); `file_structure.md` not updated for P1's files (open item).
+- **Verified:** the run and the statistics above, read back from the committed files; `uv run pytest` 525 passed, ruff clean, pyright 0 errors (before the run). **Not verified:** any claim about why hybrid is ahead (no per-category or per-question analysis was done; it was not pre-registered); the Haiku and embedding prices against an invoice.
+- **Known issues / next steps:** `q-single-01` amendment (Azim); RAGAS at the end; `file_structure.md`; P2 (GenUI catalog and adaptive dashboard) per the PRD.
+
 ### 2026-10-06: P1 tasks B2 part 2 and B4, the live corpus ingestion
 - **Changed:** `eval/report_ingestion.py` (new: the cost record generator, attributes every ledger row to a paper by position and refuses to guess), `eval/tests/test_report_ingestion.py` (4), `eval/README.md`; the cost record itself: `refdocs/evidence/2026-10-06-live-ingestion.md`, `eval/results/2026-10-06-live-ingestion-cost.json`, `eval/results/2026-10-06-live-ingestion-ledger.csv` (all 1,706 ledger rows).
 - **Decided:** nothing new. Ran the plan as approved: Azim supplied a valid OpenAI key and OpenRouter credit and asked for the process to be recorded in detail.
