@@ -4,9 +4,9 @@ note: 'Is there consensus that knowledge-graph augmentation always improves retr
   search? Cases where papers report otherwise (abstractive questions, directness, context precision, noise).
   Drafted by the assistant on 2026-10-06 from the papers'' text only: keyword and phrase search of the
   extracted PDF text, passages copied verbatim (whitespace collapsed). Retrieval output was never consulted.
-  Pending approval by Azim.'
+  Approved by Azim on 2026-10-06.'
 annotated_on: '2026-10-06'
-approved_by: null
+approved_by: Azim
 reference_contexts:
 - doc_id: 2408.04948v1
   page: 2
@@ -39,3 +39,4 @@ reference_contexts:
   page: 9
   text: global approaches signifi- cantly outperformed conventional vector RAG (SS) in both comprehensiveness
     and diversity criteria across datasets.
+approved_on: '2026-10-06'

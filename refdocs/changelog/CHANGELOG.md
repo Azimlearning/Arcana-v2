@@ -28,6 +28,12 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-06: P1 task B1 closed for 19 of 20 questions (gold approved and pinned)
+- **Decided:** Azim approved the 19 drafted gold files ("approved lets proceed"), including the three flagged as partly answerable, as annotated. `q-single-01` was not decided and stays unapproved.
+- **Changed:** the 19 files now carry `approved_by: Azim` and `approved_on`, and their note says so; `eval/tests/test_frozen_assets.py` pins each file's SHA-256 and fails if an approved file changes, if a file is approved without being pinned, or if any file other than `q-single-01` is unapproved; gold README updated.
+- **Verified:** `uv run python eval/verify_gold.py --corpus-dir ../Arcana/eval/corpus --status benchmark` printed `0 problem(s)` after approval; `uv run pytest` 457 passed; ruff clean.
+- **Known issues / next steps:** `q-single-01` amendment (Azim). A live benchmark must select the 19 approved questions until then. Next: B2 needs the keys, the cap raise and free disk. Without keys, Track B can go no further except work that needs no paid call.
+
 ### 2026-10-06: P1 task B1, gold annotation drafted (not yet approved)
 - **Changed:** `eval/gold/q-*.yaml`: benchmark-draft gold for the 19 answerable questions (4 to 7 verbatim passages each, 109 in all), replacing the two smoke files; `eval/gold/README.md` (method, approval rule, per-question table with R, the relevant-chunk count); `eval/verify_gold.py` (checks each passage is verbatim on its stated page and covered by at least one chunk under the frozen relevance rule); `Gold.approved_by` and `require_approved_gold` in the runner (a live run on unapproved gold is refused; fake runs record `gold_approved`); tests in `eval/tests/test_verify_gold.py`, `test_runner.py` and a rewritten gold-state test in `test_metrics.py`.
 - **Decided:** Azim: RAGAS goes at the very end of the project, and API keys will come later. Both recorded in STATUS. No ADR: the gold method follows the plan and constraint 9.

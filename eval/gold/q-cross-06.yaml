@@ -3,9 +3,9 @@ status: benchmark
 note: 'BM25 versus dense retrieval: what each captures that the other misses, and their complementarity.
   Drafted by the assistant on 2026-10-06 from the papers'' text only: keyword and phrase search of the
   extracted PDF text, passages copied verbatim (whitespace collapsed). Retrieval output was never consulted.
-  Pending approval by Azim.'
+  Approved by Azim on 2026-10-06.'
 annotated_on: '2026-10-06'
-approved_by: null
+approved_by: Azim
 reference_contexts:
 - doc_id: 2312.10997v5
   page: 9
@@ -31,3 +31,4 @@ reference_contexts:
   page: 5
   text: While unsupervised Contriever can underperform the classical BM25 approach, HyDE outperforms BM25
     by large margins.
+approved_on: '2026-10-06'

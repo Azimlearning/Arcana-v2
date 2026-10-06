@@ -2,9 +2,9 @@ question_id: q-cross-07
 status: benchmark
 note: 'Failure modes of vector-only retrieval named across the papers. Drafted by the assistant on 2026-10-06
   from the papers'' text only: keyword and phrase search of the extracted PDF text, passages copied verbatim
-  (whitespace collapsed). Retrieval output was never consulted. Pending approval by Azim.'
+  (whitespace collapsed). Retrieval output was never consulted. Approved by Azim on 2026-10-06.'
 annotated_on: '2026-10-06'
-approved_by: null
+approved_by: Azim
 reference_contexts:
 - doc_id: 2312.10997v5
   page: 3
@@ -31,3 +31,4 @@ reference_contexts:
   page: 7
   text: So HybridRAG does a good job overall, as whenever VectorRAG fails to fetch correct context in
     extractive questions it falls back to GraphRAG to generate the answer.
+approved_on: '2026-10-06'

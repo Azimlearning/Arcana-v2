@@ -3,9 +3,9 @@ status: benchmark
 note: 'Open problems and identified gaps in RAG and knowledge-graph retrieval research mentioned across
   the papers. Drafted by the assistant on 2026-10-06 from the papers'' text only: keyword and phrase search
   of the extracted PDF text, passages copied verbatim (whitespace collapsed). Retrieval output was never
-  consulted. Pending approval by Azim.'
+  consulted. Approved by Azim on 2026-10-06.'
 annotated_on: '2026-10-06'
-approved_by: null
+approved_by: Azim
 reference_contexts:
 - doc_id: 2312.10997v5
   page: 14
@@ -38,3 +38,4 @@ reference_contexts:
   page: 3
   text: GraphRAG research primarily focuses on knowledge and document graphs as surveyed in Figure 2,
     often overlooking broader applications in other domains like infrastructure graphs.
+approved_on: '2026-10-06'

@@ -54,7 +54,7 @@ Status vocabulary: use these exactly, and never round up:
 | Fact Checker (A7) | Quote check (deterministic) + support (light-tier judge, lexical fallback); fail closed in the Composer | 🔶 Deterministic checks measured 50/50 per defect; lexical support catches invented sentences (49/50, 48/50) but **not negated claims (0/50)**. The model judge has not been run |
 | Trace (A8) | `turn_traces` table, `GET /turns/{id}/trace`, `TracePanel` | ✅ Tested; `schema-guardian` reviewed (no blocking defects; four small ones fixed); seen in a browser |
 | End to end (A9) | A comparison runs Orchestrator, Graph, Research, Fact Checker, ends at the Composer, cites two papers, trace lists four hops | ✅ In a real browser on two real papers with the fake LLM (evidence screenshots); not with a real model |
-| B1 Gold | 19 answerable questions drafted from the PDFs (109 passages), verified verbatim and reachable; the runner refuses a live run on unapproved gold | 🔶 Drafted, **not approved**: waits on Azim (three questions flagged as partly answerable; q-single-01 amendment) |
+| B1 Gold | 19 answerable questions drafted from the PDFs (109 passages), verified verbatim and reachable; the runner refuses a live run on unapproved gold | ✅ for the 19 answerable questions: **approved by Azim 2026-10-06** and hash-pinned (the three flagged questions approved as annotated). 🔶 `q-single-01` still unapproved: its amendment is open |
 | B2 to B6 (live corpus, benchmark, Wilcoxon) | Keys, cap, one live ingestion, five arms over 20 questions | ⬜ Waits on Azim: keys in his own `.env`, cap raise (about $10), free disk, gold approval, the q-single-01 amendment. RAGAS install moves to the very end (his call, 2026-10-06) |
 
 ---
@@ -92,7 +92,7 @@ What has actually been run, not what has been written. A row here needs a real c
 
 ## Known gaps
 
-- No benchmark numbers. Draft gold exists for all 19 answerable questions (verified verbatim) but is **not approved**; no live arm can run until it is, and the runner enforces that.
+- No benchmark numbers. Gold for the 19 answerable questions is approved and pinned; `q-single-01` is not, so a live run must select the 19 (`--questions`) until its amendment is decided. The runner refuses a live run on unapproved gold.
 - **Question set defect (open for Azim):** q-single-01 ("What is Reciprocal Rank Fusion...") cannot be answered from the 16-paper corpus. It is handled as `unanswerable` (metrics `null`, excluded from aggregates) and was not edited; amending it (replace the question, add a paper that defines RRF, or keep it as a grounding test) is a declared amendment before the P1 benchmark (D-21).
 - RAGAS is not installed (about 94 packages; the drive is nearly full). Azim chose to do this at the very end of the project (2026-10-06): then `uv add ragas rapidfuzz` and a re-run. The two RAGAS context metrics stay `null` until then.
 - Task 10 waits for the API keys. Two assumptions to confirm then: OpenRouter's model ids, and the `text-embedding-3-large` price.

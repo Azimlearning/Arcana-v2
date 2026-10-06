@@ -3,9 +3,9 @@ status: benchmark
 note: 'Papers addressing multi-hop reasoning or multi-document retrieval and the techniques and findings
   they share. Drafted by the assistant on 2026-10-06 from the papers'' text only: keyword and phrase search
   of the extracted PDF text, passages copied verbatim (whitespace collapsed). Retrieval output was never
-  consulted. Pending approval by Azim.'
+  consulted. Approved by Azim on 2026-10-06.'
 annotated_on: '2026-10-06'
-approved_by: null
+approved_by: Azim
 reference_contexts:
 - doc_id: 2401.15391v1
   page: 1
@@ -35,3 +35,4 @@ reference_contexts:
   page: 11
   text: In contrast, multi-hop retrieval is designed to delve deeper into graph-structured data sources,
     extracting interconnected information [106].
+approved_on: '2026-10-06'

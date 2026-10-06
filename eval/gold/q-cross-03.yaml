@@ -2,10 +2,10 @@ question_id: q-cross-03
 status: benchmark
 note: 'Methods the papers propose or survey for reducing hallucination in RAG systems. Drafted by the
   assistant on 2026-10-06 from the papers'' text only: keyword and phrase search of the extracted PDF
-  text, passages copied verbatim (whitespace collapsed). Retrieval output was never consulted. Pending
-  approval by Azim.'
+  text, passages copied verbatim (whitespace collapsed). Retrieval output was never consulted. Approved
+  by Azim on 2026-10-06.'
 annotated_on: '2026-10-06'
-approved_by: null
+approved_by: Azim
 reference_contexts:
 - doc_id: 2310.11511v1
   page: 1
@@ -38,3 +38,4 @@ reference_contexts:
   page: 19
   text: Similarly, in order to reduce the possibility of hallucination, Guo et al. [134] uses an LLM to
     generate two similar questions and retrieves all entities found in the original and generated questions.
+approved_on: '2026-10-06'

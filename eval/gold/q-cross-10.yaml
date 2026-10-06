@@ -4,9 +4,9 @@ note: 'Latency constraints and performance trade-offs in retrieval systems. The 
   cost (LLM calls, tokens, retrieval overhead) and speed of retrieval methods rather than production latency
   as such. Drafted by the assistant on 2026-10-06 from the papers'' text only: keyword and phrase search
   of the extracted PDF text, passages copied verbatim (whitespace collapsed). Retrieval output was never
-  consulted. Pending approval by Azim.'
+  consulted. Approved by Azim on 2026-10-06.'
 annotated_on: '2026-10-06'
-approved_by: null
+approved_by: Azim
 reference_contexts:
 - doc_id: 2312.10997v5
   page: 5
@@ -40,3 +40,4 @@ reference_contexts:
   page: 1
   text: The results show that the computational costs associated with seman- tic chunking are not justified
     by consistent per- formance gains.
+approved_on: '2026-10-06'

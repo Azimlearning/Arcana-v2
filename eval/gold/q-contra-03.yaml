@@ -3,9 +3,9 @@ status: benchmark
 note: 'How the papers differ in their recommendations for when graph-based retrieval should be preferred
   over vector-based retrieval. Drafted by the assistant on 2026-10-06 from the papers'' text only: keyword
   and phrase search of the extracted PDF text, passages copied verbatim (whitespace collapsed). Retrieval
-  output was never consulted. Pending approval by Azim.'
+  output was never consulted. Approved by Azim on 2026-10-06.'
 annotated_on: '2026-10-06'
-approved_by: null
+approved_by: Azim
 reference_contexts:
 - doc_id: 2408.04948v1
   page: 7
@@ -36,3 +36,4 @@ reference_contexts:
   page: 2
   text: blindly executing the existing BM25 or embedding-based search that relies solely on semantic/lexical
     similarity ignores relational knowledge encoded in graph structure.
+approved_on: '2026-10-06'

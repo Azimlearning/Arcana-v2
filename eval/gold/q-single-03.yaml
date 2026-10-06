@@ -2,10 +2,10 @@ question_id: q-single-03
 status: benchmark
 note: 'The role of embedding models in semantic search and how embedding quality affects retrieval. Drafted
   by the assistant on 2026-10-06 from the papers'' text only: keyword and phrase search of the extracted
-  PDF text, passages copied verbatim (whitespace collapsed). Retrieval output was never consulted. Pending
-  approval by Azim.'
+  PDF text, passages copied verbatim (whitespace collapsed). Retrieval output was never consulted. Approved
+  by Azim on 2026-10-06.'
 annotated_on: '2026-10-06'
-approved_by: null
+approved_by: Azim
 reference_contexts:
 - doc_id: 2312.10997v5
   page: 3
@@ -32,3 +32,4 @@ reference_contexts:
   text: 'of zero-shot dense retrieval lies precisely in Equation 1: it requires learning of two embedding
     functions (for query and document re- spectively) into the same embedding space where inner product
     captures relevance.'
+approved_on: '2026-10-06'

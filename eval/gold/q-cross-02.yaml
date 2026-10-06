@@ -4,9 +4,9 @@ note: 'How a knowledge graph is defined and used across the papers; where the de
   as nodes, relations as edges) and diverge (a curated, schema-defined structure versus a schemaless graph
   built by an LLM, and graphs whose nodes are text passages). Drafted by the assistant on 2026-10-06 from
   the papers'' text only: keyword and phrase search of the extracted PDF text, passages copied verbatim
-  (whitespace collapsed). Retrieval output was never consulted. Pending approval by Azim.'
+  (whitespace collapsed). Retrieval output was never consulted. Approved by Azim on 2026-10-06.'
 annotated_on: '2026-10-06'
-approved_by: null
+approved_by: Azim
 reference_contexts:
 - doc_id: 2408.04948v1
   page: 2
@@ -39,3 +39,4 @@ reference_contexts:
   page: 4
   text: 'Self Canonicalization: Absent a target schema, the goal is to consolidate semanti- cally similar
     schema components, standardiz- ing them to a singular representation to stream- line the KG.'
+approved_on: '2026-10-06'

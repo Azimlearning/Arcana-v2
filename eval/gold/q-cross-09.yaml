@@ -5,9 +5,9 @@ note: 'Approaches to constructing knowledge graphs from unstructured text, and t
   entity and relationship tuples, a define-and-canonicalize step) and a taxonomy of document-graph construction.
   Drafted by the assistant on 2026-10-06 from the papers'' text only: keyword and phrase search of the
   extracted PDF text, passages copied verbatim (whitespace collapsed). Retrieval output was never consulted.
-  Pending approval by Azim.'
+  Approved by Azim on 2026-10-06.'
 annotated_on: '2026-10-06'
-approved_by: null
+approved_by: Azim
 reference_contexts:
 - doc_id: 2404.03868v2
   page: 1
@@ -38,3 +38,4 @@ reference_contexts:
   page: 25
   text: 'There are primarily two approaches to constructing a document graph: explicit construction and
     implicit construction.'
+approved_on: '2026-10-06'

@@ -3,9 +3,9 @@ status: benchmark
 note: 'Claims about the scalability of knowledge-graph construction over large corpora: cost and time
   of LLM extraction, schema size, and incremental updates. Drafted by the assistant on 2026-10-06 from
   the papers'' text only: keyword and phrase search of the extracted PDF text, passages copied verbatim
-  (whitespace collapsed). Retrieval output was never consulted. Pending approval by Azim.'
+  (whitespace collapsed). Retrieval output was never consulted. Approved by Azim on 2026-10-06.'
 annotated_on: '2026-10-06'
-approved_by: null
+approved_by: Azim
 reference_contexts:
 - doc_id: 2404.16130v2
   page: 9
@@ -34,3 +34,4 @@ reference_contexts:
   page: 10
   text: This is evident in the error analysis discussed in Appendix F, which shows most errors made by
     our system are due to NER and OpenIE and thus could benefit from direct fine-tuning.
+approved_on: '2026-10-06'

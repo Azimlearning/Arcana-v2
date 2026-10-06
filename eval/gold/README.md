@@ -42,7 +42,7 @@ supports part of the answer. Copy the text from the paper; do not paraphrase.
 | Status | Meaning |
 |---|---|
 | `smoke` | Written to demonstrate the format and exercise the runner. Not the benchmark gold. No file has this status now: the two smoke files were replaced by benchmark drafts on 2026-10-06. |
-| `benchmark` | Annotated for the real benchmark (P1). **Drafted** until `approved_by` is set; a draft is not frozen and no arm may be run against it. |
+| `benchmark` | Annotated for the real benchmark (P1). A **draft** until `approved_by` is set; a draft is not frozen and no live arm may be run against it. All 19 files were approved by Azim on 2026-10-06 and are pinned by SHA-256 in `eval/tests/test_frozen_assets.py`. |
 | `unanswerable` | No passage in the corpus supports an answer. Has an empty `reference_contexts` and a `reason`. |
 
 ## Approval and the guard
@@ -50,8 +50,8 @@ supports part of the answer. Copy the text from the paper; do not paraphrase.
 A file is **approved** when its `approved_by` field is set. The ablation runner refuses a live (paid) run if
 any selected question's gold is not approved (`require_approved_gold`, tested); a fake-mode run may use
 drafts because it only checks plumbing, and its results record `gold_approved`. Once approved, a file is
-frozen: changing it is a declared amendment (constraint 9). `q-single-01` stays unapproved until its
-amendment is decided (ADR D-21).
+frozen: changing it is a declared amendment (constraint 9): the file's hash is pinned, so an edit fails the test until the hash is
+updated in the same commit as an ADR. `q-single-01` is the one unapproved file, until its amendment is decided (ADR D-21).
 
 ## How the 2026-10-06 drafts were made (method)
 
@@ -68,7 +68,7 @@ the system it will judge):
    reachable by some arm). It prints `0 problem(s)` for all 19 files.
 
 What this does **not** establish: that the passage list is complete (a question can have supporting text
-the search did not surface), or that the passages are the best ones. Review is the check on both.
+the search did not surface), or that the passages are the best ones. Azim's review (2026-10-06) is the check on both.
 
 ## Current files
 
@@ -77,23 +77,23 @@ nDCG). Questions flagged **review** are ones where the corpus answers only part 
 
 | Question | Status | Passages | Papers | R | Note |
 |---|---|---|---|---|---|
-| `q-cross-01` | benchmark (draft) | 7 | 4 | 8 | no paper combines dense, BM25 and graph together; evidence is vector+graph, graph vs chunk, sparse+dense |
-| `q-cross-02` | benchmark (draft) | 7 | 7 | 9 | |
-| `q-cross-03` | benchmark (draft) | 7 | 6 | 9 | |
-| `q-cross-04` | benchmark (draft) | 5 | 5 | 7 | |
-| `q-cross-05` | benchmark (draft) | 6 | 4 | 5 | |
-| `q-cross-06` | benchmark (draft) | 6 | 5 | 6 | |
-| `q-cross-07` | benchmark (draft) | 6 | 5 | 7 | |
-| `q-cross-08` | benchmark (draft) | 5 | **1** | 5 | **review:** only Self-RAG treats citation accuracy; not really a cross-document question in this corpus |
-| `q-cross-09` | benchmark (draft) | 7 | 6 | 7 | |
-| `q-cross-10` | benchmark (draft) | 7 | 6 | 8 | the corpus speaks of cost and speed more than production latency |
-| `q-cross-11` | benchmark (draft) | 5 | 4 | 6 | |
-| `q-cross-12` | benchmark (draft) | 7 | 5 | 7 | |
+| `q-cross-01` | benchmark (approved) | 7 | 4 | 8 | no paper combines dense, BM25 and graph together; evidence is vector+graph, graph vs chunk, sparse+dense |
+| `q-cross-02` | benchmark (approved) | 7 | 7 | 9 | |
+| `q-cross-03` | benchmark (approved) | 7 | 6 | 9 | |
+| `q-cross-04` | benchmark (approved) | 5 | 5 | 7 | |
+| `q-cross-05` | benchmark (approved) | 6 | 4 | 5 | |
+| `q-cross-06` | benchmark (approved) | 6 | 5 | 6 | |
+| `q-cross-07` | benchmark (approved) | 6 | 5 | 7 | |
+| `q-cross-08` | benchmark (approved) | 5 | **1** | 5 | **review:** only Self-RAG treats citation accuracy; not really a cross-document question in this corpus |
+| `q-cross-09` | benchmark (approved) | 7 | 6 | 7 | |
+| `q-cross-10` | benchmark (approved) | 7 | 6 | 8 | the corpus speaks of cost and speed more than production latency |
+| `q-cross-11` | benchmark (approved) | 5 | 4 | 6 | |
+| `q-cross-12` | benchmark (approved) | 7 | 5 | 7 | |
 | `q-single-01` | unanswerable | 0 | 0 | 0 | no paper defines Reciprocal Rank Fusion (ADR D-21); amendment pending |
-| `q-single-02` | benchmark (draft) | 5 | 3 | 4 | |
-| `q-single-03` | benchmark (draft) | 5 | 3 | 7 | |
-| `q-single-04` | benchmark (draft) | 4 | 3 | 3 | **review:** the corpus never gives BM25's scoring formula; passages cover only the word-overlap description and where it does and does not work |
-| `q-contra-01` | benchmark (draft) | 5 | 3 | 6 | **review:** no paper compares chunk sizes head to head on retrieval accuracy; passages qualify the claim from different sides |
-| `q-contra-02` | benchmark (draft) | 7 | 4 | 6 | |
-| `q-contra-03` | benchmark (draft) | 7 | 6 | 8 | |
-| `q-contra-04` | benchmark (draft) | 6 | 5 | 7 | |
+| `q-single-02` | benchmark (approved) | 5 | 3 | 4 | |
+| `q-single-03` | benchmark (approved) | 5 | 3 | 7 | |
+| `q-single-04` | benchmark (approved) | 4 | 3 | 3 | **review:** the corpus never gives BM25's scoring formula; passages cover only the word-overlap description and where it does and does not work |
+| `q-contra-01` | benchmark (approved) | 5 | 3 | 6 | **review:** no paper compares chunk sizes head to head on retrieval accuracy; passages qualify the claim from different sides |
+| `q-contra-02` | benchmark (approved) | 7 | 4 | 6 | |
+| `q-contra-03` | benchmark (approved) | 7 | 6 | 8 | |
+| `q-contra-04` | benchmark (approved) | 6 | 5 | 7 | |

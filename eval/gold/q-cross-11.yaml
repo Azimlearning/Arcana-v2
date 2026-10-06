@@ -3,9 +3,9 @@ status: benchmark
 note: 'How papers approach chunking in RAG pipelines (fixed-size, semantic, sentence-level, other) and
   what they report. Drafted by the assistant on 2026-10-06 from the papers'' text only: keyword and phrase
   search of the extracted PDF text, passages copied verbatim (whitespace collapsed). Retrieval output
-  was never consulted. Pending approval by Azim.'
+  was never consulted. Approved by Azim on 2026-10-06.'
 annotated_on: '2026-10-06'
-approved_by: null
+approved_by: Azim
 reference_contexts:
 - doc_id: 2312.10997v5
   page: 8
@@ -31,3 +31,4 @@ reference_contexts:
   page: 5
   text: This chunking strategy employs a size of 2024 characters with an overlap of 204 characters, ensuring
     comprehensive coverage while maintaining context across segment boundaries.
+approved_on: '2026-10-06'

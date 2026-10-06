@@ -5,9 +5,9 @@ note: 'What the papers collectively conclude about the advantage of hybrid retri
   graph (HybridRAG), graph versus chunk retrieval (GraphRAG, LightRAG), and sparse plus dense (the RAG
   survey). Drafted by the assistant on 2026-10-06 from the papers'' text only: keyword and phrase search
   of the extracted PDF text, passages copied verbatim (whitespace collapsed). Retrieval output was never
-  consulted. Pending approval by Azim.'
+  consulted. Approved by Azim on 2026-10-06.'
 annotated_on: '2026-10-06'
-approved_by: null
+approved_by: Azim
 reference_contexts:
 - doc_id: 2408.04948v1
   page: 1
@@ -44,3 +44,4 @@ reference_contexts:
   page: 9
   text: Sparse and dense embedding approaches capture different relevance features and can ben- efit from
     each other by leveraging complementary relevance information.
+approved_on: '2026-10-06'
