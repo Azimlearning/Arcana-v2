@@ -75,6 +75,14 @@ Every departure from the frozen question set or protocol is declared here and in
   entity-resolution defect, not a finding about graphs. Enforced from 10 questions; below that it is reported.
 - Live (paid) mode is refused unless `--allow-paid` is passed.
 
+## Recording a live ingestion
+
+`uv run python eval/report_ingestion.py --label <name>` reads the spend ledger and the ingestion report beside
+the stores and writes a cost record: totals, the cost of every paper, per-call token and cost distributions, a
+CSV of every ledger row with what it was attributed to, and the store hashes for `--expect-*-sha256`. It makes
+no paid call and stops rather than guess if the ledger does not line up with the report. The 2026-10-06 record
+is `refdocs/evidence/2026-10-06-live-ingestion.md`.
+
 ## Fake mode is a plumbing check
 
 With `ARCANA_LLM_MODE=fake` and `ARCANA_EMBED_MODE=fake` the embeddings are hashed bags of words and the

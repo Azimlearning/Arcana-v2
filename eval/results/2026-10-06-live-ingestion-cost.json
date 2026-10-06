@@ -1,0 +1,609 @@
+{
+  "label": "live ingestion of the 16-paper benchmark corpus",
+  "models": [
+    "claude-haiku-4-5-20251001"
+  ],
+  "providers": [
+    "anthropic"
+  ],
+  "settings": {
+    "extraction_max_tokens": 2048,
+    "extraction_concurrency": 4,
+    "monthly_cap_usd": 10.0
+  },
+  "totals": {
+    "papers": 16,
+    "chunks": 1570,
+    "extraction_calls": 1570,
+    "extraction_failures": 15,
+    "extraction_failure_rate": 0.00955,
+    "extraction_cost_usd": 5.7451,
+    "embedding_cost_usd": 0.0605,
+    "ingestion_cost_usd": 5.8056,
+    "cost_per_chunk_usd": 0.003698,
+    "extraction_cost_per_chunk_usd": 0.003659,
+    "extraction_tokens_in": 733713,
+    "extraction_tokens_out": 1002271,
+    "embedding_tokens": 465421,
+    "wall_seconds_first_to_last_call": 1857
+  },
+  "extraction_call_distribution": {
+    "tokens_in": {
+      "mean": 467.3,
+      "median": 441,
+      "p90": 587,
+      "max": 1049
+    },
+    "tokens_out": {
+      "mean": 638.4,
+      "median": 562,
+      "p90": 963,
+      "p99": 1993,
+      "max": 2048,
+      "at_limit": 13
+    },
+    "cost_per_call_usd": {
+      "mean": 0.003659,
+      "min": 0.000619,
+      "max": 0.010877
+    }
+  },
+  "effective_prices": {
+    "embedding_usd_per_million_tokens": 0.13,
+    "extraction_blended_usd_per_million_tokens": 3.3094,
+    "note": "Booked from api/llm/pricing.py (Haiku 4.5 $1/$5 per million in/out; text-embedding-3-large $0.13 assumed); the providers' own invoices were not available to this report."
+  },
+  "ledger_by_group": {
+    "probe (a few-cent test of a route)": {
+      "calls": 8,
+      "tokens_in": 128,
+      "tokens_out": 32,
+      "cost_usd": 0.000516
+    },
+    "probe (a few-cent test of a route) [failed call, no cost]": {
+      "calls": 8,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_usd": 0.0
+    },
+    "embedding outside the ingestion (probe or a query) [failed call, no cost]": {
+      "calls": 1,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_usd": 0.0
+    },
+    "throwaway measurement extraction (not part of the benchmark stores)": {
+      "calls": 70,
+      "tokens_in": 31582,
+      "tokens_out": 40405,
+      "cost_usd": 0.233607
+    },
+    "chat turn (research)": {
+      "calls": 5,
+      "tokens_in": 16362,
+      "tokens_out": 2163,
+      "cost_usd": 0.054354
+    },
+    "chat turn (judge)": {
+      "calls": 5,
+      "tokens_in": 5981,
+      "tokens_out": 349,
+      "cost_usd": 0.007726
+    },
+    "embedding outside the ingestion (probe or a query)": {
+      "calls": 5,
+      "tokens_in": 54,
+      "tokens_out": 0,
+      "cost_usd": 6e-06
+    },
+    "benchmark corpus ingestion": {
+      "calls": 1603,
+      "tokens_in": 1199134,
+      "tokens_out": 1002271,
+      "cost_usd": 5.805572
+    },
+    "chat turn (routing)": {
+      "calls": 1,
+      "tokens_in": 115,
+      "tokens_out": 14,
+      "cost_usd": 0.000185
+    }
+  },
+  "month_total_usd": 6.102,
+  "failed_calls": [
+    {
+      "id": 3,
+      "purpose": "probe",
+      "provider": "anthropic",
+      "model": "claude-haiku-4-5"
+    },
+    {
+      "id": 5,
+      "purpose": "probe",
+      "provider": "anthropic",
+      "model": "claude-sonnet-5-5"
+    },
+    {
+      "id": 6,
+      "purpose": "probe",
+      "provider": "openrouter",
+      "model": "anthropic/claude-sonnet-5.5"
+    },
+    {
+      "id": 7,
+      "purpose": "probe",
+      "provider": "anthropic",
+      "model": "claude-opus-5-5"
+    },
+    {
+      "id": 8,
+      "purpose": "probe",
+      "provider": "openrouter",
+      "model": "anthropic/claude-opus-5.5"
+    },
+    {
+      "id": 9,
+      "purpose": "embed",
+      "provider": "openai",
+      "model": "text-embedding-3-large"
+    },
+    {
+      "id": 88,
+      "purpose": "probe",
+      "provider": "anthropic",
+      "model": "claude-haiku-4-5"
+    },
+    {
+      "id": 90,
+      "purpose": "probe",
+      "provider": "anthropic",
+      "model": "claude-sonnet-5-5"
+    },
+    {
+      "id": 92,
+      "purpose": "probe",
+      "provider": "anthropic",
+      "model": "claude-opus-5-5"
+    }
+  ],
+  "stores": {
+    "chunks": 1570,
+    "graph_sha256": "00454fd3afb00e63ab82f7e1f2c00a1551991707f9d91dc942830ad955c1f830",
+    "vectors_sha256": "3cd9426dca9160f6e377252fb95288a841d625258c29c39fa42e418d7d348f0e",
+    "chunks_sha256": "20fd0ba62ee5a5657d488c9916c85f856497a276c1c6f4386973bb12147cddfb"
+  },
+  "papers": [
+    {
+      "arxiv_id": "2309.15217v2",
+      "doc_id": "6c24762a3f277fd1",
+      "chunks": 35,
+      "nodes": 303,
+      "edges": 296,
+      "extraction_failures": 1,
+      "embedding_calls": 1,
+      "embedding_tokens": 9865,
+      "embedding_cost_usd": 0.001282,
+      "extraction_calls": 35,
+      "extraction_tokens_in": 15791,
+      "extraction_tokens_out": 21687,
+      "extraction_cost_usd": 0.124226,
+      "total_cost_usd": 0.125508,
+      "cost_per_chunk_usd": 0.003586,
+      "output_tokens": {
+        "mean": 619.6,
+        "median": 501,
+        "p90": 880,
+        "max": 1993,
+        "at_limit": 0
+      },
+      "wall_seconds": 38.7,
+      "ingestion_order": 1,
+      "title": "Ragas: Automated Evaluation of Retrieval Augmented Generation"
+    },
+    {
+      "arxiv_id": "2312.10997v5",
+      "doc_id": "396a0fadeb4cd40f",
+      "chunks": 117,
+      "nodes": 1113,
+      "edges": 1053,
+      "extraction_failures": 1,
+      "embedding_calls": 2,
+      "embedding_tokens": 35708,
+      "embedding_cost_usd": 0.004642,
+      "extraction_calls": 117,
+      "extraction_tokens_in": 55414,
+      "extraction_tokens_out": 73433,
+      "extraction_cost_usd": 0.422579,
+      "total_cost_usd": 0.427221,
+      "cost_per_chunk_usd": 0.003651,
+      "output_tokens": {
+        "mean": 627.6,
+        "median": 560,
+        "p90": 867,
+        "max": 2048,
+        "at_limit": 1
+      },
+      "wall_seconds": 135.6,
+      "ingestion_order": 2,
+      "title": "Retrieval-Augmented Generation for Large Language Models: A Survey"
+    },
+    {
+      "arxiv_id": "2408.04948v1",
+      "doc_id": "ac529ab762fd1672",
+      "chunks": 56,
+      "nodes": 416,
+      "edges": 472,
+      "extraction_failures": 0,
+      "embedding_calls": 1,
+      "embedding_tokens": 14070,
+      "embedding_cost_usd": 0.001829,
+      "extraction_calls": 56,
+      "extraction_tokens_in": 23011,
+      "extraction_tokens_out": 31488,
+      "extraction_cost_usd": 0.180451,
+      "total_cost_usd": 0.18228,
+      "cost_per_chunk_usd": 0.003255,
+      "output_tokens": {
+        "mean": 562.3,
+        "median": 518,
+        "p90": 766,
+        "max": 1155,
+        "at_limit": 0
+      },
+      "wall_seconds": 58.4,
+      "ingestion_order": 3,
+      "title": "HybridRAG: Integrating Knowledge Graphs and Vector Retrieval Augmented Generation for Efficient Information Extraction"
+    },
+    {
+      "arxiv_id": "2404.16130v2",
+      "doc_id": "730f1a9f38d16689",
+      "chunks": 94,
+      "nodes": 679,
+      "edges": 748,
+      "extraction_failures": 0,
+      "embedding_calls": 2,
+      "embedding_tokens": 28476,
+      "embedding_cost_usd": 0.003702,
+      "extraction_calls": 94,
+      "extraction_tokens_in": 43471,
+      "extraction_tokens_out": 50206,
+      "extraction_cost_usd": 0.294501,
+      "total_cost_usd": 0.298203,
+      "cost_per_chunk_usd": 0.003172,
+      "output_tokens": {
+        "mean": 534.1,
+        "median": 510,
+        "p90": 745,
+        "max": 1391,
+        "at_limit": 0
+      },
+      "wall_seconds": 91.2,
+      "ingestion_order": 4,
+      "title": "From Local to Global: A Graph RAG Approach to Query-Focused Summarization"
+    },
+    {
+      "arxiv_id": "2501.00309v2",
+      "doc_id": "737b0b8fe0aa8459",
+      "chunks": 386,
+      "nodes": 3818,
+      "edges": 3624,
+      "extraction_failures": 2,
+      "embedding_calls": 7,
+      "embedding_tokens": 106181,
+      "embedding_cost_usd": 0.013804,
+      "extraction_calls": 386,
+      "extraction_tokens_in": 171114,
+      "extraction_tokens_out": 260060,
+      "extraction_cost_usd": 1.471414,
+      "total_cost_usd": 1.485218,
+      "cost_per_chunk_usd": 0.003848,
+      "output_tokens": {
+        "mean": 673.7,
+        "median": 598,
+        "p90": 1016,
+        "max": 2048,
+        "at_limit": 2
+      },
+      "wall_seconds": 451.6,
+      "ingestion_order": 5,
+      "title": "Retrieval-Augmented Generation with Graphs (GraphRAG)"
+    },
+    {
+      "arxiv_id": "2405.14831v3",
+      "doc_id": "14671c78fc7de99d",
+      "chunks": 108,
+      "nodes": 813,
+      "edges": 960,
+      "extraction_failures": 1,
+      "embedding_calls": 2,
+      "embedding_tokens": 35482,
+      "embedding_cost_usd": 0.004613,
+      "extraction_calls": 108,
+      "extraction_tokens_in": 54255,
+      "extraction_tokens_out": 66765,
+      "extraction_cost_usd": 0.38808,
+      "total_cost_usd": 0.392693,
+      "cost_per_chunk_usd": 0.003636,
+      "output_tokens": {
+        "mean": 618.2,
+        "median": 554,
+        "p90": 1024,
+        "max": 2048,
+        "at_limit": 1
+      },
+      "wall_seconds": 115.9,
+      "ingestion_order": 6,
+      "title": "HippoRAG: Neurobiologically Inspired Long-Term Memory for Large Language Models"
+    },
+    {
+      "arxiv_id": "2410.05779v3",
+      "doc_id": "bd72eebf611df136",
+      "chunks": 65,
+      "nodes": 463,
+      "edges": 564,
+      "extraction_failures": 0,
+      "embedding_calls": 2,
+      "embedding_tokens": 16862,
+      "embedding_cost_usd": 0.002192,
+      "extraction_calls": 65,
+      "extraction_tokens_in": 27532,
+      "extraction_tokens_out": 37842,
+      "extraction_cost_usd": 0.216742,
+      "total_cost_usd": 0.218934,
+      "cost_per_chunk_usd": 0.003368,
+      "output_tokens": {
+        "mean": 582.2,
+        "median": 534,
+        "p90": 703,
+        "max": 2010,
+        "at_limit": 0
+      },
+      "wall_seconds": 67.5,
+      "ingestion_order": 7,
+      "title": "LightRAG: Simple and Fast Retrieval-Augmented Generation"
+    },
+    {
+      "arxiv_id": "2005.11401v4",
+      "doc_id": "23e3249e9a1e7541",
+      "chunks": 74,
+      "nodes": 602,
+      "edges": 738,
+      "extraction_failures": 0,
+      "embedding_calls": 2,
+      "embedding_tokens": 22583,
+      "embedding_cost_usd": 0.002936,
+      "extraction_calls": 74,
+      "extraction_tokens_in": 35572,
+      "extraction_tokens_out": 48823,
+      "extraction_cost_usd": 0.279687,
+      "total_cost_usd": 0.282623,
+      "cost_per_chunk_usd": 0.003819,
+      "output_tokens": {
+        "mean": 659.8,
+        "median": 610,
+        "p90": 999,
+        "max": 1529,
+        "at_limit": 0
+      },
+      "wall_seconds": 84.7,
+      "ingestion_order": 8,
+      "title": "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks"
+    },
+    {
+      "arxiv_id": "2310.11511v1",
+      "doc_id": "d9eaa1398abac0df",
+      "chunks": 112,
+      "nodes": 905,
+      "edges": 986,
+      "extraction_failures": 2,
+      "embedding_calls": 2,
+      "embedding_tokens": 32575,
+      "embedding_cost_usd": 0.004235,
+      "extraction_calls": 112,
+      "extraction_tokens_in": 51439,
+      "extraction_tokens_out": 72393,
+      "extraction_cost_usd": 0.413404,
+      "total_cost_usd": 0.417639,
+      "cost_per_chunk_usd": 0.003729,
+      "output_tokens": {
+        "mean": 646.4,
+        "median": 536,
+        "p90": 903,
+        "max": 2048,
+        "at_limit": 2
+      },
+      "wall_seconds": 125.0,
+      "ingestion_order": 9,
+      "title": "Self-RAG: Learning to Retrieve, Generate, and Critique through Self-Reflection"
+    },
+    {
+      "arxiv_id": "2401.15391v1",
+      "doc_id": "743155d9b0541c99",
+      "chunks": 54,
+      "nodes": 422,
+      "edges": 409,
+      "extraction_failures": 0,
+      "embedding_calls": 1,
+      "embedding_tokens": 14997,
+      "embedding_cost_usd": 0.00195,
+      "extraction_calls": 54,
+      "extraction_tokens_in": 23977,
+      "extraction_tokens_out": 29780,
+      "extraction_cost_usd": 0.172877,
+      "total_cost_usd": 0.174827,
+      "cost_per_chunk_usd": 0.003238,
+      "output_tokens": {
+        "mean": 551.5,
+        "median": 530,
+        "p90": 651,
+        "max": 1299,
+        "at_limit": 0
+      },
+      "wall_seconds": 54.9,
+      "ingestion_order": 10,
+      "title": "MultiHop-RAG: Benchmarking Retrieval-Augmented Generation for Multi-Hop Queries"
+    },
+    {
+      "arxiv_id": "2401.15884v3",
+      "doc_id": "975aa1fd3c1b6031",
+      "chunks": 65,
+      "nodes": 469,
+      "edges": 533,
+      "extraction_failures": 1,
+      "embedding_calls": 2,
+      "embedding_tokens": 19480,
+      "embedding_cost_usd": 0.002532,
+      "extraction_calls": 65,
+      "extraction_tokens_in": 30655,
+      "extraction_tokens_out": 38379,
+      "extraction_cost_usd": 0.22255,
+      "total_cost_usd": 0.225082,
+      "cost_per_chunk_usd": 0.003463,
+      "output_tokens": {
+        "mean": 590.4,
+        "median": 538,
+        "p90": 775,
+        "max": 2048,
+        "at_limit": 1
+      },
+      "wall_seconds": 66.3,
+      "ingestion_order": 11,
+      "title": "Corrective Retrieval Augmented Generation"
+    },
+    {
+      "arxiv_id": "2309.01219v3",
+      "doc_id": "d2068edc08df316d",
+      "chunks": 161,
+      "nodes": 1775,
+      "edges": 1431,
+      "extraction_failures": 5,
+      "embedding_calls": 3,
+      "embedding_tokens": 49970,
+      "embedding_cost_usd": 0.006496,
+      "extraction_calls": 161,
+      "extraction_tokens_in": 79408,
+      "extraction_tokens_out": 122140,
+      "extraction_cost_usd": 0.690108,
+      "total_cost_usd": 0.696604,
+      "cost_per_chunk_usd": 0.004327,
+      "output_tokens": {
+        "mean": 758.6,
+        "median": 613,
+        "p90": 1271,
+        "max": 2048,
+        "at_limit": 5
+      },
+      "wall_seconds": 207.3,
+      "ingestion_order": 12,
+      "title": "Siren's Song in the AI Ocean: A Survey on Hallucination in Large Language Models"
+    },
+    {
+      "arxiv_id": "2410.13070v1",
+      "doc_id": "8bbe93a93b05967d",
+      "chunks": 52,
+      "nodes": 295,
+      "edges": 398,
+      "extraction_failures": 1,
+      "embedding_calls": 1,
+      "embedding_tokens": 15689,
+      "embedding_cost_usd": 0.00204,
+      "extraction_calls": 52,
+      "extraction_tokens_in": 24687,
+      "extraction_tokens_out": 30840,
+      "extraction_cost_usd": 0.178887,
+      "total_cost_usd": 0.180927,
+      "cost_per_chunk_usd": 0.003479,
+      "output_tokens": {
+        "mean": 593.1,
+        "median": 532,
+        "p90": 755,
+        "max": 2048,
+        "at_limit": 1
+      },
+      "wall_seconds": 54.6,
+      "ingestion_order": 13,
+      "title": "Is Semantic Chunking Worth the Computational Cost?"
+    },
+    {
+      "arxiv_id": "2404.03868v2",
+      "doc_id": "01d82c67ac18ffc3",
+      "chunks": 73,
+      "nodes": 498,
+      "edges": 688,
+      "extraction_failures": 0,
+      "embedding_calls": 2,
+      "embedding_tokens": 23461,
+      "embedding_cost_usd": 0.00305,
+      "extraction_calls": 73,
+      "extraction_tokens_in": 36002,
+      "extraction_tokens_out": 43603,
+      "extraction_cost_usd": 0.254017,
+      "total_cost_usd": 0.257067,
+      "cost_per_chunk_usd": 0.003521,
+      "output_tokens": {
+        "mean": 597.3,
+        "median": 515,
+        "p90": 870,
+        "max": 1630,
+        "at_limit": 0
+      },
+      "wall_seconds": 77.4,
+      "ingestion_order": 14,
+      "title": "Extract, Define, Canonicalize: An LLM-based Framework for Knowledge Graph Construction"
+    },
+    {
+      "arxiv_id": "2212.10496v1",
+      "doc_id": "dc0ae3c5584ed146",
+      "chunks": 44,
+      "nodes": 458,
+      "edges": 430,
+      "extraction_failures": 0,
+      "embedding_calls": 1,
+      "embedding_tokens": 14919,
+      "embedding_cost_usd": 0.001939,
+      "extraction_calls": 44,
+      "extraction_tokens_in": 23343,
+      "extraction_tokens_out": 31400,
+      "extraction_cost_usd": 0.180343,
+      "total_cost_usd": 0.182282,
+      "cost_per_chunk_usd": 0.004143,
+      "output_tokens": {
+        "mean": 713.6,
+        "median": 583,
+        "p90": 936,
+        "max": 2045,
+        "at_limit": 0
+      },
+      "wall_seconds": 52.2,
+      "ingestion_order": 15,
+      "title": "Precise Zero-Shot Dense Retrieval without Relevance Labels"
+    },
+    {
+      "arxiv_id": "2304.09542v3",
+      "doc_id": "3a2ca388b4a2fb17",
+      "chunks": 74,
+      "nodes": 528,
+      "edges": 642,
+      "extraction_failures": 1,
+      "embedding_calls": 2,
+      "embedding_tokens": 25103,
+      "embedding_cost_usd": 0.003263,
+      "extraction_calls": 74,
+      "extraction_tokens_in": 38042,
+      "extraction_tokens_out": 43432,
+      "extraction_cost_usd": 0.255202,
+      "total_cost_usd": 0.258465,
+      "cost_per_chunk_usd": 0.003493,
+      "output_tokens": {
+        "mean": 586.9,
+        "median": 577,
+        "p90": 757,
+        "max": 1174,
+        "at_limit": 0
+      },
+      "wall_seconds": 82.1,
+      "ingestion_order": 16,
+      "title": "Is ChatGPT Good at Search? Investigating Large Language Models as Re-Ranking Agents"
+    }
+  ]
+}
