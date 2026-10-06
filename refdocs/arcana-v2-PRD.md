@@ -94,8 +94,10 @@ downstream decision.
 resolution is approximate and measured, since it was the pilot's bottleneck. Every signal can be
 switched off independently for ablation. Graph edges carry the passage they were extracted from.
 
-**Pillar 1: agents.** A small roster (D-05). ASSUMED (to be settled in the P1 plan): Orchestrator,
-Research, Graph, Fact Checker, Composer, Tutor, Writer, Lab Builder. Agents share one state object,
+**Pillar 1: agents.** A small roster (D-05, D-22, D-30): Orchestrator, Research, Graph, Fact Checker and
+Composer are built; the learning and writing tools will live in one Studio agent (P5, ASSUMED merge) and Lab Builder
+arrives with P4. An agent exists only for a distinct trust boundary, state or terminal duty; everything else is a
+tool group. Agents share one state object,
 call each other only through `route_to_agent` within hop and token budgets, and always terminate at
 the Composer. "Super tools" means each agent's typed tools do substantial work (cross-document
 comparison, path finding, verbatim quote checking, contract checking) rather than wrapping a prompt.
@@ -212,6 +214,10 @@ under the same id.
 | D-19 | Generated wire models are strict and forbid extras; five block statuses; `BlockMeta.error`; upsert by block id | `schema-guardian` found lax coercion accepting `"1"` for an int; fail closed means no coercion |
 | D-20 | Graph retrieval scoring is frozen before gold annotation: deterministic entity resolution, evidence-based tie-break, version-stamped results | `retrieval-auditor`: hash-order ties would make the graph arm noise; free constants invite test-set tuning |
 | D-21 | v1's question set and manifest reused unchanged and pinned by hash; monthly cap $5; q-single-01 found unanswerable from the corpus | Azim 2026-10-06; comparability with the pilot; constraint 9 |
+| D-30 | A small roster of core agents that own many tools; an agent exists only for a distinct trust boundary, state or terminal duty. Roster: Orchestrator, Research, Graph, Fact Checker, Composer, Studio (P5), Lab Builder (P4). Amends D-05 and D-22 | Azim 2026-10-06: boil v1's 25 agents down; growth by tools, not agents |
+| D-29 | P2 catalog scope (five components, InsightCard stretch) plus an extension recipe; GraphView must be a real working graph output | Azim 2026-10-06: not all components, high scalability, graph output must work (v1 had a static list) |
+| D-28 | Deterministic evidence-admitting Composer; a prebuilt Basic layout first, Adaptive layered on top and switchable | Azim 2026-10-06; free and testable; known-good fallback |
+| D-27 | `LayoutSpec` is the single source of placement and is built to grow without schema or shell changes; `BlockMeta.panel` and `order` removed | Azim 2026-10-06: flexible for all new GenUI features; two copies drift |
 | D-26 | `q-single-01` kept as an approved, pinned "should find nothing" control (amends D-21); no paper added, no question replaced | The corpus never defines RRF; replacing or adding changes frozen assets and forces a second ingestion; the control showed an empty, grounded answer |
 | D-25 | Extraction output limit raised from 1,024 to 2,048 tokens after a live measurement: 8.6 percent of chunks truncated at 1,024 | First live run on one paper: 3 of 35 chunks cut off mid-JSON, 1 of 35 at 2,048; cost per chunk $0.0036 |
 | D-24 | Benchmark amendments and enforcement: 19 approved questions, primary metrics Recall@10 and nDCG@10 only, freeze enforced by the paid runner, commit recorded, tie-safe Wilcoxon | Pre-benchmark retrieval audit: undeclared 19-question run, freeze checked only by pytest, results not tied to code, float-noise ties in the test |

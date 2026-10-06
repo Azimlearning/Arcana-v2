@@ -440,6 +440,97 @@ that it is reliable.
 **Trade-offs / rejected.** The question set keeps one question that can never score; accepted, it is
 pre-registered. Rejected: replacing the question; adding a paper.
 
+## D-27: LayoutSpec is the single source of placement, and it is built to grow (2026-10-06)
+
+**Decision.** Placement is level 2 data. `LayoutSpec.placements` (a list of `{blockId, panel, order}`) is the
+only place that says where a block goes; `BlockMeta.panel` and `BlockMeta.order` are removed. The spec is
+designed so that **a new component, panel or mode never needs a change to the layout types or the shell**:
+panels are a list of `{id, width}` (not fixed keys), the spec carries a `version`, an `origin`
+(`prebuilt` or `adaptive`) and a `mode`, placements name block ids and never block types, and each catalog
+component declares its own placement hint (preferred panel and priority) so the layout rules are data, not a
+list of component names. A client treats anything it does not recognise as "fall back to the prebuilt layout",
+never as a crash. A test registers a toy component and shows it is laid out with no change to the layout module.
+
+**Why.** Azim 2026-10-06: the layout should follow the recommendation, "also be aware that it need to be
+flexible for all the new genui features". Two copies of placement would drift (the redundant `summary` string in
+D-19 is the precedent), and every later phase (P3 router, P4 `VerifiedLab`, P5 study and writing components)
+adds components.
+
+**Trade-offs / rejected.** A breaking wire change now (about five sites, cheap with one block type, dearer
+later). Rejected: keeping both placements and validating they agree; fixed `sources/chat/studio` width keys (a
+fourth panel would change the schema).
+
+## D-28: The Composer is deterministic and admits components by evidence; a prebuilt layout comes first (2026-10-06)
+
+**Decision.** (1) In P2 no model chooses components or layout: the Composer runs each catalog component's
+structural precondition over the turn's evidence, builds the ones that pass, validates each, drops (never
+repairs) any that fail, and lays them out by rules that read the catalog's placement hints. It makes no model
+call. (2) **The user is shown a prebuilt, basic version first**, and the adaptive version is layered on top: the
+workspace opens in a fixed `prebuilt` layout (sources, chat, and a studio panel kept empty) with a source list
+available before any question is asked (served by a new `GET /workspace`, validated like any block); every turn
+the Composer also produces an `adaptive` layout; a header control switches between **Basic** and **Adaptive**;
+the first answer applies Adaptive automatically unless the user has pinned Basic. The prebuilt layout is also the
+safe fallback whenever an adaptive layout is missing or invalid.
+
+**Why.** Azim 2026-10-06: agrees a deterministic rule should decide, "but also user is presented initially with
+basic version and prebuild version they can use before having the custom adaptive version". A deterministic
+Composer is free, testable and is the bound (retrieval structure limits the interface). A prebuilt layout gives
+a working workspace with no model and no question, and a known-good fallback.
+
+**Trade-offs / rejected.** The adaptivity in P2 is rule-based, so it is less flexible than a model-chosen
+layout; a learned chooser belongs to the P3 router and can be added behind the same `LayoutSpec` without
+changing it. Rejected: an LLM layout chooser now (a paid call per turn and an unmeasured chooser). ASSUMED:
+"first answer applies Adaptive automatically unless Basic is pinned" is the assistant's reading of the request;
+it is one client setting and is cheap to change.
+
+## D-29: P2 catalog scope; capability grows by tools and recipes, not by components or agents; the graph must really work (2026-10-06)
+
+**Decision.** P2 builds five level 1 components (`CitedSummary`, `SourceList`, `GraphView`, `ConceptMap`,
+`ComparisonGrid`; `InsightCard` is a stretch) and the machinery that makes adding a sixth a bounded recipe:
+a catalog entry (precondition, supplier, caps, placement hint), a schema type, a validator rule set, a builder,
+a web component with four states, and the tamper and admission tests; the recipe is written in
+`refdocs/guides/catalog.md` and exercised by a toy component in a test. Components whose preconditions the
+current evidence cannot honestly satisfy are not built now, with reasons: `ContradictionAlert` (needs an unmeasured
+judge), `Timeline` (no extracted dates; a re-extraction), `GapAnalysis` (asserts absence), `ComparisonChart` and
+`DataTable` (no structured extraction), the learning and writing components (their agent work is P5).
+**`GraphView` must be a working graph output, which v1 never had** (v1's `KnowledgeGraphView` was a static node
+list): a drawn node-link diagram from the real extracted graph, selectable nodes and edges that show their
+grounded quote and source, keyboard operable, with a text list of the same relations; it must be shown working
+on the real ingested corpus, not only on fakes.
+
+**Why.** Azim 2026-10-06: not all v1 components are wanted; wants "functionality and possibility scaling as
+high"; and "i do want the graph output to work in v2 which was not there in v1". Extensibility is a property of
+the recipe and the contracts, not of the number of components built now.
+
+**Trade-offs / rejected.** A smaller catalog than v1's 24, which the MCAIT paper already names as a ceiling.
+Rejected: building all 24 (components with no agent or evidence behind them would be filled by the model, the
+failure the bound exists to prevent).
+
+## D-30: A small roster of core agents; capability grows as tools (2026-10-06, amends D-05 and D-22)
+
+**Decision.** Boil the agents down to a few core agents that own many typed tools each. The rule for whether
+something is an agent: **it is an agent only if it owns a distinct trust boundary, a distinct state or budget, or
+a terminal responsibility; otherwise it is a tool group of an existing agent.** The roster is **Orchestrator,
+Research, Graph, Fact Checker, Composer, and (P5) Studio**, plus **Lab Builder at P4** because generated code is
+a separate trust boundary. v1's 25 agents are absorbed as follows (full table in `refdocs/guides/agents.md`):
+the comparator, cross-document, literature, contradiction, discovery, methodology, debate, annotation and
+document agents become **Research** tools; the visual agent's data side and the graph and timeline analyses become
+**Graph** tools; the citation agent's accuracy checks and the plagiarism check join the **Fact Checker**; the UI
+agent and the visual agent's layout side are the **Composer**; the memory agent becomes the Orchestrator's
+context tools; the learning agent, Socratic tutor, study planner, writing agent and citation formatting become
+tool groups of one **Studio** agent (P5, replacing the separate Tutor and Writer of D-22); web search and audio are
+dropped (PRD non-goals). P2 adds no agent, only the Graph tool `align_documents`.
+
+**Why.** Azim 2026-10-06: some agents can be merged, some upgraded so others are not needed, "boiling down the
+AI agents the core super AI agents with all the tools needed only instead of having 24", with possibility scaling
+as high as possible. Fewer agents means fewer hops, smaller prompts, simpler budgets and a clearer trace, and a
+new capability costs a tool and a catalog entry, not a new agent.
+
+**Trade-offs / rejected.** A larger tool surface per agent (mitigated by the typed tool schemas and intent-scoped
+tool selection already in the framework). The Fact Checker stays separate on purpose: a checker merged into a
+generator would grade its own work. ASSUMED: merging Tutor and Writer into one Studio agent is settled
+properly in the P5 plan; D-22's separate Tutor and Writer are superseded as a plan, not yet built.
+
 ---
 
 ## Working assumptions (`ASSUMED:`)
