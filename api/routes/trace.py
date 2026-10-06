@@ -1,10 +1,13 @@
 """GET /turns/{turn_id}/trace: what the agents did on one turn, as a validated TurnTrace.
 
 The trace is the turn's own record (which agents ran, in what order, with what status, tokens and time).
-It holds no question text, no passage and no secret: notes are short reason codes. A turn that was never
+It holds no question text, no passage and no secret: notes are short reason codes, and the composition record (what the
+Composer offered and why it left a component out) uses a closed list of codes. A turn that was never
 traced, or an id that is not one, is a not_found envelope. What is stored is validated again on the way
 out, so a damaged row can never reach the client as a half-formed trace.
 """
+
+import json
 
 from fastapi import APIRouter, Request
 from pydantic import ValidationError
@@ -27,7 +30,10 @@ async def turn_trace(turn_id: str, request: Request) -> TurnTrace:
     if raw is None:
         raise NotFound("No trace for that turn.")
     try:
-        return TurnTrace.model_validate_json(raw)
-    except ValidationError:  # fail closed (the client gets the generic 500 envelope), but leave a clue
+        data = json.loads(raw)
+        if isinstance(data, dict) and "composition" not in data:
+            data["composition"] = []  # a trace stored before the composition record existed (P2 C4)
+        return TurnTrace.model_validate(data)
+    except (ValidationError, ValueError):  # fail closed (the client gets the generic 500 envelope), but leave a clue
         log.error("trace_corrupt", turn_id=turn_id)
         raise

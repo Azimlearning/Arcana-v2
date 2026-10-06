@@ -70,7 +70,7 @@ def step(**overrides: object) -> dict:
 
 
 def trace(**overrides: object) -> dict:
-    return {"turnId": "t1", "steps": [step(), step(hop=1, agent="research")], "hopsUsed": 2, "tokensUsed": 24, "outcome": "answered", **overrides}
+    return {"turnId": "t1", "steps": [step(), step(hop=1, agent="research")], "hopsUsed": 2, "tokensUsed": 24, "outcome": "answered", "composition": [], **overrides}
 
 
 def test_a_valid_trace_validates_from_dict_and_json():
@@ -120,3 +120,16 @@ def test_a_step_note_may_be_null_or_text_but_not_missing():
     del missing["note"]
     with pytest.raises(ValidationError):
         AgentStep.model_validate(missing)
+
+
+def test_a_composition_decision_has_a_closed_list_of_reason_codes():
+    from api.genui.generated import ComponentDecision
+
+    decision = {"component": "GraphView", "offered": False, "reasons": ["no_grounded_edge"]}
+    assert ComponentDecision.model_validate(decision).reasons == ["no_grounded_edge"]
+    for bad in ({**decision, "reasons": ["the quote said something private"]}, {**decision, "offered": "no"}, {**decision, "extra": 1}):
+        with pytest.raises(ValidationError):
+            ComponentDecision.model_validate(bad)
+    assert TurnTrace.model_validate(trace(composition=[decision])).composition[0].component == "GraphView"
+    with pytest.raises(ValidationError):  # the record is required: an old-shaped body is not a trace (the route adapts it)
+        TurnTrace.model_validate({k: v for k, v in trace().items() if k != "composition"})

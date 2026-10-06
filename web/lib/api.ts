@@ -40,6 +40,16 @@ function isTurnTrace(value: unknown): value is TurnTrace {
     typeof t.hopsUsed === "number" &&
     typeof t.tokensUsed === "number" &&
     typeof t.outcome === "string" &&
+    Array.isArray(t.composition) &&
+    t.composition.every(
+      (d) =>
+        typeof d === "object" &&
+        d !== null &&
+        typeof d.component === "string" &&
+        typeof d.offered === "boolean" &&
+        Array.isArray(d.reasons) &&
+        d.reasons.every((r) => typeof r === "string"),
+    ) &&
     Array.isArray(t.steps) &&
     t.steps.every(
       (s) =>

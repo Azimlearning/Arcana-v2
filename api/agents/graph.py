@@ -88,6 +88,7 @@ async def run_turn(
         state = await graph.ainvoke({"question": question}, context=ctx)
         composition = state["composition"]
         finals = [_checked(block, ctx) for block in composition.blocks]
+        ctx.composition = composition.records  # recorded only once the blocks passed the last gate: "offered" means sent
     except Exception as exc:
         log.error("turn_failed", error=type(exc).__name__)
         envelope = envelope_from_exception(exc)

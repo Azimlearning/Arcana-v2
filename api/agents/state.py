@@ -11,7 +11,7 @@ from typing import Any, TypedDict
 
 from api.agents.framework import AgentResult, Roster, TurnLimits
 from api.core.budget import TokenBudget
-from api.genui.catalog import Composition
+from api.genui.catalog import ComponentRecord, Composition, component_decisions
 from api.genui.generated import AgentStep, TurnOutcome, TurnTrace, UIBlock
 from api.llm.service import LLMService
 from api.retrieval.types import RetrievalResult
@@ -55,6 +55,8 @@ class TurnContext:
     hops_used: int = 0
     intent: str = "single"
     """Set by the Orchestrator; read by the agents it routes to."""
+    composition: tuple[ComponentRecord, ...] = ()
+    """What the Composer decided per component this turn. Set by `run_turn` once the turn is composed."""
 
     def trace(self, outcome: TurnOutcome) -> TurnTrace:
         steps = [self.steps[i] for i in sorted(self.steps)]
@@ -64,4 +66,5 @@ class TurnContext:
             hopsUsed=self.hops_used,
             tokensUsed=self.budget.used,
             outcome=outcome,
+            composition=component_decisions(self.composition),
         )

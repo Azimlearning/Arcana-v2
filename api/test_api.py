@@ -372,3 +372,68 @@ def test_a_store_that_cannot_be_read_is_an_internal_error_envelope(client: TestC
 
 def test_the_workspace_is_get_only(client: TestClient):
     assert client.post("/workspace").status_code == 405
+
+
+# ── the composition record in the trace (P2 C4) ───────────────────────────────
+
+
+def trace_of(client: TestClient, message: str = QUESTION) -> TurnTrace:
+    turn_id = turn_id_of(chat(client, message))
+    return TurnTrace.model_validate(client.get(f"/turns/{turn_id}/trace").json())
+
+
+def test_a_turn_trace_has_a_decision_for_every_catalog_component_in_catalog_order(ready_client: TestClient):
+    from api.genui.catalog import CATALOG
+
+    trace = trace_of(ready_client)
+    assert [d.component for d in trace.composition] == list(CATALOG)
+
+
+def test_what_was_offered_and_what_was_refused_with_its_reason(ready_client: TestClient):
+    decisions = {d.component: d for d in trace_of(ready_client).composition}
+    assert decisions["CitedSummary"].offered and decisions["SourceList"].offered and decisions["GraphView"].offered
+    assert decisions["ComparisonGrid"].offered is False and decisions["ComparisonGrid"].reasons == ["no_shared_entities"]
+    assert decisions["ConceptMap"].offered is False and decisions["ConceptMap"].reasons == ["single_hop"]
+
+
+def test_a_turn_that_failed_records_the_answer_as_unavailable_and_the_rest_as_not_considered(ready_client: TestClient):
+    container = ready_client.app.state.container  # pyright: ignore[reportAttributeAccessIssue]
+    container.llm = LLMService(FakeProvider(fail_with="timeout"), None, container.ledger)
+    decisions = {d.component: d for d in trace_of(ready_client).composition}
+    assert decisions["CitedSummary"].offered is False and decisions["CitedSummary"].reasons == ["answer_unavailable"]
+    assert all(d.reasons == ["not_considered"] for name, d in decisions.items() if name != "CitedSummary")
+
+
+def test_a_block_that_failed_validation_is_recorded_by_code_only(ready_client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    from api.agents import compose as compose_module
+    from api.core.errors import ValidationFailed
+    from api.genui.generated import FieldIssue
+
+    real = compose_module.validate_block
+
+    def refuse_the_graph_view(raw, docs):
+        if raw["type"] == "GraphView":
+            raise ValidationFailed("x", [FieldIssue(path="data.edges.0.citationId", message="a private quote was here")])
+        return real(raw, docs)
+
+    monkeypatch.setattr(compose_module, "validate_block", refuse_the_graph_view)
+    turn_id = turn_id_of(chat(ready_client))
+    response = ready_client.get(f"/turns/{turn_id}/trace")
+    graph_view = next(d for d in TurnTrace.model_validate(response.json()).composition if d.component == "GraphView")
+    assert graph_view.offered is False and graph_view.reasons == ["block_failed_validation"]
+    assert "data.edges" not in response.text and "private quote" not in response.text  # never the path or the message
+
+
+def test_the_composition_record_carries_no_question_or_document_text(ready_client: TestClient):
+    turn_id = turn_id_of(chat(ready_client, "How is dense retrieval related to reciprocal rank fusion?"))
+    body = ready_client.get(f"/turns/{turn_id}/trace").text.lower()
+    assert "dense" not in body and "fusion" not in body  # the question
+    assert "knowledge graph" not in body and "hybrid retrieval" not in body  # the document's title and words
+
+
+def test_a_trace_stored_before_the_composition_record_existed_is_still_served(ready_client: TestClient):
+    container = ready_client.app.state.container  # pyright: ignore[reportAttributeAccessIssue]
+    legacy = '{"turnId": "turn-old", "steps": [], "hopsUsed": 0, "tokensUsed": 0, "outcome": "empty"}'
+    container.docs.record_trace("turn-old", legacy)
+    response = ready_client.get("/turns/turn-old/trace")
+    assert response.status_code == 200 and response.json()["composition"] == []

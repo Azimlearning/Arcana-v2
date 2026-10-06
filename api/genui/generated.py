@@ -85,6 +85,13 @@ class ComparisonGridData(BaseModel):
     citations: list[Citation]
 
 
+class ComponentDecision(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    component: str
+    offered: bool
+    reasons: list[DecisionReason]
+
+
 class ConceptMap(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
     type: Literal['ConceptMap']
@@ -251,6 +258,7 @@ class TurnTrace(BaseModel):
     hopsUsed: int
     tokensUsed: int
     outcome: TurnOutcome
+    composition: list[ComponentDecision]
 
 
 class WorkspaceResponse(BaseModel):
@@ -264,6 +272,8 @@ AgentName = Literal['orchestrator', 'research', 'graph', 'fact_checker', 'compos
 BlockStatus = Literal['empty', 'loading', 'partial', 'ready', 'error']
 
 ChatRole = Literal['user', 'assistant']
+
+DecisionReason = Literal['no_grounded_answer', 'no_ready_document', 'no_graph_result', 'no_grounded_edge', 'no_shared_entities', 'not_a_path', 'single_hop', 'path_too_long', 'broken_path', 'ungrounded_hop', 'repeated_concept', 'block_failed_validation', 'answer_unavailable', 'not_considered', 'unspecified']
 
 ErrorCode = Literal['validation_failed', 'bad_request', 'not_found', 'budget_exhausted', 'spend_cap_exceeded', 'provider_unavailable', 'internal']
 
@@ -291,6 +301,7 @@ CitedSummary.model_rebuild()
 CitedSummaryData.model_rebuild()
 ComparisonGrid.model_rebuild()
 ComparisonGridData.model_rebuild()
+ComponentDecision.model_rebuild()
 ConceptMap.model_rebuild()
 ConceptMapData.model_rebuild()
 DoneEvent.model_rebuild()

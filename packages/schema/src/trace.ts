@@ -40,6 +40,52 @@ export interface AgentStep {
   note: string | null;
 }
 
+/**
+ * Why the Composer did or did not show a component, as a short code. Closed on purpose, like the error codes: a code is
+ * never an exception message or any text from a document or the question, and a new code is a schema change.
+ *   no_grounded_answer     the Research agent produced nothing that could be cited (the answer is shown as "nothing found");
+ *   no_ready_document      there is no stored document that is ready;
+ *   no_graph_result        the Graph agent did not run or returned nothing;
+ *   no_grounded_edge       no relation had a quote naming both of its concepts;
+ *   no_shared_entities     fewer than two documents share two or more entities with evidence;
+ *   not_a_path             the question's entities were not joined by a path;
+ *   single_hop             the path has one hop, which is a graph view and not a path map;
+ *   path_too_long          the path has more hops than a map shows;
+ *   broken_path            the path's hops do not join up;
+ *   ungrounded_hop         a hop on the path had no quote naming both of its concepts;
+ *   repeated_concept       the path passes through a concept twice;
+ *   block_failed_validation the block was built but failed server validation, so it was not sent;
+ *   answer_unavailable     the answer could not be produced or checked (the turn's error is on the answer block);
+ *   not_considered         the turn ended before the Composer could consider this component;
+ *   unspecified            a reason this version of the schema has no code for.
+ */
+export type DecisionReason =
+  | "no_grounded_answer"
+  | "no_ready_document"
+  | "no_graph_result"
+  | "no_grounded_edge"
+  | "no_shared_entities"
+  | "not_a_path"
+  | "single_hop"
+  | "path_too_long"
+  | "broken_path"
+  | "ungrounded_hop"
+  | "repeated_concept"
+  | "block_failed_validation"
+  | "answer_unavailable"
+  | "not_considered"
+  | "unspecified";
+
+/** What the Composer decided for one catalog component on one turn. */
+export interface ComponentDecision {
+  /** The component's block type, for example "GraphView". */
+  component: string;
+  /** True if a block of this component was sent in a ready or empty state. */
+  offered: boolean;
+  /** Why not (or, for an empty answer, why it is empty). Empty when it was offered with nothing to explain. */
+  reasons: DecisionReason[];
+}
+
 export interface TurnTrace {
   turnId: string;
   steps: AgentStep[];
@@ -48,4 +94,6 @@ export interface TurnTrace {
   /** @int */
   tokensUsed: number;
   outcome: TurnOutcome;
+  /** One decision per catalog component the Composer considered, in catalog order. */
+  composition: ComponentDecision[];
 }

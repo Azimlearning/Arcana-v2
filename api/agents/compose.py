@@ -265,7 +265,8 @@ def _compose_blocks(ctx: TurnContext) -> Composition:
     returns nothing: the terminal component is always present, as an error or empty block if it must be."""
     answer, failure = _gate(ctx)
     if failure is not None:
-        record = ComponentRecord("CitedSummary", "error", (failure.code,), ctx.block_id)
+        # The failure code stays on the answer block; the trace gets the closed code, never the message.
+        record = ComponentRecord("CitedSummary", "error", ("answer_unavailable",), ctx.block_id)
         return Composition((error_block(ctx, failure),), (record,))
 
     evidence = _evidence(ctx, answer)
@@ -283,7 +284,8 @@ def _compose_blocks(ctx: TurnContext) -> Composition:
             log.warning("composed_block_rejected", component=spec.name, issues=[i.path for i in exc.issues])
             if spec.terminal:
                 blocks.insert(0, error_block(ctx, exc.to_envelope()))
-            records.append(ComponentRecord(spec.name, "error", tuple(i.path for i in exc.issues), _block_id(spec, ctx)))
+            # The field paths are in the log above; the trace carries only the closed code.
+            records.append(ComponentRecord(spec.name, "error", ("block_failed_validation",), _block_id(spec, ctx)))
             continue
         blocks.append(block)
         records.append(ComponentRecord(spec.name, "empty" if empty else "admitted", result.reasons, block.id))

@@ -243,6 +243,13 @@ export function trace(overrides: Partial<TurnTrace> = {}): TurnTrace {
       { hop: 1, agent: "research", status: "ok", tokens: 900, latencyMs: 25, note: null },
       { hop: 2, agent: "fact_checker", status: "partial", tokens: 300, latencyMs: 8, note: "removed 1 of 3 segments" },
     ],
+    composition: [
+      { component: "CitedSummary", offered: true, reasons: [] },
+      { component: "SourceList", offered: true, reasons: [] },
+      { component: "GraphView", offered: false, reasons: ["no_grounded_edge"] },
+      { component: "ComparisonGrid", offered: false, reasons: ["no_shared_entities"] },
+      { component: "ConceptMap", offered: false, reasons: ["single_hop"] },
+    ],
     ...overrides,
   };
 }

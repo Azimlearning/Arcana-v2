@@ -72,7 +72,9 @@ async def test_a_comparison_with_a_graph_adds_a_grounded_graph_view(ingested, tm
     # One paper is not a comparison: the grid is refused, with its reason on record.
     assert [r.outcome for r in composition.records] == ["admitted", "admitted", "admitted", "refused", "refused"]
     assert composition.records[3].reasons == ("no_shared_entities",)
-    assert composition.records[4].reasons == ("single_hop",)  # Dense Retrieval to BM25 is one hop: the graph view's case
+    assert composition.records[4].reasons == (
+        "single_hop",
+    )  # Dense Retrieval to BM25 is one hop: the graph view's case
     view = composition.blocks[2]
     assert view.id == "blk-graph-view"
     assert {n.label for n in view.data.nodes} == {"Dense Retrieval", "BM25"}  # type: ignore[union-attr]
@@ -177,3 +179,14 @@ def test_the_graph_view_check_names_why_it_refuses():
         "doc_title": "P",
     }
     assert GRAPH_VIEW.check(evidence({"edges": [good], "labels": {"a": "Alpha", "b": "Beta"}})).satisfied
+
+
+def test_a_reason_outside_the_closed_list_is_recorded_as_unspecified_never_as_free_text():
+    from api.genui.catalog import ComponentRecord, component_decisions
+
+    records = [ComponentRecord("GraphView", "refused", ("no_grounded_edge", "a quote from the document"))]
+    graph_view = next(d for d in component_decisions(records) if d.component == "GraphView")
+    assert graph_view.reasons == ["no_grounded_edge", "unspecified"] and graph_view.offered is False
+    others = [d for d in component_decisions(records) if d.component != "GraphView"]
+    assert all(d.reasons == ["not_considered"] and d.offered is False for d in others)
+    assert [d.component for d in component_decisions([])] == list(CATALOG)

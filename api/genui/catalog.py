@@ -11,12 +11,12 @@ layout do not change (D-27).
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
-from typing import Any, Literal
+from typing import Any, Literal, cast, get_args
 
 from api.genui.alignment import MAX_GRID_DIMS, MAX_GRID_DOCS, settle
-from api.genui.generated import LayoutSpec, PanelId, UIBlock
+from api.genui.generated import ComponentDecision, DecisionReason, LayoutSpec, PanelId, UIBlock
 from api.genui.text import MIN_LABEL_CHARS, MIN_QUOTE_CHARS, label_in_quote, normalise
 from api.stores.doc_store import Document
 
@@ -336,3 +336,28 @@ CATALOG: dict[str, Spec] = {
     spec.name: spec for spec in (CITED_SUMMARY, SOURCE_LIST, GRAPH_VIEW, COMPARISON_GRID, CONCEPT_MAP)
 }
 """Every component the Composer may admit, in the order it considers them (the terminal one first)."""
+
+_KNOWN_REASONS: frozenset[str] = frozenset(get_args(DecisionReason))
+
+
+def component_decisions(records: Iterable[ComponentRecord]) -> list[ComponentDecision]:
+    """The Composer's records as the trace's decisions: one per catalog component, in catalog order. A component with
+    no record (the turn ended before it was considered) is `not_considered`. Only codes in the schema's closed list
+    are kept, anything else becomes `unspecified`, so a trace never carries free text (no exception message, no
+    document text, no question text)."""
+    by_name = {r.component: r for r in records}
+    decisions: list[ComponentDecision] = []
+    for name in CATALOG:
+        record = by_name.get(name)
+        if record is None:
+            decisions.append(ComponentDecision(component=name, offered=False, reasons=["not_considered"]))
+            continue
+        reasons = [r if r in _KNOWN_REASONS else "unspecified" for r in record.reasons]
+        decisions.append(
+            ComponentDecision(
+                component=name,
+                offered=record.outcome in ("admitted", "empty"),
+                reasons=cast("list[DecisionReason]", reasons),
+            )
+        )
+    return decisions
