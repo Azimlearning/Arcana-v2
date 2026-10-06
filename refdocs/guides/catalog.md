@@ -142,18 +142,25 @@ Status: **built** (P2 B3, with the Graph agent tool `align_documents`).
 
 ## ConceptMap
 
-Status: planned, task B4.
+Status: **built** (P2 B4).
 
-- **Precondition:** a path of at least 2 labelled hops between two entities, every hop grounded, no repeated node. (A
-  1-hop path is a `GraphView` case.)
+- **Precondition:** a path of two to six hops between two entities, every hop backed by a verbatim quote that names
+  both of its concepts, no repeated concept (compared ignoring case and spacing). (A 1-hop path is a `GraphView` case.)
 - **Supplied by:** graph traversal (Graph agent `find_path`).
-- **Payload:** `steps: {from, relation, to, citationId}[]`, `citations`.
+- **Payload:** `steps: {source, target, relation, reversed, citationId}[]`, `citations`. (`source` and `target`, not
+  `from` and `to`: `from` is a Python keyword and the generated model could not have it. `reversed` is true when the stored
+  relation runs against the path, so the map states the claim the way the document does.)
 - **Caps:** 6 steps.
-- **Validator invariants:** steps contiguous (`steps[i].to == steps[i+1].from`); no repeated node; each step cites a
+- **Validator invariants:** steps contiguous (`steps[i].source == steps[i-1].target`); no repeated node; each step cites a
   citation of this block whose quote contains both labels; no orphan citation.
 - **States:** all four. Ready: a vertical chain (concept, relation, concept) with each step's quote and source link.
 - **Placement hint:** studio panel, priority 30.
 - **Admissible with flat retrieval:** no.
+- **Measured through the Graph agent (B4, 2026-10-06, read-only on a copy of the live data):** on the 20 frozen
+  questions a `ConceptMap` was offered for 3 (two paths of 3 hops, one of 4). 15 were refused because at least one hop
+  had no verbatim quote naming both concepts (`ungrounded_hop`), 1 was a single hop (`single_hop`), 1 was not a path
+  (`not_a_path`). Requiring every hop to be grounded is what makes a map trustworthy, and also what makes it rare on
+  this corpus, where 44 percent of edges are drawable.
 
 ## InsightCard (stretch)
 

@@ -97,10 +97,33 @@ def comparison_grid(
     }
 
 
+def concept_map(
+    block_id: str,
+    status: str,
+    *,
+    data: dict[str, Any] | None = None,
+    error: ErrorEnvelope | None = None,
+    order: int = 0,
+    panel: str = "studio",
+) -> dict[str, Any]:
+    return {
+        "type": "ConceptMap",
+        "id": block_id,
+        "meta": {
+            "panel": panel,
+            "order": order,
+            "status": status,
+            "error": error.model_dump() if error is not None else None,
+        },
+        "data": data if data is not None else {"steps": [], "citations": []},
+    }
+
+
 BUILDERS: dict[str, Callable[..., dict[str, Any]]] = {
     "CitedSummary": cited_summary,
     "SourceList": source_list,
     "GraphView": graph_view,
     "ComparisonGrid": comparison_grid,
+    "ConceptMap": concept_map,
 }
 """One builder per catalog component, keyed by block type. A test keeps this in step with the catalog and the schema."""

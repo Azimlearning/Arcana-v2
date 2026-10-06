@@ -118,3 +118,28 @@ export interface ComparisonGridData {
   rows: GridRow[];
   citations: Citation[];
 }
+
+/**
+ * One hop of a concept path, in path order: from `source` to `target` (both are concept labels as stored).
+ * `reversed` says the stored relation runs the other way: when true the document says `target` `relation`
+ * `source`, so a reader never sees a relation pointing the wrong way. In a `ready` block the cited quote
+ * (`citationId`, a citation of this block) contains both labels.
+ */
+export interface PathStep {
+  source: string;
+  target: string;
+  relation: string;
+  reversed: boolean;
+  citationId: string;
+}
+
+/**
+ * How two concepts connect through the documents: an ordered path of 2 to 6 hops. In a `ready` block the steps are
+ * contiguous (each step's source is the previous step's target), no concept repeats, every step cites a citation of
+ * this block whose quote contains both of its labels, and every citation is cited. Placeholders carry no steps or
+ * citations. The schema cannot say so; the server validator does.
+ */
+export interface ConceptMapData {
+  steps: PathStep[];
+  citations: Citation[];
+}

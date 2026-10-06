@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { block, comparisonGrid, envelope, graphView, sourceList } from "@/test/fixtures";
+import { block, comparisonGrid, conceptMap, envelope, graphView, sourceList } from "@/test/fixtures";
 
 import { toErrorBlock, useWorkspace } from "./store";
 
@@ -69,6 +69,12 @@ describe("workspace store", () => {
     expect(failed.id).toBe("turn-1");
     expect(failed.meta).toMatchObject({ panel: "chat", status: "error" });
     expect(failed.data).toEqual({ segments: [], citations: [] });
+  });
+
+  it("toErrorBlock empties a ConceptMap too, and keeps its own panel", () => {
+    const failed = toErrorBlock(conceptMap("ready"), envelope());
+    expect(failed.meta).toMatchObject({ panel: "studio", status: "error" });
+    expect(failed.data).toEqual({ steps: [], citations: [] });
   });
 
   it("toErrorBlock empties a ComparisonGrid too, and keeps its own panel", () => {

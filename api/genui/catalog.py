@@ -115,6 +115,8 @@ MAX_GRAPH_NODES = 30
 MAX_GRAPH_EDGES = 40
 MAX_LABEL_CHARS = 120
 MAX_RELATION_CHARS = 80
+MAX_PATH_STEPS = 6
+MIN_PATH_STEPS = 2
 
 
 def _check_source_list(evidence: ComposerEvidence) -> Result:
@@ -216,6 +218,92 @@ COMPARISON_GRID = Spec(
 )
 
 
+def concept_path(graph: dict[str, Any] | None) -> tuple[list[dict[str, Any]], str | None]:
+    """(steps, reason): the Graph agent's path as ConceptMap steps in path order, or no steps and the reason it cannot
+    be one. Every hop must carry a verbatim quote naming both of its concepts (a hop without one breaks the path:
+    the map would otherwise skip a link), the hops must join up from the first entity, no concept may repeat, and
+    there must be 2 to 6 hops (a single hop is a GraphView case). `reversed` marks a hop whose stored relation runs
+    against the path, so the map never states a relation the wrong way round. Pure, shared by the check and the
+    Composer."""
+    if not graph:
+        return [], "no_graph_result"
+    edges = graph.get("edges") or []
+    entities = graph.get("entities") or []
+    if graph.get("mode") != "path" or not edges or not entities:
+        return [], "not_a_path"
+    if len(edges) < MIN_PATH_STEPS:
+        return [], "single_hop"
+    if len(edges) > MAX_PATH_STEPS:
+        return [], "path_too_long"
+    labels: dict[str, str] = graph.get("labels") or {}
+    steps: list[dict[str, Any]] = []
+    current = entities[0]
+    seen = {normalise(labels.get(current, "")).lower()}
+    for edge in edges:
+        if edge.get("src") == current:
+            following, backwards = edge.get("dst"), False
+        elif edge.get("dst") == current:
+            following, backwards = edge.get("src"), True
+        else:
+            return [], "broken_path"
+        quote, title = edge.get("quote"), edge.get("doc_title")
+        relation = str(edge.get("relation") or "").replace("_", " ").strip()
+        if current not in labels or following not in labels:
+            return [], "ungrounded_hop"
+        names = (labels[current], labels[following])
+        if not (
+            isinstance(quote, str)
+            and isinstance(title, str)
+            and title
+            and relation
+            and len(relation) <= MAX_RELATION_CHARS
+            and all(MIN_LABEL_CHARS <= len(n.strip()) <= MAX_LABEL_CHARS for n in names)
+            and len(normalise(quote)) >= MIN_QUOTE_CHARS
+            and all(label_in_quote(quote, n) for n in names)
+        ):
+            return [], "ungrounded_hop"
+        key = normalise(names[1]).lower()
+        if key in seen:
+            return [], "repeated_concept"
+        seen.add(key)
+        page = edge.get("page")
+        steps.append(
+            {
+                "source": names[0],
+                "target": names[1],
+                "relation": relation,
+                "reversed": backwards,
+                "chunk_id": edge["chunk_id"],
+                "doc_id": edge["doc_id"],
+                "doc_title": title,
+                "page": page if isinstance(page, int) else None,
+                "quote": quote,
+            }
+        )
+        current = following
+    if current != entities[-1]:
+        return [], "broken_path"  # the walk must end at the question's second entity
+    return steps, None
+
+
+def _check_concept_map(evidence: ComposerEvidence) -> Result:
+    steps, reason = concept_path(evidence.graph)
+    return Result(True) if steps else Result(False, (reason or "not_a_path",))
+
+
+CONCEPT_MAP = Spec(
+    name="ConceptMap",
+    precondition=(
+        "The Graph agent found a path of two to six hops between two entities, every hop backed by a verbatim quote "
+        "naming both of its concepts, with no concept repeated."
+    ),
+    supplied_by=("graph",),
+    caps={"steps": MAX_PATH_STEPS},
+    placement=Placement(panel="studio", priority=30),
+    check=_check_concept_map,
+)
+
+
 def _check_graph_view(evidence: ComposerEvidence) -> Result:
     if evidence.graph is None:
         return Result(False, ("no_graph_result",))
@@ -240,5 +328,7 @@ SOURCE_LIST = Spec(
     check=_check_source_list,
 )
 
-CATALOG: dict[str, Spec] = {spec.name: spec for spec in (CITED_SUMMARY, SOURCE_LIST, GRAPH_VIEW, COMPARISON_GRID)}
+CATALOG: dict[str, Spec] = {
+    spec.name: spec for spec in (CITED_SUMMARY, SOURCE_LIST, GRAPH_VIEW, COMPARISON_GRID, CONCEPT_MAP)
+}
 """Every component the Composer may admit, in the order it considers them (the terminal one first)."""

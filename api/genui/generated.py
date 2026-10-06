@@ -87,6 +87,20 @@ class ComparisonGridData(BaseModel):
     citations: list[Citation]
 
 
+class ConceptMap(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    type: Literal['ConceptMap']
+    id: str
+    meta: BlockMeta
+    data: ConceptMapData
+
+
+class ConceptMapData(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    steps: list[PathStep]
+    citations: list[Citation]
+
+
 class DoneEvent(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
     type: Literal['done']
@@ -163,6 +177,15 @@ class IngestResponse(BaseModel):
     error: str | None
 
 
+class PathStep(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    source: str
+    target: str
+    relation: str
+    reversed: bool
+    citationId: str
+
+
 class SourceItem(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
     docId: str
@@ -220,7 +243,7 @@ StreamEvent = Annotated[BlockEvent | StreamErrorEvent | DoneEvent, Field(discrim
 
 TurnOutcome = Literal['answered', 'empty', 'error']
 
-UIBlock = Annotated[CitedSummary | SourceList | GraphView | ComparisonGrid, Field(discriminator='type')]
+UIBlock = Annotated[CitedSummary | SourceList | GraphView | ComparisonGrid | ConceptMap, Field(discriminator='type')]
 
 AgentStep.model_rebuild()
 BlockEvent.model_rebuild()
@@ -232,6 +255,8 @@ CitedSummary.model_rebuild()
 CitedSummaryData.model_rebuild()
 ComparisonGrid.model_rebuild()
 ComparisonGridData.model_rebuild()
+ConceptMap.model_rebuild()
+ConceptMapData.model_rebuild()
 DoneEvent.model_rebuild()
 ErrorEnvelope.model_rebuild()
 FieldIssue.model_rebuild()
@@ -243,6 +268,7 @@ GridCell.model_rebuild()
 GridDimension.model_rebuild()
 GridRow.model_rebuild()
 IngestResponse.model_rebuild()
+PathStep.model_rebuild()
 SourceItem.model_rebuild()
 SourceList.model_rebuild()
 SourceListData.model_rebuild()

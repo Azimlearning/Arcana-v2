@@ -17,6 +17,10 @@ Two layers:
        - any block: a non-empty id (upsert-by-id keys on it) and a non-negative order;
        - "SourceList": placeholders carry no documents; otherwise at most MAX_SOURCES, unique ids, each id a
          stored document that is ready, with the stored title and passage count ("ready" needs one or more).
+       - "ConceptMap": 2 to MAX_PATH_STEPS steps, each starting where the previous one ended, no concept repeated,
+         and each step's cited quote contains both of its labels. A step's `relation` and `reversed` flag come from
+         the Composer, which read them from the graph: this validator holds the DocStore only, so it can prove
+         co-mention in a stored quote but not the direction of a relation.
        - a block type with no rules here is refused, so a component cannot ship without written invariants.
 
 Issue paths are dotted and relative to the block, e.g. "data.segments.0.citationIds.1". The
@@ -37,13 +41,16 @@ from api.genui.catalog import (
     MAX_GRAPH_EDGES,
     MAX_GRAPH_NODES,
     MAX_LABEL_CHARS,
+    MAX_PATH_STEPS,
     MAX_RELATION_CHARS,
     MAX_SOURCES,
+    MIN_PATH_STEPS,
 )
 from api.genui.generated import (
     Citation,
     CitedSummary,
     ComparisonGrid,
+    ConceptMap,
     FieldIssue,
     GraphView,
     SourceList,
@@ -101,6 +108,8 @@ def _content_issues(block: UIBlock, docs: DocStore) -> list[FieldIssue]:
         issues += _graph_view_issues(block, docs)
     elif isinstance(block, ComparisonGrid):
         issues += _comparison_grid_issues(block, docs)
+    elif isinstance(block, ConceptMap):
+        issues += _concept_map_issues(block, docs)
     else:
         issues.append(FieldIssue(path="type", message="no content rules exist for this block type"))
     return issues
@@ -153,6 +162,62 @@ def _source_list_issues(block: SourceList, docs: DocStore) -> list[FieldIssue]:
             issues.append(
                 FieldIssue(path=f"data.documents.{i}.chunkCount", message="does not match the stored passage count")
             )
+    return issues
+
+
+def _concept_map_issues(block: ConceptMap, docs: DocStore) -> list[FieldIssue]:
+    data, status = block.data, block.meta.status
+    if status in PLACEHOLDER_STATUSES:
+        if data.steps or data.citations:
+            return [FieldIssue(path="data", message=f"a '{status}' block must carry no steps or citations")]
+        return []
+
+    issues: list[FieldIssue] = []
+    if status == "ready" and len(data.steps) < MIN_PATH_STEPS:
+        issues.append(FieldIssue(path="data.steps", message=f"a path has at least {MIN_PATH_STEPS} steps"))
+    if len(data.steps) > MAX_PATH_STEPS:
+        issues.append(FieldIssue(path="data.steps", message=f"a path has at most {MAX_PATH_STEPS} steps"))
+
+    citations = {c.id: c for c in data.citations}
+    if len(citations) != len(data.citations):
+        issues.append(FieldIssue(path="data.citations", message="citation ids must be unique"))
+
+    referenced: set[str] = set()
+    seen: set[str] = set()
+    for i, step in enumerate(data.steps):
+        where = f"data.steps.{i}"
+        if i == 0:
+            seen.add(_norm(step.source).lower())
+        elif step.source != data.steps[i - 1].target:
+            issues.append(FieldIssue(path=f"{where}.source", message="a step must start where the previous one ended"))
+        if _norm(step.target).lower() in seen:
+            issues.append(FieldIssue(path=f"{where}.target", message="a concept may not appear twice in a path"))
+        seen.add(_norm(step.target).lower())
+        for end, name in ((step.source, "source"), (step.target, "target")):
+            if not MIN_LABEL_CHARS <= len(end.strip()) <= MAX_LABEL_CHARS:
+                issues.append(
+                    FieldIssue(
+                        path=f"{where}.{name}", message=f"a label is {MIN_LABEL_CHARS} to {MAX_LABEL_CHARS} characters"
+                    )
+                )
+        if not step.relation.strip() or len(step.relation) > MAX_RELATION_CHARS:
+            issues.append(
+                FieldIssue(path=f"{where}.relation", message=f"a relation is 1 to {MAX_RELATION_CHARS} characters")
+            )
+        citation = citations.get(step.citationId)
+        if citation is None:
+            issues.append(FieldIssue(path=f"{where}.citationId", message=f"no citation with id {step.citationId!r}"))
+            continue
+        referenced.add(citation.id)
+        for label in (step.source, step.target):
+            if not label_in_quote(citation.quote, label):
+                issues.append(
+                    FieldIssue(
+                        path=f"{where}.citationId", message=f"the cited quote does not contain the label {label!r}"
+                    )
+                )
+
+    issues += _citation_issues(data.citations, referenced, docs)
     return issues
 
 

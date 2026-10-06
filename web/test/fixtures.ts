@@ -1,4 +1,4 @@
-import type { CitedSummary, ComparisonGrid, ErrorEnvelope, GraphView, SourceList, StreamEvent, TurnTrace } from "@arcana/schema";
+import type { CitedSummary, ComparisonGrid, ConceptMap, ErrorEnvelope, GraphView, SourceList, StreamEvent, TurnTrace } from "@arcana/schema";
 
 export const TITLE = "Hybrid Retrieval over Knowledge Graphs";
 
@@ -127,6 +127,36 @@ export function comparisonGrid(
             },
             { id: "c4", chunkId: "k4", docId: "d3", docTitle: "Third Paper", page: 5, quote: "BM25 is the sparse arm of the third paper." },
             { id: "c5", chunkId: "k5", docId: "d3", docTitle: "Third Paper", page: 6, quote: "Dense Retrieval is also used in the third paper." },
+          ]
+        : [],
+      ...overrides,
+    },
+  };
+}
+
+export function conceptMap(
+  status: ConceptMap["meta"]["status"],
+  overrides: Partial<ConceptMap["data"]> = {},
+  error: ErrorEnvelope | null = null,
+): ConceptMap {
+  const content = status === "ready" || status === "partial";
+  return {
+    type: "ConceptMap",
+    id: "turn-1-concept-map",
+    meta: { panel: "studio", order: 30, status, error },
+    data: {
+      steps: content
+        ? [
+            { source: "Alpha Method", target: "Beta Index", relation: "builds on", reversed: false, citationId: "c1" },
+            { source: "Beta Index", target: "Gamma Cache", relation: "compared with", reversed: false, citationId: "c2" },
+            { source: "Gamma Cache", target: "Delta Store", relation: "feeds", reversed: false, citationId: "c3" },
+          ]
+        : [],
+      citations: content
+        ? [
+            { id: "c1", chunkId: "k1", docId: "d", docTitle: TITLE, page: 1, quote: "Alpha Method builds on Beta Index for fast lookup." },
+            { id: "c2", chunkId: "k2", docId: "d", docTitle: TITLE, page: 2, quote: "Beta Index is compared with Gamma Cache in experiments." },
+            { id: "c3", chunkId: "k3", docId: "d", docTitle: TITLE, page: 3, quote: "Gamma Cache feeds the Delta Store in the pipeline." },
           ]
         : [],
       ...overrides,

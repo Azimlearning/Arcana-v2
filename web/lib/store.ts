@@ -19,6 +19,8 @@ export function toErrorBlock(block: UIBlock, error: ErrorEnvelope): UIBlock {
       return { ...block, meta, data: { nodes: [], edges: [], citations: [] } };
     case "ComparisonGrid":
       return { ...block, meta, data: { dimensions: [], rows: [], citations: [] } };
+    case "ConceptMap":
+      return { ...block, meta, data: { steps: [], citations: [] } };
   }
 }
 

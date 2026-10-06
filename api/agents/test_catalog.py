@@ -15,7 +15,7 @@ from api.llm.providers.fake import FakeProvider
 from api.stores.doc_store import Document
 
 CATALOG_DOC = Path(__file__).resolve().parents[2] / "refdocs" / "guides" / "catalog.md"
-PLANNED = {"ConceptMap", "InsightCard"}
+PLANNED = {"InsightCard"}
 """Components written up in catalog.md but not built yet. Each task B1 to B5 moves one name out of this set."""
 
 
@@ -55,6 +55,7 @@ async def test_a_turn_yields_one_cited_summary_and_one_source_list_with_two_admi
         ("SourceList", "admitted"),
         ("GraphView", "refused"),  # this ctx has no graph store, so the Graph agent had nothing to draw
         ("ComparisonGrid", "refused"),
+        ("ConceptMap", "refused"),
     ]
     assert [r.block_id for r in composition.records if r.outcome == "admitted"] == [b.id for b in composition.blocks]
     listing = composition.blocks[1]
@@ -69,8 +70,9 @@ async def test_a_comparison_with_a_graph_adds_a_grounded_graph_view(ingested, tm
     composition = state["composition"]
     assert [b.type for b in composition.blocks] == ["CitedSummary", "SourceList", "GraphView"]
     # One paper is not a comparison: the grid is refused, with its reason on record.
-    assert [r.outcome for r in composition.records] == ["admitted", "admitted", "admitted", "refused"]
+    assert [r.outcome for r in composition.records] == ["admitted", "admitted", "admitted", "refused", "refused"]
     assert composition.records[3].reasons == ("no_shared_entities",)
+    assert composition.records[4].reasons == ("single_hop",)  # Dense Retrieval to BM25 is one hop: the graph view's case
     view = composition.blocks[2]
     assert view.meta.panel == "studio" and view.id == "blk-graph-view"
     assert {n.label for n in view.data.nodes} == {"Dense Retrieval", "BM25"}  # type: ignore[union-attr]
@@ -101,6 +103,7 @@ async def test_no_evidence_is_an_empty_record_and_still_one_block(ingested, tmp_
         ("SourceList", "refused", ("no_ready_document",)),
         ("GraphView", "refused", ("no_grounded_edge",)),
         ("ComparisonGrid", "refused", ("no_shared_entities",)),
+        ("ConceptMap", "refused", ("not_a_path",)),
     ]
 
 

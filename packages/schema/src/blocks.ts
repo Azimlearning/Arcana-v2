@@ -8,7 +8,7 @@
 //   5. Write the component's structural precondition down (constraint 7).
 
 import type { ErrorEnvelope } from "./errors";
-import type { CitedSummaryData, ComparisonGridData, GraphViewData, SourceListData } from "./payloads";
+import type { CitedSummaryData, ComparisonGridData, ConceptMapData, GraphViewData, SourceListData } from "./payloads";
 
 export type Panel = "sources" | "chat" | "studio";
 
@@ -68,5 +68,13 @@ export interface ComparisonGrid {
   data: ComparisonGridData;
 }
 
+export interface ConceptMap {
+  type: "ConceptMap";
+  /** Non-empty. Stable across updates: a later block with the same id replaces this one. */
+  id: string;
+  meta: BlockMeta;
+  data: ConceptMapData;
+}
+
 // Codegen emits a discriminated union (Field(discriminator='type')) once there are 2+ variants.
-export type UIBlock = CitedSummary | SourceList | GraphView | ComparisonGrid;
+export type UIBlock = CitedSummary | SourceList | GraphView | ComparisonGrid | ConceptMap;

@@ -8,6 +8,7 @@ import type { ComponentType } from "react";
 import { ErrorState } from "./BlockStates";
 import { CitedSummary } from "./CitedSummary";
 import { ComparisonGrid } from "./ComparisonGrid";
+import { ConceptMap } from "./ConceptMap";
 import { GraphView } from "./GraphView";
 import { SourceList } from "./SourceList";
 
@@ -21,6 +22,7 @@ export const registry: Registry<UIBlock> = {
   SourceList,
   GraphView,
   ComparisonGrid,
+  ConceptMap,
 };
 
 export function UnknownBlock({ type }: { type: string }) {

@@ -28,6 +28,7 @@ from api.genui.catalog import (
     Composition,
     Spec,
     alignment_grid,
+    concept_path,
     graph_edges,
 )
 from api.genui.generated import ErrorEnvelope, UIBlock
@@ -178,6 +179,34 @@ def _grid_data(evidence: ComposerEvidence) -> dict[str, Any]:
     }
 
 
+def _concept_data(evidence: ComposerEvidence) -> dict[str, Any]:
+    """ConceptMapData from the Graph agent's path: one citation per distinct (chunk, quote), steps in path order."""
+    steps, _ = concept_path(evidence.graph)
+    citations: dict[tuple[str, str], dict[str, Any]] = {}
+    out: list[dict[str, Any]] = []
+    for step in steps:
+        key = (step["chunk_id"], step["quote"])
+        if key not in citations:
+            citations[key] = {
+                "id": f"c{len(citations) + 1}",
+                "chunkId": step["chunk_id"],
+                "docId": step["doc_id"],
+                "docTitle": step["doc_title"],
+                "page": step["page"],
+                "quote": step["quote"],
+            }
+        out.append(
+            {
+                "source": step["source"],
+                "target": step["target"],
+                "relation": step["relation"],
+                "reversed": step["reversed"],
+                "citationId": citations[key]["id"],
+            }
+        )
+    return {"steps": out, "citations": list(citations.values())}
+
+
 def _raw(spec: Spec, ctx: TurnContext, evidence: ComposerEvidence, *, empty: bool) -> dict[str, Any]:
     """The unvalidated block for one admitted (or, for the terminal component, empty) spec."""
     builder = BUILDERS[spec.name]
@@ -196,6 +225,8 @@ def _raw(spec: Spec, ctx: TurnContext, evidence: ComposerEvidence, *, empty: boo
         return builder(block_id, "ready", data=_graph_data(evidence), **where)
     if spec.name == "ComparisonGrid":
         return builder(block_id, "ready", data=_grid_data(evidence), **where)
+    if spec.name == "ConceptMap":
+        return builder(block_id, "ready", data=_concept_data(evidence), **where)
     raise AssertionError(f"no builder wiring for {spec.name}")  # the completeness test keeps this in step
 
 
