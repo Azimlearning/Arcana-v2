@@ -182,7 +182,7 @@ async def research(question: str, ctx: TurnContext) -> tuple[Answer | None, dict
             system=SYSTEM_COMPARE if compare else SYSTEM,
             purpose="research",
             tier="standard",
-            max_tokens=1500,
+            max_tokens=3000,  # thinking tokens count against this: a truncated JSON reply is paid for and lost
             effort="medium",
         ),
         ctx.budget,

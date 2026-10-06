@@ -25,6 +25,7 @@ Required once the matching mode is `live`. With `ARCANA_LLM_MODE=fake` and `ARCA
 |---|---|---|
 | `ARCANA_LLM_MODE` | `fake` | `live` calls real providers |
 | `ARCANA_EMBED_MODE` | `fake` | `live` calls the embeddings API |
+| `ARCANA_LEDGER_PATH` | unset | Optional. Where the spend ledger lives. Unset: in a live mode it is `./data/ledger.db` (one file for every run, so the cap covers all of them, and deleting a data directory does not erase it); in fake mode it stays in the data directory (D-23) |
 | `ARCANA_DATA_DIR` | `./data` | Where the graph, vectors, SQLite file, uploads and artifacts live |
 | `LOG_LEVEL` | `INFO` | Backend log verbosity |
 | `NEXT_PUBLIC_API_BASE_URL` | `http://localhost:8000` | The API the web app streams from. Public by design: it is inlined into the browser bundle, so it must never hold a secret |

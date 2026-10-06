@@ -298,3 +298,50 @@ def test_gold_files_read_the_approver_and_default_to_a_draft(tmp_path: Path):
     (tmp_path / "q-2.yaml").write_text("question_id: q-2\nstatus: benchmark\napproved_by: Azim\nreference_contexts: []\n", encoding="utf-8")
     one, two = metrics.load_gold(tmp_path, "q-1"), metrics.load_gold(tmp_path, "q-2")
     assert one is not None and not one.approved and two is not None and two.approved and two.approved_by == "Azim"
+
+
+# ── cost-audit findings in the runner ─────────────────────────────────────────
+
+
+def _ingested(chunks: int, failures: int | None, now: bool = True) -> dict:
+    return {"arxiv_id": "x", "status": "ready", "chunks": chunks, "extraction_failures": failures, "ingested_now": now}
+
+
+def test_a_run_where_too_many_chunks_failed_extraction_is_refused():
+    from eval.run_ablation import require_extraction_quality
+
+    require_extraction_quality([_ingested(100, 5)])  # exactly 5 percent is allowed
+    with pytest.raises(RunInvalid, match="6 of 100"):
+        require_extraction_quality([_ingested(100, 6)])
+
+
+def test_documents_reused_from_an_earlier_ingest_are_not_counted_in_the_failure_rate():
+    from eval.run_ablation import require_extraction_quality
+
+    require_extraction_quality([_ingested(500, None, now=False), _ingested(100, 0)])  # reused: failures unknown (None)
+
+
+async def test_the_corpus_loop_stops_at_the_first_failed_paper(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    from types import SimpleNamespace
+
+    from api.ingestion.types import IngestResult
+    from eval import run_ablation
+
+    corpus = tmp_path / "corpus"
+    corpus.mkdir()
+    manifest = []
+    for i in range(3):
+        (corpus / f"p{i}.pdf").write_bytes(f"%PDF-{i}".encode())
+        manifest.append({"arxiv_id": f"0000.0000{i}v1", "file": f"p{i}.pdf"})
+    ingested: list[str] = []
+
+    async def fake_ingest(raw: bytes, name: str, deps):
+        ingested.append(name)
+        status = "failed" if name == "p1.pdf" else "ready"
+        return IngestResult("d", "T", status, 4, 1, 1, 0, "cap" if status == "failed" else None)
+
+    monkeypatch.setattr(run_ablation, "ingest_pdf", fake_ingest)
+    container = SimpleNamespace(docs=SimpleNamespace(get_document=lambda _id: None), ingest_deps=None)
+    report = await run_ablation.ensure_corpus(container, manifest, corpus, reingest=False)  # pyright: ignore[reportArgumentType]
+    assert ingested == ["p0.pdf", "p1.pdf"]  # p2 was never attempted (it would pay for embeddings, then fail)
+    assert [r["status"] for r in report] == ["ready", "failed"]

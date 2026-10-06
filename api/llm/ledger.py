@@ -67,6 +67,13 @@ class SpendLedger:
             ).scalar_one()
         return float(total)
 
+    def remaining_usd(self) -> float | None:
+        """Cap minus this month's spend and in-flight reservations; None when there is no cap."""
+        if self._cap is None:
+            return None
+        with self._lock:
+            return max(self._cap - self.month_total() - self._pending, 0.0)
+
     def reserve(self, estimate_usd: float) -> Reservation:
         """Claim budget for one call, or raise SpendCapExceeded. Call before the provider."""
         with self._lock:

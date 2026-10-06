@@ -61,7 +61,13 @@ def build_container(settings: Settings) -> Container:
     data = settings.arcana_data_dir
     data.mkdir(parents=True, exist_ok=True)
     engine = make_engine(data / "arcana.db")
-    ledger = SpendLedger(engine, settings.llm_monthly_cap_usd)
+    live = "live" in (settings.arcana_llm_mode, settings.arcana_embed_mode)
+    ledger_path = settings.arcana_ledger_path or (Path("./data") / "ledger.db" if live else None)
+    # In a live mode the ledger is one fixed file, not part of a data directory: the monthly cap must cover
+    # every run (the API, the eval, a different --data-dir), and deleting a data directory to start clean
+    # must not erase the spend history. Fake mode keeps it beside the data, so tests stay isolated.
+    ledger_engine = make_engine(ledger_path) if ledger_path else engine
+    ledger = SpendLedger(ledger_engine, settings.llm_monthly_cap_usd)
     return Container(
         settings=settings,
         engine=engine,

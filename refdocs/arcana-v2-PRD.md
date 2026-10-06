@@ -212,6 +212,7 @@ under the same id.
 | D-19 | Generated wire models are strict and forbid extras; five block statuses; `BlockMeta.error`; upsert by block id | `schema-guardian` found lax coercion accepting `"1"` for an int; fail closed means no coercion |
 | D-20 | Graph retrieval scoring is frozen before gold annotation: deterministic entity resolution, evidence-based tie-break, version-stamped results | `retrieval-auditor`: hash-order ties would make the graph arm noise; free constants invite test-set tuning |
 | D-21 | v1's question set and manifest reused unchanged and pinned by hash; monthly cap $5; q-single-01 found unanswerable from the corpus | Azim 2026-10-06; comparability with the pilot; constraint 9 |
+| D-23 | Spend ledger is one file in a live mode (`./data/ledger.db`); cap required when any paid mode is live; priced by requested model; no SDK retries; per-document ingestion limits | Pre-live cost audit: separate ledgers, a dated model id priced as Opus, an uncapped live-embeddings mode, unledgered retries, uncapped single uploads |
 | D-22 | P1 roster: Orchestrator, Research, Graph, Fact Checker (+ Composer stub); routing in `route_to_agent`, explicit roster, fail-closed Fact Checker | Q-04 resolved; hops and budgets must be plain testable code; v1's global registry and fail-open checker not ported |
 
 ---

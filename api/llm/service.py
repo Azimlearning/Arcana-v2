@@ -24,6 +24,10 @@ class LLMService:
         self._providers = [primary] + ([fallback] if fallback is not None else [])
         self._ledger = ledger
 
+    def remaining_usd(self) -> float | None:
+        """What the monthly cap still allows (None: no cap). For up-front checks before a big job."""
+        return self._ledger.remaining_usd()
+
     async def complete(self, request: LLMRequest, budget: TokenBudget | None = None) -> LLMResult:
         if not 1 <= request.max_tokens <= MAX_OUTPUT_TOKENS:
             raise BadRequest(f"max_tokens must be between 1 and {MAX_OUTPUT_TOKENS}.")
@@ -69,11 +73,11 @@ class LLMService:
                 )
                 raise
 
-            cost = (
-                response.cost_usd
-                if response.cost_usd is not None
-                else cost_usd(provider.name, response.model, response.tokens_in, response.tokens_out)
-            )
+            # Price by the model that was REQUESTED (an id this code chose and the table knows), never by the
+            # id echoed back. A provider-reported cost is trusted only as a lower bound: a bring-your-own-key
+            # route can report 0 for a call that still costs money, so book the larger of the two.
+            estimated = cost_usd(provider.name, model, response.tokens_in, response.tokens_out)
+            cost = estimated if response.cost_usd is None else max(response.cost_usd, estimated)
             self._ledger.settle(
                 reservation,
                 provider=provider.name,

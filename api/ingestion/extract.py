@@ -21,6 +21,8 @@ from dataclasses import dataclass
 
 from api.core.errors import IngestFailed
 from api.llm.json_reply import parse_json_object
+from api.llm.models import ANTHROPIC_MODELS
+from api.llm.pricing import estimate_call_cost
 from api.llm.service import LLMService
 from api.llm.types import LLMRequest
 from api.stores.doc_store import Chunk
@@ -90,17 +92,29 @@ def _singularise(token: str) -> str:
     return token
 
 
+EXTRACTION_MAX_TOKENS = 1024
+
+
+def extraction_request(chunk: Chunk) -> LLMRequest:
+    return LLMRequest(
+        prompt=build_prompt(chunk.text),
+        system=EXTRACTION_SYSTEM,
+        purpose="extract",
+        tier="light",
+        max_tokens=EXTRACTION_MAX_TOKENS,
+    )
+
+
+def estimate_extraction_cost_usd(chunks: list[Chunk]) -> float:
+    """Worst case for extracting `chunks`: each call's input estimate plus an output that fills max_tokens,
+    at the light tier's price. The same estimate the ledger reserves per call."""
+    model = ANTHROPIC_MODELS["light"]
+    return sum(estimate_call_cost("anthropic", model, extraction_request(c)) for c in chunks)
+
+
 async def extract_chunk(chunk: Chunk, llm: LLMService) -> ExtractionResult:
     """Run one extraction call for `chunk`. Raises IngestFailed only for a malformed reply."""
-    result = await llm.complete(
-        LLMRequest(
-            prompt=build_prompt(chunk.text),
-            system=EXTRACTION_SYSTEM,
-            purpose="extract",
-            tier="light",
-            max_tokens=1024,
-        )
-    )
+    result = await llm.complete(extraction_request(chunk))
     return build_result(_parse_json(result.text), chunk)
 
 

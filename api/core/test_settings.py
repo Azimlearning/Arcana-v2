@@ -10,6 +10,7 @@ ALL_KEYS = [
     "OPENAI_API_KEY",
     "LLM_MONTHLY_CAP_USD",
     "ARCANA_DATA_DIR",
+    "ARCANA_LEDGER_PATH",
     "LOG_LEVEL",
 ]
 

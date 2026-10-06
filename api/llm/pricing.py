@@ -9,6 +9,7 @@ conservative: input tokens are over-counted and output is assumed to run to max_
 from __future__ import annotations
 
 import math
+import re
 
 from api.llm.types import LLMRequest
 
@@ -39,8 +40,14 @@ def estimate_embedding_tokens(texts: list[str]) -> int:
     return math.ceil(sum(len(t) for t in texts) / 3)
 
 
+_DATE_SUFFIX = re.compile(r"-\d{8}$")
+
+
 def _normalise(model: str) -> str:
-    return model.removeprefix("anthropic/").replace(".", "-")
+    """An alias for a model id: no provider prefix, dots as dashes, no dated-snapshot suffix. The API may
+    echo the dated id ("claude-haiku-4-5-20251001") for the alias that was requested; without this it
+    would miss the table and be priced as the dearest model."""
+    return _DATE_SUFFIX.sub("", model.removeprefix("anthropic/").replace(".", "-"))
 
 
 def price_for(provider: str, model: str) -> tuple[float, float]:

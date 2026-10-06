@@ -73,6 +73,23 @@ def require_approved_gold(golds: dict[str, metrics.Gold | None], live: bool) -> 
         raise RunInvalid(f"gold is not approved for: {', '.join(unapproved)}")
 
 
+MAX_EXTRACTION_FAILURE_RATE = 0.05
+
+
+def require_extraction_quality(ingestion: list[dict[str, Any]]) -> None:
+    """A graph built from mostly-failed extractions would make the graph arms look useless for a reason that
+    has nothing to do with graphs. Refuse a run where more than 5 percent of the chunks ingested NOW failed
+    to extract (documents reused from an earlier ingest report None and are not counted here)."""
+    fresh = [d for d in ingestion if d.get("ingested_now")]
+    chunks = sum(d["chunks"] for d in fresh)
+    failures = sum(d["extraction_failures"] or 0 for d in fresh)
+    if chunks and failures / chunks > MAX_EXTRACTION_FAILURE_RATE:
+        raise RunInvalid(
+            f"{failures} of {chunks} chunks failed extraction ({failures / chunks:.0%}); "
+            f"the limit is {MAX_EXTRACTION_FAILURE_RATE:.0%}. The graph would not be a fair test."
+        )
+
+
 class RunInvalid(Exception):
     """The run must not proceed or must not be reported (exit code 2)."""
 
@@ -130,6 +147,8 @@ async def ensure_corpus(
                        "chunks": result.chunk_count, "nodes": result.node_count, "edges": result.edge_count,
                        "extraction_failures": result.extraction_failures, "ingested_now": True,
                        "error": result.error})
+        if result.status != "ready":
+            break  # stop at the first failure (spend cap, provider down): later papers would only pay for embeddings first
     return report
 
 
@@ -219,6 +238,7 @@ async def run(args: argparse.Namespace) -> tuple[Path, dict[str, Any]]:
     failed_docs = [d["arxiv_id"] for d in ingestion if d["status"] != "ready"]
     if failed_docs:
         raise RunInvalid(f"documents failed to ingest: {failed_docs}")
+    require_extraction_quality(ingestion)
     problems = check_corpus_parity(container.docs, container.vectors, container.graph)
     if problems:
         raise RunInvalid("corpus parity check failed: " + "; ".join(problems))

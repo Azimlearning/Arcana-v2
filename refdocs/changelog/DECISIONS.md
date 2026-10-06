@@ -348,6 +348,30 @@ prompt variants is what D-05 rejected. Porting v1's registry and fail-open check
   spot* (a negated claim passes it, 0 of 50 caught; `eval/results/mutation-factcheck.json`). The lexical
   rule is a safety net, not evidence of faithfulness. The model judge's own detection rate is unmeasured.
 
+## D-23: Spend ledger is one file in a live mode; the cap guards everything paid (2026-10-06)
+
+**Decision.** (1) In a live mode (LLM or embeddings) the spend ledger lives at `./data/ledger.db`, one file
+whatever `--data-dir` or `ARCANA_DATA_DIR` is, unless `ARCANA_LEDGER_PATH` says otherwise; in fake mode it stays
+in the data directory so tests are isolated. (2) `LLM_MONTHLY_CAP_USD` is required (positive) when EITHER mode
+is live. (3) A call is priced by the model id this code requested, normalised (no provider prefix, no dated
+suffix); a provider-reported cost is a lower bound (the ledger books the larger of reported and estimated).
+(4) Anthropic SDK retries are off (`max_retries=0`): the fallback provider is the recovery. (5) Ingestion refuses
+a document over 600 passages, and one whose worst-case extraction plus embedding cost exceeds the cap that
+remains, before any paid call.
+
+**Why.** The pre-live `cost-auditor` found each of these could let spend escape or be mis-booked: the eval run
+and the API had separate ledgers (so two caps, and deleting a data directory erased the history); a dated model id
+echoed by the API would have been priced as Opus and tripped the cap at about 64 percent of the real spend;
+live embeddings with a fake LLM ran uncapped; an SDK retry is a second billed request under one ledger row; and
+one upload could issue thousands of extraction calls and then be rolled back.
+
+**Trade-offs / rejected.** One shared ledger means a smoke chat session spends from the same cap as the corpus
+ingestion (intended; do not chat during the one-shot ingestion). No SDK retries means a transient 5xx goes to
+OpenRouter at once, whose model ids are still ASSUMED. Booking the larger of reported and estimated cost can
+over-count an OpenRouter call slightly. Rejected: a ledger table inside each data directory with a "global
+total" query (two files to keep in step), and leaving unknown models priced as the dearest (a dated id is not
+unknown).
+
 ---
 
 ## Working assumptions (`ASSUMED:`)

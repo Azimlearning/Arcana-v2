@@ -17,10 +17,11 @@ from datetime import UTC, datetime
 from api.core.errors import ArcanaError, IngestFailed
 from api.core.logging import get_logger
 from api.ingestion.chunk import chunk
-from api.ingestion.embed import Embedder
-from api.ingestion.extract import ExtractionResult, extract_chunk
+from api.ingestion.embed import EMBEDDING_MODEL, Embedder
+from api.ingestion.extract import ExtractionResult, estimate_extraction_cost_usd, extract_chunk
 from api.ingestion.parse import parse
 from api.ingestion.types import IngestResult, doc_id_for
+from api.llm.pricing import embedding_cost_usd, estimate_embedding_tokens
 from api.llm.service import LLMService
 from api.stores.doc_store import Chunk, DocStore, Document
 from api.stores.graph_store import GraphStore
@@ -29,6 +30,9 @@ from api.stores.vector_store import VectorStore
 log = get_logger(__name__)
 
 EXTRACTION_CONCURRENCY = 4
+MAX_CHUNKS_PER_DOC = 600
+"""A document with more passages than this is refused before any paid call. The largest paper in the
+benchmark corpus has 386; one upload must not be able to spend the month's cap on a single file."""
 
 
 @dataclass
@@ -74,6 +78,21 @@ async def ingest_pdf(raw: bytes, filename: str, deps: IngestDeps) -> IngestResul
     chunks = chunk(parsed.pages, doc_id=doc_id)
     if not chunks:
         return failed("No extractable text: the PDF may be scanned images (OCR is not supported).", title)
+
+    if len(chunks) > MAX_CHUNKS_PER_DOC:
+        return failed(f"The document has {len(chunks)} passages; the limit is {MAX_CHUNKS_PER_DOC}.", title)
+    remaining = deps.llm.remaining_usd()
+    if remaining is not None:
+        # Refuse up front rather than pay for part of a document and roll it back when the cap runs out.
+        worst_case = estimate_extraction_cost_usd(chunks) + embedding_cost_usd(
+            EMBEDDING_MODEL, estimate_embedding_tokens([c.text for c in chunks])
+        )
+        if worst_case > remaining:
+            return failed(
+                f"Ingesting this document could cost up to ${worst_case:.2f} but only ${remaining:.2f} of "
+                "the monthly cap remains. Nothing was sent.",
+                title,
+            )
 
     deps.docs.put_document(Document(doc_id, title, filename, "parsing", len(raw), None, _now()))
     try:

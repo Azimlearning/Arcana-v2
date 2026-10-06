@@ -39,6 +39,10 @@ class Settings(BaseSettings):
     arcana_llm_mode: Mode = "fake"
     arcana_embed_mode: Mode = "fake"
     arcana_data_dir: Path = Path("./data")
+    arcana_ledger_path: Path | None = None
+    """Where the spend ledger lives. Unset: in a live mode it is ./data/ledger.db, ONE file whatever the
+    data directory is, so the monthly cap covers every run (the API and the eval share it); in fake mode it
+    stays beside the data."""
     log_level: str = "INFO"
 
     anthropic_api_key: SecretStr | None = None
@@ -54,12 +58,18 @@ class Settings(BaseSettings):
                 missing.append(("ANTHROPIC_API_KEY", "required when ARCANA_LLM_MODE=live"))
             if not _has(self.openrouter_api_key):
                 missing.append(("OPENROUTER_API_KEY", "required when ARCANA_LLM_MODE=live"))
-            if self.llm_monthly_cap_usd is None or self.llm_monthly_cap_usd <= 0:
-                missing.append(
-                    ("LLM_MONTHLY_CAP_USD", "required (a positive number) when ARCANA_LLM_MODE=live")
-                )
         if self.arcana_embed_mode == "live" and not _has(self.openai_api_key):
             missing.append(("OPENAI_API_KEY", "required when ARCANA_EMBED_MODE=live"))
+        if "live" in (self.arcana_llm_mode, self.arcana_embed_mode) and (
+            self.llm_monthly_cap_usd is None or self.llm_monthly_cap_usd <= 0
+        ):
+            # Any paid call needs the cap: live embeddings with a fake LLM spend money too (constraint 8).
+            missing.append(
+                (
+                    "LLM_MONTHLY_CAP_USD",
+                    "required (a positive number) when ARCANA_LLM_MODE or ARCANA_EMBED_MODE is live",
+                )
+            )
         return missing
 
 

@@ -108,7 +108,20 @@ class OpenAIEmbedder(Embedder):
             if attempt:
                 await asyncio.sleep(self._backoff_s * 2 ** (attempt - 1))
             reservation = self._ledger.reserve(estimate)  # may raise SpendCapExceeded: nothing sent
-            reason, vectors, tokens = await self._request(batch)
+            try:
+                reason, vectors, tokens = await self._request(batch)
+            except BaseException:  # cancellation or a bug: release the reservation before propagating
+                self._ledger.settle(
+                    reservation,
+                    provider="openai",
+                    model=EMBEDDING_MODEL,
+                    tokens_in=0,
+                    tokens_out=0,
+                    cost_usd=0.0,
+                    purpose="embed",
+                    status="failed",
+                )
+                raise
             if vectors is None:
                 self._ledger.settle(
                     reservation,

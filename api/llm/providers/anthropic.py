@@ -34,9 +34,10 @@ class AnthropicProvider:
         timeout_s: float = 60.0,
     ):
         self._models = models or ANTHROPIC_MODELS
-        # One SDK retry: a longer retry loop only delays the fallback, which is the real recovery.
+        # No SDK retries: a retry is a second billed request under ONE ledger row (the reservation covers
+        # one), and the fallback provider is the intended recovery. A failure is settled and falls back.
         self._client = client or anthropic.AsyncAnthropic(
-            api_key=api_key, timeout=timeout_s, max_retries=1
+            api_key=api_key, timeout=timeout_s, max_retries=0
         )
 
     def model_for(self, tier: Tier) -> str:
