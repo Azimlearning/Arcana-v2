@@ -204,6 +204,15 @@ def test_the_fake_research_responder_cites_the_leading_passages():
     assert [s["cites"] for s in out["segments"]] == [[1], [2]]
 
 
+def test_the_fake_research_responder_cites_the_first_passage_of_each_document():
+    prompt = (
+        "Question: q\n\nPassages:\n[1] (Paper A, p.1)\nA one. More.\n\n[2] (Paper A, p.2)\nA two.\n\n"
+        "[3] (Paper B (extended), p.9)\nB one.\n"
+    )
+    out = json.loads(fake_research_responder(LLMRequest(prompt=prompt, purpose="research")))
+    assert [s["cites"] for s in out["segments"]] == [[1], [3]]  # one per document, even with ")" in a title
+
+
 async def test_a_block_built_around_the_validator_is_never_streamed(ingested, tmp_path):
     """Fail closed by structure: whatever the graph hands back is re-validated before it can leave."""
     from api.genui.generated import (

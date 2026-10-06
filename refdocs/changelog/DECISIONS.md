@@ -332,6 +332,22 @@ that agents compose only through `route_to_agent`. Failing open contradicts "gro
 nodes. Building Tutor and Writer now: nothing in P1's definition of done needs them, and a roster of
 prompt variants is what D-05 rejected. Porting v1's registry and fail-open checker: see above.
 
+**Amendment (2026-10-06, found while building A7 and A9; the decision above is otherwise unchanged).**
+- *The Fact Checker returns the checked answer, not a verdict the Composer applies.* It still builds no
+  block (it returns data: the answer with failing citations and unsupported segments removed, plus a
+  report). The Composer's rule is the fail-closed part: with `fact_checker` on the roster, only the
+  checker's answer can be shown, and a checker that was never run, failed or was refused gives an error
+  block. Why: "the Composer applies a verdict" needs the Composer to understand segments and citations;
+  gating on the checker's output keeps that logic in one place and is simpler to prove (tests cover a
+  raising, a refused and a never-run checker).
+- *The comparison plan runs Graph too* (`graph, research, fact_checker`), and `compare_documents` pools
+  the graph's evidence chunks with retrieval. Why: the P1 definition of done names a cross-document
+  comparison running all four agents, and entities shared between papers are the cheapest evidence that
+  two papers are about the same thing. Trade-off: one more hop (no model call) per comparison.
+- *Support is judged by a light-tier model with a lexical fallback, and the fallback has a measured blind
+  spot* (a negated claim passes it, 0 of 50 caught; `eval/results/mutation-factcheck.json`). The lexical
+  rule is a safety net, not evidence of faithfulness. The model judge's own detection rate is unmeasured.
+
 ---
 
 ## Working assumptions (`ASSUMED:`)

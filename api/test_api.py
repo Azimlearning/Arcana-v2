@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 from pydantic import TypeAdapter
 
 from api.core.settings import ConfigError, Settings
-from api.genui.generated import ErrorEnvelope, IngestResponse, StreamEvent
+from api.genui.generated import ErrorEnvelope, IngestResponse, StreamEvent, TurnTrace
 from api.llm.providers.fake import FakeProvider
 from api.llm.service import LLMService
 from api.main import create_app
@@ -203,3 +203,91 @@ def test_a_malformed_sse_body_would_be_caught_by_the_test_parser():
 def test_stream_event_json_round_trips(ready_client: TestClient):
     first = chat(ready_client).text.split("\n\n")[0].removeprefix("data: ")
     assert json.loads(first)["type"] == "block"
+
+
+# ── /turns/{id}/trace ─────────────────────────────────────────────────────────
+
+
+def turn_id_of(response) -> str:
+    return events(response)[1].block.id  # pyright: ignore[reportAttributeAccessIssue]
+
+
+def test_a_chat_turn_has_a_trace_listing_every_hop_in_order(ready_client: TestClient):
+    turn_id = turn_id_of(chat(ready_client))  # a comparison: orchestrator, graph, research, fact checker
+    response = ready_client.get(f"/turns/{turn_id}/trace")
+    assert response.status_code == 200
+    trace = TurnTrace.model_validate(response.json())  # the generated, strict wire type
+    assert trace.turnId == turn_id and trace.outcome == "answered"
+    assert [(s.hop, s.agent) for s in trace.steps] == [
+        (0, "orchestrator"),
+        (1, "graph"),
+        (2, "research"),
+        (3, "fact_checker"),
+    ]
+    assert trace.hopsUsed == 4 and trace.steps[0].status == "ok"  # the others may be partial on a small fixture
+    assert trace.tokensUsed > 0 and trace.steps[0].tokens >= trace.steps[1].tokens  # inclusive of what it routed to
+
+
+def test_a_relationship_question_traces_the_graph_hop_too(ready_client: TestClient):
+    turn_id = turn_id_of(chat(ready_client, "How is dense retrieval related to reciprocal rank fusion?"))
+    trace = TurnTrace.model_validate(ready_client.get(f"/turns/{turn_id}/trace").json())
+    assert [s.agent for s in trace.steps] == ["orchestrator", "graph", "research", "fact_checker"]
+
+
+def test_the_trace_carries_no_question_text(ready_client: TestClient):
+    turn_id = turn_id_of(chat(ready_client, "How is dense retrieval related to reciprocal rank fusion?"))
+    body = ready_client.get(f"/turns/{turn_id}/trace").text
+    assert "dense" not in body.lower() and "fusion" not in body.lower()
+
+
+def test_a_failed_turn_has_a_trace_with_the_failure_and_an_error_outcome(ready_client: TestClient):
+    container = ready_client.app.state.container  # pyright: ignore[reportAttributeAccessIssue]
+    container.llm = LLMService(FakeProvider(fail_with="timeout"), None, container.ledger)
+    turn_id = turn_id_of(chat(ready_client))
+    trace = TurnTrace.model_validate(ready_client.get(f"/turns/{turn_id}/trace").json())
+    assert trace.outcome == "error"
+    research = next(s for s in trace.steps if s.agent == "research")
+    assert research.status == "failed" and research.note == "provider_unavailable"
+
+
+def test_a_nothing_ingested_turn_is_traced_as_empty(client: TestClient):
+    turn_id = turn_id_of(chat(client))
+    assert TurnTrace.model_validate(client.get(f"/turns/{turn_id}/trace").json()).outcome == "empty"
+
+
+@pytest.mark.parametrize("turn_id", ["turn-never-happened", "x" * 65, "..%2F..%2Fsecrets"])
+def test_an_unknown_turn_is_a_not_found_envelope(client: TestClient, turn_id: str):
+    response = client.get(f"/turns/{turn_id}/trace")
+    assert response.status_code == 404
+    envelope = ErrorEnvelope.model_validate(response.json())
+    assert envelope.code == "not_found"
+
+
+def test_a_damaged_stored_trace_is_never_returned_as_a_trace(ready_client: TestClient):
+    container = ready_client.app.state.container  # pyright: ignore[reportAttributeAccessIssue]
+    container.docs.record_trace("turn-damaged", '{"turnId": "turn-damaged", "steps": "nope"}')
+    quiet = TestClient(ready_client.app, raise_server_exceptions=False)
+    response = quiet.get("/turns/turn-damaged/trace")
+    assert response.status_code == 500 and "steps" not in response.text  # the error envelope, no detail
+
+
+def test_the_trace_endpoint_is_get_only(client: TestClient):
+    assert client.post("/turns/anything/trace").status_code == 405
+
+
+def test_a_turn_forced_to_one_hop_still_ends_with_a_block_and_a_trace(ready_client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    from api.agents.framework import TurnLimits
+    from api.agents.state import TurnContext
+    from api.routes import chat as chat_route
+
+    monkeypatch.setattr(chat_route, "TurnContext", lambda **kw: TurnContext(**kw, limits=TurnLimits(max_hops=1)))
+    stream = events(chat(ready_client))
+    assert [e.type for e in stream] == ["block", "block", "done"]  # a block, not a hang or a crash
+    final = stream[1].block  # pyright: ignore[reportAttributeAccessIssue]
+    assert final.meta.status == "error" and final.meta.error.code == "budget_exhausted"
+    assert final.data.segments == []  # nothing unchecked or half-answered is shown
+
+    trace = TurnTrace.model_validate(ready_client.get(f"/turns/{final.id}/trace").json())
+    assert trace.hopsUsed == 1 and trace.outcome == "error"
+    assert trace.steps[0].agent == "orchestrator" and trace.steps[0].status == "ok"
+    assert {s.status for s in trace.steps[1:]} == {"refused"}  # every later hop is recorded as refused

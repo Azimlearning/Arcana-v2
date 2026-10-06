@@ -29,4 +29,4 @@ If reality diverges from the doc mid-build, **edit the doc** and note it in the 
 | File | Companion plan | Status |
 |---|---|---|
 | [2026-10-05-p0-walking-skeleton.md](2026-10-05-p0-walking-skeleton.md) | [../plans/2026-10-05-p0-walking-skeleton.md](../plans/2026-10-05-p0-walking-skeleton.md) | Closed with deferrals (tasks 1 to 9 and 11 done on fakes; task 10 and the RAGAS install deferred to P1 task B2) |
-| [2026-10-06-p1-agent-core.md](2026-10-06-p1-agent-core.md) | [../plans/2026-10-06-p1-agent-core.md](../plans/2026-10-06-p1-agent-core.md) | In progress (Track A started) |
+| [2026-10-06-p1-agent-core.md](2026-10-06-p1-agent-core.md) | [../plans/2026-10-06-p1-agent-core.md](../plans/2026-10-06-p1-agent-core.md) | In progress (Track A done on fakes, A1 to A9; Track B waits on Azim) |

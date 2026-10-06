@@ -1,4 +1,4 @@
-import type { CitedSummary, ErrorEnvelope, StreamEvent } from "@arcana/schema";
+import type { CitedSummary, ErrorEnvelope, StreamEvent, TurnTrace } from "@arcana/schema";
 
 export const TITLE = "Hybrid Retrieval over Knowledge Graphs";
 
@@ -62,3 +62,18 @@ export function sseResponse(chunks: string[], options: { breakAfter?: boolean; s
 
 export const jsonResponse = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
+
+export function trace(overrides: Partial<TurnTrace> = {}): TurnTrace {
+  return {
+    turnId: "turn-1",
+    outcome: "answered",
+    hopsUsed: 3,
+    tokensUsed: 1200,
+    steps: [
+      { hop: 0, agent: "orchestrator", status: "ok", tokens: 1200, latencyMs: 40, note: null },
+      { hop: 1, agent: "research", status: "ok", tokens: 900, latencyMs: 25, note: null },
+      { hop: 2, agent: "fact_checker", status: "partial", tokens: 300, latencyMs: 8, note: "removed 1 of 3 segments" },
+    ],
+    ...overrides,
+  };
+}

@@ -32,7 +32,7 @@ DEFAULT_INTENT: Intent = "single"
 # Which agents each intent runs, in order. Agents missing from the roster are skipped.
 INTENT_PLANS: dict[Intent, tuple[str, ...]] = {
     "single": ("research", "fact_checker"),
-    "compare": ("research", "fact_checker"),
+    "compare": ("graph", "research", "fact_checker"),  # shared entities link the papers being compared
     "relate": ("graph", "research", "fact_checker"),
 }
 

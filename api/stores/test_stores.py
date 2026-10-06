@@ -203,6 +203,37 @@ def test_doc_store_turns_and_persistence(tmp_path: Path):
     assert reopened.turns() == [Turn("t1", "2026-10-05T00:00:01Z", "q?", "ok", 12, None)]
 
 
+def test_doc_store_traces_round_trip_replace_and_persist(tmp_path: Path):
+    path = tmp_path / "t.db"
+    store = SqliteDocStore(make_engine(path))
+    assert store.get_trace("t1") is None  # never recorded
+    store.record_trace("t1", '{"first": 1}')
+    store.record_trace("t2", '{"other": 2}')
+    store.record_trace("t1", '{"second": 1}')  # a re-record replaces, it does not duplicate
+    assert store.get_trace("t1") == '{"second": 1}' and store.get_trace("t2") == '{"other": 2}'
+    store.engine.dispose()
+    assert SqliteDocStore(make_engine(path)).get_trace("t1") == '{"second": 1}'
+
+
+def test_a_data_directory_from_before_traces_existed_still_opens_and_gains_the_table(tmp_path: Path):
+    import sqlite3
+
+    path = tmp_path / "old.db"
+    old = sqlite3.connect(path)  # the P0 turns table, with a row, and no turn_traces table
+    old.execute(
+        "CREATE TABLE turns (id VARCHAR PRIMARY KEY, created_at VARCHAR NOT NULL, query TEXT NOT NULL,"
+        " outcome VARCHAR NOT NULL, latency_ms INTEGER NOT NULL, error_code VARCHAR)"
+    )
+    old.execute("INSERT INTO turns VALUES ('t0', '2026-10-05T00:00:00Z', 'old?', 'ok', 5, NULL)")
+    old.commit()
+    old.close()
+
+    store = SqliteDocStore(make_engine(path))
+    assert [t.id for t in store.turns()] == ["t0"]  # the old rows are untouched
+    store.record_trace("t0", "{}")
+    assert store.get_trace("t0") == "{}"
+
+
 def test_graph_node_chunk_ids_merge_persist_and_prune(tmp_path: Path):
     path = tmp_path / "g.json"
     g = NetworkXGraphStore(path)

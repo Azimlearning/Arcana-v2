@@ -59,12 +59,15 @@ async def chat(body: ChatRequest, request: Request) -> StreamingResponse:
     async def events() -> AsyncIterator[str]:
         started = time.perf_counter()
         error_code: str | None = None
+        final_status: str | None = None
         try:
             async for event in run_turn(_graph, question, ctx):
                 if isinstance(event, StreamErrorEvent):
                     error_code = event.error.code
-                elif isinstance(event, BlockEvent) and event.block.meta.status == "error":
-                    error_code = event.block.meta.error.code if event.block.meta.error else "internal"
+                elif isinstance(event, BlockEvent):
+                    final_status = event.block.meta.status  # the last block streamed is the turn's result
+                    if final_status == "error":
+                        error_code = event.block.meta.error.code if event.block.meta.error else "internal"
                 yield sse(event)
         finally:  # also runs when the client disconnects mid-stream
             try:
@@ -80,5 +83,10 @@ async def chat(body: ChatRequest, request: Request) -> StreamingResponse:
                 )
             except Exception as exc:  # recording is bookkeeping: it must never break the response
                 log.error("turn_not_recorded", error=type(exc).__name__)
+            try:
+                outcome = "answered" if final_status in ("ready", "partial") else "empty" if final_status == "empty" else "error"
+                container.docs.record_trace(ctx.block_id, ctx.trace(outcome).model_dump_json())
+            except Exception as exc:
+                log.error("trace_not_recorded", error=type(exc).__name__)
 
     return StreamingResponse(events(), media_type="text/event-stream", headers=SSE_HEADERS)

@@ -59,6 +59,16 @@ turns = Table(
     Column("error_code", String),
 )
 
+# A separate table, not a column on `turns`: create_all adds a missing table but never alters an existing
+# one, so a data directory created before traces existed still opens. No foreign key to `turns`: the trace
+# and the turn row are written independently.
+turn_traces = Table(
+    "turn_traces",
+    metadata,
+    Column("turn_id", String, primary_key=True),
+    Column("trace_json", Text, nullable=False),
+)
+
 
 def make_engine(path: Path) -> Engine:
     """The one SQLite engine for the data directory. Foreign keys on, WAL for concurrent readers."""
@@ -91,10 +101,10 @@ def _chunk(row) -> Chunk:
     return Chunk(id=row.id, doc_id=row.doc_id, ordinal=row.ordinal, page=row.page, text=row.text)
 
 
-def _upsert(table: Table, values: dict):
+def _upsert(table: Table, values: dict, key: str = "id"):
     stmt = sqlite_insert(table).values(**values)
     return stmt.on_conflict_do_update(
-        index_elements=[table.c.id], set_={k: v for k, v in values.items() if k != "id"}
+        index_elements=[table.c[key]], set_={k: v for k, v in values.items() if k != key}
     )
 
 
@@ -201,3 +211,12 @@ class SqliteDocStore(DocStore):
                 )
                 for r in rows
             ]
+
+    def record_trace(self, turn_id: str, trace_json: str) -> None:
+        with self.engine.begin() as conn:
+            conn.execute(_upsert(turn_traces, {"turn_id": turn_id, "trace_json": trace_json}, key="turn_id"))
+
+    def get_trace(self, turn_id: str) -> str | None:
+        with self.engine.connect() as conn:
+            row = conn.execute(select(turn_traces.c.trace_json).where(turn_traces.c.turn_id == turn_id)).first()
+            return row[0] if row else None

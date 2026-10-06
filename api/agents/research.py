@@ -88,8 +88,12 @@ async def retrieve_evidence(query: str, ctx: TurnContext) -> list[RetrievedChunk
 async def compare_documents(query: str, ctx: TurnContext) -> list[RetrievedChunk]:
     """Evidence balanced across documents: up to two passages from each, best documents first."""
     result = await ctx.retrieve(query)
-    pool = list(result.chunks)
+    pool = graph_evidence(ctx)  # chunks behind graph connections: often the link between two papers
     seen = {c.id for c in pool}
+    for chunk in result.chunks:
+        if chunk.id not in seen:
+            seen.add(chunk.id)
+            pool.append(chunk)
     for ranking in result.per_signal.values():  # deeper candidates than the fused top ten
         for chunk in ranking:
             if chunk.id not in seen:

@@ -88,3 +88,11 @@ class DocStore(ABC):
 
     @abstractmethod
     def turns(self) -> list[Turn]: ...
+
+    @abstractmethod
+    def record_trace(self, turn_id: str, trace_json: str) -> None:
+        """Keep the turn's trace (serialised TurnTrace) under the turn id. Replaces an earlier one."""
+
+    @abstractmethod
+    def get_trace(self, turn_id: str) -> str | None:
+        """The serialised trace recorded for the turn, or None. The caller validates it."""

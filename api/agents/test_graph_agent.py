@@ -201,5 +201,23 @@ async def test_research_leads_with_the_chunks_the_graph_agent_found(tmp_path: Pa
     assert [c.id for c in chunks] == ctx.results["graph"].payload["chunk_ids"][: len(chunks)]
 
 
+async def test_a_comparison_pools_the_graphs_evidence_with_retrieval(tmp_path: Path):
+    from api.agents.research import compare_documents
+    from api.retrieval.types import RetrievalResult, RetrievedChunk
+
+    async def retrieve(q: str) -> RetrievalResult:
+        other = RetrievedChunk("c5", "d2", "Chunk 5 text.", 5, 1.0, ("dense",))
+        return RetrievalResult(chunks=[other], per_signal={})
+
+    from api.agents.framework import route_to_agent
+    from api.agents.roster import default_roster
+
+    ctx = make_ctx(tmp_path)
+    ctx.roster, ctx.retrieve = default_roster(), retrieve
+    await route_to_agent(ctx, "graph", "How is dense retrieval related to cosine similarity?")
+    picked = [c.id for c in await compare_documents("q", ctx)]
+    assert picked[0] in {"c3", "c4", "c1", "c2"} and "c5" in picked  # graph evidence from d1, retrieval from d2
+
+
 def test_without_a_graph_result_there_is_no_graph_evidence(tmp_path: Path):
     assert graph_evidence(make_ctx(tmp_path)) == []

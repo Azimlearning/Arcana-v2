@@ -28,4 +28,4 @@ Status vocabulary: `Draft` · `In progress` · `Done` · `Blocked` · `Supersede
 | File | Description | Status |
 |---|---|---|
 | [2026-10-05-p0-walking-skeleton.md](2026-10-05-p0-walking-skeleton.md) | P0: walking skeleton + eval harness | In progress (closed with two deferrals, see STATUS) |
-| [2026-10-06-p1-agent-core.md](2026-10-06-p1-agent-core.md) | P1: agent core with super tools + first full benchmark | In progress (approved 2026-10-06; Track A started) |
+| [2026-10-06-p1-agent-core.md](2026-10-06-p1-agent-core.md) | P1: agent core with super tools + first full benchmark | In progress (approved 2026-10-06; Track A built on fakes; Track B waits on Azim) |

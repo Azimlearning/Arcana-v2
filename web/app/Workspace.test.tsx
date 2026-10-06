@@ -4,7 +4,7 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { TITLE, block, envelope, frame, jsonResponse, sseResponse } from "@/test/fixtures";
+import { TITLE, block, envelope, frame, jsonResponse, sseResponse, trace } from "@/test/fixtures";
 import { useWorkspace } from "@/lib/store";
 
 import { Workspace } from "./Workspace";
@@ -131,6 +131,37 @@ describe("Workspace", () => {
     render(<Workspace />);
     ask("   x  ");
     expect(await screen.findByRole("alert")).toHaveTextContent("The message is empty.");
+  });
+
+  it("offers the trace after a finished turn, and shows its hops when opened", async () => {
+    routes["/chat"] = okStream;
+    routes["/turns/turn-1/trace"] = () => jsonResponse(trace());
+    render(<Workspace />);
+    ask();
+    await screen.findByText(/Dense retrieval embeds passages/);
+    fireEvent.click(await screen.findByRole("button", { name: "Show how this was answered" }));
+    expect(await screen.findByText(/1\. orchestrator/)).toBeInTheDocument();
+    expect(screen.getByText(/2\. research/)).toBeInTheDocument();
+    expect(screen.getByText(/3\. fact checker/)).toBeInTheDocument();
+  });
+
+  it("offers the trace of a turn that ended in an error too, and says so if the server has none", async () => {
+    routes["/chat"] = () => sseResponse([frame({ type: "block", block: block("loading") })], { breakAfter: true });
+    routes["/turns/turn-1/trace"] = () =>
+      jsonResponse(envelope({ code: "not_found", message: "No trace for that turn.", retryable: false }), 404);
+    render(<Workspace />);
+    ask();
+    await screen.findByText("The connection to the server was lost.");
+    fireEvent.click(await screen.findByRole("button", { name: "Show how this was answered" }));
+    expect(await screen.findByText("No trace for that turn.")).toBeInTheDocument();
+  });
+
+  it("does not offer a trace while the answer is still streaming", async () => {
+    routes["/chat"] = () => new Response(new ReadableStream({ start() {} }), { status: 200 }); // never ends
+    render(<Workspace />);
+    ask();
+    await waitFor(() => expect(useWorkspace.getState().turn).toBe("streaming"));
+    expect(screen.queryByRole("button", { name: /how this was answered/i })).not.toBeInTheDocument();
   });
 
   it("an empty answer says nothing was found, and a new question starts a fresh panel", async () => {

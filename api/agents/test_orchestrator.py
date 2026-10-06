@@ -89,7 +89,7 @@ async def test_a_confident_rule_never_asks_the_model(tmp_path: Path):
     ctx, provider = make_ctx(tmp_path, says("relate"), spy)
     await route(ctx, "How does Dense Retrieval compare with BM25?")
     assert provider.calls == []  # no routing call at all
-    assert spy.ran == [("research", "compare")]
+    assert spy.ran == [("graph", "compare"), ("research", "compare")]
     assert ctx.results["orchestrator"].payload["routed_by"] == "rules"
 
 
