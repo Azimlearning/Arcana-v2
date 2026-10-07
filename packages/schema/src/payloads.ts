@@ -143,3 +143,63 @@ export interface ConceptMapData {
   steps: PathStep[];
   citations: Citation[];
 }
+
+// ── TraversalView (P2c, D-33): what the graph signal followed for one question ──────────────────────────────────────
+
+/** How a seed concept was found in the question: the whole name matched (`exact`) or only part of it (`approximate`). */
+export type SeedMatch = "exact" | "approximate";
+
+/** A concept the question resolved to: a stored node. The label is in `nodes`. */
+export interface TraversalSeed {
+  nodeId: string;
+  match: SeedMatch;
+}
+
+/**
+ * One edge the search followed from a seed, one hop, in either direction. `relation` is the stored relation string,
+ * unchanged. `citationId` names the reached passage the edge was extracted from.
+ */
+export interface TraversalStep {
+  source: string;
+  target: string;
+  relation: string;
+  citationId: string;
+  /** @int */
+  hop: number;
+}
+
+/**
+ * How a passage was reached, strongest first: `mentions` (it mentions a seed), `edge` (a relation touching a seed was
+ * extracted from it), `neighbour` (it only mentions a concept one hop from a seed).
+ */
+export type ReachedVia = "mentions" | "edge" | "neighbour";
+
+/** A passage the graph signal returned. `rank` is its place in the signal's own ranking (1 first). */
+export interface ReachedPassage {
+  citationId: string;
+  via: ReachedVia;
+  /** @int */
+  rank: number;
+  /** The seeds that reach it (any way). */
+  seedIds: string[];
+}
+
+/**
+ * What the graph signal followed for one question, derived from the stores and checked against them: the concepts the
+ * question resolved to (`seeds`), the edges followed from them that led to a returned passage (`steps`), the passages
+ * returned in the signal's order (`reached`), and how many followed edges are not listed (`stepsLeftOut`). It shows what
+ * the SEARCH did, not what the documents state: a followed edge may be a co-mention. In a `ready` block, re-running the
+ * traversal from `seeds` over the stores gives exactly these `steps`, `reached` and `stepsLeftOut`; every node is a stored
+ * node with its stored label; every reached passage cites a stored chunk with a verbatim quote; at most 10 seeds, 40
+ * nodes, 60 steps and 10 passages. Placeholders carry no seeds, nodes, steps, passages or citations. The schema cannot
+ * say so; the server validator does.
+ */
+export interface TraversalViewData {
+  seeds: TraversalSeed[];
+  nodes: GraphNode[];
+  steps: TraversalStep[];
+  reached: ReachedPassage[];
+  citations: Citation[];
+  /** @int */
+  stepsLeftOut: number;
+}

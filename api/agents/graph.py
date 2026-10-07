@@ -64,7 +64,7 @@ def _checked_layout(layout: LayoutSpec | None, block_ids: set[str]) -> LayoutEve
 def _checked(block: UIBlock, ctx: TurnContext) -> BlockEvent:
     """The last gate before the wire. Re-validates from plain data, so a block that was built with
     model_construct, or mutated after it was validated, cannot be streamed (constraint 2)."""
-    return BlockEvent(type="block", block=validate_block(block.model_dump(), ctx.docs))
+    return BlockEvent(type="block", block=validate_block(block.model_dump(), ctx.docs, ctx.graph))
 
 
 async def stream_composition(

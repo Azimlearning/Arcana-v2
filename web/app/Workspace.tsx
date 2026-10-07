@@ -161,9 +161,10 @@ export function Workspace() {
   // A view can be saved from a finished, answered turn (its id is the answer block's id) and not from a view that was itself
   // applied from a saved one. Which kinds the server will accept is the server's decision; it says why if it refuses.
   const turnId = turn === "idle" ? placed.chat.find((b) => b.type === "CitedSummary")?.id : undefined;
-  const SAVEABLE = ["GraphView", "ComparisonGrid", "ConceptMap"];
+  const SAVEABLE = ["GraphView", "TraversalView", "ComparisonGrid", "ConceptMap"];
   const KIND_NAMES: Record<string, string> = {
     GraphView: "Connection graph",
+    TraversalView: "Search path",
     ComparisonGrid: "Document comparison",
     ConceptMap: "Connection path",
   };

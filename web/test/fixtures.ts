@@ -1,4 +1,4 @@
-import type { CitedSummary, ComparisonGrid, ConceptMap, ErrorEnvelope, GraphView, LayoutSpec, SavedPattern, SourceList, WorkspaceResponse, StreamEvent, TurnTrace } from "@arcana/schema";
+import type { CitedSummary, ComparisonGrid, ConceptMap, ErrorEnvelope, GraphView, LayoutSpec, SavedPattern, SourceList, TraversalView, WorkspaceResponse, StreamEvent, TurnTrace } from "@arcana/schema";
 
 export const TITLE = "Hybrid Retrieval over Knowledge Graphs";
 
@@ -77,6 +77,56 @@ export function graphView(
             { id: "c2", chunkId: "d_c_2", docId: "d", docTitle: TITLE, page: null, quote: "Reciprocal Rank Fusion merges Dense Retrieval with the others." },
           ]
         : [],
+      ...overrides,
+    },
+  };
+}
+
+export function traversalView(
+  status: TraversalView["meta"]["status"],
+  overrides: Partial<TraversalView["data"]> = {},
+  error: ErrorEnvelope | null = null,
+): TraversalView {
+  const content = status === "ready" || status === "partial";
+  return {
+    type: "TraversalView",
+    id: "turn-1-traversal-view",
+    meta: { status, error },
+    data: {
+      seeds: content
+        ? [
+            { nodeId: "dense", match: "exact" },
+            { nodeId: "bm25", match: "approximate" },
+          ]
+        : [],
+      nodes: content
+        ? [
+            { id: "dense", label: "Dense Retrieval" },
+            { id: "bm25", label: "BM25" },
+            { id: "rrf", label: "Reciprocal Rank Fusion" },
+          ]
+        : [],
+      steps: content
+        ? [
+            { source: "dense", target: "bm25", relation: "contrasted_with", citationId: "c1", hop: 1 },
+            { source: "dense", target: "rrf", relation: "merged_by", citationId: "c2", hop: 1 },
+          ]
+        : [],
+      reached: content
+        ? [
+            { citationId: "c1", via: "mentions", rank: 1, seedIds: ["dense", "bm25"] },
+            { citationId: "c2", via: "edge", rank: 2, seedIds: ["dense"] },
+            { citationId: "c3", via: "neighbour", rank: 3, seedIds: ["bm25"] },
+          ]
+        : [],
+      citations: content
+        ? [
+            { id: "c1", chunkId: "d_c_1", docId: "d", docTitle: TITLE, page: 3, quote: "Dense Retrieval alone and BM25 alone are two arms." },
+            { id: "c2", chunkId: "d_c_2", docId: "d", docTitle: TITLE, page: null, quote: "Reciprocal Rank Fusion merges Dense Retrieval with the others." },
+            { id: "c3", chunkId: "d_c_3", docId: "d", docTitle: TITLE, page: 4, quote: "Sparse retrieval such as BM25 scores exact terms." },
+          ]
+        : [],
+      stepsLeftOut: content ? 7 : 0,
       ...overrides,
     },
   };

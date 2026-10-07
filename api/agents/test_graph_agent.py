@@ -31,7 +31,7 @@ EDGES = [
     ("bm25", "inverted_index", "uses", "c5", "d2"),
 ]
 CHUNKS = {
-    f"c{i}": SimpleNamespace(id=f"c{i}", doc_id="d1" if i < 5 else "d2", page=i, text=f"Chunk {i} text.")
+    f"c{i}": SimpleNamespace(id=f"c{i}", doc_id="d1" if i < 5 else "d2", page=i, ordinal=i, text=f"Chunk {i} text.")
     for i in range(1, 6)
 }
 
@@ -248,6 +248,7 @@ LABELLED = {
         id="c1",
         doc_id="d1",
         page=3,
+        ordinal=1,
         text="Dense retrieval uses a vector index to find passages quickly. It scales well.",
     ),
 }
@@ -286,7 +287,9 @@ def two_paper_world(tmp_path: Path, *, drop: tuple[str, ...] = (), third_paper: 
         "k5": ("d3", 7, "The third paper only discusses dense retrieval at length."),
         "k6": ("d1", 3, "Louvain communities are mentioned once, in paper one only."),
     }
-    chunks = {i: SimpleNamespace(id=i, doc_id=d, page=p, text=t) for i, (d, p, t) in texts.items() if i not in drop}
+    chunks = {
+        i: SimpleNamespace(id=i, doc_id=d, page=p, ordinal=0, text=t) for i, (d, p, t) in texts.items() if i not in drop
+    }
     graph = NetworkXGraphStore(tmp_path / "align.json")
     graph.upsert_node(
         Node(
@@ -373,7 +376,7 @@ async def test_whatever_the_graph_looks_like_every_cell_is_that_papers_own_verba
                 named = [n for n in range(len(labels)) if rng.random() < 0.4]
                 text = " ".join(f"The paper discusses {labels[n]} here." for n in named) or "Nothing relevant is said."
                 cid = f"t{trial}_d{d}_k{k}"
-                chunks[cid] = SimpleNamespace(id=cid, doc_id=f"d{d}", page=k + 1, text=text)
+                chunks[cid] = SimpleNamespace(id=cid, doc_id=f"d{d}", page=k + 1, ordinal=k, text=text)
                 for n in named + [n for n in range(len(labels)) if rng.random() < 0.1]:  # sometimes mis-attributed
                     node_chunks[n].append(cid)
                     node_docs[n].add(f"d{d}")

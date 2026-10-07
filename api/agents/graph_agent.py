@@ -25,10 +25,11 @@ from typing import Any
 from api.agents.framework import Agent, AgentOutput, tool_spec
 from api.agents.state import TurnContext
 from api.genui.alignment import settle
-from api.genui.catalog import cap
+from api.genui.catalog import CATALOG, cap
 from api.genui.evidence import excerpt_containing
 from api.genui.text import MIN_LABEL_CHARS
 from api.retrieval.entities import resolve_query_entities
+from api.retrieval.traversal import steps_for_display, trace_graph_signal
 from api.retrieval.types import ResolutionReport
 from api.stores.graph_store import Edge, GraphStore
 
@@ -56,6 +57,8 @@ class GraphResult:
     """How many edges have no quote holding both endpoint labels (see the module note)."""
     chunk_ids: list[str] = field(default_factory=list)
     resolution: dict[str, Any] = field(default_factory=dict)
+    traversal: dict[str, Any] = field(default_factory=dict)
+    """What the graph signal followed for the question (see `_traversal`), or empty when it resolved nothing."""
 
     def payload(self) -> dict[str, Any]:
         return {
@@ -69,6 +72,7 @@ class GraphResult:
             "seeds": self.seeds,
             "chunk_ids": self.chunk_ids,
             "resolution": self.resolution,
+            "traversal": self.traversal,
         }
 
 
@@ -324,6 +328,36 @@ async def neighborhood(entity: str, hops: int, ctx: TurnContext) -> GraphResult:
 # ── the agent ─────────────────────────────────────────────────────────────────
 
 
+def _traversal(query: str, graph: GraphStore, ctx: TurnContext) -> dict[str, Any]:
+    """The graph signal's traversal for the question as plain data (D-33): the seeds in the retriever's order, the
+    steps worth showing (those that led to a returned passage, within the TraversalView caps) and the passages
+    reached. Everything else about a traversal is a function of these seeds and the stores, so that is all the Composer
+    and the validator need. Empty when nothing resolved."""
+    caps = CATALOG["TraversalView"].fences.caps
+    trace = trace_graph_signal(query, graph, ctx.docs, caps["reached"])
+    if not trace.seeds:
+        return {}
+    shown, left_out = steps_for_display(trace, caps["steps"], caps["nodes"])
+    return {
+        "seeds": [{"id": s.node_id, "label": s.label, "match": s.match} for s in trace.seeds],
+        "steps": [
+            {
+                "seed_id": s.seed_id,
+                "src": s.edge.src,
+                "dst": s.edge.dst,
+                "relation": s.edge.relation,
+                "chunk_id": s.edge.chunk_id,
+            }
+            for s in shown
+        ],
+        "steps_total": trace.steps_total,
+        "left_out": left_out,
+        "reached": [
+            {"chunk_id": r.chunk_id, "via": r.via, "rank": r.rank, "seed_ids": list(r.seed_ids)} for r in trace.reached
+        ],
+    }
+
+
 async def _run(query: str, ctx: TurnContext) -> AgentOutput:
     """Resolve the question's entities; two or more give a path, one gives a neighbourhood."""
     graph = ctx.graph
@@ -340,6 +374,7 @@ async def _run(query: str, ctx: TurnContext) -> AgentOutput:
         result = _none(report)
     # Alignment needs no edges: two papers can both discuss an entity without a stored relation between them.
     result.alignment = _align(graph, ctx, ids[: cap("ComparisonGrid", "entities")]).payload() if ids else {}
+    result.traversal = _traversal(query, graph, ctx)
     result.seeds = [
         {"id": n, "label": node.label} for n in ids[: cap("ComparisonGrid", "entities")] if (node := graph.get_node(n))
     ]

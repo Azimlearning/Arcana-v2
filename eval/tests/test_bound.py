@@ -51,6 +51,13 @@ def rich_graph(hops: int = 3) -> dict:
         "doc_title": f"Paper {doc[-1]}",
     }
     return {
+        "traversal": {
+            "seeds": [{"id": "n0", "label": "Alpha Method", "match": "exact"}],
+            "steps": [{"seed_id": "n0", "src": "n0", "dst": "n1", "relation": "builds_on", "chunk_id": "c0"}],
+            "steps_total": 5,
+            "left_out": 4,
+            "reached": [{"chunk_id": "c0", "via": "mentions", "rank": 1, "seed_ids": ["n0"]}],
+        },
         "mode": "path",
         "entities": ["n0", f"n{hops}"],
         "edges": edges,
@@ -76,6 +83,7 @@ def test_on_a_rich_graph_the_hybrid_layer_admits_every_component_and_the_counts_
     assert rows["GraphView"]["detail"] == {"drawable_edges": 3}
     assert rows["ComparisonGrid"]["detail"] == {"documents": 2, "entities": 2, "cells": 4}
     assert rows["ConceptMap"]["detail"] == {"hops": 3}
+    assert rows["TraversalView"]["detail"] == {"seeds": 1, "steps_shown": 1, "steps_followed": 5}
     assert rows["SourceList"]["detail"] == {"ready_documents": 2}
 
 
@@ -130,7 +138,10 @@ def test_the_summary_counts_rates_realised_sets_and_refusals_by_hand():
     assert hybrid["components"]["ConceptMap"]["refusal_reasons"] == {"no_graph_result": 2, "single_hop": 1}
     assert hybrid["components"]["ComparisonGrid"]["admitted"] == 2
     assert hybrid["X"] == sorted(CATALOG) and flat["X"] == ["CitedSummary", "SourceList"]
-    assert s["hybrid_only"] == ["ComparisonGrid", "ConceptMap", "GraphView"] and s["flat_not_in_hybrid"] == []
+    assert (
+        s["hybrid_only"] == ["ComparisonGrid", "ConceptMap", "GraphView", "TraversalView"]
+        and s["flat_not_in_hybrid"] == []
+    )
     assert s["flat_graph_components_admitted"] == 0
     assert s["entity_resolution"] == {
         "mean_hit_rate": 0.5,

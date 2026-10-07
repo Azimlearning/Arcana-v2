@@ -46,11 +46,14 @@ from api.genui.generated import (
     GraphView,
     LayoutSpec,
     SourceList,
+    TraversalView,
     UIBlock,
 )
 from api.genui.text import MIN_LABEL_CHARS, MIN_QUOTE_CHARS, label_in_quote
 from api.genui.text import normalise as _norm
+from api.retrieval.traversal import TraversalSeed, seed_weight, steps_for_display, traverse
 from api.stores.doc_store import DocStore
+from api.stores.graph_store import GraphStore
 
 _UI_BLOCK = TypeAdapter(UIBlock)
 PLACEHOLDER_STATUSES = {"empty", "loading", "error"}
@@ -74,21 +77,23 @@ def _schema_issues(exc: ValidationError, tag: str | None) -> list[FieldIssue]:
     ]
 
 
-def validate_block(raw: Mapping[str, Any], docs: DocStore) -> UIBlock:
-    """Return the validated block, or raise ValidationFailed naming every violated field."""
+def validate_block(raw: Mapping[str, Any], docs: DocStore, graph: GraphStore | None = None) -> UIBlock:
+    """Return the validated block, or raise ValidationFailed naming every violated field. `graph` is the graph store
+    the claims of a graph-derived block (a `TraversalView`) are re-derived from; a block of that kind is refused when it
+    is not given, because its claims could not be checked."""
     tag = raw.get("type") if isinstance(raw.get("type"), str) else None
     try:
         block = _UI_BLOCK.validate_python(dict(raw))
     except ValidationError as exc:
         raise ValidationFailed("The block does not match the wire schema.", _schema_issues(exc, tag)) from exc
 
-    issues = _content_issues(block, docs)
+    issues = _content_issues(block, docs, graph)
     if issues:
         raise ValidationFailed("The block failed content validation.", issues)
     return block
 
 
-def _content_issues(block: UIBlock, docs: DocStore) -> list[FieldIssue]:
+def _content_issues(block: UIBlock, docs: DocStore, graph: GraphStore | None) -> list[FieldIssue]:
     """Rules common to every block, then the rules of its own type. A type with no rules here is refused:
     a component is not shown until its invariants are written down (constraint 7)."""
     issues = _common_issues(block)
@@ -102,6 +107,8 @@ def _content_issues(block: UIBlock, docs: DocStore) -> list[FieldIssue]:
         issues += _comparison_grid_issues(block, docs)
     elif isinstance(block, ConceptMap):
         issues += _concept_map_issues(block, docs)
+    elif isinstance(block, TraversalView):
+        issues += _traversal_view_issues(block, docs, graph)
     else:
         issues.append(FieldIssue(path="type", message="no content rules exist for this block type"))
     return issues
@@ -489,6 +496,117 @@ def _graph_view_issues(block: GraphView, docs: DocStore) -> list[FieldIssue]:
             issues.append(FieldIssue(path=f"data.nodes.{i}", message="a node must be an end of at least one edge"))
 
     issues += _citation_issues(data.citations, referenced, docs)
+    return issues
+
+
+def _traversal_view_issues(block: TraversalView, docs: DocStore, graph: GraphStore | None) -> list[FieldIssue]:
+    """A traversal is a function of its seeds and the stores, so it is checked by running that function again: the
+    validator re-derives the passages reached, the steps shown and how many were left out from the block's seeds, and the
+    block must say exactly that. The seeds' `match` is taken as given (the question is not in the block)."""
+    caps = _caps("TraversalView")
+    data, status = block.data, block.meta.status
+    if status in PLACEHOLDER_STATUSES:
+        if data.seeds or data.nodes or data.steps or data.reached or data.citations or data.stepsLeftOut:
+            return [FieldIssue(path="data", message=f"a '{status}' block must carry nothing")]
+        return []
+    if graph is None:
+        return [FieldIssue(path="data", message="a traversal can only be checked against the graph store")]
+
+    issues: list[FieldIssue] = []
+    if status == "ready" and not (data.seeds and data.steps and data.reached):
+        issues.append(FieldIssue(path="data", message="a ready block needs a seed, a step and a passage"))
+    for name, items, cap in (
+        ("seeds", data.seeds, caps["seeds"]),
+        ("nodes", data.nodes, caps["nodes"]),
+        ("steps", data.steps, caps["steps"]),
+        ("reached", data.reached, caps["reached"]),
+    ):
+        if len(items) > cap:
+            issues.append(FieldIssue(path=f"data.{name}", message=f"at most {cap} may be shown"))
+
+    labels: dict[str, str] = {}
+    for i, node in enumerate(data.nodes):
+        if node.id in labels:
+            issues.append(FieldIssue(path=f"data.nodes.{i}.id", message="node ids must be unique"))
+        labels[node.id] = node.label
+        stored = graph.get_node(node.id)
+        if stored is None:
+            issues.append(FieldIssue(path=f"data.nodes.{i}.id", message="no stored node has this id"))
+        elif stored.label != node.label:
+            issues.append(FieldIssue(path=f"data.nodes.{i}.label", message="does not match the stored label"))
+        if not MIN_LABEL_CHARS <= len(node.label.strip()) <= caps["label_chars"]:
+            issues.append(FieldIssue(path=f"data.nodes.{i}.label", message="a label is 2 to 120 characters"))
+
+    citations = {c.id: c for c in data.citations}
+    if len(citations) != len(data.citations):
+        issues.append(FieldIssue(path="data.citations", message="citation ids must be unique"))
+    seen_seeds: set[str] = set()
+    for i, seed in enumerate(data.seeds):
+        if seed.nodeId in seen_seeds:
+            issues.append(FieldIssue(path=f"data.seeds.{i}.nodeId", message="a seed is listed once"))
+        seen_seeds.add(seed.nodeId)
+        if seed.nodeId not in labels:
+            issues.append(FieldIssue(path=f"data.seeds.{i}.nodeId", message="a seed must be one of the nodes"))
+
+    referenced: set[str] = set()
+    for i, passage in enumerate(data.reached):
+        if passage.citationId not in citations:
+            issues.append(FieldIssue(path=f"data.reached.{i}.citationId", message="no citation has this id"))
+        elif passage.citationId in referenced:
+            issues.append(FieldIssue(path=f"data.reached.{i}.citationId", message="a passage is listed once"))
+        referenced.add(passage.citationId)
+    for i, step in enumerate(data.steps):
+        if step.citationId not in referenced:
+            issues.append(FieldIssue(path=f"data.steps.{i}.citationId", message="must cite a passage of this block"))
+        if step.hop != 1:
+            issues.append(FieldIssue(path=f"data.steps.{i}.hop", message="the graph signal expands one hop"))
+        for end, field_name in ((step.source, "source"), (step.target, "target")):
+            if end not in labels:
+                issues.append(FieldIssue(path=f"data.steps.{i}.{field_name}", message=f"no node with id {end!r}"))
+
+    issues += _citation_issues(data.citations, referenced, docs)
+    if issues:
+        return issues  # the re-derivation below reads the same fields: report the plain defects first
+
+    held = [TraversalSeed(s.nodeId, labels[s.nodeId], s.match, seed_weight(s.match)) for s in data.seeds]
+    derived = traverse(held, graph, docs, caps["reached"])
+    if len(derived.seeds) != len(held):
+        return [FieldIssue(path="data.seeds", message="a seed is not a node of the graph")]
+
+    chunk_of = {cid: c.chunkId for cid, c in citations.items()}
+    shown = [(p.rank, chunk_of[p.citationId], p.via, tuple(p.seedIds)) for p in data.reached]
+    expected = [(r.rank, r.chunk_id, r.via, r.seed_ids) for r in derived.reached]
+    if len(shown) != len(expected):
+        issues.append(
+            FieldIssue(
+                path="data.reached.(count)", message=f"the graph signal returns {len(expected)} passages for these seeds"
+            )
+        )
+    for i, (got, want) in enumerate(zip(shown, expected, strict=False)):
+        for part, g, w in zip(("rank", "citationId", "via", "seedIds"), got, want, strict=True):
+            if g != w:
+                issues.append(
+                    FieldIssue(path=f"data.reached.{i}.{part}", message="does not match what the graph signal returns")
+                )
+
+    wanted_steps, left_out = steps_for_display(derived, caps["steps"], caps["nodes"])
+    got_steps = [(s.source, s.target, s.relation, chunk_of[s.citationId]) for s in data.steps]
+    want_steps = [(s.edge.src, s.edge.dst, s.edge.relation, s.edge.chunk_id) for s in wanted_steps]
+    if len(got_steps) != len(want_steps):
+        issues.append(
+            FieldIssue(path="data.steps.(count)", message=f"the traversal shows {len(want_steps)} steps for these seeds")
+        )
+    for i, (got, want) in enumerate(zip(got_steps, want_steps, strict=False)):
+        if got != want:
+            issues.append(FieldIssue(path=f"data.steps.{i}", message="is not the edge the traversal followed here"))
+    if data.stepsLeftOut != left_out:
+        issues.append(FieldIssue(path="data.stepsLeftOut", message="does not match the steps the traversal left out"))
+
+    want_nodes = {s.nodeId for s in data.seeds} | {e for s in wanted_steps for e in (s.edge.src, s.edge.dst)}
+    if set(labels) != want_nodes:
+        issues.append(
+            FieldIssue(path="data.nodes.(set)", message="the nodes must be the seeds and the ends of the steps shown")
+        )
     return issues
 
 

@@ -19,10 +19,11 @@ One hop is all the graph signal expands; a view built on this says so.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Literal
 
-from api.retrieval.entities import resolve_query_entities
+from api.retrieval.entities import APPROX_WEIGHT, resolve_query_entities
 from api.retrieval.graph import DIRECT_WEIGHT, NEIGHBOR_WEIGHT
 from api.retrieval.types import TOP_K, ResolutionReport
 from api.stores.doc_store import DocStore
@@ -71,20 +72,40 @@ class GraphTraversal:
     """Every edge followed. `steps` is all of them; a consumer that caps what it shows says how many it left out."""
 
 
+def seed_weight(match: Literal["exact", "approximate"]) -> float:
+    """The weight the retriever gives an entity of this match kind (entities.py: 1.0 exact, APPROX_WEIGHT otherwise)."""
+    return 1.0 if match == "exact" else APPROX_WEIGHT
+
+
 def trace_graph_signal(query: str, graph: GraphStore, docs: DocStore, top_k: int = TOP_K) -> GraphTraversal:
     """The seeds, the edges followed and the chunks reached for `query`, in the retriever's order. Pure: reads the
     stores, writes nothing, makes no model or network call."""
     nodes = graph.nodes()
     report = resolve_query_entities(query, nodes)
-    if not report.entities:
-        return GraphTraversal((), (), (), report, 0)
-
     by_id = {n.id: n for n in nodes}
+    seeds = tuple(TraversalSeed(e.node_id, by_id[e.node_id].label, e.match, e.weight) for e in report.entities)
+    return traverse(seeds, graph, docs, top_k, report)
+
+
+def traverse(
+    seeds: Sequence[TraversalSeed],
+    graph: GraphStore,
+    docs: DocStore,
+    top_k: int = TOP_K,
+    report: ResolutionReport | None = None,
+) -> GraphTraversal:
+    """Expand one hop from each seed and rank the chunks reached, exactly as the graph signal does. Everything a
+    traversal says is a function of the seeds and the stores, which is what lets a block built from one be re-derived and
+    checked by the validator without the question. Seeds the graph does not hold are skipped."""
+    held = [s for s in seeds if graph.get_node(s.node_id) is not None]
+    empty = report or ResolutionReport(0, 0)
+    if not held:
+        return GraphTraversal((), (), (), empty, 0)
+
     scores: dict[str, float] = {}
     support: dict[str, int] = {}
     via: dict[str, Via] = {}
     reached_by: dict[str, list[str]] = {}
-    seeds: list[TraversalSeed] = []
     steps: list[TraversalStep] = []
 
     def reach(chunk_id: str, how: Via, seed_id: str) -> None:
@@ -93,23 +114,23 @@ def trace_graph_signal(query: str, graph: GraphStore, docs: DocStore, top_k: int
         if seed_id not in reached_by.setdefault(chunk_id, []):
             reached_by[chunk_id].append(seed_id)
 
-    for entity in report.entities:
-        seed = by_id[entity.node_id]
-        seeds.append(TraversalSeed(seed.id, seed.label, entity.match, entity.weight))
-        sub = graph.expand([seed.id], hops=1)
+    for seed in held:
+        node = graph.get_node(seed.node_id)
+        assert node is not None  # held above
+        sub = graph.expand([node.id], hops=1)
         for edge in sub.edges:
             support[edge.chunk_id] = support.get(edge.chunk_id, 0) + 1
-            steps.append(TraversalStep(seed.id, edge))
-        mentions = set(seed.chunk_ids)
+            steps.append(TraversalStep(node.id, edge))
+        mentions = set(node.chunk_ids)
         edge_chunks = {e.chunk_id for e in sub.edges}
         direct = mentions | edge_chunks
-        neighbour = {c for n in sub.nodes if n.id != seed.id for c in n.chunk_ids} - direct
+        neighbour = {c for n in sub.nodes if n.id != node.id for c in n.chunk_ids} - direct
         for chunk_id in direct:
-            scores[chunk_id] = scores.get(chunk_id, 0.0) + entity.weight * DIRECT_WEIGHT
-            reach(chunk_id, "mentions" if chunk_id in mentions else "edge", seed.id)
+            scores[chunk_id] = scores.get(chunk_id, 0.0) + seed.weight * DIRECT_WEIGHT
+            reach(chunk_id, "mentions" if chunk_id in mentions else "edge", node.id)
         for chunk_id in neighbour:
-            scores[chunk_id] = scores.get(chunk_id, 0.0) + entity.weight * NEIGHBOR_WEIGHT
-            reach(chunk_id, "neighbour", seed.id)
+            scores[chunk_id] = scores.get(chunk_id, 0.0) + seed.weight * NEIGHBOR_WEIGHT
+            reach(chunk_id, "neighbour", node.id)
 
     stored = docs.get_chunks(list(scores))
     ranked = sorted(
@@ -121,17 +142,29 @@ def trace_graph_signal(query: str, graph: GraphStore, docs: DocStore, top_k: int
         for i, cid in enumerate(ranked[:top_k], start=1)
     )
     # An edge that joins two seeds is followed from each of them: it appears once per seed, so `steps_total` counts both.
-    return GraphTraversal(tuple(seeds), tuple(steps), reached, report, len(steps))
+    return GraphTraversal(tuple(held), tuple(steps), reached, empty, len(steps))
 
 
-def steps_for_display(traversal: GraphTraversal, limit: int) -> tuple[tuple[TraversalStep, ...], int]:
+def steps_for_display(
+    traversal: GraphTraversal, limit: int, max_nodes: int | None = None
+) -> tuple[tuple[TraversalStep, ...], int]:
     """The steps worth showing: those whose chunk is one of the chunks reached (the passages the signal ranked top),
-    best-ranked chunk first, at most `limit`, in the order they were followed within a rank; and how many followed
-    steps are not shown. A hub seed follows hundreds of edges (755 on one frozen question) and almost all lead to
-    passages outside the top ranks; a view shows the edges that led to the passages the signal returned and counts the
-    rest, never padding with edges that led nowhere."""
+    best-ranked chunk first, at most `limit`, and, if `max_nodes` is given, only while the seeds plus the ends of the
+    steps shown stay within it; and how many followed steps are not shown. A hub seed follows hundreds of edges (755 on
+    one frozen question) and almost all lead to passages outside the top ranks; a view shows the edges that led to the
+    passages the signal returned and counts the rest, never padding with edges that led nowhere."""
     rank = {r.chunk_id: r.rank for r in traversal.reached}
     useful = [i for i, s in enumerate(traversal.steps) if s.edge.chunk_id in rank]
     useful.sort(key=lambda i: (rank[traversal.steps[i].edge.chunk_id], i))
-    kept = useful[:limit]
+    nodes = {s.node_id for s in traversal.seeds}
+    kept: list[int] = []
+    for i in useful:
+        if len(kept) >= limit:
+            break
+        edge = traversal.steps[i].edge
+        grown = nodes | {edge.src, edge.dst}
+        if max_nodes is not None and len(grown) > max_nodes:
+            continue
+        nodes = grown
+        kept.append(i)
     return tuple(traversal.steps[i] for i in kept), len(traversal.steps) - len(kept)

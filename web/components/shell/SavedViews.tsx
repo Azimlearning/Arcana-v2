@@ -11,6 +11,7 @@ import type { ErrorEnvelope, PatternRefusalReason, PatternState, SavedPattern } 
 /** What each kind of view is called to a reader. A template not listed is shown under its own name. */
 const KIND_WORDS: Record<string, string> = {
   GraphView: "Connection graph",
+  TraversalView: "Search path",
   ComparisonGrid: "Document comparison",
   ConceptMap: "Connection path",
   SourceList: "Source list",

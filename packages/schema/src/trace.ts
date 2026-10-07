@@ -54,6 +54,9 @@ export interface AgentStep {
  *   broken_path            the path's hops do not join up;
  *   ungrounded_hop         a hop on the path had no quote naming both of its concepts;
  *   repeated_concept       the path passes through a concept twice;
+ *   nothing_resolved       the question resolved to no concept in the graph, so the search followed nothing;
+ *   no_edge_followed       the search followed no edge that led to a passage it returned;
+ *   too_many_seeds         the question resolved to more concepts than a traversal view shows (it would no longer be the whole search);
  *   block_failed_validation the block was built but failed server validation, so it was not sent;
  *   answer_unavailable     the answer could not be produced or checked (the turn's error is on the answer block);
  *   not_considered         the turn ended before the Composer could consider this component;
@@ -71,6 +74,9 @@ export type DecisionReason =
   | "broken_path"
   | "ungrounded_hop"
   | "repeated_concept"
+  | "nothing_resolved"
+  | "no_edge_followed"
+  | "too_many_seeds"
   | "block_failed_validation"
   | "answer_unavailable"
   | "not_considered"

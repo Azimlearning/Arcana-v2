@@ -233,6 +233,14 @@ class Placement(BaseModel):
     order: int
 
 
+class ReachedPassage(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    citationId: str
+    via: ReachedVia
+    rank: int
+    seedIds: list[str]
+
+
 class RegionSpec(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
     id: RegionId
@@ -292,6 +300,39 @@ class SummarySegment(BaseModel):
     citationIds: list[str]
 
 
+class TraversalSeed(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    nodeId: str
+    match: SeedMatch
+
+
+class TraversalStep(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    source: str
+    target: str
+    relation: str
+    citationId: str
+    hop: int
+
+
+class TraversalView(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    type: Literal['TraversalView']
+    id: str
+    meta: BlockMeta
+    data: TraversalViewData
+
+
+class TraversalViewData(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    seeds: list[TraversalSeed]
+    nodes: list[GraphNode]
+    steps: list[TraversalStep]
+    reached: list[ReachedPassage]
+    citations: list[Citation]
+    stepsLeftOut: int
+
+
 class TurnTrace(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
     turnId: str
@@ -314,7 +355,7 @@ BlockStatus = Literal['empty', 'loading', 'partial', 'ready', 'error']
 
 ChatRole = Literal['user', 'assistant']
 
-DecisionReason = Literal['no_grounded_answer', 'no_ready_document', 'no_graph_result', 'no_grounded_edge', 'no_shared_entities', 'not_a_path', 'single_hop', 'path_too_long', 'broken_path', 'ungrounded_hop', 'repeated_concept', 'block_failed_validation', 'answer_unavailable', 'not_considered', 'unspecified']
+DecisionReason = Literal['no_grounded_answer', 'no_ready_document', 'no_graph_result', 'no_grounded_edge', 'no_shared_entities', 'not_a_path', 'single_hop', 'path_too_long', 'broken_path', 'ungrounded_hop', 'repeated_concept', 'nothing_resolved', 'no_edge_followed', 'too_many_seeds', 'block_failed_validation', 'answer_unavailable', 'not_considered', 'unspecified']
 
 ErrorCode = Literal['validation_failed', 'bad_request', 'not_found', 'budget_exhausted', 'spend_cap_exceeded', 'provider_unavailable', 'pattern_refused', 'internal']
 
@@ -328,7 +369,11 @@ PatternRefusalReason = Literal['precondition_not_met', 'template_changed', 'docu
 
 PatternState = Literal['generated', 'verified', 'saved']
 
+ReachedVia = Literal['mentions', 'edge', 'neighbour']
+
 RegionId = Literal['main', 'secondary', 'shelf']
+
+SeedMatch = Literal['exact', 'approximate']
 
 SplitDirection = Literal['rows', 'columns']
 
@@ -338,7 +383,7 @@ StreamEvent = Annotated[BlockEvent | LayoutEvent | StreamErrorEvent | DoneEvent,
 
 TurnOutcome = Literal['answered', 'empty', 'error']
 
-UIBlock = Annotated[CitedSummary | SourceList | GraphView | ComparisonGrid | ConceptMap, Field(discriminator='type')]
+UIBlock = Annotated[CitedSummary | SourceList | GraphView | ComparisonGrid | ConceptMap | TraversalView, Field(discriminator='type')]
 
 AgentStep.model_rebuild()
 BlockEvent.model_rebuild()
@@ -371,6 +416,7 @@ PathStep.model_rebuild()
 PatternList.model_rebuild()
 PatternParam.model_rebuild()
 Placement.model_rebuild()
+ReachedPassage.model_rebuild()
 RegionSpec.model_rebuild()
 SavePatternRequest.model_rebuild()
 SavedPattern.model_rebuild()
@@ -379,5 +425,9 @@ SourceList.model_rebuild()
 SourceListData.model_rebuild()
 StreamErrorEvent.model_rebuild()
 SummarySegment.model_rebuild()
+TraversalSeed.model_rebuild()
+TraversalStep.model_rebuild()
+TraversalView.model_rebuild()
+TraversalViewData.model_rebuild()
 TurnTrace.model_rebuild()
 WorkspaceResponse.model_rebuild()

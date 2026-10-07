@@ -52,7 +52,11 @@ def test_a_turn_records_the_reusable_views_it_showed_with_their_string_parameter
     mode, components = view
     assert mode in ("research", "exploration")
     by_template = {c.template: c for c in components}
-    assert set(by_template) == {"SourceList", "GraphView"}  # the answer is not reusable; the grid and path were refused
+    assert set(by_template) == {
+        "SourceList",
+        "GraphView",
+        "TraversalView",
+    }  # the answer is not reusable; the grid and path were refused
     assert by_template["GraphView"].params == {"entities": ["Dense Retrieval", "BM25"]}
     assert by_template["SourceList"].params == {} and all(c.verified for c in components)
 

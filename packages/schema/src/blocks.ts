@@ -8,7 +8,14 @@
 //   5. Write the component's structural precondition down (constraint 7).
 
 import type { ErrorEnvelope } from "./errors";
-import type { CitedSummaryData, ComparisonGridData, ConceptMapData, GraphViewData, SourceListData } from "./payloads";
+import type {
+  CitedSummaryData,
+  ComparisonGridData,
+  ConceptMapData,
+  GraphViewData,
+  SourceListData,
+  TraversalViewData,
+} from "./payloads";
 
 /**
  * Lifecycle of a block on the wire. `empty`, `loading`, `partial`, `error` are the states every
@@ -71,5 +78,13 @@ export interface ConceptMap {
   data: ConceptMapData;
 }
 
+export interface TraversalView {
+  type: "TraversalView";
+  /** Non-empty. Stable across updates: a later block with the same id replaces this one. */
+  id: string;
+  meta: BlockMeta;
+  data: TraversalViewData;
+}
+
 // Codegen emits a discriminated union (Field(discriminator='type')) once there are 2+ variants.
-export type UIBlock = CitedSummary | SourceList | GraphView | ComparisonGrid | ConceptMap;
+export type UIBlock = CitedSummary | SourceList | GraphView | ComparisonGrid | ConceptMap | TraversalView;

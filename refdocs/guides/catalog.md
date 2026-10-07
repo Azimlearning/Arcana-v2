@@ -167,6 +167,40 @@ Status: **built** (P2 B4).
   (`not_a_path`). Requiring every hop to be grounded is what makes a map trustworthy, and also what makes it rare on
   this corpus, where 44 percent of edges are drawable.
 
+## TraversalView
+
+Status: **in progress** (P2c T2). New in v2 (D-33); no v1 counterpart.
+
+- **Precondition:** the question resolved to at least one concept in the graph (no more than the seeds cap, so the view is
+  the whole search and not part of it), and the one-hop expansion from those concepts followed at least one edge that led
+  to a passage the graph signal returned (a stored chunk among its ranked top ten).
+- **Supplied by:** the graph signal's traversal (`trace_graph_signal`, run by the Graph agent and put in its payload as
+  `traversal`). Flat retrieval has no graph, so it supplies nothing.
+- **Payload:** `seeds: {nodeId, match}[]` (`exact` or `approximate`), `nodes: {id, label}[]`, `steps: {source, target,
+  relation, citationId, hop}[]`, `reached: {citationId, via, rank, seedIds}[]`, `citations`, `stepsLeftOut`.
+- **Caps:** 10 seeds, 40 nodes, 60 steps, 10 passages; label at most 120 characters.
+- **Fences:** caps `seeds=10 nodes=40 steps=60 reached=10 label_chars=120`; grounding `provenance_rederived_from_stores`; a11y `group:Search path | region:Passages reached | region:Details`. Slots: none. Template version 1; reusable without Research: no.
+- **Grounding is provenance, not "the text states the relation".** The view shows what the search followed: a followed edge
+  may be a co-mention. Every claim is re-derived from the stores by the validator: it re-runs the traversal from the block's
+  seeds (stored nodes, with their stored labels) and requires exactly the block's `reached` (the chunk each citation names,
+  its `via`, its `rank` and the seeds that reach it), `steps` (the edges that led to those passages, best-ranked passage
+  first, within the node and step caps) and `stepsLeftOut`. The seeds' `match` kind is taken as given (the validator does
+  not see the question); it sets each seed's weight, which changes the order only when seeds of different kinds compete.
+- **Validator invariants:** placeholders carry nothing; a ready block has at least one seed, step and passage; node ids
+  unique with the stored label; every seed is a stored node; `reached` and `steps` equal the re-derived ones; every
+  passage cites a stored chunk (title, page, a verbatim quote of at least the minimum length); every step cites a
+  passage's citation; `hop` is 1; no orphan citation; caps.
+- **States:** all four. Ready: a diagram with the seeds in a left column, the concepts they reach on the right, the
+  followed edges between them, and the passages reached as a ranked list saying how each was reached, with selection by
+  click or keyboard; and a text list of every step.
+- **Placement hint:** studio panel, priority 25 (under `GraphView`).
+- **Admissible with flat retrieval:** no.
+- **Refusal reasons:** `no_graph_result`, `nothing_resolved`, `no_edge_followed`, `too_many_seeds`.
+- **Feasibility measured on the live stores (2026-10-07, read-only):** on the 20 frozen questions the question resolves to
+  4 to 10 concepts; the search follows 16 to 755 edges; the top ten are almost all reached by a concept's own mention. The
+  view therefore shows only the edges that led to those passages and counts the rest. Admission on the 20 questions is
+  measured in task T3.
+
 ## InsightCard (stretch)
 
 Status: **deferred** (task B5 was a stretch and was not built in P2; it needs Azim's agreement to start). Nothing below exists in code.

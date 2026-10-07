@@ -71,6 +71,9 @@ class Slot:
     kind: Literal["entity", "document_id"]
     min_count: int = 1
     max_count: int = 1
+    source: Literal["seeds", "traversal"] = "seeds"
+    """Where the labels come from in the Graph agent's payload: the question's resolved entities (`seeds`), or the concepts
+    its traversal started from (`traversal`)."""
 
 
 @dataclass(frozen=True)
@@ -423,6 +426,43 @@ GRAPH_VIEW = Spec(
     check=_check_graph_view,
 )
 
+
+def _check_traversal_view(evidence: ComposerEvidence) -> Result:
+    if evidence.graph is None:
+        return Result(False, ("no_graph_result",))
+    traversal = evidence.graph.get("traversal") or {}
+    seeds = traversal.get("seeds") or []
+    if not seeds:
+        return Result(False, ("nothing_resolved",))
+    if len(seeds) > cap("TraversalView", "seeds"):
+        return Result(False, ("too_many_seeds",))
+    if not traversal.get("steps"):
+        return Result(False, ("no_edge_followed",))
+    return Result(True)
+
+
+TRAVERSAL_VIEW = Spec(
+    name="TraversalView",
+    precondition=(
+        "The question resolved to at least one and at most 10 concepts, and the one-hop expansion from them followed at "
+        "least one edge that led to a passage the graph signal returned."
+    ),
+    supplied_by=("graph",),
+    fences=Fences(
+        caps={"seeds": 10, "nodes": 40, "steps": 60, "reached": 10, "label_chars": 120},
+        grounding="provenance_rederived_from_stores",
+        a11y=(
+            A11yRequirement("group", "Search path"),
+            A11yRequirement("region", "Passages reached"),
+            A11yRequirement("region", "Details"),
+        ),
+    ),
+    slots=(Slot("entities", "entity", 1, 10, source="traversal"),),
+    reusable=True,
+    placement=PlacementHint(panel="studio", priority=25),
+    check=_check_traversal_view,
+)
+
 SOURCE_LIST = Spec(
     name="SourceList",
     precondition="At least one document in the store has status ready.",
@@ -438,7 +478,7 @@ SOURCE_LIST = Spec(
 )
 
 CATALOG: dict[str, Spec] = {
-    spec.name: spec for spec in (CITED_SUMMARY, SOURCE_LIST, GRAPH_VIEW, COMPARISON_GRID, CONCEPT_MAP)
+    spec.name: spec for spec in (CITED_SUMMARY, SOURCE_LIST, GRAPH_VIEW, TRAVERSAL_VIEW, COMPARISON_GRID, CONCEPT_MAP)
 }
 """Every component the Composer may admit, in the order it considers them (the terminal one first)."""
 
@@ -450,12 +490,16 @@ def component_params(name: str, graph: dict[str, Any] | None) -> dict[str, list[
     template = CATALOG[name]
     if not template.reusable:
         return None
-    seeds = [s["label"] for s in (graph or {}).get("seeds") or [] if isinstance(s.get("label"), str)]
+
+    def labels(source: str) -> list[str]:
+        found = (graph or {}).get("seeds") if source == "seeds" else ((graph or {}).get("traversal") or {}).get("seeds")
+        return [s["label"] for s in found or [] if isinstance(s.get("label"), str)]
+
     params: dict[str, list[str]] = {}
     for slot in template.slots:
         if slot.kind != "entity":
             continue
-        values = seeds[: slot.max_count]
+        values = labels(slot.source)[: slot.max_count]
         if len(values) < slot.min_count:
             return None
         params[slot.name] = values

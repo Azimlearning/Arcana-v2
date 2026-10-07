@@ -35,10 +35,17 @@ from api.genui.catalog import (
     concept_path,
     graph_edges,
 )
+from api.genui.evidence import best_excerpt, excerpt_containing
 from api.genui.generated import ErrorEnvelope, LayoutSpec, SavedPattern, UIBlock
 from api.genui.layout import compose_layout, prebuilt_layout
 from api.genui.patterns import params_of, validate_params
-from api.genui.templates import SUITES, TemplateRefused, fixture_store, register_template
+from api.genui.templates import (
+    SUITES,
+    TemplateRefused,
+    fixture_graph,
+    fixture_store,
+    register_template,
+)
 from api.genui.validate import validate_block, validate_layout
 from api.stores.doc_store import DocStore, Document
 
@@ -241,6 +248,74 @@ def _raw_graph_view(spec: Spec, ctx: TurnContext, evidence: ComposerEvidence, em
     return BUILDERS[spec.name](_block_id(spec, ctx), "ready", data=_graph_data(evidence))
 
 
+def _traversal_data(ctx: TurnContext, evidence: ComposerEvidence) -> dict[str, Any]:
+    """The TraversalView payload from the Graph agent's traversal: one citation per passage reached (a verbatim quote of
+    its chunk, preferring a span that holds the label of a seed that reaches it), each step citing the passage its edge
+    came from, and the nodes the seeds and the steps name with their stored labels. The validator re-derives all of it."""
+    traversal = (evidence.graph or {}).get("traversal") or {}
+    graph = ctx.graph
+    labels: dict[str, str] = {s["id"]: s["label"] for s in traversal.get("seeds", [])}
+    for step in traversal.get("steps", []):
+        for end in (step["src"], step["dst"]):
+            node = graph.get_node(end) if graph is not None else None
+            if end not in labels and node is not None:
+                labels[end] = node.label
+    chunks = ctx.docs.get_chunks([r["chunk_id"] for r in traversal.get("reached", [])])
+    citations: list[dict[str, Any]] = []
+    reached: list[dict[str, Any]] = []
+    cite_of: dict[str, str] = {}
+    for r in traversal.get("reached", []):
+        chunk = chunks.get(r["chunk_id"])
+        document = ctx.docs.get_document(chunk.doc_id) if chunk is not None else None
+        if chunk is None or document is None:
+            continue
+        seed_labels = [labels[s] for s in r["seed_ids"] if s in labels]
+        quote = (excerpt_containing(chunk.text, seed_labels[:1]) if seed_labels else None) or best_excerpt(
+            chunk.text, " ".join(seed_labels)
+        )
+        cid = f"c{r['rank']}"
+        cite_of[chunk.id] = cid
+        citations.append(
+            {
+                "id": cid,
+                "chunkId": chunk.id,
+                "docId": chunk.doc_id,
+                "docTitle": document.title,
+                "page": chunk.page,
+                "quote": quote,
+            }
+        )
+        reached.append({"citationId": cid, "via": r["via"], "rank": r["rank"], "seedIds": list(r["seed_ids"])})
+    steps = [
+        {
+            "source": s["src"],
+            "target": s["dst"],
+            "relation": s["relation"],
+            "citationId": cite_of[s["chunk_id"]],
+            "hop": 1,
+        }
+        for s in traversal.get("steps", [])
+        if s["chunk_id"] in cite_of
+    ]
+    ordered = list(
+        dict.fromkeys(
+            [s["id"] for s in traversal.get("seeds", [])] + [e for s in steps for e in (s["source"], s["target"])]
+        )
+    )
+    return {
+        "seeds": [{"nodeId": s["id"], "match": s["match"]} for s in traversal.get("seeds", [])],
+        "nodes": [{"id": n, "label": labels[n]} for n in ordered if n in labels],
+        "steps": steps,
+        "reached": reached,
+        "citations": citations,
+        "stepsLeftOut": int(traversal.get("left_out", 0)),
+    }
+
+
+def _raw_traversal_view(spec: Spec, ctx: TurnContext, evidence: ComposerEvidence, empty: bool) -> dict[str, Any]:
+    return BUILDERS[spec.name](_block_id(spec, ctx), "ready", data=_traversal_data(ctx, evidence))
+
+
 def _raw_comparison_grid(spec: Spec, ctx: TurnContext, evidence: ComposerEvidence, empty: bool) -> dict[str, Any]:
     return BUILDERS[spec.name](_block_id(spec, ctx), "ready", data=_grid_data(evidence))
 
@@ -254,6 +329,7 @@ _RAW: dict[str, RawBuilder] = {
     "CitedSummary": _raw_cited_summary,
     "SourceList": _raw_source_list,
     "GraphView": _raw_graph_view,
+    "TraversalView": _raw_traversal_view,
     "ComparisonGrid": _raw_comparison_grid,
     "ConceptMap": _raw_concept_map,
 }
@@ -286,7 +362,7 @@ def _compose_blocks(ctx: TurnContext) -> Composition:
             continue
         empty = not result.satisfied
         try:
-            block = validate_block(_raw(spec, ctx, evidence, empty=empty), ctx.docs)
+            block = validate_block(_raw(spec, ctx, evidence, empty=empty), ctx.docs, ctx.graph)
         except ValidationFailed as exc:
             log.warning("composed_block_rejected", component=spec.name, issues=[i.path for i in exc.issues])
             if spec.terminal:
@@ -359,7 +435,7 @@ async def compose_from_pattern(ctx: TurnContext, pattern: SavedPattern) -> Compo
     if not check.satisfied:
         raise PatternRefused("precondition_not_met", "Your documents no longer support this view.")
     try:
-        block = validate_block(_raw(template, ctx, evidence, empty=False), ctx.docs)
+        block = validate_block(_raw(template, ctx, evidence, empty=False), ctx.docs, ctx.graph)
     except ValidationFailed as exc:
         log.warning("applied_block_rejected", component=template.name, issues=[i.path for i in exc.issues])
         raise PatternRefused("precondition_not_met", "Your documents no longer support this view.") from exc
@@ -387,7 +463,7 @@ async def reverify_pattern(ctx: TurnContext, pattern: SavedPattern) -> int:
         raise PatternRefused("template_changed", "The layout this view was made with no longer exists.")
     valid, defects = suite()
     try:
-        register_template(template, fixture_store(), valid, defects, {})  # a throwaway registry: this only checks
+        register_template(template, fixture_store(), valid, defects, {}, fixture_graph())  # a throwaway registry
     except TemplateRefused as exc:
         log.error("reverify_registration_refused", template=template.name, defect=exc.defect)
         raise PatternRefused("template_changed", "The layout this view was made with did not pass its checks.") from exc

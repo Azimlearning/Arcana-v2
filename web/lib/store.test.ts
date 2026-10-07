@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { block, comparisonGrid, conceptMap, envelope, graphView, layout, sourceList, workspace } from "@/test/fixtures";
+import { block, comparisonGrid, conceptMap, envelope, graphView, layout, sourceList, traversalView, workspace } from "@/test/fixtures";
 
 import { FALLBACK_LAYOUT } from "./layout";
 import { activeLayout, toErrorBlock, useWorkspace } from "./store";
@@ -149,6 +149,12 @@ describe("workspace store", () => {
     const failed = toErrorBlock(graphView("ready"), envelope());
     expect(failed.meta).toMatchObject({ status: "error" });
     expect(failed.data).toEqual({ nodes: [], edges: [], citations: [] });
+  });
+
+  it("toErrorBlock empties a TraversalView too", () => {
+    const failed = toErrorBlock(traversalView("ready"), envelope());
+    expect(failed.meta).toMatchObject({ status: "error" });
+    expect(failed.data).toEqual({ seeds: [], nodes: [], steps: [], reached: [], citations: [], stepsLeftOut: 0 });
   });
 
   it("toErrorBlock empties a SourceList too", () => {

@@ -38,6 +38,9 @@ const REASON_WORDS: Record<DecisionReason, string> = {
   broken_path: "the links between the concepts did not join up",
   ungrounded_hop: "one link on the path had no quote naming both of its concepts",
   repeated_concept: "the path went through the same concept twice",
+  nothing_resolved: "the question did not match a concept in your documents, so the search followed nothing",
+  no_edge_followed: "the search followed no relation that led to a passage it returned",
+  too_many_seeds: "the question matched more concepts than the search path can show at once",
   block_failed_validation: "it was built but failed the server's checks, so it was not sent",
   answer_unavailable: "the answer could not be produced or checked",
   not_considered: "the turn ended before it was considered",
@@ -50,6 +53,7 @@ const COMPONENT_WORDS: Record<string, string> = {
   CitedSummary: "Answer",
   SourceList: "Source list",
   GraphView: "Connection graph",
+  TraversalView: "Search path",
   ComparisonGrid: "Document comparison",
   ConceptMap: "Connection path",
 };

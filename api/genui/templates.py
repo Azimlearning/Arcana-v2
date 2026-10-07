@@ -18,6 +18,7 @@ import copy
 import re
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from sqlalchemy import create_engine
@@ -28,6 +29,8 @@ from api.genui.builders import BUILDERS
 from api.genui.catalog import CATALOG, Spec
 from api.genui.validate import validate_block
 from api.stores.doc_store import Chunk, DocStore, Document
+from api.stores.graph_store import Edge, GraphStore, Node
+from api.stores.local.networkx_graph import NetworkXGraphStore
 from api.stores.local.sqlite_doc import SqliteDocStore
 
 
@@ -75,6 +78,7 @@ def register_template(
     valid: Mapping[str, Any],
     defects: Sequence[PlantedDefect],
     registry: dict[str, Registration] | None = None,
+    graph: GraphStore | None = None,
 ) -> Registration:
     """Register `template` only if `valid` validates and every planted defect is rejected."""
     registry = REGISTRY if registry is None else registry
@@ -83,7 +87,7 @@ def register_template(
     if not defects:
         raise TemplateRefused(template.name, None, "no planted defects were declared")
     try:
-        validate_block(copy.deepcopy(dict(valid)), docs)
+        validate_block(copy.deepcopy(dict(valid)), docs, graph)
     except ValidationFailed as exc:
         paths = ", ".join(i.path for i in exc.issues)
         raise TemplateRefused(template.name, None, f"the fixture block does not validate ({paths})") from exc
@@ -97,7 +101,7 @@ def register_template(
         if damaged == dict(valid):
             raise TemplateRefused(template.name, defect.name, "the defect changes nothing")
         try:
-            validate_block(damaged, docs)
+            validate_block(damaged, docs, graph)
         except ValidationFailed as exc:
             if defect.expects is not None and defect.expects not in {i.path for i in exc.issues}:
                 raise TemplateRefused(
@@ -133,6 +137,7 @@ CONCEPTS_B = "In the second paper " + ", ".join(CONCEPTS[:-1]) + " and " + CONCE
 NODES = ["Node One", "Node Two", "Node Three", "Node Four", "Node Five", "Node Six", "Node Seven", "Node Eight"]
 CHAIN = " leads to ".join(NODES) + " in one long sentence."
 EXTRA_SENTENCE = "Alpha Method is described in another paper as well."
+LONG_LABEL = "A concept whose stored label is longer than the label cap allows " + "y" * 60
 EXTRA_PAPERS = ("c", "d", "e", "f", "g")  # five more papers, so a grid can be built with more rows than its cap
 EXTRA_EMPTY = 49  # and 49 empty documents, so a source list can be built with more items than its cap
 TITLE_A, TITLE_B = "Fixture Paper A", "Fixture Paper B"
@@ -159,6 +164,20 @@ def fixture_store() -> DocStore:
         ]
     )
     return docs
+
+
+def fixture_graph() -> GraphStore:
+    """A throwaway in-memory graph over the fixture papers: Alpha Method builds on Beta Index (fx-a-1), Beta Index is
+    compared with Gamma Cache (fx-a-2); each concept also appears in a chunk of the second paper where it is named."""
+    graph = NetworkXGraphStore(Path("fixture-graph-never-saved.json"))
+    both = ("fx-a", "fx-b")
+    graph.upsert_node(Node("alpha", "Alpha Method", None, both, ("fx-a-1", "fx-b-1")))
+    graph.upsert_node(Node("beta", "Beta Index", None, both, ("fx-a-1", "fx-a-2", "fx-b-2")))
+    graph.upsert_node(Node("gamma", "Gamma Cache", None, ("fx-a",), ("fx-a-2",)))
+    graph.upsert_node(Node("long", LONG_LABEL, None, ("fx-a",), ()))  # a stored label over the label cap
+    graph.upsert_edge(Edge("alpha", "beta", "builds_on", "fx-a-1", "fx-a"))
+    graph.upsert_edge(Edge("beta", "gamma", "compared_with", "fx-a-2", "fx-a"))
+    return graph
 
 
 def _cite(cid: str, chunk: str, doc: str, title: str, page: int, quote: str) -> dict[str, Any]:
@@ -304,6 +323,94 @@ def _graph_view() -> tuple[dict[str, Any], list[PlantedDefect]]:
     ]
 
 
+def _traversal_view() -> tuple[dict[str, Any], list[PlantedDefect]]:
+    """Seed Alpha Method (exact): one followed edge (builds_on, from fx-a-1) and four passages reached, two by a mention
+    (fx-a-1, fx-b-1, ranked with the edge chunk first) and two only through the neighbour Beta Index (fx-a-2, fx-b-2)."""
+    raw = BUILDERS["TraversalView"](
+        "fx-traversal",
+        "ready",
+        data={
+            "seeds": [{"nodeId": "alpha", "match": "exact"}],
+            "nodes": [{"id": "alpha", "label": "Alpha Method"}, {"id": "beta", "label": "Beta Index"}],
+            "steps": [{"source": "alpha", "target": "beta", "relation": "builds_on", "citationId": "c1", "hop": 1}],
+            "reached": [
+                {"citationId": "c1", "via": "mentions", "rank": 1, "seedIds": ["alpha"]},
+                {"citationId": "c2", "via": "mentions", "rank": 2, "seedIds": ["alpha"]},
+                {"citationId": "c3", "via": "neighbour", "rank": 3, "seedIds": ["alpha"]},
+                {"citationId": "c4", "via": "neighbour", "rank": 4, "seedIds": ["alpha"]},
+            ],
+            "citations": [
+                _cite("c1", "fx-a-1", "fx-a", TITLE_A, 1, A1),
+                _cite("c2", "fx-b-1", "fx-b", TITLE_B, 1, B1),
+                _cite("c3", "fx-a-2", "fx-a", TITLE_A, 2, A2),
+                _cite("c4", "fx-b-2", "fx-b", TITLE_B, 2, B2),
+            ],
+            "stepsLeftOut": 0,
+        },
+    )
+
+    def swap_first_two(r: dict[str, Any]) -> None:
+        _data(r)["reached"][0]["citationId"], _data(r)["reached"][1]["citationId"] = "c2", "c1"
+
+    def reach_an_unreachable_chunk(r: dict[str, Any]) -> None:
+        """The last passage cites a real, verbatim chunk that the graph does not reach from this seed."""
+        _data(r)["citations"][3] = _cite("c4", "fx-a-3", "fx-a", TITLE_A, 3, CONCEPTS_A)
+
+    def seed_a_node_with_a_long_label(r: dict[str, Any]) -> None:
+        _data(r)["seeds"][0]["nodeId"] = "long"
+        _data(r)["nodes"][0] = {"id": "long", "label": LONG_LABEL}
+
+    def drop_last_passage(r: dict[str, Any]) -> None:
+        _data(r)["reached"].pop()
+        _data(r)["citations"].pop()
+
+    return raw, [
+        *_common(),
+        PlantedDefect("seed_not_among_the_nodes", _set("data.seeds.0.nodeId", "ghost"), expects="data.seeds.0.nodeId"),
+        PlantedDefect("unknown_seed_match", _set("data.seeds.0.match", "fuzzy"), expects="data.seeds.0.match"),
+        PlantedDefect("node_not_in_the_graph", _set("data.nodes.1.id", "ghost"), expects="data.nodes.1.id"),
+        PlantedDefect(
+            "node_with_another_label", _set("data.nodes.0.label", "Alpha Methods"), expects="data.nodes.0.label"
+        ),
+        PlantedDefect("duplicate_node_id", _set("data.nodes.1.id", "alpha"), expects="data.nodes.1.id"),
+        PlantedDefect(
+            "an_extra_node",
+            lambda r: _data(r)["nodes"].append({"id": "gamma", "label": "Gamma Cache"}),
+            expects="data.nodes.(set)",
+        ),
+        PlantedDefect(
+            "a_step_that_is_not_a_stored_edge", _set("data.steps.0.relation", "refutes"), expects="data.steps.0"
+        ),
+        PlantedDefect("a_step_of_two_hops", _set("data.steps.0.hop", 2), expects="data.steps.0.hop"),
+        PlantedDefect(
+            "a_step_citing_nothing", _set("data.steps.0.citationId", "c9"), expects="data.steps.0.citationId"
+        ),
+        PlantedDefect(
+            "a_wrong_way_of_being_reached", _set("data.reached.0.via", "neighbour"), expects="data.reached.0.via"
+        ),
+        PlantedDefect(
+            "an_unknown_way_of_being_reached", _set("data.reached.0.via", "teleport"), expects="data.reached.0.via"
+        ),
+        PlantedDefect("a_wrong_rank", _set("data.reached.0.rank", 2), expects="data.reached.0.rank"),
+        PlantedDefect("passages_in_the_wrong_order", swap_first_two, expects="data.reached.0.citationId"),
+        PlantedDefect(
+            "a_passage_reached_by_no_seed", _set("data.reached.0.seedIds", []), expects="data.reached.0.seedIds"
+        ),
+        PlantedDefect(
+            "a_passage_the_graph_does_not_reach", reach_an_unreachable_chunk, expects="data.reached.3.citationId"
+        ),
+        PlantedDefect("a_missing_passage", drop_last_passage, expects="data.reached.(count)"),
+        PlantedDefect("a_wrong_left_out_count", _set("data.stepsLeftOut", 5), expects="data.stepsLeftOut"),
+        PlantedDefect("over_long_label", seed_a_node_with_a_long_label, expects="data.nodes.0.label"),
+        PlantedDefect("over_cap_seeds", lambda r: _repeat(r, "seeds", 11), expects="data.seeds"),
+        PlantedDefect("over_cap_nodes", lambda r: _repeat(r, "nodes", 21), expects="data.nodes"),
+        PlantedDefect("over_cap_steps", lambda r: _repeat(r, "steps", 61), expects="data.steps"),
+        PlantedDefect("over_cap_reached", lambda r: _repeat(r, "reached", 3), expects="data.reached"),
+        PlantedDefect("ready_without_steps", lambda r: _data(r).update(steps=[])),
+        PlantedDefect("placeholder_with_traversal", _set("meta.status", "empty")),
+    ]
+
+
 def _many_rows(raw: dict[str, Any]) -> None:
     """Five more papers, each with one grounded cell for the first column: seven rows, only the row cap exceeded."""
     for x in EXTRA_PAPERS:
@@ -440,6 +547,7 @@ SUITES: dict[str, Callable[[], tuple[dict[str, Any], list[PlantedDefect]]]] = {
     "CitedSummary": _cited_summary,
     "SourceList": _source_list,
     "GraphView": _graph_view,
+    "TraversalView": _traversal_view,
     "ComparisonGrid": _comparison_grid,
     "ConceptMap": _concept_map,
 }
@@ -457,12 +565,13 @@ def ensure_builtin_registered(registry: dict[str, Registration] | None = None) -
     if not pending:
         return registry
     docs = fixture_store()
+    graph = fixture_graph()
     for template in pending:
         suite = SUITES.get(template.name)
         if suite is None:
             raise TemplateRefused(template.name, None, "no planted-defect suite is declared for it")
         valid, defects = suite()
-        register_template(template, docs, valid, defects, registry)
+        register_template(template, docs, valid, defects, registry, graph)
     return registry
 
 

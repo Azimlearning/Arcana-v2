@@ -28,6 +28,8 @@ export function toErrorBlock(block: UIBlock, error: ErrorEnvelope): UIBlock {
       return { ...block, meta, data: { documents: [] } };
     case "GraphView":
       return { ...block, meta, data: { nodes: [], edges: [], citations: [] } };
+    case "TraversalView":
+      return { ...block, meta, data: { seeds: [], nodes: [], steps: [], reached: [], citations: [], stepsLeftOut: 0 } };
     case "ComparisonGrid":
       return { ...block, meta, data: { dimensions: [], rows: [], citations: [] } };
     case "ConceptMap":

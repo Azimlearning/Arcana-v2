@@ -101,14 +101,18 @@ def test_chat_streams_a_loading_block_then_a_validated_ready_block_then_done(rea
     assert response.headers["cache-control"] == "no-cache"
 
     stream = events(response)  # every event parsed against the generated schema
-    assert [e.type for e in stream] == ["block", "block", "block", "block", "layout", "done"]
+    assert [e.type for e in stream] == ["block", "block", "block", "block", "block", "layout", "done"]
     loading, final = stream[0].block, stream[1].block  # pyright: ignore[reportAttributeAccessIssue]
-    layout = stream[4].layout  # pyright: ignore[reportAttributeAccessIssue]
+    layout = stream[5].layout  # pyright: ignore[reportAttributeAccessIssue]
     assert layout.origin == "adaptive" and sum(p.width for p in layout.panels) == 100
-    shown = {e.block.id for e in stream[:4]}  # pyright: ignore[reportAttributeAccessIssue]
+    shown = {e.block.id for e in stream[:5]}  # pyright: ignore[reportAttributeAccessIssue]
     assert {p.blockId for p in layout.placements} <= shown  # it places only blocks this turn produced
-    extra = [(e.block.type, e.block.meta.status) for e in stream[2:4]]  # pyright: ignore[reportAttributeAccessIssue]
-    assert extra == [("SourceList", "ready"), ("GraphView", "ready")]  # a comparison turn also drew the graph
+    extra = [(e.block.type, e.block.meta.status) for e in stream[2:5]]  # pyright: ignore[reportAttributeAccessIssue]
+    assert extra == [
+        ("SourceList", "ready"),
+        ("GraphView", "ready"),
+        ("TraversalView", "ready"),
+    ]  # a comparison turn also drew the graph and what the search followed
     assert loading.meta.status == "loading" and final.meta.status == "ready"
     assert loading.id == final.id  # the second block replaces the first
     assert final.data.segments and final.data.citations
@@ -364,7 +368,9 @@ def test_a_store_that_cannot_be_read_is_an_internal_error_envelope(client: TestC
         raise RuntimeError("secret internal detail")
 
     monkeypatch.setattr(container.docs, "list_documents", broken)
-    quiet = TestClient(client.app, raise_server_exceptions=False)  # let the app's own handler answer, as a browser sees it
+    quiet = TestClient(
+        client.app, raise_server_exceptions=False
+    )  # let the app's own handler answer, as a browser sees it
     response = quiet.get("/workspace")
     assert response.status_code == 500 and response.json()["code"] == "internal"
     assert "secret" not in response.text
@@ -392,7 +398,9 @@ def test_a_turn_trace_has_a_decision_for_every_catalog_component_in_catalog_orde
 def test_what_was_offered_and_what_was_refused_with_its_reason(ready_client: TestClient):
     decisions = {d.component: d for d in trace_of(ready_client).composition}
     assert decisions["CitedSummary"].offered and decisions["SourceList"].offered and decisions["GraphView"].offered
-    assert decisions["ComparisonGrid"].offered is False and decisions["ComparisonGrid"].reasons == ["no_shared_entities"]
+    assert decisions["ComparisonGrid"].offered is False and decisions["ComparisonGrid"].reasons == [
+        "no_shared_entities"
+    ]
     assert decisions["ConceptMap"].offered is False and decisions["ConceptMap"].reasons == ["single_hop"]
 
 
@@ -404,17 +412,21 @@ def test_a_turn_that_failed_records_the_answer_as_unavailable_and_the_rest_as_no
     assert all(d.reasons == ["not_considered"] for name, d in decisions.items() if name != "CitedSummary")
 
 
-def test_a_block_that_failed_validation_is_recorded_by_code_only(ready_client: TestClient, monkeypatch: pytest.MonkeyPatch):
+def test_a_block_that_failed_validation_is_recorded_by_code_only(
+    ready_client: TestClient, monkeypatch: pytest.MonkeyPatch
+):
     from api.agents import compose as compose_module
     from api.core.errors import ValidationFailed
     from api.genui.generated import FieldIssue
 
     real = compose_module.validate_block
 
-    def refuse_the_graph_view(raw, docs):
+    def refuse_the_graph_view(raw, docs, graph=None):
         if raw["type"] == "GraphView":
-            raise ValidationFailed("x", [FieldIssue(path="data.edges.0.citationId", message="a private quote was here")])
-        return real(raw, docs)
+            raise ValidationFailed(
+                "x", [FieldIssue(path="data.edges.0.citationId", message="a private quote was here")]
+            )
+        return real(raw, docs, graph)
 
     monkeypatch.setattr(compose_module, "validate_block", refuse_the_graph_view)
     turn_id = turn_id_of(chat(ready_client))

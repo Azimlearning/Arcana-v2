@@ -11,6 +11,7 @@ import { ComparisonGrid } from "./ComparisonGrid";
 import { ConceptMap } from "./ConceptMap";
 import { GraphView } from "./GraphView";
 import { SourceList } from "./SourceList";
+import { TraversalView } from "./TraversalView";
 
 /** One component per member of the block union `B`, each receiving exactly its own variant. */
 export type Registry<B extends { type: string }> = {
@@ -21,6 +22,7 @@ export const registry: Registry<UIBlock> = {
   CitedSummary,
   SourceList,
   GraphView,
+  TraversalView,
   ComparisonGrid,
   ConceptMap,
 };

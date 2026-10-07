@@ -116,6 +116,13 @@ def detail(name: str, evidence: ComposerEvidence) -> dict[str, int]:
     """Counts that say how much of a component was available (not a quality measure)."""
     if name == "GraphView":
         return {"drawable_edges": len(graph_edges(evidence.graph))}
+    if name == "TraversalView":
+        traversal = (evidence.graph or {}).get("traversal") or {}
+        return {
+            "seeds": len(traversal.get("seeds") or []),
+            "steps_shown": len(traversal.get("steps") or []),
+            "steps_followed": int(traversal.get("steps_total") or 0),
+        }
     if name == "ComparisonGrid":
         docs, dims, cells = alignment_grid(evidence.graph)
         return {"documents": len(docs), "entities": len(dims), "cells": len(cells)}

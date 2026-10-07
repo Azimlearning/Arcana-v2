@@ -63,6 +63,26 @@ def graph_view(
     }
 
 
+def traversal_view(
+    block_id: str,
+    status: str,
+    *,
+    data: dict[str, Any] | None = None,
+    error: ErrorEnvelope | None = None,
+) -> dict[str, Any]:
+    return {
+        "type": "TraversalView",
+        "id": block_id,
+        "meta": {
+            "status": status,
+            "error": error.model_dump() if error is not None else None,
+        },
+        "data": data
+        if data is not None
+        else {"seeds": [], "nodes": [], "steps": [], "reached": [], "citations": [], "stepsLeftOut": 0},
+    }
+
+
 def comparison_grid(
     block_id: str,
     status: str,
@@ -103,6 +123,7 @@ BUILDERS: dict[str, Callable[..., dict[str, Any]]] = {
     "CitedSummary": cited_summary,
     "SourceList": source_list,
     "GraphView": graph_view,
+    "TraversalView": traversal_view,
     "ComparisonGrid": comparison_grid,
     "ConceptMap": concept_map,
 }
