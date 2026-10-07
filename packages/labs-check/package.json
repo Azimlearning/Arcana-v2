@@ -1,0 +1,10 @@
+{
+  "name": "@arcana/labs-check",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The VerifiedLab checker and runner (P4, D-36): an AST allowlist and an isolated runner for one generated pure function. Called by api/labs as a subprocess; never loaded by the web app.",
+  "type": "module",
+  "dependencies": {
+    "acorn": "8.19.0"
+  }
+}

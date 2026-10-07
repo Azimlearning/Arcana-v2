@@ -1,0 +1,19 @@
+{
+  "_about": "The one reviewable list of what a generated lab function may contain (D-36). Everything not named here is rejected. Read by check.mjs and by a test that compares it with refdocs/guides/catalog.md.",
+  "function_name": "lab",
+  "param_name": "p",
+  "max_source_chars": 4000,
+  "max_nodes": 2000,
+  "max_loop_bound": 10000,
+  "max_loop_depth": 2,
+  "max_loop_product": 100000,
+  "max_call_args": 3,
+  "math_functions": ["abs", "min", "max", "pow", "sqrt", "exp", "log", "log1p", "expm1", "sin", "cos", "tan", "tanh", "floor", "ceil", "round", "sign", "hypot", "atan", "atan2"],
+  "math_constants": ["PI", "E"],
+  "binary_operators": ["+", "-", "*", "/", "%", "**", "<", "<=", ">", ">=", "==", "!=", "===", "!=="],
+  "logical_operators": ["&&", "||"],
+  "unary_operators": ["-", "+", "!"],
+  "assignment_operators": ["=", "+=", "-=", "*=", "/="],
+  "update_operators": ["++", "--"],
+  "denied_local_names": ["constructor", "prototype", "__proto__", "__defineGetter__", "__defineSetter__", "__lookupGetter__", "__lookupSetter__", "toString", "valueOf", "hasOwnProperty", "Math", "p", "lab", "arguments", "eval", "undefined", "NaN", "Infinity", "globalThis", "window", "self", "process", "require", "module", "exports"]
+}
