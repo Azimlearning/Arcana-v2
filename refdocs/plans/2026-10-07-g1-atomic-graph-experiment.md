@@ -68,6 +68,8 @@ Embeddings of chunks are the same text as before, so the vector store is reused 
 
 **The slice, chosen by the rule (2026-10-07):** three papers, 285 chunks, 19 of the 20 questions answerable (`refdocs/evidence/20261007T021458Z-g1-slice-and-baseline-v2.md`): about $1.2 to $3.0, expected **$1.9**, for the subset instead of the roughly 400 chunks the first draft assumed; the pilot (Ragas) is $0.15 to $0.37 on top.
 
+**The pilot, run (2026-10-07):** measured **$0.00358 per chunk** (35 chunks, $0.1254), about half the auditor's expected figure; the whole pilot including diagnostics and the repeat after the fix was $0.2954 of the $0.40 confirmed. The slice of 285 chunks is therefore about **$1.0 to $1.2**, and a full 16-paper run about $5.6 to $6.0 (still above the $3.53 left; it needs the cap raised or the 2026-11-01 reset). See `refdocs/evidence/20261007-g1-pilot.md`.
+
 ## Risks & unknowns
 
 | Risk | Impact | Mitigation |

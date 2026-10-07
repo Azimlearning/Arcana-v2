@@ -247,12 +247,16 @@ def gate(variant: dict, hybrid: float | None = 0.0, graph: float | None = 0.0, *
     )
 
 
-def test_the_registered_gate_needs_all_three_structural_conditions():
+def test_the_registered_gate_needs_both_structural_conditions_and_not_the_degree_share_a_sparse_graph_raises():
     ok = gate(metrics_of(0.80, 0.20, 0.30))  # exactly 0.8 of the baseline's coverage, no more concentrated
     assert ok["structural_no_regression"]["passed"] and ok["ready_for_azim_to_decide"]
-    for worse in (metrics_of(0.71, 0.20, 0.30), metrics_of(0.90, 0.21, 0.30), metrics_of(0.90, 0.20, 0.31)):
+    for worse in (metrics_of(0.71, 0.20, 0.30), metrics_of(0.90, 0.20, 0.31)):
         got = gate(worse)
         assert not got["structural_no_regression"]["passed"] and not got["ready_for_azim_to_decide"]
+    sparse = gate(
+        metrics_of(0.90, 0.60, 0.30)
+    )  # the ten largest nodes own far more of a graph with few edges: reported only
+    assert sparse["structural_no_regression"]["passed"] and sparse["reported_not_gating"]["hub_concentration"]
     assert (
         gate(metrics_of(0.71, 0.20, 0.30))["structural_no_regression"]["concept_coverage_at_least_0_8_of_baseline"]
         is False

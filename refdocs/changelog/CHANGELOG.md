@@ -28,6 +28,14 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-07: G1.5a the one-paper pilot (first paid run, $0.2954) and the two amendments it forced
+- **Changed:** `api/ingestion/atomic.py` (builder g1-3: copies matched blind to PDF line-break hyphenation, the chunk's own words stored), `eval/graph_quality.py` (the same hyphen-blind test for both graphs), `eval/graph_variant.py` (the degree-share clause leaves the gate; the projection uses the measured $0.0040 per chunk), tests, `refdocs/evidence/20261007-g1-pilot.md`, the G1 plan, execution doc and D-34.
+- **Decided:** (1) the builder is g1-3; the pilot paper is not a result and the measured slice is rebuilt with g1-3; (2) the share of edge ends owned by the ten largest nodes is reported, not gating (it rises in any sparser graph). Both before any measured run.
+- **Deviations:** the pilot included four diagnostic replies and a repeat run, still inside the $0.40 Azim confirmed.
+- **Verified:** `uv run pytest api eval/tests` (889 passed), ruff, pyright; the pilot's own numbers in the evidence record. **Spend:** 82 calls, all `extract`, $0.295391; month total $6.467745 of $10 ($3.5323 left).
+- **Measured (pilot, not a result):** $0.00358 per chunk; with g1-2 only 66 nodes and 13 edges survived (114 notes dropped as not verbatim: the model repairs hyphenation); with g1-3, 100 nodes and 31 edges against the free-form graph's 303 and 296 on the same paper; the atomic graph names a concept in 100 percent of chunks but carries a relation in 54 percent.
+- **Known issues / next steps:** waiting for Azim's confirmation of the subset (3 papers, 285 chunks, about $1.0 to $1.2, ceiling $1.60), which fits in what is left; the full 16 papers would need the cap raised.
+
 ### 2026-10-07: G1 slice chosen by the rule, and the baseline re-measured with the amended measures (free)
 - **Changed:** `eval/results/20261007T021458Z-graph-quality-baseline-v2.json`, `refdocs/evidence/20261007T021458Z-g1-slice-and-baseline-v2.md`, the G1 plan (slice and cost), the G1 execution doc (paid-step commands, the slice).
 - **Decided:** nothing new; the rule written before the choice picked **three papers, 285 chunks, 19 of 20 questions answerable** (2312.10997v5, 2408.04948v1, 2310.11511v1). That makes the retrieval clause evaluable (19 is above the ten required), and the subset about $1.9 expected (1.2 to 3.0) rather than the earlier 400-chunk assumption.
