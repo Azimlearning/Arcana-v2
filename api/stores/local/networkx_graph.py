@@ -7,14 +7,28 @@ cannot leave a truncated graph.
 
 from __future__ import annotations
 
+import functools
 import json
 import os
+import threading
 from collections.abc import Collection, Iterable
 from pathlib import Path
 
 import networkx as nx
 
 from api.stores.graph_store import Edge, GraphStore, Node, Subgraph
+
+
+def _locked(method):
+    """Run a method holding the store's lock: a request served from a worker thread (the notes view reads the whole graph to
+    check that its vault is current) must not iterate it while an ingestion adds nodes and edges."""
+
+    @functools.wraps(method)
+    def wrapper(self, *args, **kwargs):
+        with self._lock:
+            return method(self, *args, **kwargs)
+
+    return wrapper
 
 
 def _edge_key(relation: str, chunk_id: str) -> str:
@@ -24,11 +38,13 @@ def _edge_key(relation: str, chunk_id: str) -> str:
 class NetworkXGraphStore(GraphStore):
     def __init__(self, path: Path):
         self._path = path
+        self._lock = threading.RLock()
         self._g: nx.MultiDiGraph = nx.MultiDiGraph()
         if path.exists():
             data = json.loads(path.read_text(encoding="utf-8"))
             self._g = nx.node_link_graph(data, edges="edges", multigraph=True, directed=True)
 
+    @_locked
     def upsert_node(self, node: Node) -> None:
         if node.id in self._g:
             existing = self._g.nodes[node.id]
@@ -51,6 +67,7 @@ class NetworkXGraphStore(GraphStore):
                 **extra,
             )
 
+    @_locked
     def upsert_edge(self, edge: Edge) -> None:
         if not edge.chunk_id:
             raise ValueError("an edge must record the chunk it came from")
@@ -80,12 +97,15 @@ class NetworkXGraphStore(GraphStore):
             note=d.get("note"),
         )
 
+    @_locked
     def get_node(self, node_id: str) -> Node | None:
         return self._node(node_id) if node_id in self._g else None
 
+    @_locked
     def nodes(self) -> list[Node]:
         return [self._node(n) for n in self._g.nodes]
 
+    @_locked
     def edges(self) -> list[Edge]:
         return [
             Edge(
@@ -99,6 +119,7 @@ class NetworkXGraphStore(GraphStore):
             for u, v, d in self._g.edges(data=True)
         ]
 
+    @_locked
     def expand(self, node_ids: Iterable[str], hops: int = 1) -> Subgraph:
         seeds = {n for n in node_ids if n in self._g}
         reached = set(seeds)
@@ -127,6 +148,7 @@ class NetworkXGraphStore(GraphStore):
         touched = {e.src for e in edges.values()} | {e.dst for e in edges.values()} | seeds
         return Subgraph(nodes=[self._node(n) for n in sorted(touched)], edges=list(edges.values()))
 
+    @_locked
     def shortest_path(self, src: str, dst: str) -> list[str] | None:
         if src not in self._g or dst not in self._g:
             return None
@@ -135,12 +157,14 @@ class NetworkXGraphStore(GraphStore):
         except nx.NetworkXNoPath:
             return None
 
+    @_locked
     def communities(self) -> list[set[str]]:
         if self._g.number_of_nodes() == 0:
             return []
         simple = nx.Graph(self._g.to_undirected())
         return [set(c) for c in nx.community.louvain_communities(simple, seed=0)]
 
+    @_locked
     def delete_document(self, doc_id: str, chunk_ids: Collection[str] = ()) -> None:
         doomed = [(u, v, k) for u, v, k, d in self._g.edges(keys=True, data=True) if d["doc_id"] == doc_id]
         self._g.remove_edges_from(doomed)
@@ -152,6 +176,7 @@ class NetworkXGraphStore(GraphStore):
             if not ids:
                 self._g.remove_node(n)
 
+    @_locked
     def save(self) -> None:
         self._path.parent.mkdir(parents=True, exist_ok=True)
         data = nx.node_link_data(self._g, edges="edges")

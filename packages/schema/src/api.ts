@@ -104,10 +104,12 @@ export interface LintPageRef {
  * words after folding plurals and hyphens), `one_more_word` (one name is the other plus one word) or `initials` (one is the
  * initials of the other).
  */
+export type LintDuplicateReason = "same_name" | "one_more_word" | "initials";
+
 export interface LintDuplicate {
   a: LintPageRef;
   b: LintPageRef;
-  reason: string;
+  reason: LintDuplicateReason;
 }
 
 /** One paper's definition of a concept, verbatim, with the paper's title. */

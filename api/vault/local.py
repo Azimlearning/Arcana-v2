@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import uuid
 from pathlib import Path
 
 from api.vault.store import VaultStore
@@ -16,10 +17,15 @@ class JsonVaultStore(VaultStore):
         self._vectors: dict[str, list[float]] = {}
         self._meta: dict[str, object] = {}
         if path.exists():
-            raw = json.loads(path.read_text(encoding="utf-8"))
-            self._vault = Vault.from_dict(raw["vault"])
-            self._vectors = {k: list(v) for k, v in raw.get("label_vectors", {}).items()}
-            self._meta = dict(raw.get("label_meta", {}))
+            try:
+                raw = json.loads(path.read_text(encoding="utf-8"))
+                vault = Vault.from_dict(raw["vault"])
+                vectors = {k: list(v) for k, v in raw.get("label_vectors", {}).items()}
+                meta = dict(raw.get("label_meta", {}))
+            except (ValueError, KeyError, TypeError):
+                # The vault is derived and can always be compiled again: a damaged file is no vault, not a start-up failure.
+                return
+            self._vault, self._vectors, self._meta = vault, vectors, meta
 
     def vault(self) -> Vault | None:
         return self._vault
@@ -49,6 +55,6 @@ class JsonVaultStore(VaultStore):
             "label_vectors": self._vectors,
             "label_meta": self._meta,
         }
-        tmp = self._path.with_suffix(".tmp")
+        tmp = self._path.with_name(f"{self._path.name}.{uuid.uuid4().hex}.tmp")  # no other writer shares this name
         tmp.write_text(json.dumps(body, sort_keys=True), encoding="utf-8")
         tmp.replace(self._path)

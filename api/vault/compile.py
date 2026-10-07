@@ -15,6 +15,7 @@ Nothing is merged by judgement and no stored node, edge or passage is changed: t
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 from collections import Counter
 from collections.abc import Iterable, Sequence
@@ -43,16 +44,22 @@ MIN_COMPACT_CHARS = 4
 
 
 def corpus_fingerprint(graph: GraphStore, docs: DocStore) -> str:
-    """A hash of what a vault is built from: every stored passage (id and text) and every graph node and edge. A vault whose
-    recorded fingerprint differs from the stores' is out of date (a document was added or replaced, or the graph was rebuilt)."""
+    """A hash of what a vault is built from: every stored passage (id, document, position, page and text) and every graph node
+    (id, label, type, kind, note, documents and passages) and edge (ends, relation, passage, document and evidence), each record
+    encoded as JSON so no separator can run two fields together. A vault whose recorded fingerprint differs from the stores' is
+    out of date (a document was added or replaced, or the graph was rebuilt)."""
     h = hashlib.sha256()
+
+    def add(record: object) -> None:
+        h.update(json.dumps(record, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
+        h.update(b"\n")
+
     for chunk in sorted(docs.all_chunks(), key=lambda c: c.id):
-        h.update(chunk.id.encode("utf-8"))
-        h.update(hashlib.sha256(chunk.text.encode("utf-8")).digest())
+        add(["c", chunk.id, chunk.doc_id, chunk.ordinal, chunk.page, hashlib.sha256(chunk.text.encode("utf-8")).hexdigest()])
     for node in sorted(graph.nodes(), key=lambda n: n.id):
-        h.update(f"n|{node.id}|{node.label}|{','.join(sorted(node.chunk_ids))}".encode())
+        add(["n", node.id, node.label, node.type, node.kind, node.note, sorted(node.doc_ids), sorted(node.chunk_ids)])
     for edge in sorted(graph.edges(), key=lambda e: (e.src, e.relation, e.dst, e.chunk_id)):
-        h.update(f"e|{edge.src}|{edge.relation}|{edge.dst}|{edge.chunk_id}|{edge.evidence or ''}".encode())
+        add(["e", edge.src, edge.relation, edge.dst, edge.chunk_id, edge.doc_id, edge.evidence])
     return h.hexdigest()
 
 

@@ -198,9 +198,9 @@ def _kind(raw: object, drops: Counter[str]) -> str:
 def build_atomic2_result(parsed: dict, chunk: Chunk) -> ExtractionResult:
     """Apply the rules to one passage's parsed reply. The model's numbers are hints and are never trusted: every sentence stored
     is chosen by the server and holds the labels it must name."""
-    concepts = parsed.get("concepts", [])
-    relations = parsed.get("relations", [])
-    claims = parsed.get("claims", [])
+    concepts = parsed.get("concepts") or []  # a null field is an empty list, not a lost passage
+    relations = parsed.get("relations") or []
+    claims = parsed.get("claims") or []
     if (
         not isinstance(concepts, list)
         or not isinstance(relations, list)
@@ -212,6 +212,10 @@ def build_atomic2_result(parsed: dict, chunk: Chunk) -> ExtractionResult:
 
     kept: dict[str, Node] = {}
     by_label: dict[str, str] = {}
+    if len(concepts) > MAX_CONCEPTS:
+        drops["concept_over_cap"] += len(concepts) - MAX_CONCEPTS
+    if len(relations) > MAX_RELATIONS:
+        drops["relation_over_cap"] += len(relations) - MAX_RELATIONS
     for concept in concepts[:MAX_CONCEPTS]:
         if not isinstance(concept, dict):
             drops["concept_malformed"] += 1
@@ -272,6 +276,9 @@ def build_atomic2_result(parsed: dict, chunk: Chunk) -> ExtractionResult:
         if kind not in RELATIONS:
             drops["relation_type_other"] += 1
             kind = OTHER
+        if (src, dst, kind) in edges:
+            drops["relation_duplicate"] += 1
+            continue
         edges.setdefault(
             (src, dst, kind),
             Edge(

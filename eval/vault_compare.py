@@ -332,7 +332,14 @@ async def compare(args: argparse.Namespace) -> dict[str, Any]:
     questions_path, gold_dir = Path(args.questions_file), Path(args.gold_dir)
     manifest_path = Path(args.manifest)
     require_frozen_paths(questions_path, gold_dir, args.allow_dirty)
+    variant_info: dict[str, Any] = {}
     for d in variant_dirs:
+        recorded = d / "variant.json"
+        if recorded.exists():  # a rebuilt graph says whether it is complete; a copy of the pinned stores has no such record
+            info = json.loads(recorded.read_text(encoding="utf-8"))
+            if not info.get("complete"):
+                raise RunInvalid(f"{d} has an incomplete rebuild record (variant.json): a partial graph is not compared")
+            variant_info[d.name] = {k: info.get(k) for k in ("builder", "prompt_version", "claims", "spent_usd", "max_usd")}
         if not (d / VAULT_FILE).exists():
             raise RunInvalid(f"{d} has no {VAULT_FILE}: build it with `vault_tool.py build`")
         if sha256_file(d / "vectors.npz") != sha256_file(baseline_dir / "vectors.npz"):
@@ -559,6 +566,7 @@ async def compare(args: argparse.Namespace) -> dict[str, Any]:
             "descriptive_only": descriptive_only,
             "semantic_arms_missing_for": missing_sem,
             "protocol_complete": not missing_sem,
+            "variant_builds": variant_info,
             "control_arm_flat_differs": False,
         },
         "variants": per_variant,

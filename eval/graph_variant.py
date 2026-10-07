@@ -115,6 +115,9 @@ from eval.run_ablation import (
 EXPECTED_PER_CHUNK_USD = 0.0040
 """The start-of-document projection before anything has been measured in a build: the pilot measured $0.00358 per chunk for
 the atomic prompt (35 chunks, 2026-10-07), rounded up. The first estimate, $0.0067, was the cost auditor's guess."""
+EXPECTED_BY_BUILDER = {"atomic": EXPECTED_PER_CHUNK_USD, "atomic2": 0.0030}
+"""The start-of-document projection per builder: atomic2 returns no sentences, so it is cheaper than g1-3 (the cost audit expects
+about $0.0022 per passage; 0.0030 keeps the projection safe without stopping a build that would fit)."""
 ARMS_COMPARED = ("graph", "hybrid", "flat")
 MAX_NDCG_DROP = 0.05
 PAIRED_MIN_FOR_SIGNIFICANCE = 10
@@ -256,7 +259,7 @@ async def rebuild_graph(
     for arxiv_id, entry in saved.items():
         chunks = container.docs.chunks_for_document(entry["doc_id"])
         projected = (container.ledger.month_total() - spent_before) + len(chunks) * max(
-            per_chunk, EXPECTED_PER_CHUNK_USD
+            per_chunk, EXPECTED_BY_BUILDER.get(builder, EXPECTED_PER_CHUNK_USD)
         )
         if projected > max_usd:
             documents.append(
@@ -274,6 +277,18 @@ async def rebuild_graph(
                     "arxiv_id": arxiv_id,
                     "doc_id": entry["doc_id"],
                     "status": "not_built_ceiling" if isinstance(exc, CeilingReached) else "not_built_cap",
+                    "chunks": len(chunks),
+                    "cost_usd": round(container.ledger.month_total() - before, 6),
+                }
+            )
+            break
+        except ArcanaError as exc:  # a provider that failed on both routes: record it, with what it cost, instead of losing the run
+            documents.append(
+                {
+                    "arxiv_id": arxiv_id,
+                    "doc_id": entry["doc_id"],
+                    "status": "not_built_error",
+                    "error": exc.code,
                     "chunks": len(chunks),
                     "cost_usd": round(container.ledger.month_total() - before, 6),
                 }

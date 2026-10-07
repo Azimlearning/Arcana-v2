@@ -107,7 +107,7 @@ function Mastery({ block }: { block: ConceptPageBlock }) {
   return (
     <section aria-label="Your mastery" className="rounded border border-stone-200 bg-stone-50 p-3 text-sm">
       <h3 className="text-xs font-medium uppercase tracking-wide text-stone-500">Your mastery</h3>
-      <div className="mt-1 flex items-center gap-2">
+      <div className="mt-1 flex items-center gap-2" role="status" aria-live="polite">
         <span className={`inline-block h-3 w-3 rounded-full border border-stone-400 ${BAND_SWATCH[state]}`} aria-hidden="true" />
         <span>
           {m === null
@@ -134,13 +134,14 @@ function Mastery({ block }: { block: ConceptPageBlock }) {
             <button
               key={r.signal}
               type="button"
-              disabled={busy}
+              aria-disabled={busy}
               onClick={async () => {
+                if (busy) return; // ignored while a rating is being saved; the button keeps focus
                 setBusy(true);
                 setFailed(!(await rate(block.data.page.id, r.signal)));
                 setBusy(false);
               }}
-              className="rounded border border-stone-300 bg-white px-2 py-1 text-xs hover:bg-stone-100 disabled:opacity-50"
+              className={`rounded border border-stone-300 bg-white px-2 py-1 text-xs hover:bg-stone-100 ${busy ? "opacity-50" : ""}`}
             >
               {r.label}
             </button>

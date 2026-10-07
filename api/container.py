@@ -1,6 +1,7 @@
 """Wires stores, providers and retrievers for the configured mode. Built once, at app startup."""
 
-from dataclasses import dataclass
+import threading
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from sqlalchemy import Engine
@@ -44,6 +45,8 @@ class Container:
     uploads_dir: Path
     vault_store: VaultStore
     learner_store: LearnerStore
+    _vault_lock: threading.RLock = field(default_factory=threading.RLock, repr=False)
+    """One vault compile at a time: two requests that both find it stale reuse the first one's build (the check is made again inside)."""
 
     @property
     def ingest_deps(self) -> IngestDeps:
@@ -60,18 +63,27 @@ class Container:
         return self.vault_store.vault()
 
     def fresh_vault(self) -> Vault | None:
+        with self._vault_lock:
+            return self._fresh_vault()
+
+    def _fresh_vault(self) -> Vault | None:
         """The vault, compiled again first if the stored documents or graph have changed since it was built (compounding: a document
         added or replaced reaches the notes view without anyone asking). A vault built before the corpus was recorded is kept as it
-        is, and so is the absence of a vault when there is nothing to build from."""
+        is (until `POST /vault/rebuild`), and a missing vault is built only when documents are stored. If every document is later
+        removed, the vault is rebuilt empty."""
         current = self.vault_store.vault()
         if current is None:
-            return self.rebuild_vault() if self.docs.all_chunks() else None
+            return self._rebuild_vault() if self.docs.all_chunks() else None
         recorded = current.stats.get("corpus")
         if recorded is not None and recorded != corpus_fingerprint(self.graph, self.docs):
-            return self.rebuild_vault()
+            return self._rebuild_vault()
         return current
 
     def rebuild_vault(self) -> Vault:
+        with self._vault_lock:
+            return self._rebuild_vault()
+
+    def _rebuild_vault(self) -> Vault:
         """Compile the vault from the stored graph and passages and keep it. Deterministic, no model call. A previous build's
         claims are kept only if the build supplied them elsewhere: the a claim of a deleted passage is dropped by the compiler."""
         built = compile_vault(self.graph, self.docs, carried_claims(self.vault_store.vault()))

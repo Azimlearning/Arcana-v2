@@ -9,6 +9,7 @@ from __future__ import annotations
 import sqlite3
 from abc import ABC, abstractmethod
 from collections.abc import Collection, Mapping
+from contextlib import closing
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -41,7 +42,7 @@ class SqliteLearnerStore(LearnerStore):
     def __init__(self, path: Path):
         self._path = path
         path.parent.mkdir(parents=True, exist_ok=True)
-        with self._connect() as db:
+        with closing(self._connect()) as db, db:
             db.execute(
                 "CREATE TABLE IF NOT EXISTS learner_events ("
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, page_id TEXT NOT NULL, signal TEXT NOT NULL, at TEXT NOT NULL)"
@@ -56,7 +57,7 @@ class SqliteLearnerStore(LearnerStore):
     def record(self, event: LearnerEvent) -> None:
         if event.signal not in SIGNALS:
             raise ValueError(f"unknown signal {event.signal!r}")
-        with self._connect() as db:
+        with closing(self._connect()) as db, db:
             db.execute(
                 "INSERT INTO learner_events (page_id, signal, at) VALUES (?, ?, ?)",
                 (event.page_id, event.signal, event.at.astimezone(UTC).isoformat()),
@@ -68,7 +69,7 @@ class SqliteLearnerStore(LearnerStore):
             )
 
     def events(self, page_id: str) -> list[LearnerEvent]:
-        with self._connect() as db:
+        with closing(self._connect()) as db:
             rows = db.execute(
                 "SELECT signal, at FROM learner_events WHERE page_id = ? ORDER BY id", (page_id,)
             ).fetchall()
@@ -82,7 +83,7 @@ class SqliteLearnerStore(LearnerStore):
         if not wanted:
             return out
         grouped: dict[str, list[LearnerEvent]] = {}
-        with self._connect() as db:
+        with closing(self._connect()) as db:
             for start in range(0, len(wanted), 500):  # SQLite's limit on bound variables
                 batch = wanted[start : start + 500]
                 marks = ",".join("?" * len(batch))
@@ -100,7 +101,7 @@ class SqliteLearnerStore(LearnerStore):
         return out
 
     def delete_all(self) -> int:
-        with self._connect() as db:
+        with closing(self._connect()) as db, db:
             return db.execute("DELETE FROM learner_events").rowcount
 
 

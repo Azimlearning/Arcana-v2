@@ -244,7 +244,7 @@ class LintDuplicate(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
     a: LintPageRef
     b: LintPageRef
-    reason: str
+    reason: LintDuplicateReason
 
 
 class LintPageRef(BaseModel):
@@ -509,6 +509,8 @@ LayoutMode = Literal['basic', 'research', 'exploration']
 LayoutOrigin = Literal['prebuilt', 'adaptive']
 
 LearnerSignal = Literal['know', 'unsure', 'dont_know']
+
+LintDuplicateReason = Literal['same_name', 'one_more_word', 'initials']
 
 PageLinkDirection = Literal['out', 'in']
 

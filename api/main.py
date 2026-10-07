@@ -31,7 +31,7 @@ WEB_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"]
 
 # Declared Content-Length limits, checked before the body is read. A chunked body without a
 # Content-Length is not caught here; the route still bounds what it keeps.
-MAX_BODY_BYTES = {"/chat": 512 * 1024, "/ingest": ingest.MAX_UPLOAD_BYTES + 1024 * 1024, "/patterns": 16 * 1024}
+MAX_BODY_BYTES = {"/chat": 512 * 1024, "/ingest": ingest.MAX_UPLOAD_BYTES + 1024 * 1024, "/patterns": 16 * 1024, "/learner/events": 4 * 1024}
 
 
 def _envelope(code: ErrorCode, message: str, issues: list[FieldIssue] | None = None) -> ErrorEnvelope:

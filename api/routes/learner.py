@@ -22,7 +22,7 @@ def record_event(body: LearnerEventRequest, request: Request) -> LearnerEventRes
     container = request.app.state.container
     vault = container.fresh_vault()
     if vault is None or body.pageId not in vault.pages:
-        raise NotFound(f"The vault has no page {body.pageId!r}.")
+        raise NotFound(f"The vault has no page {body.pageId[:80]!r}.")
     now = datetime.now(UTC)
     container.learner_store.record(LearnerEvent(body.pageId, body.signal, now))
     score = mastery_of(container.learner_store.events(body.pageId), now)

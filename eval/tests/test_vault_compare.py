@@ -573,3 +573,46 @@ def test_an_atomic2_rebuild_keeps_the_claims_beside_the_graph_and_the_vault_tool
     assert record["stats"]["claims"] > 0 and (tmp / "atomic2-vault" / "claims.json").exists()
     vault = JsonVaultStore(tmp / "atomic2-vault" / "vault.json").vault()
     assert vault is not None and vault.claims and all(c.page_ids for c in vault.claims)
+
+
+def test_a_partial_rebuild_is_never_compared_and_a_complete_one_is_recorded(two_papers, capsys):
+    argv, tmp, data = two_papers
+    baseline, variant = variant_dirs(tmp, data)
+    record = variant / "variant.json"
+    info = json.loads(record.read_text(encoding="utf-8"))
+    assert info["complete"] is True
+    info["complete"] = False
+    record.write_text(json.dumps(info), encoding="utf-8")
+    assert main(compare_args(argv, tmp, baseline, variant, "--without-semantic")) == 2
+    assert "incomplete rebuild record" in capsys.readouterr().err
+    info["complete"] = True
+    record.write_text(json.dumps(info), encoding="utf-8")
+    assert main(compare_args(argv, tmp, baseline, variant, "--without-semantic")) == 0
+    (path,) = (tmp / "cmp").glob("*-t.json")
+    builds = json.loads(path.read_text(encoding="utf-8"))["run"]["variant_builds"]
+    assert builds["atomic-vault"]["builder"] == "atomic" and builds["atomic-vault"]["prompt_version"]
+
+
+def test_a_provider_failure_is_recorded_with_what_it_cost_not_lost(two_papers, monkeypatch):
+    from api.core.errors import ProviderUnavailable
+    from eval import graph_variant
+
+    _, tmp, data = two_papers
+    slice_stores(data, tmp / "slice", [FIRST])
+
+    async def failing(chunks, deps):
+        raise ProviderUnavailable("the provider is down")
+
+    monkeypatch.setattr(graph_variant, "build_graph", failing)
+    info = asyncio.run(rebuild_graph(tmp / "slice", tmp / "failed", "atomic2", 1.0, allow_paid=False))
+    assert info["complete"] is False
+    report = json.loads((tmp / "failed" / "ingestion_report.json").read_text(encoding="utf-8"))
+    assert report[0]["status"] == "not_built_error" and report[0]["error"] == "provider_unavailable" and "cost_usd" in report[0]
+    assert (tmp / "failed" / "variant.json").exists()  # the record is written, so the run is not lost
+
+
+def test_the_projection_per_passage_is_per_builder_and_atomic2_is_cheaper_than_g1_3():
+    from eval import graph_variant
+
+    assert graph_variant.EXPECTED_BY_BUILDER["atomic"] == graph_variant.EXPECTED_PER_CHUNK_USD == 0.0040
+    assert graph_variant.EXPECTED_BY_BUILDER["atomic2"] < graph_variant.EXPECTED_BY_BUILDER["atomic"]

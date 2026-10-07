@@ -252,3 +252,139 @@ def test_the_lint_route_answers_with_a_validated_report_and_an_empty_one_before_
         "tensionsTotal",
         "hubs",
     }
+
+
+# ── what the schema-guardian found (M2.7, M2.8) ───────────────────────────────
+
+
+def test_two_requests_that_both_find_the_vault_stale_compile_it_once(client, pdf_bytes):
+    import threading
+    import time
+
+    client.post("/ingest", files={"file": ("one.pdf", pdf_bytes, "application/pdf")})
+    container = client.app.state.container  # type: ignore[attr-defined]
+    built = {"count": 0}
+    real = container._rebuild_vault
+
+    def counting():
+        built["count"] += 1
+        time.sleep(0.2)  # long enough for the second thread to arrive while the first is compiling
+        return real()
+
+    container._rebuild_vault = counting
+    results: list = []
+    threads = [
+        threading.Thread(target=lambda: results.append(container.fresh_vault())) for _ in range(4)
+    ]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert built["count"] == 1 and len(results) == 4 and all(r is not None for r in results)
+    assert len({r.sha256() for r in results if r is not None}) == 1
+
+
+def test_a_damaged_vault_file_is_no_vault_and_saving_leaves_no_temp_file(tmp_path: Path):
+    from api.vault.local import JsonVaultStore
+
+    path = tmp_path / "vault.json"
+    path.write_text(
+        '{"vault": {"version": "vault-1", "n_chunks": 3', encoding="utf-8"
+    )  # cut off mid-write
+    store = JsonVaultStore(path)
+    assert store.vault() is None  # derived data: compiled again, never a start-up failure
+    graph, docs = world(tmp_path)
+    store.put_vault(compile_vault(graph, docs))
+    store.save()
+    store.save()
+    assert JsonVaultStore(path).vault() is not None and not list(tmp_path.glob("*.tmp"))
+    path.write_text("[]", encoding="utf-8")
+    assert JsonVaultStore(path).vault() is None  # the wrong shape is damage too
+
+
+def test_the_graph_can_be_read_from_another_thread_while_ingestion_adds_to_it(tmp_path: Path):
+    import threading
+
+    from api.stores.graph_store import Node
+    from api.stores.local.networkx_graph import NetworkXGraphStore
+
+    graph = NetworkXGraphStore(tmp_path / "g.json")
+    for i in range(50):
+        graph.upsert_node(Node(f"seed{i}", f"seed{i}", None, ("d",), ("c",), None, None))
+    errors: list[BaseException] = []
+    stop = threading.Event()
+
+    def reader():
+        try:
+            while not stop.is_set():
+                graph.nodes()
+                graph.edges()
+        except BaseException as exc:
+            errors.append(exc)
+
+    readers = [threading.Thread(target=reader) for _ in range(3)]
+    for t in readers:
+        t.start()
+    for i in range(2000):
+        graph.upsert_node(Node(f"n{i}", f"n{i}", None, ("d",), ("c",), None, None))
+    stop.set()
+    for t in readers:
+        t.join()
+    assert errors == [] and len(graph.nodes()) == 2050
+
+
+def test_the_fingerprint_sees_a_node_kind_a_note_and_a_passage_position(tmp_path: Path):
+    from api.stores.graph_store import Node
+    from api.stores.local.networkx_graph import NetworkXGraphStore
+
+    def graph_with(kind, note, d):
+        g = NetworkXGraphStore(d / "g.json")
+        g.upsert_node(Node("a", "alpha concept", "t", ("d1",), ("c1",), kind, note))
+        return g
+
+    base = tmp_path / "base"
+    base.mkdir()
+    _, docs = world(base)
+    first = corpus_fingerprint(graph_with("method", "A sentence about alpha concept.", base), docs)
+    other = tmp_path / "other"
+    other.mkdir()
+    assert (
+        corpus_fingerprint(graph_with("model", "A sentence about alpha concept.", other), docs)
+        != first
+    )  # a kind
+    third = tmp_path / "third"
+    third.mkdir()
+    assert (
+        corpus_fingerprint(
+            graph_with("method", "Another sentence about alpha concept.", third), docs
+        )
+        != first
+    )  # a note
+
+
+def test_a_learner_file_that_cannot_be_read_does_not_take_the_notes_view_down(tmp_path: Path):
+    from api.agents.compose import compose_notes
+
+    graph, docs = world(tmp_path)
+    vault = compile_vault(graph, docs)
+
+    class Broken:
+        def mastery(self, page_ids, now=None):
+            raise RuntimeError("database is locked")
+
+    _, blocks = compose_notes(vault, docs, "rag", "", Broken())  # type: ignore[arg-type]
+    assert [b.type for b in blocks] == ["ConceptPage", "NotesGraph"] and blocks[
+        0
+    ].data.mastery is None  # type: ignore[union-attr]
+
+
+def test_a_rating_request_with_a_huge_body_is_refused_before_it_is_read(client):
+    big = client.post(
+        "/learner/events", content=b"x" * 10_000, headers={"Content-Type": "application/json"}
+    )
+    assert big.status_code == 413
+    long_id = "p" * 3000
+    refused = client.post("/learner/events", json={"pageId": long_id, "signal": "know"})
+    assert (
+        refused.status_code == 404 and long_id not in refused.text
+    )  # the id is cut in the message, not echoed whole

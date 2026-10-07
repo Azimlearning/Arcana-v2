@@ -353,3 +353,21 @@ async def test_the_pipeline_builds_the_graph_and_hands_the_claims_to_a_sink(make
         c.sentence in chunks[c.chunk_id] for c in deps.claim_sink
     )
     json.dumps(report)  # the report is plain data
+
+
+def test_a_null_field_is_an_empty_list_not_a_lost_passage():
+    result = build_atomic2_result({"concepts": CONCEPTS, "relations": None, "claims": None}, CHUNK)
+    assert len(result.nodes) == 4 and result.edges == [] and result.claims == []
+    assert build_atomic2_result({"concepts": None}, CHUNK).nodes == []
+
+
+def test_what_the_caps_cut_and_a_repeated_relation_are_counted_not_silent():
+    many = [{"label": f"Concept number {i}", "kind": "concept"} for i in range(30)]
+    text = " ".join(f"Concept number {i} is described in this sentence." for i in range(30))
+    over = build_atomic2_result({"concepts": many}, Chunk("c9", "d1", 0, 1, text))
+    assert len(over.nodes) == atomic2.MAX_CONCEPTS and over.drops["concept_over_cap"] == 5
+    relation = {"src": "Self-RAG", "dst": "reflection tokens", "type": "uses", "s": 2}
+    again = build_atomic2_result({"concepts": CONCEPTS, "relations": [relation] * 3}, CHUNK)
+    assert len(again.edges) == 1 and again.drops["relation_duplicate"] == 2
+    lots = build_atomic2_result({"concepts": CONCEPTS, "relations": [relation] * 45}, CHUNK)
+    assert lots.drops["relation_over_cap"] == 5

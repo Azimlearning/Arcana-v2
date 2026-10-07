@@ -158,3 +158,33 @@ describe("ConceptPage: the learner's mastery", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Your rating could not be saved.");
   });
 });
+
+
+describe("ConceptPage: rating buttons and announcements", () => {
+  it("announces a change of mastery politely, as a status", () => {
+    render(<ConceptPage block={conceptPage("ready", { mastery: { score: 0.7, events: 3 } })} />);
+    const status = screen.getByRole("status");
+    expect(status).toHaveAttribute("aria-live", "polite");
+    expect(status).toHaveTextContent("Comfortable (70 percent, from 3 ratings).");
+  });
+
+  it("keeps the focus on a rating button while it is being saved, and ignores a second press meanwhile", async () => {
+    let finish: (saved: boolean) => void = () => {};
+    const rate = vi.fn(() => new Promise<boolean>((resolve) => (finish = resolve)));
+    render(
+      <NotesNav.Provider value={{ openPage: vi.fn(), rate }}>
+        <ConceptPage block={conceptPage("ready")} />
+      </NotesNav.Provider>,
+    );
+    const button = screen.getByRole("button", { name: "I know this" });
+    button.focus();
+    fireEvent.click(button);
+    expect(button).not.toBeDisabled(); // not disabled, so focus is not lost
+    expect(button).toHaveAttribute("aria-disabled", "true");
+    expect(document.activeElement).toBe(button);
+    fireEvent.click(button);
+    expect(rate).toHaveBeenCalledTimes(1);
+    finish(true);
+    await waitFor(() => expect(button).toHaveAttribute("aria-disabled", "false"));
+  });
+});

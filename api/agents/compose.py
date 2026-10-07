@@ -519,7 +519,12 @@ def compose_notes(
     graph_builder, page_builder = BUILDERS["NotesGraph"], BUILDERS["ConceptPage"]
     # One snapshot of the learner's mastery for this request: a score depends on the clock, so the blocks are built and checked from
     # the same reading (D-35 A6).
-    mastery = learner.mastery(vault.pages) if learner is not None and vault is not None else None
+    mastery = None
+    if learner is not None and vault is not None:
+        try:
+            mastery = learner.mastery(vault.pages)
+        except Exception as exc:  # a locked or damaged learner file must not take the whole notes view down
+            log.warning("learner_unreadable", error=type(exc).__name__)  # every block then says no mastery, which validates
     blocks: list[UIBlock] = []
     admitted: list[tuple[str, str]] = []
     if vault is None or not vault.pages:
