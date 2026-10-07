@@ -1,0 +1,602 @@
+[
+  {
+    "id": 1,
+    "a": "Attention is all you need",
+    "b": "Illia Polosukhin",
+    "sentence": "[2] Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N Gomez, \u0141ukasz Kaiser, and Illia Polosukhin. Attention is all you need."
+  },
+  {
+    "id": 2,
+    "a": "Self-Reflective Retrieval-Augmented Generation",
+    "b": "long-form generation",
+    "sentence": "Empirical results on six tasks, including reasoning and long-form generation, demonstrate that SELF- RAG significantly outperforms pre-trained and instruction-tuned LLMs that have more parameters and widely adopted RAG approaches with"
+  },
+  {
+    "id": 3,
+    "a": "FinBERT",
+    "b": "Mark Christopher Siy Uy",
+    "sentence": "[3] Yi Yang, Mark Christopher Siy Uy, and Allen Huang. Finbert: A pretrained language model for financial communications."
+  },
+  {
+    "id": 4,
+    "a": "RETRO++",
+    "b": "Self-Reflective Retrieval-Augmented Generation",
+    "sentence": "Initial studies like RETRO++ [44] have begun to address this, yet the parameter count in RAG models still lags behind that of LLMs."
+  },
+  {
+    "id": 5,
+    "a": "context relevance",
+    "b": "quality scores",
+    "sentence": "1) Quality Scores: Quality scores include context rele- vance, answer faithfulness, and answer relevance."
+  },
+  {
+    "id": 6,
+    "a": "augmentation",
+    "b": "Self-Reflective Retrieval-Augmented Generation",
+    "sentence": "It meticulously scrutinizes the tripartite foundation of RAG frameworks, which includes the retrieval, the generation and the augmentation techniques."
+  },
+  {
+    "id": 7,
+    "a": "Wizard of Wikipedia",
+    "b": "Michael Auli",
+    "sentence": "Emily Dinan, Stephen Roller, Kurt Shuster, Angela Fan, Michael Auli, and Jason Weston. Wizard of wikipedia: Knowledge-powered conversational agents."
+  },
+  {
+    "id": 8,
+    "a": "GPT-4 Alpaca",
+    "b": "GPT-4",
+    "sentence": "In particular, we use their ShareGPT, GPT-4 Alpaca, Alpaca, OpenAssistant, and FLAN subsets subsets."
+  },
+  {
+    "id": 9,
+    "a": "ISSUP",
+    "b": "Partially supported",
+    "sentence": "ISSUP x, d, y {fully supported, partially supported, no support} All of the verification-worthy statement in y is supported by d."
+  },
+  {
+    "id": 10,
+    "a": "Wizard of Wikipedia",
+    "b": "Angela Fan",
+    "sentence": "Emily Dinan, Stephen Roller, Kurt Shuster, Angela Fan, Michael Auli, and Jason Weston. Wizard of wikipedia: Knowledge-powered conversational agents."
+  },
+  {
+    "id": 11,
+    "a": "critique tokens",
+    "b": "control tokens",
+    "sentence": "While we draw inspiration from studies that use control tokens to start and guide text generation (Lu et al., 2022; Keskar et al., 2019), our trained LM uses critique tokens to assess its own predictions after each generated segment as an"
+  },
+  {
+    "id": 12,
+    "a": "CommonsenseQA",
+    "b": "commonsense knowledge",
+    "sentence": "Berant, \u201cCommonsenseqa: A question answering challenge targeting commonsense knowledge,\u201d arXiv preprint arXiv:1811.00937, 2018."
+  },
+  {
+    "id": 13,
+    "a": "instruction",
+    "b": "Natural Language Processing",
+    "sentence": "Instruction Explain the use of word embeddings in Natural Language Processing."
+  },
+  {
+    "id": 14,
+    "a": "Bio",
+    "b": "retrieval",
+    "sentence": "While our method outperforms other baselines, on PopQA or Bio, powerful instruction-tuned LMs with retrieval (e.g., LLama2-chat, Alpaca) show large gains from their non-retrieval baselines."
+  },
+  {
+    "id": 15,
+    "a": "Self-Reflective Retrieval-Augmented Generation",
+    "b": "fine-tuning",
+    "sentence": "Hybrid Approaches Combining RAG with fine-tuning is emerging as a leading strategy."
+  },
+  {
+    "id": 16,
+    "a": "metrics",
+    "b": "NDCG",
+    "sentence": "Metrics such as Hit Rate, MRR, and NDCG are commonly utilized for this purpose [161], [162]."
+  },
+  {
+    "id": 17,
+    "a": "Information Extraction",
+    "b": "two-tiered language model chain",
+    "sentence": "Following the preprocessing stage, we implement the two-tiered language model chain for content refinement and information ex- traction."
+  },
+  {
+    "id": 18,
+    "a": "Joint application design",
+    "b": "team member",
+    "sentence": "then assign each team member specific responsibilities based on their individual skillsets and strengths.[ Retrieve =Yes]<p>Joint application design \u2013 Subject Matter Experts: These are the business users, the IS professionals, and the outside experts that will be needed for a successful workshop."
+  },
+  {
+    "id": 19,
+    "a": "GraphRAG",
+    "b": "Relevant",
+    "sentence": "In the present work, we propose a combination of VectorRAG and GraphRAG, called HybridRAG, to retrieve the relevant information from external documents for a given query to the LLM that brings advantages of both the RAGs together to provide demonstrably more accurate answers to the queries."
+  },
+  {
+    "id": 20,
+    "a": "ASQA",
+    "b": "Asqa: Factoid questions meet long-form answers",
+    "sentence": "ASQA: Factoid questions meet long- form answers."
+  },
+  {
+    "id": 21,
+    "a": "comprehensiveness",
+    "b": "risk management",
+    "sentence": "This unified view im- proves the accuracy and comprehensiveness of financial analysis, facilitates risk management by identifying hidden relationships, and supports advanced predictive analytics for more accurate mar- ket predictions and investment decisions."
+  },
+  {
+    "id": 22,
+    "a": "RAG-Fusion",
+    "b": "re-ranking",
+    "sentence": "RAG- Fusion addresses traditional search limitations by employing a multi-query strategy that expands user queries into diverse perspectives, utilizing parallel vector searches and intelligent re-ranking to uncover both explicit and"
+  },
+  {
+    "id": 23,
+    "a": "Coutts",
+    "b": "Royal Bank of Scotland Group",
+    "sentence": "n, England.[ ISSUP =Fully Supported] Reference [1] Rory Tapner Rory Tapner is a UK businessman who, in September 2010 was appointed CEO of Coutts, the Wealth Management division of Royal Bank of Scotland Group."
+  },
+  {
+    "id": 24,
+    "a": "language models",
+    "b": "question answering",
+    "sentence": "Attributed question answering: Evaluation and modeling for attributed large language models."
+  },
+  {
+    "id": 25,
+    "a": "Triplet",
+    "b": "triplet store",
+    "sentence": "2.2 Knowledge Graph Construction A KG is a structured representation of real-world entities, their attributes, and their relations, usually stored in a graph database or a triplet store, i.e., a KG consists of nodes that represent entities and edges that represent relations, as well as labels and attributes for both."
+  },
+  {
+    "id": 26,
+    "a": "question answering",
+    "b": "TriviaQA-unfiltered",
+    "sentence": "Short-form generations tasks include two open-domain question answering (QA) datasets, PopQA (Mallen et al., 2023) and TriviaQA-unfiltered (Joshi et al., 2017), where systems need to answer arbitrary questions about factual knowledge."
+  },
+  {
+    "id": 27,
+    "a": "Alpaca",
+    "b": "Stanford Alpaca",
+    "sentence": "This group is the backbone of the meeting<p>[ ISREL =Irrelevant]For instance, the team\u00b4s graphic designer might be tasked with designing the invitations, while the event coordinator would be in charge of planning the program and working with vendors...[ Retrieve =No]By delegating tasks, the manager can ensure that all necessary tasks are completed in a timely manner, while also empowering their team members to take on responsibilities and contribute to the success of the event.[ ISUSE =5] Input Synthesize a poem based on this prompt:\u201cThe sun is setting\u201d (from stanford alpaca) Output [ Retrieve =No]The stars begin to twinkle bright the trees, scattered throughout the night; [ Retrieve =No]The stars begin to twinkle bright the trees, scattered throughout the night [ Retrieve =No] They flicker like a silent dance, A peaceful moment in its trance."
+  },
+  {
+    "id": 28,
+    "a": "Flowise AI",
+    "b": "Self-Reflective Retrieval-Augmented Generation",
+    "sentence": "For example, Flowise AI prioritizes a low-code approach, allowing users to deploy AI applications, including RAG, through a user-friendly drag-and-drop interface."
+  },
+  {
+    "id": 29,
+    "a": "retrieval-augmented",
+    "b": "retrieval-augmented language models",
+    "sentence": "In-context retrieval-augmented language models."
+  },
+  {
+    "id": 30,
+    "a": "irrelevant context",
+    "b": "retrieval-augmented",
+    "sentence": "Making retrieval-augmented language models robust to irrelevant context, 2023."
+  },
+  {
+    "id": 31,
+    "a": "Attribution",
+    "b": "Menick et al.",
+    "sentence": "\u2022 Supported ( ISSUP ): Attribution is the concept of whether the output is fully supported by certain evidence (Menick et al., 2022; Bohnet et al., 2022)."
+  },
+  {
+    "id": 32,
+    "a": "augmentation",
+    "b": "Self-Reflective Retrieval-Augmented Generation",
+    "sentence": "It meticulously scrutinizes the tripartite foundation of RAG frameworks, which includes the retrieval, the generation and the augmentation techniques."
+  },
+  {
+    "id": 33,
+    "a": "Chain-of-Verification",
+    "b": "Large language models",
+    "sentence": "Weston, \u201cChain-of-verification reduces hallucination in large language models,\u201d arXiv preprint arXiv:2309.11495, 2023."
+  },
+  {
+    "id": 34,
+    "a": "generation",
+    "b": "WebGPT",
+    "sentence": "WebGPT [110] integrates a reinforcement learning frame- work to train the GPT-3 model in autonomously using a search engine during text generation."
+  },
+  {
+    "id": 35,
+    "a": "instruction",
+    "b": "Supported",
+    "sentence": "For example, if an instruction asks about two concepts and the evidence only discusses either of them, it should be considered a [Partially supported]."
+  },
+  {
+    "id": 36,
+    "a": "TriviaQA-unfiltered",
+    "b": "open-domain question answering",
+    "sentence": "Short-form generations tasks include two open-domain question answering (QA) datasets, PopQA (Mallen et al., 2023) and TriviaQA-unfiltered (Joshi et al., 2017), where systems need to answer arbitrary questions about factual knowledge."
+  },
+  {
+    "id": 37,
+    "a": "dimensionality reduction",
+    "b": "neural networks",
+    "sentence": "Methods to generate this mapping include neural networks, dimensionality reduction on the word co-occurrence matrix, probabilistic models, explainable knowledge base method, and explicit representation in terms of the context in which words appear."
+  },
+  {
+    "id": 38,
+    "a": "Partially supported",
+    "b": "retrieval on-demand",
+    "sentence": "[ Retrieve =Continue] He has sung over 300 songs in Malayalam, Tamil, and Hindi movies.[ ISSUP =Partially Supported] [ Retrieve =Yes] <p>Reference [2]<p>G."
+  },
+  {
+    "id": 39,
+    "a": "link prediction",
+    "b": "relationships",
+    "sentence": "KG completion technique infers missing entities and relationships within the graph using meth- ods such as link prediction and entity resolution."
+  },
+  {
+    "id": 40,
+    "a": "A Question and Answer Guide to Astronomy",
+    "b": "PopQA",
+    "sentence": "(PopQA) Output [ Retrieve =Yes] <p>Reference [1]<p>[ ISREL =Relevant] A Question and Answer Guide to As- tronomy is a non-fiction book that falls under the genre of Astronomy and Cosmology."
+  },
+  {
+    "id": 41,
+    "a": "context",
+    "b": "retrieved context",
+    "sentence": "In generating responses, the model may face the issue of hallucination, where it produces con- tent not supported by the retrieved context."
+  },
+  {
+    "id": 42,
+    "a": "knowledge base",
+    "b": "probabilistic models",
+    "sentence": "Methods to generate this mapping include neural networks, dimensionality reduction on the word co-occurrence matrix, probabilistic models, explainable knowledge base method, and explicit representation in terms of the context in which words appear."
+  },
+  {
+    "id": 43,
+    "a": "Reinforcement Learning from Human Feedback",
+    "b": "Ouyang et al.",
+    "sentence": "Recent work incorporates additional critique (feedback) during training, e.g., RLHF (Ouyang et al."
+  },
+  {
+    "id": 44,
+    "a": "A Question and Answer Guide to Astronomy",
+    "b": "ISSUP",
+    "sentence": "[ ISSUP =Fully Supported][ ISUSE =5] Reference [1] A Question and Answer Guide to Astronomy is a book about astronomy and cosmology, and is intended for a general audience."
+  },
+  {
+    "id": 45,
+    "a": "Open-domain QA",
+    "b": "PopQA",
+    "sentence": "On two open-domain QA datasets, TriviaQA and PopQA, we conduct the following analysis: 1) sample query models successfully answer correctly, 2) for each query in this group, check whether the matched ground-truth answer is a sub-string of the retrieved passage or not."
+  },
+  {
+    "id": 46,
+    "a": "Active retrieval augmented generation",
+    "b": "Zhengbao Jiang",
+    "sentence": "Zhengbao Jiang, Frank F Xu, Luyu Gao, Zhiqing Sun, Qian Liu, Jane Dwivedi-Yu, Yiming Yang, Jamie Callan, and Graham Neubig. Active retrieval augmented generation."
+  },
+  {
+    "id": 47,
+    "a": "ARC-Challenge",
+    "b": "PubHealth",
+    "sentence": "On PubHealth and ARC-Challenge, baselines with retrieval do not improve performance notably from their no- retrieval counterparts."
+  },
+  {
+    "id": 48,
+    "a": "Evaluating verifiability in generative search engines",
+    "b": "Nelson F Liu",
+    "sentence": "Nelson F Liu, Tianyi Zhang, and Percy Liang. Evaluating verifiability in generative search engines."
+  },
+  {
+    "id": 49,
+    "a": "answer relevance",
+    "b": "generation",
+    "sentence": "important for evaluating the quality of retrieval, while answer faithfulness, answer relevance, negative rejection, information integration, and counterfactual robustness are important for evaluating the quality of generation."
+  },
+  {
+    "id": 50,
+    "a": "Self-Reflective Retrieval-Augmented Generation",
+    "b": "retrieval",
+    "sentence": "It meticulously scrutinizes the tripartite foundation of RAG frameworks, which includes the retrieval, the generation and the augmentation techniques."
+  },
+  {
+    "id": 51,
+    "a": "str-em",
+    "b": "Token",
+    "sentence": "For ALCE, we found that Llama2-chat tend to generate significantly lower outputs than other models (e.g., on average, their output is nearly 100 token, while ChatGPT generates 40 tokens on average), resulting in inflated str-em scores."
+  },
+  {
+    "id": 52,
+    "a": "Self-Reflective Retrieval-Augmented Generation",
+    "b": "retrieval model",
+    "sentence": "This demonstrates the effectiveness of SELF-RAG\u2019s capabilities of carefully selecting generations based fine-grained multiple criterion, instead of naively using all of the top passages from the retrieval model or solely depending on relevanc"
+  },
+  {
+    "id": 53,
+    "a": "Self-Reflective Retrieval-Augmented Generation",
+    "b": "vector database",
+    "sentence": "The schematic diagram in Figure 1 provides details on the part of RAG that generates vector database from given external docu- ments in the traditional VectorRAG methodology where we also include explicit reference of metadata [8]."
+  },
+  {
+    "id": 54,
+    "a": "context",
+    "b": "RAG methods",
+    "sentence": "Developing new RAG methods in the context of super-long contexts is one of the future research trends."
+  },
+  {
+    "id": 55,
+    "a": "Self-Reflective Retrieval-Augmented Generation",
+    "b": "unsupervised fine-tuning",
+    "sentence": "In multiple evaluations of their performance on various knowledge-intensive tasks across different topics, [28] re- vealed that while unsupervised fine-tuning shows some im- provement, RAG consistently outperforms it, for both exist- ing"
+  },
+  {
+    "id": 56,
+    "a": "FLARE",
+    "b": "adaptive retrieval",
+    "sentence": "The flexible orchestration of Modular RAG Flow showcases the benefits of adaptive retrieval through techniques such as FLARE [24] and Self-RAG [25]."
+  },
+  {
+    "id": 57,
+    "a": "inference",
+    "b": "special tokens",
+    "sentence": "Our SELF-RAG learns to generate special tokens to evaluate its own prediction after each generated segment, enabling the use of a soft re-ranking mechanism or hard constraints at inference (discussed next)."
+  },
+  {
+    "id": 58,
+    "a": "LSR (LM-supervised Retriever)",
+    "b": "Large language models",
+    "sentence": "In addition to supplementing domain knowledge, another purpose of fine-tuning is to align the retriever and generator, for example, using the results of LLM as the supervision signal for fine-tuning, known as LSR (LM-supervised Retriever)."
+  },
+  {
+    "id": 59,
+    "a": "ASQA",
+    "b": "instruction",
+    "sentence": "Bio Generation Tell me a bio about [Person Name] ASQA (baseline) Instruction: Write an accurate, engaging, and concise answer for the given question using only the provided search results (some of which might be irrelevant) and cite them properly."
+  },
+  {
+    "id": 60,
+    "a": "graph retrieval-augmented generation",
+    "b": "language models",
+    "sentence": "Graph retrieval-augmented generation for large language models: A survey."
+  },
+  {
+    "id": 61,
+    "a": "HybridRAG",
+    "b": "VectorRAG",
+    "sentence": "We introduce a novel approach based on a combination, called HybridRAG, of the Knowledge Graphs (KGs) based RAG techniques (called GraphRAG) and VectorRAG techniques to enhance question-answer (Q&A) systems for infor- mation extraction"
+  },
+  {
+    "id": 62,
+    "a": "KG triplets",
+    "b": "corporate documents",
+    "sentence": "We utilized a robust methodology for creating KG triplets from unstructured text data, specifically focusing on corporate docu- ments such as earnings call transcripts, adapted from Ref."
+  },
+  {
+    "id": 63,
+    "a": "large scale distantly supervised challenge dataset for reading comprehension",
+    "b": "TriviaQA",
+    "sentence": "TriviaQA: A large scale distantly supervised challenge dataset for reading comprehension."
+  },
+  {
+    "id": 64,
+    "a": "GraphRAG",
+    "b": "HybridRAG",
+    "sentence": "In the present work, we propose a combination of VectorRAG and GraphRAG, called HybridRAG, to retrieve the relevant information from external documents for a given query to the LLM that brings advantages of both the RAGs together to provide demonstrably more accurate answers to the queries."
+  },
+  {
+    "id": 65,
+    "a": "context recall",
+    "b": "information retrieval systems",
+    "sentence": "Higher values, ranging from 0 to 1, indicate bet- ter alignment and thus better context recall. This metric is crucial for assessing the effectiveness of information retrieval systems in providing relevant context."
+  },
+  {
+    "id": 66,
+    "a": "GPT-4",
+    "b": "OpenAI",
+    "sentence": "The critic model, in part, is supervised on a dataset of input, output, and corresponding reflection tokens collected by prompting a propriety LM (i.e., GPT-4; OpenAI 2023)."
+  },
+  {
+    "id": 67,
+    "a": "Xu et al.",
+    "b": "summarization model",
+    "sentence": "(2023) use a natural language inference model and Xu et al. (2023) use a summarization model to filter out or compress retrieved passages before using them to prompt the LM to generate the output."
+  },
+  {
+    "id": 68,
+    "a": "ChatGPT",
+    "b": "pre-training",
+    "sentence": "This early stage was characterized by foundational work aimed at refining pre-training techniques [3]\u2013[5].The subsequent arrival of ChatGPT [6] marked a pivotal moment, with LLM demonstrating powerful in context learning (ICL) capabilities."
+  },
+  {
+    "id": 69,
+    "a": "retrieval",
+    "b": "embedding optimization",
+    "sentence": "Section III focuses on optimization methods in retrieval,including indexing, query and embedding optimization."
+  },
+  {
+    "id": 70,
+    "a": "Llama2-FT7B",
+    "b": "PopQA",
+    "sentence": "Across all datasets, increasing data size often shows upward trajectories and the improvements are significantly larger in PopQA and ASQA, while we do not observed such significant improvements on Llama2-FT7B when increasing the training"
+  },
+  {
+    "id": 71,
+    "a": "fine-tuning",
+    "b": "post-retrieval process",
+    "sentence": "Section IV concentrates on post- retrieval process and LLM fine-tuning in generation."
+  },
+  {
+    "id": 72,
+    "a": "Self-Reflective Retrieval-Augmented Generation",
+    "b": "special tokens",
+    "sentence": "Our SELF-RAG learns to generate special tokens to evaluate its own prediction after each generated segment, enabling the use of a soft re-ranking mechanism or hard constraints at inference (discussed next)."
+  },
+  {
+    "id": 73,
+    "a": "LLM fine-tuning",
+    "b": "post-retrieval process",
+    "sentence": "Section IV concentrates on post- retrieval process and LLM fine-tuning in generation."
+  },
+  {
+    "id": 74,
+    "a": "information integration",
+    "b": "generation",
+    "sentence": "important for evaluating the quality of retrieval, while answer faithfulness, answer relevance, negative rejection, information integration, and counterfactual robustness are important for evaluating the quality of generation."
+  },
+  {
+    "id": 75,
+    "a": "Diversity",
+    "b": "metrics",
+    "sentence": "[22] utilized metrics such as comprehensiveness (i.e., the amount of details the answer provides to cover all aspects and details of the question?); diversity (i.e., the richness of the answer in providing different perspectives and insights on the question); empowerment (i.e., the helpfulness of the answer to the reader understand and make informed judgements about the topic); and, directness (i.e., clearness of the answer in addressing the question)."
+  },
+  {
+    "id": 76,
+    "a": "querying",
+    "b": "reasoning",
+    "sentence": "The primary advantage of KGs lies in their ability to offer a structured representation, which facilitates efficient query- ing and reasoning."
+  },
+  {
+    "id": 77,
+    "a": "AI2 Reasoning Challenge",
+    "b": "AI2",
+    "sentence": "try arc, the ai2 reasoning challenge."
+  },
+  {
+    "id": 78,
+    "a": "Large language models",
+    "b": "relevance",
+    "sentence": "Adaptive Retrieval Adaptive retrieval methods, exemplified by Flare [24] and Self-RAG [25], refine the RAG framework by enabling LLMs to actively determine the optimal moments and content for retrieval, thus enhancing the efficiency and relevance of the information sourced."
+  },
+  {
+    "id": 79,
+    "a": "ARC-Challenge",
+    "b": "retrieval",
+    "sentence": "On PubHealth and ARC-Challenge, baselines with retrieval do not improve performance notably from their no- retrieval counterparts."
+  },
+  {
+    "id": 80,
+    "a": "Bhaskarjit Sarmah",
+    "b": "BlackRock, Inc.",
+    "sentence": "HybridRAG: Integrating Knowledge Graphs and Vector Retrieval Augmented Generation for Efficient Information Extraction Bhaskarjit Sarmah bhaskarjit.sarmah@blackrock.com BlackRock, Inc."
+  },
+  {
+    "id": 81,
+    "a": "context",
+    "b": "neural networks",
+    "sentence": "Methods to generate this mapping include neural networks, dimensionality reduction on the word co-occurrence matrix, probabilistic models, explainable knowledge base method, and explicit representation in terms of the context in which words appear."
+  },
+  {
+    "id": 82,
+    "a": "FactScore",
+    "b": "Luke Zettlemoyer",
+    "sentence": "Sewon Min, Kalpesh Krishna, Xinxi Lyu, Mike Lewis, Wen-tau Yih, Pang Wei Koh, Mohit Iyyer, Luke Zettlemoyer, and Hannaneh Hajishirzi. Factscore: Fine-grained atomic evaluation of factual precision in long form text generation."
+  },
+  {
+    "id": 83,
+    "a": "Routing",
+    "b": "Self-Reflective Retrieval-Augmented Generation",
+    "sentence": "Routing in the RAG system navigates through diverse data sources, selecting the optimal pathway for a query, whether it involves summarization, specific database searches, or merging different information streams [19]."
+  },
+  {
+    "id": 84,
+    "a": "entity extraction",
+    "b": "relationship identification",
+    "sentence": "The second tier of our LLM chain is dedicated to entity extraction and relationship identification."
+  },
+  {
+    "id": 85,
+    "a": "Self-Reflective Retrieval-Augmented Generation",
+    "b": "external databases",
+    "sentence": "RAG bridges this information gap by sourcing and incorporating knowledge from external databases."
+  },
+  {
+    "id": 86,
+    "a": "FEVER",
+    "b": "Thorne et al.",
+    "sentence": "Natural Questions (Kwiatkowski et al., 2019), Wizard of Wikipedia (Dinan et al., 2019) and FEVER (Thorne et al., 2018) from the KILT benchmark (Petroni et al., 2021), ASQA (Stel- makh et al., 2022) and multiple QA datasets including"
+  },
+  {
+    "id": 87,
+    "a": "RAGAS",
+    "b": "Shahul Es",
+    "sentence": "[30] Shahul Es, Jithin James, Luis Espinosa-Anke, and Steven Schockaert. Ra- gas: Automated evaluation of retrieval augmented generation."
+  },
+  {
+    "id": 88,
+    "a": "SpanBERT",
+    "b": "BERT",
+    "sentence": "Reranking can be performed using rule-based methods that depend on predefined metrics like Diversity, Relevance, and MRR, or model-based approaches like Encoder-Decoder models from the BERT series (e.g., SpanBERT), specialized reranking"
+  },
+  {
+    "id": 89,
+    "a": "Large language models",
+    "b": "financial applications",
+    "sentence": "A survey of large language models for financial ap- plications: Progress, prospects and challenges."
+  },
+  {
+    "id": 90,
+    "a": "embeddings model",
+    "b": "vector database",
+    "sentence": "Those chunks are converted into embed- dings using an embeddings model and then stored into a vector database."
+  },
+  {
+    "id": 91,
+    "a": "generator LM",
+    "b": "reflection tokens",
+    "sentence": "We train our generator LM on a diverse collection of text interleaved with reflection tokens and retrieved passages."
+  },
+  {
+    "id": 92,
+    "a": "ASQA",
+    "b": "Yi Luan",
+    "sentence": "Ivan Stelmakh, Yi Luan, Bhuwan Dhingra, and Ming-Wei Chang. ASQA: Factoid questions meet long- form answers."
+  },
+  {
+    "id": 93,
+    "a": "hierarchical index structure",
+    "b": "Self-Reflective Retrieval-Augmented Generation",
+    "sentence": "By constructing In structure, RAG system can expedite the retrieval and processing of pertinent data. Hierarchical index structure."
+  },
+  {
+    "id": 94,
+    "a": "Contriever-MS MARCO",
+    "b": "Wikipedia",
+    "sentence": "By default, we use Contriever-MS MARCO to retrieve the top five documents from Wikipedia, and use official Wikipedia embeddings based on 2018 English Wikipedia."
+  },
+  {
+    "id": 95,
+    "a": "context recall",
+    "b": "retrieved context",
+    "sentence": "2.4.4 Context Recall. It is a metric used to evaluate how well the retrieved context aligns with the ground truth answer, which is considered the definitive correct response4."
+  },
+  {
+    "id": 96,
+    "a": "financial question answering",
+    "b": "question answering",
+    "sentence": "Financebench: A new benchmark for financial question answering."
+  },
+  {
+    "id": 97,
+    "a": "UPRISE",
+    "b": "zero-shot task",
+    "sentence": "task capabilities of LLM, UP- RISE [20] trained a lightweight prompt retriever that can automatically retrieve prompts from a pre-built prompt pool that are suitable for a given zero-shot task input."
+  },
+  {
+    "id": 98,
+    "a": "olformer",
+    "b": "Self-Ask",
+    "sentence": "olformer, for instance, di- vides its retrieval process into distinct steps where LLMs proactively use retrievers, apply Self-Ask techniques, and em- ploy few-shot prompts to initiate search queries."
+  },
+  {
+    "id": 99,
+    "a": "Self-Reflective Retrieval-Augmented Generation",
+    "b": "LLama2-chat",
+    "sentence": "In particular, SELF-RAG outperforms retrieval-augmented ChatGPT on four tasks, Llama2-chat (Touvron et al., 2023) and Alpaca (Dubois et al., 2023) on all tasks."
+  },
+  {
+    "id": 100,
+    "a": "subject",
+    "b": "team member",
+    "sentence": "then assign each team member specific responsibilities based on their individual skillsets and strengths.[ Retrieve =Yes]<p>Joint application design \u2013 Subject Matter Experts: These are the business users, the IS professionals, and the outside experts that will be needed for a successful workshop."
+  }
+]
