@@ -28,6 +28,13 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-07: G1 slice chosen by the rule, and the baseline re-measured with the amended measures (free)
+- **Changed:** `eval/results/20261007T021458Z-graph-quality-baseline-v2.json`, `refdocs/evidence/20261007T021458Z-g1-slice-and-baseline-v2.md`, the G1 plan (slice and cost), the G1 execution doc (paid-step commands, the slice).
+- **Decided:** nothing new; the rule written before the choice picked **three papers, 285 chunks, 19 of 20 questions answerable** (2312.10997v5, 2408.04948v1, 2310.11511v1). That makes the retrieval clause evaluable (19 is above the ten required), and the subset about $1.9 expected (1.2 to 3.0) rather than the earlier 400-chunk assumption.
+- **Deviations:** none.
+- **Verified:** `eval/graph_quality.py` and `choose` at commit `8428a59`, clean tree, pinned hashes verified; no model call, no spend.
+- **Known issues / next steps:** waiting for Azim's confirmation of the pilot (Ragas, about $0.23, ceiling $0.40).
+
 ### 2026-10-07: G1.4 reviews and their fixes (before any live run): ceiling, protocol, alias links
 - **Changed:** `eval/graph_variant.py` (`CeilingGuard` on every call, a complete-rebuild record required, the gate replaced, resolution and validity reported, the control enforced, `choose` and `audit` commands, the protocol text amended), `eval/graph_quality.py` (coverage, concentration and label measures), `api/ingestion/atomic.py` (prompt g1-2: abbreviations linked by `alias_of` from their defining sentence instead of merged; one-sentence notes and evidence; a minimum label length), `api/ingestion/pipeline.py`, tests, the G1 plan and execution doc, D-34 (the amended protocol), the cost table in the plan.
 - **Decided:** the atomic builder merges nothing by judgement; the structural gate rests on measures a sentence-checking builder cannot pass by construction; the retrieval clause is `not_evaluable` when descriptive; the slice rule and the pilot rule are written before any choice. All amendments are before any live run, so none rests on a result.

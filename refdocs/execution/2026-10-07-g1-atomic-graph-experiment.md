@@ -54,7 +54,7 @@
 ### Task G1.4: Review before any spend
 
 1. `retrieval-auditor` on the builder, arms and protocol; `cost-auditor` on the paid path (the extraction call, the cap, the per-run ceiling).
-2. Show Azim the exact spend for G1.5 (chunks of the chosen 4 papers times the measured cost per chunk, with a ceiling) and the choice of papers (stated by rule, not by outcome), and wait for confirmation.
+2. Show Azim the exact spend for G1.5 (the slice's 285 chunks times the pilot's measured cost per chunk, with a ceiling) and the papers (chosen by the rule, not by outcome), and wait for confirmation.
 
 **Verify:** both reports are in the changelog; no blocking finding remains; Azim has confirmed the amount in writing.
 
@@ -68,9 +68,11 @@ Rebuild the graph of one paper (the shortest in the manifest by chunk count: 230
 
 **Reality (G1.4, first part, 2026-10-07):** the cost audit of the built tool found three blocking items, now fixed with tests: `--max-usd` was only a start-of-document gate (a single document could overshoot it), so `CeilingGuard` now refuses every call before it is sent if the money spent in the build plus the worst case of the calls in flight and of this one would pass the ceiling, the half-built document is discarded and the report is still written (`not_built_ceiling` or `not_built_cap`); the first-document projection uses the expected atomic rate ($0.0067 per chunk) instead of the free-form rate; and `compare` refuses a variant without a complete rebuild record. The plan's cost table was corrected (above).
 
+**Commands for the paid steps (run from the repository root, tree clean).** Pilot: `uv run python eval/graph_variant.py slice --from data/eval-live-live --to <scratch>/pilot-base --papers 2309.15217v2`, then `ARCANA_LLM_MODE=live ARCANA_EMBED_MODE=fake uv run python eval/graph_variant.py rebuild --slice <scratch>/pilot-base --to <scratch>/pilot-atomic --max-usd 0.40 --allow-paid`. Subset: the same with `--papers 2310.11511v1,2312.10997v5,2408.04948v1` and the ceiling Azim confirms; then `ARCANA_LLM_MODE=fake ARCANA_EMBED_MODE=live uv run python eval/graph_variant.py compare --baseline <slice> --variant <variant> --allow-paid`. The ledger is the one file `data/ledger.db` relative to the working directory, so they must be run from the repository root.
+
 ### Task G1.5: The subset run (spends about $1.5 after confirmation)
 
-1. Ingest 4 papers with the atomic builder into a new directory, reusing the pinned vector store entries for the same chunks (a parity check that the chunk ids and texts equal the pinned ones).
+1. Slice the three papers the rule chose (2310.11511v1, 2312.10997v5, 2408.04948v1; 285 chunks), rebuild their graph with the atomic builder into a new directory (documents and vectors copied unchanged), under the ceiling Azim confirms after the pilot.
 2. Run `eval/graph_quality.py` on the new graph and on the same four papers' slice of the pinned graph; run the study (`eval/bound.py`) on the questions whose gold lies in those papers; run `hybrid` against `hybrid_atomic` on those questions. State how many questions that is and that retrieval numbers are descriptive.
 3. Commit the results with the commit, hashes, the ledger delta and the limits.
 
