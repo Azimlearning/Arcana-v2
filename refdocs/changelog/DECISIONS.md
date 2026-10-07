@@ -685,6 +685,8 @@ strings validated against the template's slots).
 
 **Declared differences.** `atomic2` allows 25 concepts, 40 relations and 6 claims per passage, 3,072 output tokens (as g1-3); relation evidence may span two adjacent sentences; concept notes are the first sentence holding the label (preferring one with a definitional cue: " is ", " are ", "refers to", "denotes", "called", "known as", "we propose", "we introduce"). Both builders use the light tier. One build is one sample (no temperature).
 
+**Amendment A1, 2026-10-07, after compiling the vault over the Mark 1 slice and reading 28 sampled co-mention links, still before any vault retrieval run.** About 16 percent of the first build's 1,633 co-mention links came from sentences that read like reference-list entries ("Yu, ... arXiv preprint arXiv:2305.19912, 2023."), which name the concepts of a cited title and state no relation. Rule added to the construction: a sentence holding a strong bibliography marker (arXiv, preprint, proceedings, doi, pp., journal of, conference on, association for computational; case-insensitive; "et al" is not a marker because prose cites "Lewis et al." too) makes no co-mention links. The structure of the build (pages, mentions, asserted links) and every retrieval constant are unchanged; only that one rule moved, and it is part of `vault-1` because no retrieval run has used the earlier text. The first build's counts were seen before this amendment; they are disclosed here, not hidden.
+
 **Spend.** Only the `atomic2` rebuild (extraction, under the cap and a `--max-usd` ceiling enforced per call, confirmed by Azim beforehand) and embeddings (the questions' query embeddings and the page labels, under $0.001 together) are paid.
 
 ## Working assumptions (`ASSUMED:`)
