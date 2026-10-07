@@ -308,6 +308,17 @@ export function Workspace() {
     },
   };
 
+  // A region this screen gives no content of its own (a component may ask for any region of any panel) still shows the
+  // blocks placed in it, so a validated placement is never drawn nowhere.
+  for (const panel of layout.panels) {
+    for (const region of panel.regions) {
+      const content = panels[panel.id];
+      if (content[region.id] === undefined && byRegion[panel.id][region.id].length > 0) {
+        content[region.id] = <div className="space-y-4 p-1">{byRegion[panel.id][region.id].map(withSave)}</div>;
+      }
+    }
+  }
+
   return (
     <Shell
       layout={layout}

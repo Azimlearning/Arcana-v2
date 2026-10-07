@@ -11,7 +11,7 @@
 - **Every wire change follows preflight question 5, in this order, every time:** (1) `packages/schema` first, (2) `pnpm codegen` then `pnpm codegen:check`, (3) the server validator handles it and fails closed, (4) a registry entry and a component with all four states, (5) the component's structural precondition written down in `refdocs/guides/catalog.md` and satisfiable by retrieval. Tasks B1 to B5 and C1 spell this out; do not skip a step because the types compile.
 - Do not touch retrieval, the protocol stamp, the extraction prompt, the gold, the questions, the manifest or the ingested stores. `uv run pytest eval/tests/test_frozen_assets.py` runs in every verify as a tripwire.
 - No paid call is added by this phase. Any task that appears to need one stops and goes back to the plan.
-- v1 is at `../Arcana/` (read only). Port with provenance headers (the shell frame only, task C2). Synapse is not on this machine: nothing is ported from it.
+- v1 is at `../Arcana/` (read only). Port with provenance headers (the shell frame only, task C2). Nothing is ported from Synapse (it is on this machine under `Coding/Hackathon/Genui/Synapse-V3`, found on 2026-10-07 and read for P2b; this line first said it was absent).
 - Never build the second of anything until the first is green end to end: components are built one at a time (B1 to B5) and the layout comes after the second component exists.
 
 ---

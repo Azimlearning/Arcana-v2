@@ -2,7 +2,7 @@
 
 > A follow-on to P2 (`2026-10-06-p2-genui-catalog-dashboard.md`), from Azim's comments on the D1 screenshots on 2026-10-07. Execution doc: `refdocs/execution/2026-10-07-p2b-studio-shell-split-regions.md`.
 > A plan says **what and why**. The execution doc says **how and in what order**.
-> Status: **Approved by Azim 2026-10-07** ("the layout change is correct for now", the Studio understood, "I approve this plan so far and you can proceed"). ADR D-32 accepted with it. Building starts at task F1.
+> Status: **Done 2026-10-07** (built and checked; see the check under Definition of done). **Approved by Azim 2026-10-07** ("the layout change is correct for now", the Studio understood, "I approve this plan so far and you can proceed"). ADR D-32 accepted with it. 
 
 ## Why this exists
 
@@ -80,10 +80,22 @@ No paid call is added. The browser run reuses the real stores and the existing c
 
 ## Definition of done
 
-- [ ] `packages/schema` defines `RegionId`, `SplitDirection`, `RegionSpec` and the extended `PanelSpec` and `Placement`; `pnpm codegen:check` exits 0; a v1 layout still validates on both sides.
-- [ ] `validate_layout` and `web/lib/layout.ts` enforce the same region rules, with tests for each invariant and a shared fixture.
-- [ ] A toy component that asks for `chat.secondary` is split, validated and rendered with no change to the layout module (a test), and the layout guide describes the rule.
-- [ ] The prebuilt Basic layout has the graph area above a Studio area with disabled generator tiles and an Outputs shelf; saved views appear on the shelf and no longer in the header (component tests and a browser capture).
-- [ ] No generator has behaviour, and no paid call or model call was added (a test and the ledger).
-- [ ] In a real browser on the real stores: the Basic and Adaptive layouts, a saved view applied from the shelf, and the studio column with a real graph above the Studio area; screenshots committed, with the 1440 px crowding stated as measured.
-- [ ] `schema-guardian` has reviewed the wire change, `test-runner` is green on the full suite, and STATUS, CHANGELOG, ADR D-32, the file structure guide and the indexes are current.
+- [x] `packages/schema` defines `RegionId`, `SplitDirection`, `RegionSpec` and the extended `PanelSpec` and `Placement`; `pnpm codegen:check` exits 0; a v1 layout still validates on both sides.
+- [x] `validate_layout` and `web/lib/layout.ts` enforce the same region rules, with tests for each invariant and a shared fixture.
+- [x] A toy component that asks for `chat.secondary` is split, validated and rendered with no change to the layout module (a test), and the layout guide describes the rule.
+- [x] The prebuilt Basic layout has the graph area above a Studio area with disabled generator tiles and an Outputs shelf; saved views appear on the shelf and no longer in the header (component tests and a browser capture).
+- [x] No generator has behaviour, and no paid call or model call was added (a test and the ledger).
+- [x] In a real browser on the real stores: the Basic and Adaptive layouts, a saved view applied from the shelf, and the studio column with a real graph above the Studio area; screenshots committed, with the 1440 px crowding stated as measured.
+- [x] `schema-guardian` has reviewed the wire change, `test-runner` is green on the full suite, and STATUS, CHANGELOG, ADR D-32, the file structure guide and the indexes are current.
+
+### Check against the build (2026-10-07, P2b F5)
+
+1. Schema types and codegen, v1 still valid on both sides: **met** (`pnpm codegen:check` OK; `layout-v1.json` is read by one server and one web test).
+2. Server and client enforce the same region rules, with a shared fixture: **met**. One stated difference: the client ignores unknown extra keys and accepts `20.0` as a whole number where the server's strict models refuse them (server output never has either).
+3. A toy component asking for `chat.secondary` is split with no change to the layout module: **met** (tests; an exhaustive test over every panel, region and direction a hint can name gives a layout the validator accepts).
+4. The prebuilt Basic layout has the graph area above the Studio area (inert generator tiles and an Outputs shelf), with saved views on the shelf and not in the header: **met** (component tests; browser captures 01, 03, 05). The graph area in Basic is a sentence, so the fixed layout is 25 and 75 rather than the 60 and 40 of Adaptive.
+5. No generator has behaviour; no model or paid call was added: **met** (a test that the Studio renders nothing focusable and calls nothing; the cost audit found no change under `api/llm`, `api/retrieval`, `api/ingestion` and the ledger unchanged at 1759 rows, $6.172354).
+6. A real browser at 1440 by 900: **met for Basic, Adaptive, a saved view applied from the shelf after a reload, and the graph above the Studio area** (captures 01 to 05; fake model on two real papers, so no paid call). **Not shown:** the real model and the 16-paper store (not needed for a layout change), and any use of `secondary` in a real turn (no built component asks for it). **The 1440 px crowding, measured:** the Adaptive graph area at 60 percent of the column height cuts off the graph's details box (it scrolls within its region) and the shelf at 40 percent just fits one saved view, then scrolls. **Phone width (400 px) is unusable** (capture 06: panels squeezed to a few characters). The `flex-grow` transition was measured: a panel went 482, 480, 424, 311, 275 px at 0, 0, 60, 150 and 400 ms, so the browser interpolates it.
+7. Reviews: **met.** `schema-guardian` found no blocking item in F1 or in the whole; its non-blocking items were fixed with tests (a block in a region the screen gives no content is still drawn; the region lists are exhaustive; the chat panel must have a `main` region) or recorded. `cost-auditor`: no paid call, ledger unchanged. Full suite: `uv run pytest` 793 passed twice (then 795 after the last fixes, run once), web 223 passed, ruff, pyright, typecheck, lint, codegen check, and `pnpm --filter web build` clean.
+
+**Not done in P2b, by decision:** the generators and the Studio agent (P5); resizing and rearranging by the user; remembering a layout; phone and tablet layout.

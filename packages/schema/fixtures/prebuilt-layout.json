@@ -32,11 +32,11 @@
       "regions": [
         {
           "id": "main",
-          "size": 60
+          "size": 25
         },
         {
           "id": "shelf",
-          "size": 40
+          "size": 75
         }
       ]
     }

@@ -58,6 +58,7 @@ describe("isLayoutSpec", () => {
         ]), // a repeated region id
       (l) => ((l.placements as Array<{ region: string }>)[0]!.region = "shelf"), // the panel has no such region
       (l) => delete (l.placements as Array<{ region?: string }>)[0]!.region,
+      (l) => ((l.panels as Array<{ regions: Array<{ id: string }> }>)[1]!.regions[0]!.id = "secondary"), // chat has no main
     ];
     for (const change of bad) expect(isLayoutSpec(damaged(change))).toBe(false);
     expect(isLayoutSpec(null)).toBe(false);

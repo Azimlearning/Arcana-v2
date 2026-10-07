@@ -75,6 +75,7 @@ export function isLayoutSpec(value: unknown): value is LayoutSpec {
     total += width;
   }
   if (total !== 100 || (widths.get("chat") ?? 0) < MIN_CHAT_WIDTH) return false;
+  if (!regions.get("chat")?.has("main")) return false; // the answer's own area: blocks with no placement go there
 
   const placed = new Set<string>();
   const positions = new Set<string>();
@@ -117,8 +118,8 @@ export const FALLBACK_LAYOUT: LayoutSpec = {
       width: 20,
       direction: "rows",
       regions: [
-        { id: "main", size: 60 },
-        { id: "shelf", size: 40 },
+        { id: "main", size: 25 },
+        { id: "shelf", size: 75 },
       ],
     },
   ],
@@ -128,8 +129,11 @@ export const FALLBACK_LAYOUT: LayoutSpec = {
 export type PlacedBlocks = Record<PanelId, UIBlock[]>;
 export type PlacedByRegion = Record<PanelId, Record<RegionId, UIBlock[]>>;
 
-/** The regions in the order they are drawn and flattened (the schema's closed list). */
-export const REGION_ORDER: readonly RegionId[] = ["main", "secondary", "shelf"];
+/** The regions in the order they are drawn and flattened. A record, so a region added to the schema must be ranked here. */
+const REGION_RANK: Record<RegionId, number> = { main: 0, secondary: 1, shelf: 2 };
+export const REGION_ORDER: readonly RegionId[] = (Object.keys(REGION_RANK) as RegionId[]).sort(
+  (a, b) => REGION_RANK[a] - REGION_RANK[b],
+);
 
 /**
  * Which blocks each region of each panel shows. The rules (all tested):

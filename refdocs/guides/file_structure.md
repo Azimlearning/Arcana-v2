@@ -43,8 +43,8 @@ Tests sit beside the module they cover as `test_*.py`.
 | `app/` | Next.js App Router: `layout`, `page`, `Workspace.tsx` (the shell: upload, question, answer panel). |
 | `components/TracePanel.tsx` | The collapsible record of what the agents did on a turn (loads when first opened; status in words). |
 | `components/genui/` | `registry.tsx` (typed over the block union; the only way a block becomes UI), `CitedSummary`, `SourceList`, `GraphView` (with `graphLayout.ts`, a deterministic layout), `ComparisonGrid`, `ConceptMap`, `BlockStates.tsx` (loading, empty, partial, error frames), `ids.ts` (`safeId`, for every fragment anchor). |
-| `components/shell/` | `Shell` and `Panel` (draw a `LayoutSpec`), `LayoutSwitch` (Basic or Adaptive), `SavedViews` and `SaveView` (the saved-view flow). |
-| `lib/` | `stream.ts` (SSE over POST, one terminal callback; also `streamApply`), `api.ts` (upload, trace, workspace, patterns), `store.ts` (Zustand: blocks by id, layouts, layout choice, saved views), `layout.ts` (`isLayoutSpec`, the fallback layout, `placeBlocks`). |
+| `components/shell/` | `Shell` and `Panel` (draw a `LayoutSpec`: panels, and each panel's regions in rows or columns, with animated shares), `LayoutSwitch` (Basic or Adaptive), `Studio` (the inert generator list, D-32), `SavedViews` (the outputs shelf list: each saved view with its state in words) and `SaveView` (save a view from an answer). |
+| `lib/` | `stream.ts` (SSE over POST, one terminal callback; also `streamApply`), `api.ts` (upload, trace, workspace, patterns), `store.ts` (Zustand: blocks by id, layouts, layout choice, saved views), `layout.ts` (`isLayoutSpec`, `readLayout` which also reads a version 1 layout, the fallback layout, `placeBlocksByRegion`, `placeBlocks`, `flattenPlaced`). |
 | `test/fixtures.ts` | Block and stream builders for tests. |
 
 ## `eval/`

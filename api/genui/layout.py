@@ -56,6 +56,9 @@ DEFAULT_DIRECTION: dict[PanelId, SplitDirection] = {"sources": "rows", "chat": "
 # Each region's weight; a panel's regions share it in these proportions (main 3 : secondary 2 : shelf 2).
 WEIGHT: dict[RegionId, int] = {"main": 3, "secondary": 2, "shelf": 2}
 REGION_ORDER: tuple[RegionId, ...] = ("main", "secondary", "shelf")
+# The fixed Basic layout's studio is mostly shelf: its graph area only says where graphs show in Basic (seen in the browser,
+# P2b F5: at 60 / 40 that area was a large empty block).
+PREBUILT_SIZES: dict[PanelId, tuple[tuple[RegionId, int], ...]] = {"studio": (("main", 25), ("shelf", 75))}
 
 
 def _shares(regions: Sequence[RegionId]) -> list[RegionSpec]:
@@ -81,6 +84,14 @@ def _panel(
     )
 
 
+def _prebuilt_panel(panel: PanelId, width: int) -> PanelSpec:
+    """A panel of the fixed layout: the regions it always has beside `main`, in their fixed sizes if it has any."""
+    spec = _panel(panel, width, (MAIN, *ALWAYS.get(panel, ())))
+    if panel in PREBUILT_SIZES:
+        spec = spec.model_copy(update={"regions": [RegionSpec(id=r, size=n) for r, n in PREBUILT_SIZES[panel]]})
+    return spec
+
+
 def prebuilt_layout(sources_block_id: str | None = None) -> LayoutSpec:
     """The fixed layout the workspace opens on. Every turn block is shown in chat, in arrival order (no placement);
     only the workspace's own source list, when its id is given, is placed in the sources panel. The studio panel is
@@ -92,7 +103,7 @@ def prebuilt_layout(sources_block_id: str | None = None) -> LayoutSpec:
         version=LAYOUT_VERSION,
         origin="prebuilt",
         mode="basic",
-        panels=[_panel(panel, width, (MAIN, *ALWAYS.get(panel, ()))) for panel, width in WIDTHS["basic"]],
+        panels=[_prebuilt_panel(panel, width) for panel, width in WIDTHS["basic"]],
         placements=placements,
     )
 

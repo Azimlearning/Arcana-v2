@@ -3,6 +3,7 @@
 import itertools
 import pathlib
 from dataclasses import replace
+from typing import get_args
 
 import pytest
 
@@ -18,6 +19,7 @@ from api.genui.generated import (
     DoneEvent,
     LayoutEvent,
     LayoutSpec,
+    PanelId,
     PanelSpec,
     Placement,
     RegionId,
@@ -113,7 +115,10 @@ def test_the_studio_is_its_graph_area_above_its_shelf_and_the_shelf_alone_when_n
     assert regions_of(with_graph, "studio") == [("main", 60), ("shelf", 40)]
     assert next(p for p in with_graph.panels if p.id == "studio").direction == "rows"
     assert regions_of(compose_layout(admitted(TERMINAL), "single"), "studio") == [("shelf", 100)]
-    assert regions_of(prebuilt_layout(), "studio") == [("main", 60), ("shelf", 40)]
+    assert regions_of(prebuilt_layout(), "studio") == [
+        ("main", 25),
+        ("shelf", 75),
+    ]  # mostly shelf: Basic shows graphs in chat
     assert regions_of(prebuilt_layout(), "chat") == [("main", 100)]
 
 
@@ -157,6 +162,27 @@ def test_blocks_are_ordered_within_their_region_and_regions_share_each_panel_in_
     for panel_spec in layout.panels:
         assert sum(r.size for r in panel_spec.regions) == 100
     assert validate_layout(layout, {b for b, _ in admitted(TERMINAL, "ToyA", "ToyB")}) == layout
+
+
+def test_every_combination_of_hints_gives_a_layout_the_validator_accepts(monkeypatch):
+    """Any one or two components asking for any panel, region and direction, with or without the answer and with an
+    unknown component beside them, still gives a valid layout in which every placement lands in a region its panel has."""
+    panels: tuple[PanelId, ...] = ("sources", "chat", "studio")
+    regions: tuple[RegionId, ...] = ("main", "secondary", "shelf")
+    directions: tuple[SplitDirection | None, ...] = (None, "rows", "columns")
+    hints = [
+        PlacementHint(panel=pn, priority=pr, region=rg, direction=d)
+        for pn, rg, d, pr in itertools.product(panels, regions, directions, (5, 50))
+    ]
+    for i, hint in enumerate(hints):
+        monkeypatch.setitem(CATALOG, f"Toy{i}", replace(CATALOG[OPTIONAL[0]], name=f"Toy{i}", placement=hint))
+    names = [f"Toy{i}" for i in range(len(hints))]
+    for chosen in [*((n,) for n in names), *itertools.combinations(names[::7], 2)]:
+        for with_answer, intent in itertools.product((True, False), ("single", "relate")):
+            blocks = admitted(*(([TERMINAL] if with_answer else []) + list(chosen)), "Unknown")
+            layout = compose_layout(blocks, intent)
+            assert validate_layout(layout, {b for b, _ in blocks}) == layout
+            assert {p.blockId for p in layout.placements} == {b for b, _ in blocks}  # nothing is dropped
 
 
 def test_the_prebuilt_layout_is_valid_and_fixed():
@@ -268,6 +294,25 @@ def test_regions_divide_a_panel_and_a_placement_must_name_one_the_panel_has():
 )
 def test_a_damaged_region_list_is_rejected_with_its_field_path(regions, path):
     assert path in fails(region_layout(regions), {"a"})
+
+
+def test_the_chat_panel_must_have_a_main_region():
+    no_main = LayoutSpec(
+        version=2,
+        origin="adaptive",
+        mode="research",
+        panels=[panel("sources", 0), panel("chat", 100, (("secondary", 100),)), panel("studio", 0)],
+        placements=[],
+    )
+    assert fails(no_main) == ["panels"]
+
+
+def test_every_region_the_schema_names_has_a_weight_and_a_place_in_the_drawing_order():
+    """A region added to the schema must be given a share and a rank here: a missing weight is a KeyError at compose
+    time and a missing rank silently drops the region from the layout."""
+    from api.genui.layout import REGION_ORDER, WEIGHT
+
+    assert set(WEIGHT) == set(get_args(RegionId)) == set(REGION_ORDER) and len(REGION_ORDER) == len(set(REGION_ORDER))
 
 
 def test_a_region_of_size_zero_holds_nothing_and_orders_are_unique_within_a_region():

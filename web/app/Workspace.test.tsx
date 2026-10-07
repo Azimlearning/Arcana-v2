@@ -275,6 +275,30 @@ describe("Workspace", () => {
     expect(within(screen.getByLabelText("Answer")).queryByText(/Comparison of/)).not.toBeInTheDocument();
   });
 
+  it("shows a block placed in a region this screen gives no content of its own (never drawn nowhere)", async () => {
+    routes["/workspace"] = () => jsonResponse(workspace());
+    const elsewhere = places().map((p) =>
+      p.blockId === "turn-1-comparison-grid" ? { ...p, panel: "sources" as const, region: "secondary" as const, order: 0 } : p,
+    );
+    const panels = researchPanels(20, 45, 35).map((p) =>
+      p.id === "sources"
+        ? {
+            ...p,
+            regions: [
+              { id: "main" as const, size: 60 },
+              { id: "secondary" as const, size: 40 },
+            ],
+          }
+        : p,
+    );
+    routes["/chat"] = () => answerWith(layout(elsewhere, { panels }));
+    render(<Workspace />);
+    ask();
+    await screen.findByText(/Dense retrieval embeds passages/);
+    const side = await screen.findByRole("region", { name: "Side area" });
+    expect(within(side).getByText(/Comparison of/)).toBeInTheDocument();
+  });
+
   it("in Basic every turn block is stacked in the answer column, and the turn's source list is not repeated", async () => {
     routes["/workspace"] = () => jsonResponse(workspace());
     routes["/chat"] = () => answerWith(null);

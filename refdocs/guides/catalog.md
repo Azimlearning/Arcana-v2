@@ -218,7 +218,7 @@ highest-priority hint in the panel that names one, else the panel's default (cha
 The studio panel is the graph area (`main`) above the shelf; the chat panel splits into `main` and `secondary` only when
 a component asks for `secondary` (none of the five built ones does; the Studio components of P5 will). The prebuilt
 layout always shows the studio's graph area above its shelf; in Basic the graph shows below the answer, so the graph
-area says so. A new region role is a schema change, like a new panel.
+area says so. A new region role is a schema change, like a new panel. The fixed prebuilt layout is the exception to the shares: its studio is graph area 25 and shelf 75 (Basic shows graphs in chat, so the graph area is a sentence). A hint may name any region of any panel: a block placed in a region the screen gives no content of its own is still shown there. The chat panel always has a `main` region.
 
 The prebuilt layout places only the workspace's own source list (in the sources panel, task C2); every turn block with no
 placement is shown in chat in arrival order. `validate_layout` (`api/genui/validate.py`) asserts the invariants: version 2 (a version 1

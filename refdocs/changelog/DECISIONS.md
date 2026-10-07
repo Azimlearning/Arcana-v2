@@ -604,7 +604,9 @@ strings validated against the template's slots).
 
 ## D-32: Layout v2 adds regions inside panels, and the Studio is a shell before it has generators (2026-10-07)
 
-**Status.** Accepted 2026-10-07 (Azim approved the P2b plan). Not yet built.
+**Status.** Accepted 2026-10-07 (Azim approved the P2b plan). Built 2026-10-07 (P2b F1 to F5).
+
+**Built, with what the build changed.** The Composer gives the studio panel a graph area above its shelf (60 and 40 in Adaptive; the fixed Basic layout is 25 and 75 because Basic shows graphs in chat and its graph area only says so, seen in the browser), keeps the studio at a 20 percent column in Adaptive even with no graph so the shelf and the saved views stay reachable (answer-only layouts are 0, 80, 20), and decides a split's direction by the highest-priority hint that names one. A region size may be 0 (the plan said 1) so an unused region can exist without space. The chat panel must have a `main` region (both validators). A version 1 layout is read as one `main` region per panel. The Studio generators are inert list items.
 
 **Decision.** (1) `LayoutSpec` version 2 lets a panel be divided into regions (`main`, `secondary`, `shelf`) with a direction (`rows` or `columns`) and sizes in percent; a placement names a panel and a region; a v1 spec is read as one `main` region per panel. The region ids are a closed union and the split is one level deep. (2) The studio panel's basic layout is the graph area above a Studio area, which holds inert generator tiles and an Outputs shelf; the shelf's first items are the saved views. (3) The generators and the Studio agent stay in P5 (D-30).
 
@@ -621,8 +623,6 @@ load-bearing is built on it. When one is resolved, delete it here and write a re
 2. **ASSUMED:** OpenRouter model ids follow its dotted naming (`anthropic/claude-sonnet-5.5`, `-opus-5.5`, `-haiku-4.5`). Its public model list did not show the sonnet and haiku entries on 2026-10-05. Confirm in P0 task 10.
 3. **ASSUMED:** `text-embedding-3-large` costs $0.13 per million tokens (`api/llm/pricing.py`). The OpenAI reference page does not state a price. Confirm against the pricing page before the first live embedding run (P0 task 10); the cap check depends on it.
 
-4. **Approved direction (Azim 2026-10-07, early comments on the D1 screenshots; planned as P2b and accepted as D-32). Kept here until built:** v1's **Studio** returns in the right column below the graph, NotebookLM-style: generators for slides, quizzes and the like, with each generated output kept as a saved item below it. This is the P5 Studio agent (D-30) plus a Studio panel region and an output shelf. Planned as P2b (`refdocs/plans/2026-10-07-p2b-studio-shell-split-regions.md`, ADR D-32 accepted): the shell and the shelf are built there, the generators stay in P5; the saved items reuse the D-31 pattern store.
-5. **ASSUMED (same source):** the adaptive layout's middle section may **split** (vertically or horizontally) according to what the Composer generates (a quiz, a study session, and so on). This is a growth of `LayoutSpec` (nested regions with a direction), a breaking wire change, so it needs its own decision and the schema-guardian review before it is built; D-27's closed `PanelId` is the reason it is not free. Accepted as D-32 and planned in P2b.
-6. **ASSUMED:** D-28's default "the first answer applies Adaptive unless Basic is pinned" is built (`web/lib/store.ts`). It is sticky: once Basic is pinned, Adaptive does not auto-apply until the user chooses it. Confirm or change at the next checkpoint.
+4. **ASSUMED:** D-28's default "the first answer applies Adaptive unless Basic is pinned" is built (`web/lib/store.ts`). It is sticky: once Basic is pinned, Adaptive does not auto-apply until the user chooses it. Confirm or change at the next checkpoint.
 
 Resolved and removed from this list: Q-02 (D-17), Q-03 (D-18), Q-04 (D-22), Q-05 and Q-01 (D-21), Q-08 (Tailwind v4 and LangGraph 1.x read from current docs at install: `@tailwindcss/postcss` with `@import "tailwindcss"` and no config file; `StateGraph(State, context_schema=...)`, `runtime: Runtime[Context]` in nodes, `graph.ainvoke(..., context=...)`).

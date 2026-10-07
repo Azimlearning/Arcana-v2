@@ -228,6 +228,8 @@ def validate_layout(raw: LayoutSpec | Mapping[str, Any], known_block_ids: Collec
         issues.append(FieldIssue(path="panels", message="the chat panel is required"))
     elif widths["chat"] < MIN_CHAT_WIDTH:
         issues.append(FieldIssue(path="panels", message=f"the chat panel must be at least {MIN_CHAT_WIDTH} wide"))
+    if "chat" in regions and "main" not in regions["chat"]:
+        issues.append(FieldIssue(path="panels", message="the chat panel has a main region (the answer's own area)"))
 
     seen_blocks: set[str] = set()
     orders: set[tuple[str, str, int]] = set()

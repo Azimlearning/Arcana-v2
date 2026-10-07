@@ -199,8 +199,8 @@ const FALLBACK: LayoutSpec = {
       width: 20,
       direction: "rows" as const,
       regions: [
-        { id: "main" as const, size: 60 },
-        { id: "shelf" as const, size: 40 },
+        { id: "main" as const, size: 25 },
+        { id: "shelf" as const, size: 75 },
       ],
     },
   ],

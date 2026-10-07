@@ -55,7 +55,7 @@ export interface Placement {
 
 /**
  * The whole layout. Server guarantees: `version` is 2; panel ids are unique; widths are whole numbers from 0 to
- * 100 that sum to 100; the chat panel is present and at least 25 wide; a panel of width 0 has no placements; every
+ * 100 that sum to 100; the chat panel is present, at least 25 wide and has a `main` region; a panel of width 0 has no placements; every
  * panel has at least one region, region ids are unique within a panel, sizes are whole numbers from 0 to 100 that sum
  * to 100, and a region of size 0 holds no placements; every placement names a distinct block of the turn and a region
  * its panel has; orders are unique within a region. A block with no placement is shown in the chat panel in arrival

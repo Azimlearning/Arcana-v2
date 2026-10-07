@@ -29,5 +29,5 @@ Status vocabulary: `Draft` · `In progress` · `Done` · `Blocked` · `Supersede
 |---|---|---|
 | [2026-10-05-p0-walking-skeleton.md](2026-10-05-p0-walking-skeleton.md) | P0: walking skeleton + eval harness | In progress (closed with two deferrals, see STATUS) |
 | [2026-10-06-p1-agent-core.md](2026-10-06-p1-agent-core.md) | P1: agent core with super tools + first full benchmark | Done 2026-10-06; one declared open item (RAGAS metrics deferred to the end); result inconclusive |
-| [2026-10-07-p2b-studio-shell-split-regions.md](2026-10-07-p2b-studio-shell-split-regions.md) | P2b: layout v2 (regions inside panels), the Studio shell and the Outputs shelf (Azim's UI direction, 2026-10-07) | In progress (approved 2026-10-07, ADR D-32; F1 next) |
+| [2026-10-07-p2b-studio-shell-split-regions.md](2026-10-07-p2b-studio-shell-split-regions.md) | P2b: layout v2 (regions inside panels), the Studio shell and the Outputs shelf (Azim's UI direction, 2026-10-07) | Done 2026-10-07 (ADR D-32; definition of done checked in the plan) |
 | [2026-10-06-p2-genui-catalog-dashboard.md](2026-10-06-p2-genui-catalog-dashboard.md) | P2: GenUI catalog (level 1, evidence-admitted components) + adaptive dashboard (level 2 `LayoutSpec`) + first measurement of the bound | Done 2026-10-07 (ADRs D-27 to D-31; B5 stretch deferred; definition of done checked item by item in the plan) |
