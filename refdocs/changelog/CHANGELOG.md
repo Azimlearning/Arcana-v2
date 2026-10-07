@@ -28,6 +28,13 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-07: P2c and G1 planned and approved (Azim's graph upgrade), docs only
+- **Changed:** `refdocs/plans/2026-10-07-p2c-traversal-view.md`, `refdocs/plans/2026-10-07-g1-atomic-graph-experiment.md`, their execution docs, ADRs D-33 and D-34, the PRD rows, both index tables.
+- **Decided:** Azim approved both parts of his graph idea ("proceed with both") and the experiment being measured as extra arms. Part 1 (D-33) is a `TraversalView` showing what the search followed per prompt, with the retriever untouched. Part 2 (D-34) is an atomic-note graph builder as an additive variant with the protocol fixed before any live run, a free structural baseline first, a 4-paper subset (about $1.5), and the full 16 papers (about $5.8) only after Azim raises the monthly cap.
+- **Deviations:** none. Each paid step in G1 needs Azim's confirmation of the amount before it runs (the plan says so).
+- **Verified:** nothing verified this session (documents only).
+- **Known issues / next steps:** T1 (the traversal function and its parity test) and G1.1 (the free baseline of the current graph). Cost facts used in the plans: $0.0037 per chunk measured; 1,570 chunks; $3.83 left of the $10 cap.
+
 ### 2026-10-07: P2b task F5 (browser run, reviews, wrap-up); P2b closed
 - **Changed:** `api/genui/layout.py` (the fixed Basic layout's studio is graph area 25 and shelf 75), `api/genui/validate.py` and `web/lib/layout.ts` (the chat panel must have a `main` region), `packages/schema/src/layout.ts` (comment), `web/lib/layout.ts` (region order from an exhaustive record), `web/app/Workspace.tsx` (a region the screen gives no content of its own still shows its placed blocks), tests on both sides (an exhaustive test over every panel, region and direction a hint can name; the weights table checked against the schema), `refdocs/evidence/p2b-01..06-*.png`. Docs: the plan (Done; definition of done checked item by item), the execution doc (F5 Reality; the F2 note corrected), D-32 (Built, with what the build changed; working assumptions 4 and 5 removed because they are built), the catalog guide, `file_structure.md`, STATUS (P2b row, ledger rows), both indexes, and a wrong line in P2's execution doc (Synapse is on this machine).
 - **Decided:** Nothing new beyond D-32 as amended. The fixed Basic studio is 25 and 75 (the browser showed 60 and 40 as an empty block); the chat panel always has a `main` region.

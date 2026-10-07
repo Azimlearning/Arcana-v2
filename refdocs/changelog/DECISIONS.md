@@ -614,6 +614,22 @@ strings validated against the template's slots).
 
 **Trade-offs / rejected.** A second breaking change to `LayoutSpec`. Rejected: an open tree of nested splits (the server could describe a layout the client cannot draw, and the validator would be recursive); building the generators now (they are P5 and need the Studio agent); hiding the generator tiles until they work (the screen should say what is not built).
 
+## D-33: A TraversalView shows what the search followed, as its own component (2026-10-07)
+
+**Decision.** A new catalog component, `TraversalView`, shows for a prompt which concepts the question resolved to (the seeds), the one-hop edges the graph signal followed, and the passages reached, in rank order, with how each was reached. Its precondition: the graph signal resolved at least one query entity and followed at least one edge to a stored chunk. It is grounded by **provenance**: every seed, edge and passage is checked against the stores (not "the text states the relation"), and the view says it shows what the search followed. It is computed by a read-only function (`trace_graph_signal`) that shares the retriever's helpers and constants; **the retriever is not edited**, and a parity test over the frozen question set keeps the two in step. Placed in the studio's graph area under `GraphView`.
+
+**Why.** Azim 2026-10-07: show "the node traversal based on each prompts" in the top-right graph. `GraphView` guarantees every edge's quote names both concepts, which hides the edges the search actually followed; mixing the two would weaken that guarantee. A separate component keeps each claim honest and makes the graph's real behaviour inspectable, which is also the evidence for D-34.
+
+**Trade-offs / rejected.** A second walk over the graph can drift from the retriever (mitigated by the parity test, not by editing frozen code). One hop only: that is what the retriever does. Rejected: extra fields on `GraphView` (weakens its guarantee); recording the path inside the retriever (touches frozen D-20 code and changes `RetrieverResult`); an LLM-written explanation (no model call, and it would be unverifiable).
+
+## D-34: An atomic-note graph builder is run as additive experimental arms, with the protocol fixed first (2026-10-07)
+
+**Decision.** (1) The Obsidian-style ingestion idea (small concept notes with typed, evidenced relations, merged across documents) is built as a **variant behind the same interface** that writes to its own store directory. (2) It is evaluated as the additional arms `graph_atomic` and `hybrid_atomic` against `graph` and `hybrid` on the frozen question set; no existing store, question, gold annotation, scoring constant or result is changed. (3) A free structural baseline of the current graph is measured first. (4) The protocol (the comparison, Recall@10 and nDCG@10 as primary, structural metrics as secondary, what counts as improved, descriptive-only reporting where the number of answerable questions is small) is written into this ADR and committed **before any live run**. (5) Paid steps run in two stages: a 4-paper subset (about $1.5, within the cap), then the full 16 papers (about $5.8) only after Azim raises the monthly cap; each paid step needs Azim's confirmation of the amount. (6) `Node` and `Edge` gain optional fields with defaults; old stores still load.
+
+**Why.** Azim 2026-10-07: break documents into small nodes with relations at ingestion; "I think this can improve the graph RAG output"; and "part 2 will actually have experimentation or actual test results". The current graph is measurably weak in structure (44 percent of edges drawable, a path map admitted on 3 of 20 questions), so the hypothesis is plausible; whether it helps retrieval is unknown, and constraint 9 requires the protocol to be fixed before the arms run.
+
+**Trade-offs / rejected.** Evidence filtering costs edges (many are dropped); the experiment measures whether the survivors are worth more. A subset run can only describe retrieval on the few questions whose gold sits in its papers. Rejected: replacing the builder (cannot be compared, rewrites history); an LLM-judged merge (paid, unrepeatable); tuning the prompt on the evaluation questions (constraint 9).
+
 ## Working assumptions (`ASSUMED:`)
 
 Not decisions; guesses made to keep moving. Each one must be confirmed or killed before anything
