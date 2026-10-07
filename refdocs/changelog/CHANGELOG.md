@@ -28,6 +28,14 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-07: M2.11 the vault review screen (`/notes/review`)
+- **Changed:** `web/app/notes/review/{page,ReviewScreen}.tsx`, `web/lib/api.ts` (`fetchLint`), a "Review" link in the notes header, tests, `refdocs/plans/2026-10-07-m2-lint-screen.md` and its execution doc, indexes, file map, `refdocs/evidence/m2-11-review.png`. No server or wire change: the report and `GET /vault/lint` already existed (M2.8).
+- **Decided:** nothing architectural. The screen reports and has no action: the vault never merges or judges (D-35); it is a typed endpoint's response, not a GenUI block.
+- **Deviations:** none.
+- **Verified:** `pnpm --filter web test` 343 passed, typecheck and lint clean; a real browser at 1440 by 900 on a copy of the `atomic2` vault showed the four lists with exact totals (98 near-duplicate pairs, 6 multi-paper definitions, 301 unlinked pages, 5 hubs).
+- **Noted, not changed:** the `one_more_word` lint reason is noisy on real data (most pairs are specialisations, not duplicates); opening a page from the report needs a page address, a separate change.
+- **Known issues / next steps:** unchanged from Q1 (the full 16-paper `atomic2` build waits for the cap; the audit samples are unread).
+
 ### 2026-10-07: Q1 a quiz from the vault's claims (`QuizCard`), no model, feeding the learner's mastery
 - **Changed:** `packages/schema` (`QuizItem`, `QuizCardData`, the `QuizCard` block, `QuizAnswerRequest`, `QuizAnswerResponse`) and `api/genui/generated.py`; `api/vault/quiz.py` (derivation: the blank, the fair wrong answers, an item read back from its id), `api/genui/{validate,notes_catalog,builders}.py`, `api/agents/compose.py` (`compose_quiz`), `api/routes/{quiz,vault}.py` (`POST /quiz/answer`, `GET /vault/quiz`), `api/main.py`; web `QuizCard.tsx`, registry, `notesNav`, `NotesWorkspace` ("Quiz me" and a quiz mode), `lib/api.ts`, `lib/store.ts`, fixtures; `ConceptPage` now says "from N ratings and answers"; tests; the catalog guide (`QuizCard` moved out of "Not admitted"), file map, plan and execution doc and index tables; D-35 amendment A8 (amends D-29); evidence `refdocs/evidence/q1-1-quiz.png`, `q1-2-answered.png`.
 - **Decided:** A8, before the code: the block never carries the answer; the server derives the item again from its id and records `quiz_correct` or `quiz_wrong` for the blanked page (never the one chosen); weakest concept first, one item per page; the Studio's quiz tool is built as a deterministic tool with no agent in front of it yet (D-30).

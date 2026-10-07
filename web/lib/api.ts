@@ -11,6 +11,7 @@ import type {
   SavePatternRequest,
   TurnTrace,
   UIBlock,
+  VaultLintResponse,
   WorkspaceResponse,
 } from "@arcana/schema";
 
@@ -234,6 +235,44 @@ export async function answerQuiz(
   } catch {
     return null;
   }
+}
+
+export type LintResult = { ok: true; report: VaultLintResponse } | { ok: false; error: ErrorEnvelope };
+
+const isList = (value: unknown): value is unknown[] => Array.isArray(value);
+
+function isLintReport(value: unknown): value is VaultLintResponse {
+  if (typeof value !== "object" || value === null) return false;
+  const v = value as Partial<Record<keyof VaultLintResponse, unknown>>;
+  return (
+    typeof v.pages === "number" &&
+    typeof v.orphansTotal === "number" &&
+    typeof v.duplicatesTotal === "number" &&
+    typeof v.tensionsTotal === "number" &&
+    isList(v.orphans) &&
+    isList(v.duplicates) &&
+    isList(v.tensions) &&
+    isList(v.hubs)
+  );
+}
+
+/** What a person should look at in the vault (M2.8, D-35): reported, never fixed. A body that is not a report is an error. */
+export async function fetchLint(options: { baseUrl?: string; fetchImpl?: typeof fetch; signal?: AbortSignal } = {}): Promise<LintResult> {
+  const { baseUrl = API_BASE, fetchImpl = fetch, signal } = options;
+  let response: Response;
+  try {
+    response = await fetchImpl(`${baseUrl}/vault/lint`, { signal });
+  } catch {
+    return { ok: false, error: clientError("Could not reach the server.") };
+  }
+  if (!response.ok) return { ok: false, error: await envelopeFromResponse(response) };
+  try {
+    const body: unknown = await response.json();
+    if (isLintReport(body)) return { ok: true, report: body };
+  } catch {
+    // not JSON
+  }
+  return { ok: false, error: clientError("The server sent an unreadable response.", false) };
 }
 
 /** Record the learner's own rating of a page of the vault (D-35 A6). True when the server saved it. */

@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { envelope, jsonResponse, layout, quizAnswer, savedPattern, sourceList } from "@/test/fixtures";
 
-import { answerQuiz, deletePattern, fetchNotes, fetchQuiz, fetchWorkspace, recordLearnerEvent, isSavedPattern, listPatterns, reverifyPattern, savePattern } from "./api";
+import { answerQuiz, deletePattern, fetchLint, fetchNotes, fetchQuiz, fetchWorkspace, recordLearnerEvent, isSavedPattern, listPatterns, reverifyPattern, savePattern } from "./api";
 
 const prebuilt = layout([{ blockId: "workspace-sources", panel: "sources", region: "main" as const, order: 0 }], {
   origin: "prebuilt",
@@ -247,5 +247,41 @@ describe("fetchQuiz and answerQuiz", () => {
       throw new TypeError("offline");
     };
     expect(await answerQuiz("x", "y", { fetchImpl: down as unknown as typeof fetch })).toBeNull();
+  });
+});
+
+
+describe("fetchLint", () => {
+  const REPORT = {
+    pages: 3,
+    orphans: [],
+    orphansTotal: 0,
+    duplicates: [],
+    duplicatesTotal: 0,
+    tensions: [],
+    tensionsTotal: 0,
+    hubs: [],
+  };
+
+  it("asks GET /vault/lint and returns a well-formed report", async () => {
+    const fetchImpl = vi.fn(async () => jsonResponse(REPORT));
+    const got = await fetchLint({ fetchImpl: fetchImpl as unknown as typeof fetch, baseUrl: "http://api" });
+    expect(got).toEqual({ ok: true, report: REPORT });
+    expect(String((fetchImpl.mock.calls[0] as unknown[])[0])).toBe("http://api/vault/lint");
+  });
+
+  it("is an error for a body that is not a report, a refusal, and a server that cannot be reached", async () => {
+    for (const body of [null, "x", {}, { ...REPORT, orphans: "none" }, { ...REPORT, pages: "3" }]) {
+      const fetchImpl = vi.fn(async () => jsonResponse(body));
+      expect((await fetchLint({ fetchImpl: fetchImpl as unknown as typeof fetch })).ok).toBe(false);
+    }
+    const refused = vi.fn(async () => jsonResponse(envelope({ code: "internal", message: "Down." }), 500));
+    const result = await fetchLint({ fetchImpl: refused as unknown as typeof fetch });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.message).toBe("Down.");
+    const down = async () => {
+      throw new TypeError("offline");
+    };
+    expect((await fetchLint({ fetchImpl: down as unknown as typeof fetch })).ok).toBe(false);
   });
 });

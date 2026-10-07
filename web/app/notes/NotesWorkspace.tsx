@@ -163,6 +163,9 @@ export function NotesWorkspace() {
                 <Link href="/notes" aria-current="page" className="font-medium text-stone-900 underline underline-offset-4">
                   Notes
                 </Link>
+                <Link href="/notes/review" className="text-stone-600 hover:text-stone-900">
+                  Review
+                </Link>
               </nav>
             </div>
             <form
