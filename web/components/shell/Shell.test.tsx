@@ -1,4 +1,4 @@
-import type { LayoutSpec } from "@arcana/schema";
+import type { LayoutSpec, PanelSpec } from "@arcana/schema";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -7,7 +7,7 @@ import { layout } from "@/test/fixtures";
 import { LayoutSwitch } from "./LayoutSwitch";
 import { Shell } from "./Shell";
 
-const panels = { sources: <p>S</p>, chat: <p>C</p>, studio: <p>T</p> };
+const panels = { sources: { main: <p>S</p> }, chat: { main: <p>C</p> }, studio: { main: <p>T</p> } };
 const shell = (spec: LayoutSpec) => render(<Shell layout={spec} header={<span>Arcana</span>} panels={panels} />);
 
 describe("Shell", () => {
@@ -45,6 +45,92 @@ describe("Shell", () => {
     expect(screen.getByRole("main", { name: "Chat" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Studio" })).toBeInTheDocument();
     expect(document.querySelector("[data-layout-origin]")).toHaveAttribute("data-layout-origin", "adaptive");
+  });
+});
+
+describe("Shell regions", () => {
+  const studio = (spec: Partial<PanelSpec>): PanelSpec => ({
+    id: "studio",
+    width: 35,
+    direction: "rows",
+    regions: [
+      { id: "main", size: 60 },
+      { id: "shelf", size: 40 },
+    ],
+    ...spec,
+  });
+  const split = (spec: Partial<PanelSpec> = {}) =>
+    layout([], {
+      panels: [
+        { id: "sources", width: 20, direction: "rows", regions: [{ id: "main", size: 100 }] },
+        { id: "chat", width: 45, direction: "columns", regions: [{ id: "main", size: 100 }] },
+        studio(spec),
+      ],
+    });
+  const withShelf = {
+    ...panels,
+    studio: { main: <p>Graph</p>, shelf: <p>Saved</p> },
+  };
+
+  it("divides a panel into its regions, each with its size as a flex-grow value, in the layout's order", () => {
+    render(<Shell layout={split()} header={<span>Arcana</span>} panels={withShelf} />);
+    const regions = Array.from(document.querySelectorAll('[data-panel="studio"] [data-region]'));
+    expect(regions.map((r) => r.getAttribute("data-region"))).toEqual(["main", "shelf"]);
+    expect(regions[0]).toHaveStyle({ flexGrow: "60" });
+    expect(regions[1]).toHaveStyle({ flexGrow: "40" });
+    expect(regions[0]).toHaveTextContent("Graph");
+    expect(regions[1]).toHaveTextContent("Saved");
+  });
+
+  it("stacks regions for rows and puts them side by side for columns", () => {
+    const { unmount } = render(<Shell layout={split()} header={<span>A</span>} panels={withShelf} />);
+    expect(document.querySelector('[data-panel="studio"]')).toHaveClass("flex-col");
+    unmount();
+    render(<Shell layout={split({ direction: "columns" })} header={<span>A</span>} panels={withShelf} />);
+    expect(document.querySelector('[data-panel="studio"]')).toHaveClass("flex-row");
+  });
+
+  it("names a region as a landmark only when its panel is split", () => {
+    render(<Shell layout={split()} header={<span>A</span>} panels={withShelf} />);
+    expect(screen.getByRole("region", { name: "Outputs" })).toHaveTextContent("Saved");
+    expect(screen.getByRole("region", { name: "Main area" })).toHaveTextContent("Graph");
+    expect(document.querySelector('[data-panel="chat"] [data-region]')).not.toHaveAttribute("role");
+  });
+
+  it("draws a listed region with no content as an empty area, and does not draw one the layout leaves out", () => {
+    render(<Shell layout={split()} header={<span>A</span>} panels={{ ...panels, studio: { main: <p>Graph</p> } }} />);
+    expect(document.querySelector('[data-panel="studio"] [data-region="shelf"]')).toBeEmptyDOMElement();
+    render(
+      <Shell
+        layout={split({ regions: [{ id: "main", size: 100 }] })}
+        header={<span>A</span>}
+        panels={{ ...panels, studio: { main: <p>Graph</p>, shelf: <p>Hidden by the layout</p> } }}
+      />,
+    );
+    expect(screen.queryByText("Hidden by the layout")).not.toBeInTheDocument();
+  });
+
+  it("collapses a region of size 0: aria-hidden and inert", () => {
+    render(
+      <Shell
+        layout={split({ regions: [{ id: "main", size: 0 }, { id: "shelf", size: 100 }] })}
+        header={<span>A</span>}
+        panels={withShelf}
+      />,
+    );
+    const main = document.querySelector('[data-panel="studio"] [data-region="main"]')!;
+    expect(main).toHaveAttribute("aria-hidden", "true");
+    expect(main).toHaveAttribute("inert");
+    expect(document.querySelector('[data-panel="studio"] [data-region="shelf"]')).not.toHaveAttribute("inert");
+  });
+
+  it("contains hidden text and long titles inside each region, and animates a change of share unless motion is reduced", () => {
+    render(<Shell layout={split()} header={<span>A</span>} panels={withShelf} />);
+    for (const region of Array.from(document.querySelectorAll("[data-region]"))) {
+      expect(region).toHaveClass("relative", "overflow-y-auto", "[overflow-wrap:anywhere]");
+      expect(region).toHaveClass("transition-[flex-grow]", "motion-reduce:transition-none");
+    }
+    expect(document.querySelector('[data-panel="studio"]')).toHaveClass("transition-[flex-grow]", "motion-reduce:transition-none");
   });
 });
 

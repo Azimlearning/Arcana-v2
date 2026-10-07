@@ -53,6 +53,8 @@
 
 **Verify:** component tests for rows and columns, for a region that is empty, and for a v1 layout; keyboard order follows reading order; the long-title and hidden-text containment tests from D1 still pass.
 
+**Reality (F3 done 2026-10-07):** Tailwind v4 docs read first (`transition-[flex-grow]`, `motion-reduce:transition-none`; the old note in `Shell.tsx` saying `flex-grow` cannot be animated was wrong in principle and is replaced by a check in the real browser in F5). `Panel` now takes the panel's spec and a map of region content: it is a flex container (`flex-col` for rows, `flex-row` for columns) whose regions each take their size as a flex-grow value, are `relative` and scroll on their own, and carry the D1 containment classes; a region is a labelled landmark ("Main area", "Side area", "Outputs") only when its panel has more than one; a region of size 0 is `aria-hidden` and `inert`; a listed region with no content is drawn empty and one the layout leaves out is not drawn. `placeBlocksByRegion` groups blocks by panel and region (a placement into a region the panel lacks goes to the panel's first region; unplaced blocks go to chat's main); `placeBlocks` is kept as the by-panel view for the code that does not care (`flattenPlaced`). `Workspace` gives chat a `main` and a `secondary` and the studio a `main` (the graph or, empty, a sentence about where graphs show) and a `shelf` (blocks placed there; the saved views arrive in F4). Verified: web 214 passed, typecheck and lint clean.
+
 ### Task F4: The Studio area and the shelf
 
 **Files:** `web/components/shell/Studio.tsx` (new), `SavedViews.tsx` (moves into the shelf), `Workspace.tsx`, tests.

@@ -3,10 +3,11 @@
 // `inert`. Rewritten for v2: the widths come from the server's `LayoutSpec` (D-27), not a client-side per-mode table;
 // there is no resizer, mode indicator or notebook id; the panel contents are passed in, so the frame knows no
 // component; and Tailwind 4 utility classes are used (v1's token classes such as `bg-paper` are not carried over).
-//
-// Note: CSS `flex-grow` is not animatable, so a change of layout is an instant reflow.
+// Added for D-32: each panel is divided into the layout's regions (`Panel`), and a change of width or size is animated
+// with a CSS transition on `flex-grow` (Synapse's adaptive layout animates its column template the same way), switched
+// off for `prefers-reduced-motion`. Whether the browser interpolates `flex-grow` is checked in the real browser (P2b F5).
 
-import type { LayoutSpec, PanelId } from "@arcana/schema";
+import type { LayoutSpec, PanelId, RegionId } from "@arcana/schema";
 import type { ReactNode } from "react";
 
 import { Panel } from "./Panel";
@@ -20,8 +21,8 @@ export function Shell({
 }: {
   layout: LayoutSpec;
   header: ReactNode;
-  /** What each panel holds. A panel the layout does not list is not rendered. */
-  panels: Record<PanelId, ReactNode>;
+  /** What each region of each panel holds. A panel the layout does not list is not rendered. */
+  panels: Record<PanelId, Partial<Record<RegionId, ReactNode>>>;
 }) {
   return (
     <div className="flex h-screen flex-col bg-stone-50 text-stone-900">
@@ -30,9 +31,7 @@ export function Shell({
       </header>
       <div className="flex min-h-0 flex-1 gap-4 p-4" data-layout-origin={layout.origin} data-layout-mode={layout.mode}>
         {layout.panels.map((panel) => (
-          <Panel key={panel.id} id={panel.id} width={panel.width} as={TAGS[panel.id]}>
-            {panels[panel.id]}
-          </Panel>
+          <Panel key={panel.id} spec={panel} regions={panels[panel.id]} as={TAGS[panel.id]} />
         ))}
       </div>
     </div>

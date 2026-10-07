@@ -28,6 +28,13 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-07: P2b task F3 (the shell draws regions)
+- **Changed:** `web/components/shell/Panel.tsx` (regions, direction, landmarks, animation), `Shell.tsx`, `web/lib/layout.ts` (`placeBlocksByRegion`, `flattenPlaced`, `REGION_ORDER`), `web/app/Workspace.tsx` (chat main and secondary, studio main and shelf), tests (`Shell.test.tsx`, `layout.test.ts`, `Workspace.test.tsx`), the execution doc (F3 Reality).
+- **Decided:** Region landmarks only when a panel is split; a region the layout lists with no content is drawn empty (its size is the layout's to give).
+- **Deviations:** none. The note in `Shell.tsx` that `flex-grow` cannot be animated was incorrect in principle; the transition is added and its effect is checked in the browser run (F5), not assumed.
+- **Verified:** `pnpm -r typecheck`, `pnpm -r lint`, `pnpm -r test` (214 passed). Backend unchanged since F2 (792 passed).
+- **Known issues / next steps:** F4 (the Studio area and the shelf: inert generator tiles, saved views moved from the header); the studio shelf is empty until then.
+
 ### 2026-10-07: P2b task F2 (Composer rules for regions)
 - **Changed:** `api/genui/layout.py` (regions from hints, weights, direction rule, the studio keeps its shelf), `api/genui/catalog.py` (`PlacementHint.region`, `.direction`), `api/genui/test_layout.py` (new region tests, toy components), `packages/schema/fixtures/prebuilt-layout.json` (studio is graph area above shelf), `web/lib/layout.ts` and `web/test/fixtures.ts` (fallback matches the fixture), `web/lib/layout.test.ts`, `refdocs/guides/catalog.md` (regions, the table), the execution doc (F2 Reality).
 - **Decided:** The studio panel is never hidden in Adaptive (it keeps a 20 percent column for its shelf), so saved views stay reachable once they move there (F4). A conflict between hints that name a direction is settled by the highest priority. Both recorded in the execution doc.

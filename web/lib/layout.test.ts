@@ -220,3 +220,38 @@ describe("readLayout", () => {
     }
   });
 });
+
+describe("placeBlocksByRegion", () => {
+  const item = (id: string) => ({ type: "CitedSummary", id, meta: { status: "ready", error: null }, data: {} }) as unknown as UIBlock;
+  const twoRegionChat = (placements: LayoutSpec["placements"]): LayoutSpec => ({
+    ...GOOD,
+    panels: GOOD.panels.map((p) =>
+      p.id === "chat"
+        ? { ...p, direction: "columns", regions: [{ id: "main", size: 60 }, { id: "secondary", size: 40 }] }
+        : p,
+    ),
+    placements,
+  });
+
+  it("groups blocks by panel and region, in order within a region", async () => {
+    const { placeBlocksByRegion, placeBlocks } = await import("./layout");
+    const layout = twoRegionChat([
+      { blockId: "a", panel: "chat", region: "main", order: 0 },
+      { blockId: "b", panel: "chat", region: "secondary", order: 1 },
+      { blockId: "c", panel: "chat", region: "secondary", order: 0 },
+    ]);
+    const blocks = [item("a"), item("b"), item("c")];
+    const placed = placeBlocksByRegion(layout, blocks);
+    expect(placed.chat.main.map((x) => x.id)).toEqual(["a"]);
+    expect(placed.chat.secondary.map((x) => x.id)).toEqual(["c", "b"]);
+    expect(placed.studio.main).toEqual([]);
+    expect(placeBlocks(layout, blocks).chat.map((x) => x.id)).toEqual(["a", "c", "b"]); // by panel: regions in drawing order
+  });
+
+  it("shows a block whose region its panel does not have in the panel's first region, and unplaced blocks in chat's main", async () => {
+    const { placeBlocksByRegion } = await import("./layout");
+    const layout = { ...GOOD, placements: [{ blockId: "a", panel: "chat", region: "shelf", order: 0 }] } as LayoutSpec;
+    const placed = placeBlocksByRegion(layout, [item("a"), item("z")]);
+    expect(placed.chat.main.map((x) => x.id)).toEqual(["a", "z"]);
+  });
+});
