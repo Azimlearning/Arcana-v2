@@ -31,8 +31,8 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 
 from api.core.errors import IngestFailed
-from api.genui.evidence import label_in_quote, verified_quote
-from api.genui.text import MIN_LABEL_CHARS
+from api.genui.evidence import QUOTE_CHARS, label_in_quote, verified_quote
+from api.genui.text import MIN_LABEL_CHARS, MIN_QUOTE_CHARS
 from api.ingestion.extract import PASSAGE_CLOSE, PASSAGE_OPEN, ExtractionResult, slug
 from api.llm.json_reply import parse_json_object
 from api.llm.models import ANTHROPIC_MODELS
@@ -43,7 +43,7 @@ from api.stores.doc_store import Chunk
 from api.stores.graph_store import Edge, Node
 
 BUILDER = "atomic"
-PROMPT_VERSION = "g1-2"
+PROMPT_VERSION = "g1-3"
 
 KINDS = ("concept", "method", "model", "dataset", "metric", "task", "person", "organisation")
 """What a note is about. Anything else the model says is stored as `other` and counted."""
@@ -92,6 +92,52 @@ ATOMIC_MAX_TOKENS = 3072
 """Larger than the free-form extractor's 2,048: every concept and relation also returns a sentence."""
 
 
+_HYPHEN_BREAK = re.compile(r"-\s*")
+
+
+def hyphen_key(text: str) -> str:
+    """The text with every hyphen, and the space a PDF leaves after a line-break hyphen, removed, so "retrieval- augmented",
+    "retrieval-augmented" and "retrievalaugmented" compare equal. PDF text breaks words across lines ("an- swers",
+    "prompt- ing") and a model repairs them when it copies; this key is what lets a repaired copy be matched to its source."""
+    return _HYPHEN_BREAK.sub("", " ".join(text.split()))
+
+
+def label_in_text(text: str, label: str) -> bool:
+    """`label_in_quote`, blind to hyphenation: the label occurs in the text as a whole word or phrase."""
+    return label_in_quote(hyphen_key(text), hyphen_key(label))
+
+
+def verbatim_span(chunk_text: str, proposed: object) -> str | None:
+    """The proposed sentence as a verbatim span of the chunk, or None. A copy that matches the chunk exactly (whitespace
+    aside) is returned as it is; a copy that matches only when hyphenation is ignored is mapped back to the chunk's own
+    words, hyphens and line-break spaces included, so what is stored is always a span of the stored text and a later check
+    of it against the chunk passes."""
+    exact = verified_quote(chunk_text, proposed)
+    if exact is not None or not isinstance(proposed, str):
+        return exact
+    normal = " ".join(chunk_text.split())
+    wanted = hyphen_key(proposed)
+    if len(" ".join(proposed.split())) < min(MIN_QUOTE_CHARS, len(normal)) or not wanted:
+        return None
+    kept: list[str] = []
+    origin: list[int] = []
+    i = 0
+    while i < len(normal):
+        if normal[i] == "-":  # a hyphen, and the space after it, take no part in the comparison
+            i += 1
+            while i < len(normal) and normal[i] == " ":
+                i += 1
+            continue
+        kept.append(normal[i])
+        origin.append(i)
+        i += 1
+    at = "".join(kept).find(wanted)
+    if at < 0:
+        return None
+    span = normal[origin[at] : origin[at + len(wanted) - 1] + 1]
+    return span if len(span) <= QUOTE_CHARS else span[:QUOTE_CHARS].rsplit(" ", 1)[0]
+
+
 _SENTENCE_BREAK = re.compile(r"(?<=[.!?])\s+")
 
 
@@ -101,7 +147,7 @@ def one_sentence(span: str, labels: Sequence[str]) -> str | None:
     parts = [p for p in _SENTENCE_BREAK.split(span) if p]
     if len(parts) <= 1:
         return span
-    return next((p for p in parts if all(label_in_quote(p, label) for label in labels)), None)
+    return next((p for p in parts if all(label_in_text(p, label) for label in labels)), None)
 
 
 def concept_id(label: str) -> str:
@@ -192,12 +238,12 @@ def build_atomic_result(parsed: dict, chunk: Chunk) -> ExtractionResult:
         if not isinstance(proposed, str) or not proposed.strip():
             drops["concept_no_note"] += 1
             continue
-        note = verified_quote(chunk.text, proposed)
+        note = verbatim_span(chunk.text, proposed)
         if note is None:
             drops["concept_note_not_verbatim"] += 1
             continue
         note = one_sentence(note, [label])
-        if note is None or not label_in_quote(note, label):
+        if note is None or not label_in_text(note, label):
             drops["concept_note_missing_label"] += 1
             continue
         by_label[label.lower()] = node_id
@@ -232,12 +278,12 @@ def build_atomic_result(parsed: dict, chunk: Chunk) -> ExtractionResult:
         if not isinstance(proposed, str) or not proposed.strip():
             drops["relation_no_evidence"] += 1
             continue
-        evidence = verified_quote(chunk.text, proposed)
+        evidence = verbatim_span(chunk.text, proposed)
         if evidence is None:
             drops["relation_evidence_not_verbatim"] += 1
             continue
         both = [kept[src].label, kept[dst].label]
-        if not all(label_in_quote(evidence, label) for label in both):
+        if not all(label_in_text(evidence, label) for label in both):
             drops["relation_evidence_missing_label"] += 1
             continue
         evidence = one_sentence(evidence, both)

@@ -138,3 +138,14 @@ def test_coverage_in_a_slice_counts_only_the_slices_chunks_and_an_empty_graph_co
     empty = measure([], [], CHUNKS)
     assert empty["chunk_coverage"]["with_a_concept"] == 0.0 and empty["edges_per_node"] is None
     assert empty["hub_concentration"] == {"top10_degree_share": None, "top_1_percent_share_of_chunk_links": None}
+
+
+def test_the_structure_measures_are_blind_to_pdf_hyphenation_for_both_graphs():
+    texts = {"d1_c_1": "A retrieval- augmented method uses a proba- bilistic ranker in this paper at length."}
+    nodes = [
+        node("a", "retrieval-augmented method", ["d1"], ["d1_c_1"]),
+        node("b", "probabilistic ranker", ["d1"], ["d1_c_1"]),
+    ]
+    edges = [Edge("a", "b", "uses", "d1_c_1", "d1")]
+    m = measure(nodes, edges, texts)
+    assert m["edges_stated_in_one_sentence"]["count"] == 1 and m["nodes_label_in_own_chunks"]["count"] == 2

@@ -65,6 +65,14 @@ def relation_words(relation: str) -> str:
     return " ".join(relation.replace("_", " ").lower().split())
 
 
+def label_in_text(text: str, label: str) -> bool:
+    """The label occurs in the text as a whole word or phrase, blind to hyphenation: PDF text breaks "retrieval-augmented"
+    across a line ("retrieval- augmented") and a model repairs it, so a plain test would count the repair as an error for
+    either graph."""
+    strip = lambda t: re.sub(r"-\s*", "", normalise(t))  # noqa: E731
+    return label_in_quote(strip(text), strip(label))
+
+
 def sentences(text: str) -> list[str]:
     return [s for s in _SENTENCES.split(normalise(text)) if s]
 
@@ -72,12 +80,12 @@ def sentences(text: str) -> list[str]:
 def edge_facts(edge: Edge, labels: Mapping[str, str], chunk_text: str | None) -> dict[str, bool]:
     """What the source chunk's text lets us say about one edge."""
     src, dst = labels.get(edge.src, ""), labels.get(edge.dst, "")
-    both_in_chunk = bool(chunk_text) and label_in_quote(chunk_text or "", src) and label_in_quote(chunk_text or "", dst)
+    both_in_chunk = bool(chunk_text) and label_in_text(chunk_text or "", src) and label_in_text(chunk_text or "", dst)
     in_one_sentence = False
     sentence_ok = False
     if chunk_text and both_in_chunk:
         for s in sentences(chunk_text):
-            if label_in_quote(s, src) and label_in_quote(s, dst):
+            if label_in_text(s, src) and label_in_text(s, dst):
                 in_one_sentence = True
                 sentence_ok = len(normalise(s)) >= MIN_QUOTE_CHARS
                 break
@@ -165,7 +173,7 @@ def measure(
     top10 = sum(d for _, d in degree.most_common(10))
     links = sorted((len(n.chunk_ids) for n in node_list), reverse=True)
     top_percent = links[: max(1, -(-node_total // 100))] if node_total else []
-    own_chunks = sum(1 for n in node_list if any(label_in_quote(chunk_texts.get(c, ""), n.label) for c in n.chunk_ids))
+    own_chunks = sum(1 for n in node_list if any(label_in_text(chunk_texts.get(c, ""), n.label) for c in n.chunk_ids))
 
     return {
         "chunk_coverage": {

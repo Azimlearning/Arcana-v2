@@ -264,7 +264,7 @@ def test_a_build_report_lists_the_builder_prompt_version_and_drops():
 
     report = BuildReport(drops=Counter({"concept_no_note": 2}))
     out = report.as_dict()
-    assert out["builder"] == "atomic" and out["prompt_version"] == atomic.PROMPT_VERSION == "g1-2"
+    assert out["builder"] == "atomic" and out["prompt_version"] == atomic.PROMPT_VERSION == "g1-3"
     assert out["drops"] == {"concept_no_note": 2} and "merges" not in out
 
 
@@ -379,5 +379,61 @@ async def test_the_default_builder_is_the_free_form_one_and_reports_nothing_new(
 def test_the_prompt_is_frozen_text_with_a_version(tmp_path):
     """The prompt may only change with the version: the protocol (G1.3) pins both."""
     digest = hashlib.sha256(ATOMIC_SYSTEM.encode()).hexdigest()
-    assert atomic.PROMPT_VERSION == "g1-2" and len(digest) == 64
+    assert atomic.PROMPT_VERSION == "g1-3" and len(digest) == 64
     assert json.dumps(sorted(KINDS)) and atomic.ATOMIC_MARKER in ATOMIC_SYSTEM
+
+
+# ── PDF line-break hyphenation (found by the pilot, builder g1-3) ─────────────
+
+BROKEN = (
+    "Several approaches use retrieval- augmented strategies in combination with LLMs. "
+    "Other work studies the conditional proba- bilities that a model assigns to each token."
+)
+
+
+def test_a_copy_that_repairs_a_line_break_hyphen_is_matched_to_the_chunks_own_words():
+    from api.ingestion.atomic import hyphen_key, label_in_text, verbatim_span
+
+    assert hyphen_key("retrieval- augmented") == hyphen_key("retrieval-augmented") == "retrievalaugmented"
+    assert label_in_text(BROKEN, "retrieval-augmented strategies") and not label_in_text(BROKEN, "retrieval strategies")
+    repaired = "Several approaches use retrieval-augmented strategies in combination with LLMs."
+    span = verbatim_span(BROKEN, repaired)
+    assert (
+        span == "Several approaches use retrieval- augmented strategies in combination with LLMs."
+    )  # the chunk's words
+    assert span in " ".join(BROKEN.split())  # stored text is always a span of the stored chunk
+    assert verbatim_span(BROKEN, "the conditional probabilities that a model assigns to each token") == (
+        "the conditional proba- bilities that a model assigns to each token"
+    )
+    assert (
+        verbatim_span(BROKEN, "Several approaches use dense strategies in combination with LLMs.") is None
+    )  # a paraphrase
+    assert verbatim_span(BROKEN, "") is None and verbatim_span(BROKEN, 7) is None
+    assert verbatim_span(BROKEN, "short") is None  # too short to be evidence, as before
+
+
+def test_a_repaired_note_survives_the_builder_and_is_stored_as_the_chunks_own_span():
+    chunk = Chunk("c", "d", 0, 1, BROKEN)
+    concept = [
+        {
+            "label": "retrieval-augmented strategies",
+            "kind": "method",
+            "note": "Several approaches use retrieval-augmented strategies in combination with LLMs.",
+        },
+        {
+            "label": "LLMs",
+            "kind": "model",
+            "note": "Several approaches use retrieval-augmented strategies in combination with LLMs.",
+        },
+    ]
+    relation = {
+        "src": "retrieval-augmented strategies",
+        "dst": "LLMs",
+        "type": "uses",
+        "evidence": "Several approaches use retrieval-augmented strategies in combination with LLMs.",
+    }
+    result = build_atomic_result(reply(concepts=concept, relations=[relation]), chunk)
+    assert [n.id for n in result.nodes] == ["retrieval_augmented_strategy", "llm"] and result.drops == {}
+    assert all(n.note and n.note in " ".join(BROKEN.split()) for n in result.nodes)
+    evidence = result.edges[0].evidence
+    assert evidence is not None and evidence in " ".join(BROKEN.split())
