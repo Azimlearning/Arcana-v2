@@ -20,7 +20,7 @@ router = APIRouter()
 @router.post("/learner/events")
 def record_event(body: LearnerEventRequest, request: Request) -> LearnerEventResponse:
     container = request.app.state.container
-    vault = container.vault()
+    vault = container.fresh_vault()
     if vault is None or body.pageId not in vault.pages:
         raise NotFound(f"The vault has no page {body.pageId!r}.")
     now = datetime.now(UTC)

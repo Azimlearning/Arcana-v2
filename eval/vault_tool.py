@@ -21,6 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from api.stores.local.networkx_graph import NetworkXGraphStore
 from api.stores.local.sqlite_doc import SqliteDocStore, make_engine
 from api.vault.compile import compile_vault
+from api.vault.lint import lint
 from api.vault.local import JsonVaultStore
 from api.vault.types import ClaimDraft
 from eval.graph_variant import CLAIMS_FILE, STORE_FILES, copy_database
@@ -89,7 +90,17 @@ def main(argv: list[str] | None = None) -> int:
     b = sub.add_parser("build", help="compile a vault into a new copy of a data directory")
     b.add_argument("--from", dest="source", required=True)
     b.add_argument("--to", dest="target", required=True)
+    lt = sub.add_parser("lint", help="print what a person should look at in a vault (orphans, near-duplicates, tensions, hubs)")
+    lt.add_argument("--data", required=True)
     args = parser.parse_args(argv)
+    if args.command == "lint":
+        data = Path(args.data)
+        vault = JsonVaultStore(data / VAULT_FILE).vault()
+        if vault is None:
+            raise SystemExit(f"{data} has no {VAULT_FILE}")
+        report = lint(vault, SqliteDocStore(make_engine(data / "arcana.db")))
+        print(json.dumps(report, indent=2, ensure_ascii=False))
+        return 0
     record = build(Path(args.source), Path(args.target))
     print(json.dumps({"vault_sha256": record["vault_sha256"], **record["stats"]}, indent=2))
     return 0

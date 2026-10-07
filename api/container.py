@@ -25,7 +25,7 @@ from api.stores.local.networkx_graph import NetworkXGraphStore
 from api.stores.local.numpy_vector import NumpyVectorStore
 from api.stores.local.sqlite_doc import SqliteDocStore, make_engine
 from api.stores.vector_store import VectorStore
-from api.vault.compile import carried_claims, compile_vault
+from api.vault.compile import carried_claims, compile_vault, corpus_fingerprint
 from api.vault.local import JsonVaultStore
 from api.vault.store import VaultStore
 from api.vault.types import Vault
@@ -58,6 +58,18 @@ class Container:
     def vault(self) -> Vault | None:
         """The compiled vault of the stored documents, or None if none has been built (D-35)."""
         return self.vault_store.vault()
+
+    def fresh_vault(self) -> Vault | None:
+        """The vault, compiled again first if the stored documents or graph have changed since it was built (compounding: a document
+        added or replaced reaches the notes view without anyone asking). A vault built before the corpus was recorded is kept as it
+        is, and so is the absence of a vault when there is nothing to build from."""
+        current = self.vault_store.vault()
+        if current is None:
+            return self.rebuild_vault() if self.docs.all_chunks() else None
+        recorded = current.stats.get("corpus")
+        if recorded is not None and recorded != corpus_fingerprint(self.graph, self.docs):
+            return self.rebuild_vault()
+        return current
 
     def rebuild_vault(self) -> Vault:
         """Compile the vault from the stored graph and passages and keep it. Deterministic, no model call. A previous build's

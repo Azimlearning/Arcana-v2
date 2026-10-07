@@ -234,6 +234,32 @@ class LearnerEventResponse(BaseModel):
     mastery: Mastery
 
 
+class LintDefinition(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    docTitle: str
+    text: str
+
+
+class LintDuplicate(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    a: LintPageRef
+    b: LintPageRef
+    reason: str
+
+
+class LintPageRef(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    id: str
+    label: str
+    passages: int
+
+
+class LintTension(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    page: LintPageRef
+    definitions: list[LintDefinition]
+
+
 class Mastery(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
     score: float
@@ -450,6 +476,18 @@ class TurnTrace(BaseModel):
     composition: list[ComponentDecision]
 
 
+class VaultLintResponse(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    pages: int
+    orphans: list[LintPageRef]
+    orphansTotal: int
+    duplicates: list[LintDuplicate]
+    duplicatesTotal: int
+    tensions: list[LintTension]
+    tensionsTotal: int
+    hubs: list[LintPageRef]
+
+
 class WorkspaceResponse(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
     layout: LayoutSpec
@@ -528,6 +566,10 @@ LayoutEvent.model_rebuild()
 LayoutSpec.model_rebuild()
 LearnerEventRequest.model_rebuild()
 LearnerEventResponse.model_rebuild()
+LintDefinition.model_rebuild()
+LintDuplicate.model_rebuild()
+LintPageRef.model_rebuild()
+LintTension.model_rebuild()
 Mastery.model_rebuild()
 NotesEdge.model_rebuild()
 NotesGraph.model_rebuild()
@@ -556,4 +598,5 @@ TraversalStep.model_rebuild()
 TraversalView.model_rebuild()
 TraversalViewData.model_rebuild()
 TurnTrace.model_rebuild()
+VaultLintResponse.model_rebuild()
 WorkspaceResponse.model_rebuild()

@@ -88,3 +88,56 @@ export interface LearnerEventResponse {
   /** The page's mastery after this event. */
   mastery: Mastery;
 }
+
+// ── Vault lint (M2.8, D-35): GET /vault/lint ──────────────────────────────────────────────────────────────────────────
+
+/** A page named in the lint report. */
+export interface LintPageRef {
+  id: string;
+  label: string;
+  /** @int */
+  passages: number;
+}
+
+/**
+ * Two pages whose names suggest one concept, awaiting a person's review. Never merged by the system. `reason`: `same_name` (the same
+ * words after folding plurals and hyphens), `one_more_word` (one name is the other plus one word) or `initials` (one is the
+ * initials of the other).
+ */
+export interface LintDuplicate {
+  a: LintPageRef;
+  b: LintPageRef;
+  reason: string;
+}
+
+/** One paper's definition of a concept, verbatim, with the paper's title. */
+export interface LintDefinition {
+  docTitle: string;
+  text: string;
+}
+
+/** A concept that two or more papers define: the definitions side by side, not compared or judged. */
+export interface LintTension {
+  page: LintPageRef;
+  definitions: LintDefinition[];
+}
+
+/**
+ * What a person should look at in the vault. Reported, never fixed: orphans (no link of either kind), near-duplicate pages, concepts
+ * defined in several papers, and hub pages (mentioned in a quarter or more of all passages). Each list is capped at 50 for display;
+ * the totals are exact.
+ */
+export interface VaultLintResponse {
+  /** @int */
+  pages: number;
+  orphans: LintPageRef[];
+  /** @int */
+  orphansTotal: number;
+  duplicates: LintDuplicate[];
+  /** @int */
+  duplicatesTotal: number;
+  tensions: LintTension[];
+  /** @int */
+  tensionsTotal: number;
+  hubs: LintPageRef[];
+}

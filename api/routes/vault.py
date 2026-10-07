@@ -11,7 +11,8 @@ from fastapi import APIRouter, Query, Request
 from pydantic import BaseModel
 
 from api.agents.compose import compose_notes
-from api.genui.generated import WorkspaceResponse
+from api.genui.generated import VaultLintResponse, WorkspaceResponse
+from api.vault.lint import lint as lint_vault
 
 router = APIRouter()
 
@@ -27,13 +28,13 @@ class VaultRebuilt(BaseModel):
 
 
 @router.get("/vault/notes")
-async def notes(
+def notes(
     request: Request,
     page: str | None = Query(default=None, max_length=MAX_PAGE_ID_CHARS),
     query: str = Query(default="", max_length=MAX_QUERY_CHARS),
 ) -> WorkspaceResponse:
     container = request.app.state.container
-    layout, blocks = compose_notes(container.vault(), container.docs, page or None, query, container.learner_store)
+    layout, blocks = compose_notes(container.fresh_vault(), container.docs, page or None, query, container.learner_store)
     return WorkspaceResponse(layout=layout, blocks=blocks)
 
 
@@ -47,3 +48,16 @@ def rebuild(request: Request) -> VaultRebuilt:
         co_mention_links=int(stats.get("co_mention_links", 0)),
         claims=len(vault.claims),
     )
+
+
+@router.get("/vault/lint")
+def lint(request: Request) -> VaultLintResponse:
+    """What a person should look at in the vault: orphans, near-duplicate pages, concepts several papers define, hub pages. Reported,
+    never fixed. No vault yet is an empty report."""
+    container = request.app.state.container
+    vault = container.fresh_vault()
+    if vault is None:
+        return VaultLintResponse(
+            pages=0, orphans=[], orphansTotal=0, duplicates=[], duplicatesTotal=0, tensions=[], tensionsTotal=0, hubs=[]
+        )
+    return VaultLintResponse.model_validate(lint_vault(vault, container.docs))

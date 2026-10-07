@@ -14,6 +14,7 @@ Nothing is merged by judgement and no stored node, edge or passage is changed: t
 
 from __future__ import annotations
 
+import hashlib
 import re
 from collections import Counter
 from collections.abc import Iterable, Sequence
@@ -39,6 +40,20 @@ from api.vault.types import (
 _ABBREVIATION = re.compile(r"^[A-Z][A-Z0-9]{1,7}s?$")
 MIN_COMPACT_CHARS = 4
 """Two node ids that differ only by underscores are one page only when the compact form is at least this long."""
+
+
+def corpus_fingerprint(graph: GraphStore, docs: DocStore) -> str:
+    """A hash of what a vault is built from: every stored passage (id and text) and every graph node and edge. A vault whose
+    recorded fingerprint differs from the stores' is out of date (a document was added or replaced, or the graph was rebuilt)."""
+    h = hashlib.sha256()
+    for chunk in sorted(docs.all_chunks(), key=lambda c: c.id):
+        h.update(chunk.id.encode("utf-8"))
+        h.update(hashlib.sha256(chunk.text.encode("utf-8")).digest())
+    for node in sorted(graph.nodes(), key=lambda n: n.id):
+        h.update(f"n|{node.id}|{node.label}|{','.join(sorted(node.chunk_ids))}".encode())
+    for edge in sorted(graph.edges(), key=lambda e: (e.src, e.relation, e.dst, e.chunk_id)):
+        h.update(f"e|{edge.src}|{edge.relation}|{edge.dst}|{edge.chunk_id}|{edge.evidence or ''}".encode())
+    return h.hexdigest()
 
 
 def compile_vault(graph: GraphStore, docs: DocStore, claims: Iterable[ClaimDraft] = ()) -> Vault:
@@ -97,6 +112,7 @@ def compile_vault(graph: GraphStore, docs: DocStore, claims: Iterable[ClaimDraft
         "alias_edges_inside_a_page": alias_internal,
         "claims": len(claim_notes),
         "claims_dropped": claims_dropped,
+        "corpus": corpus_fingerprint(graph, docs),
     }
     return Vault(VAULT_VERSION, len(chunks), pages, links + co_links, claim_notes, stats)
 
