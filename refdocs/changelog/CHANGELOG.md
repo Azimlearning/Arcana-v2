@@ -28,6 +28,14 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-07: G1.5 the subset run (measured): the registered gate failed on one clause by 0.0056
+- **Changed:** `eval/results/20261007T051315Z-g1-subset.json`, `...-g1-subset-build.json`, `20261007T051342Z-audit-sample.{json,md}` and `-audit-key.json`; `refdocs/evidence/20261007T051315Z-g1-subset.md`; D-34 (the result), the G1 execution doc (G1.5 Reality).
+- **Decided:** nothing; the gate is reported as registered and not reinterpreted.
+- **Deviations:** none. No amendment after seeing results.
+- **Verified:** the tools' own checks at commit `68e6cd5` (clean tree; same chunk and vector hashes in both directories; flat control identical; both graphs passed the corpus parity check). **Spend:** $1.0879 for the build (285 calls, 0 failures) and $0.00006 for 19 query embeddings; month total $7.5557 of $10, $2.4443 left.
+- **Measured:** hybrid nDCG@10 0.3611 to 0.3706 (+0.0096; 6 improved, 6 tied, 7 worsened) and graph +0.0048 over 19 answerable questions, descriptive; the atomic graph is 744 nodes and 221 edges against 2,312 and 2,511, with 89 percent of edges stated in one sentence (by construction), 15 relation types against 492, but 73 percent of nodes without an edge and relations in 39 percent of passages against 98 percent; entity-resolution hit rate 0.389 against 0.546.
+- **Known issues / next steps:** Azim's reading of the audit sample; the design question the run raises (about three quarters of the proposed relations are lost); the full 16 papers would cost about $5.6 to $6.0 and needs the cap raised or the 2026-11-01 reset.
+
 ### 2026-10-07: G1.5a the one-paper pilot (first paid run, $0.2954) and the two amendments it forced
 - **Changed:** `api/ingestion/atomic.py` (builder g1-3: copies matched blind to PDF line-break hyphenation, the chunk's own words stored), `eval/graph_quality.py` (the same hyphen-blind test for both graphs), `eval/graph_variant.py` (the degree-share clause leaves the gate; the projection uses the measured $0.0040 per chunk), tests, `refdocs/evidence/20261007-g1-pilot.md`, the G1 plan, execution doc and D-34.
 - **Decided:** (1) the builder is g1-3; the pilot paper is not a result and the measured slice is rebuilt with g1-3; (2) the share of edge ends owned by the ten largest nodes is reported, not gating (it rises in any sparser graph). Both before any measured run.

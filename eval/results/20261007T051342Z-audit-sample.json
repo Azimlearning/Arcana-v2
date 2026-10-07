@@ -1,0 +1,902 @@
+[
+  {
+    "concept_a": "Q&A pipeline",
+    "relation": "uses",
+    "concept_b": "LangChain",
+    "sentence": "The Q&A pipeline is constructed using the LangChain frame- work",
+    "item": 1,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "ToC",
+    "relation": "implements",
+    "concept_b": "Query Clarification",
+    "sentence": "es based on the results obtained from previous searches. Recursive Retrieval aims to enhance the search experience by gradu- ally converging on the most pertinent information through a feedback loop. IRCoT [61] uses chain-of-thought to guid",
+    "item": 2,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "ROUGE-L",
+    "relation": "evaluates",
+    "concept_b": "Answer Relevance",
+    "sentence": "[64], [71] StrategyQA [148] [14], [24], [48], [51], [55], [58] Fact Checking/Verification FEVER [149] [4], [13], [27], [34], [42], [50] PubHealth [150] [25], [67] Text Generation Biography [151] [67] Text Summarization WikiASP [152] [24] XSum [153] [17] Text Classification VioLens [154] [19] TREC [155] [33] Sentiment SST-2 [156] [20], [33], [38] Code Search CodeSearchNet [157] [76] Robustness Evaluation NoMIRACL [56] [56] Math GSM8K [158] [73] Machine Translation JRC-Acquis [159] [17] 14 TABLE III SUMMARY OF METRICS APPLICABLE FOR EVALUATION ASPECTS OF RAG Context Relevance Faithfulness Answer Relevance Noise Robustness Negative Rejection Information Integration Counterfactual Robustness Accuracy \u2713 \u2713 \u2713 \u2713 \u2713 \u2713 \u2713 EM \u2713 Recall \u2713 Precision \u2713 \u2713 R-Rate \u2713 Cosine Similarity \u2713 Hit Rate \u2713 MRR \u2713 NDCG \u2713 BLEU \u2713 \u2713 \u2713 ROUGE/ROUGE-L \u2713 \u2713 \u2713 The specific metrics for each evaluation aspect are sum- marized in Table III.",
+    "item": 3,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "Table 12",
+    "relation": "demonstrates",
+    "concept_b": "ISUSE",
+    "sentence": "Table 12 shows an instruction and demonstrations used to collect the five-way output tokens for ISUSE .",
+    "item": 4,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "RAG",
+    "relation": "part_of",
+    "concept_b": "NLP",
+    "sentence": "The rapid advancement and growing adoption of RAG in the field of NLP have propelled the evaluation of RAG models to the forefront of research in the LLMs community.",
+    "item": 5,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "KGs",
+    "relation": "alias_of",
+    "concept_b": "Knowledge Graph",
+    "sentence": "Knowledge graphs (KGs) [14] may provide a different point of view to looking at the financial documents where the documents arXiv:2408.04948v1 [cs.CL] 9 Aug 2024 Sarmah et al.",
+    "item": 6,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "RAG",
+    "relation": "alias_of",
+    "concept_b": "Retrieval-Augmented Generation",
+    "sentence": "Retrieval-Augmented Generation (RAG) Ours: Self-reflective Retrieval-Augmented Generation (Self-RAG) Popular names by states.",
+    "item": 7,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "call transcripts",
+    "relation": "other",
+    "concept_b": "Q&A pairs",
+    "sentence": "These call transcripts documents consist of questions and an- swers between financial analysts and the company representatives for the respective companies, hence, there already exist certain Q&A pairs within these documents",
+    "item": 8,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "C",
+    "relation": "predicts",
+    "concept_b": "ISUSE",
+    "sentence": "Algorithm 3 Mgen Data creation 1: Input Input-output data D = X, Y 2: for (x, y) \u2208{X, Y } do 3: Given (x, y) C predicts Retrieve 4: if Retrieve is predicted then 5: Retrieve relevant passages D using R given (x, y) \u25b7Retrieve passages 6: for d \u2208D do 7: C predicts ISREL for each d \u25b7Predict relevance of passages 8: C predicts ISSUP for each (y, d) \u25b7Predict supports of outputs 9: C predicts ISUSE for each d \u25b7Predict overall utility (t = T only) 10: Sample d 11: else if Retrieve is not predicted then 12: C predicts ISUSE given x, y Add augmented (x, y, d, r) to Dgen Training examples.",
+    "item": 9,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "VectorRAG",
+    "relation": "improves",
+    "concept_b": "Natural Language Processing",
+    "sentence": "VectorRAG (the traditional RAG techniques that are based on vector databases) focuses on improving Natural Language Processing (NLP) tasks by retrieving relevant textual information to support the generation tasks.",
+    "item": 10,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "TriviaQA",
+    "relation": "used_for",
+    "concept_b": "reading comprehension",
+    "sentence": "mark for question answering research,\u201d Transactions of the Association for Computational Linguistics, vol. 7, pp. 453\u2013466, 2019. [112] Y. Liu, S. Yavuz, R. Meng, M. Moorthy, S. Joty, C. Xiong, and Y. Zhou, \u201cExploring the integration strateg",
+    "item": 11,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "H. Ji",
+    "relation": "authored",
+    "concept_b": "Retrieval-augmented generative question answering for event argument extraction",
+    "sentence": "t arXiv:2303.08559, 2023. [37] X. Du and H. Ji, \u201cRetrieval-augmented generative question answering for event argument extraction,\u201d arXiv preprint arXiv:2211.07067, 2022. [38] L. Wang, N. Yang, and F. Wei, \u201cLearning to retrieve in-context ex",
+    "item": 12,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "NLP",
+    "relation": "alias_of",
+    "concept_b": "Natural Language Processing",
+    "sentence": "Preceding sentences Word embeddings are one of the most powerful tools available for Natural Language Processing (NLP).",
+    "item": 13,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "Patrick Lewis",
+    "relation": "authored",
+    "concept_b": "Task-aware retrieval with instructions",
+    "sentence": "Conference on Learning Representations, 2020. URL https://openreview.net/forum? id=SJgVHkrYDH. Akari Asai, Sewon Min, Zexuan Zhong, and Danqi Chen. Retrieval-based language models and appli- cations. In Proceedings of the 61st Annual Meetin",
+    "item": 14,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "retrieval augmented generation (RAG)",
+    "relation": "evaluated_on",
+    "concept_b": "open-domain question-answering",
+    "sentence": "Improving the domain adaptation of retrieval augmented generation (rag) models for open domain question answer- ing",
+    "item": 15,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "A. Y. Ng",
+    "relation": "author",
+    "concept_b": "Recursive deep models for semantic compositionality over a sentiment treebank",
+    "sentence": "\u201cLearning question classifiers,\u201d in COLING 2002: The 19th International Conference on Computational Linguistics, 2002. [156] R. Socher, A. Perelygin, J. Wu, J. Chuang, C. D. Manning, A. Y. Ng, and C. Potts, \u201cRecursive deep models for semant",
+    "item": 16,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "WebGPT",
+    "relation": "uses",
+    "concept_b": "GPT-3",
+    "sentence": "WebGPT [110] integrates a reinforcement learning frame- work to train the GPT-3 model in autonomously using a search engine during text generation.",
+    "item": 17,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "entity extraction",
+    "relation": "part_of",
+    "concept_b": "LLM chain",
+    "sentence": "The second tier of our LLM chain is dedicated to entity extraction and relationship identification",
+    "item": 18,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "retrieval-based prompt selection",
+    "relation": "uses",
+    "concept_b": "code-related few-shot learning",
+    "sentence": "Retrieval-based prompt selection for code-related few-shot learning",
+    "item": 19,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "critic score",
+    "relation": "part_of",
+    "concept_b": "critique tokens",
+    "sentence": "The score of each segment yt with respect to passage d is updated with a critic score S that is the linear weighted sum of the normalized probability of each Critique token type",
+    "item": 20,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "RAG-based methods",
+    "relation": "uses",
+    "concept_b": "LLMs",
+    "sentence": "RAG- based methods ensure the LLMs generate relevant and coherent responses that are aligned with the original input query.",
+    "item": 21,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "age requirement",
+    "relation": "applies to",
+    "concept_b": "U.S. Senate",
+    "sentence": "t answer. Input Earth\u2019s rotating causes A: the cycling of AM and PM B: the creation of volcanic eruptions C: the cycling of the tides D: the creation of gravity Evidence Rotation causes the day-night cycle which also creates a corresponding",
+    "item": 22,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "Modular RAG",
+    "relation": "part_of",
+    "concept_b": "fine-tuning",
+    "sentence": "As research progresses, Modular RAG has become more integrated with fine-tuning techniques.",
+    "item": 23,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "RAG",
+    "relation": "uses",
+    "concept_b": "fine-tuning",
+    "sentence": "the RAG system can more easily integrate with other technologies (such as fine-tuning or reinforcement learning)",
+    "item": 24,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "KGs",
+    "relation": "alias_of",
+    "concept_b": "Knowledge Graph",
+    "sentence": "On the Knowledge Graph (KG), retrieval granularity includes Entity, Triplet, and sub-Graph.",
+    "item": 25,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "RAG",
+    "relation": "other",
+    "concept_b": "fine-tuning",
+    "sentence": "Combining RAG with fine-tuning is emerging as a leading strategy.",
+    "item": 26,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "Earnings Reports",
+    "relation": "data source for",
+    "concept_b": "Information Extraction from Financial Documents",
+    "sentence": "nique has applications beyond the financial domain. 1 INTRODUCTION For the financial analyst, it is crucial to extract and analyze infor- mation from unstructured data sources like news articles, earnings reports, and other financial docume",
+    "item": 27,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "A Question and Answer Guide to Astronomy",
+    "relation": "has_genre",
+    "concept_b": "Astronomy and Cosmology",
+    "sentence": "[ ISSUP =Fully Supported][ ISUSE =5] Reference [1] A Question and Answer Guide to Astronomy is a book about astronomy and cosmology, and is intended for a general audience.",
+    "item": 28,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "empowerment",
+    "relation": "evaluates",
+    "concept_b": "VectorRAG",
+    "sentence": "G will be provided in Section 4.4. 2.4 Evaluation Metrics To assess the efficacy of this integrated approach, we conducted a comparative analysis among the three approaches in a controlled ex- perimental set up: VectorRAG, GraphRAG and Hybr",
+    "item": 29,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "Akari Asai",
+    "relation": "authored_by",
+    "concept_b": "University of Washington",
+    "sentence": "Akari Asai\u2020, Zeqiu Wu\u2020, Yizhong Wang\u2020\u00a7, Avirup Sil\u2021, Hannaneh Hajishirzi\u2020\u00a7 \u2020University of Washington",
+    "item": 30,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "Contriever-MS MARCO",
+    "relation": "uses",
+    "concept_b": "Wikipedia",
+    "sentence": "By default, we use Contriever-MS MARCO to retrieve the top five documents from Wikipedia, and use official Wikipedia embeddings based on 2018 English Wikipedia.",
+    "item": 31,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "RLHF",
+    "relation": "uses",
+    "concept_b": "PPO",
+    "sentence": "predicts the overall utility token ISUSE , and an augmented output with reflection tokens and the original input pair is added to Dgen. See the example training data in Figure 2. Generator learning. We train the generator model M by trainin",
+    "item": 32,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "decomposition",
+    "relation": "uses",
+    "concept_b": "self-evaluation guided decoding",
+    "sentence": "Decom- position enhances reasoning via self-evaluation guided decoding",
+    "item": 33,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "RAG",
+    "relation": "part_of",
+    "concept_b": "LLMs",
+    "sentence": "propelled the evaluation of RAG models to the forefront of research in the LLMs community.",
+    "item": 34,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "question answering",
+    "relation": "evaluates",
+    "concept_b": "EM",
+    "sentence": "question answering evaluations might rely on EM and F1 scores",
+    "item": 35,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "SELF-RAG",
+    "relation": "evaluated_on",
+    "concept_b": "long-form generation",
+    "sentence": "Empirical results on six tasks, including reasoning and long-form generation, demonstrate that SELF- RAG significantly outperforms pre-trained and instruction-tuned LLMs that have more parameters and widely adopted RAG approaches with",
+    "item": 36,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "critic model",
+    "relation": "trains_on",
+    "concept_b": "Dcritic",
+    "sentence": "sample, Y sample) do \u25b7Data collections for C 5: Prompt GPT-4 to collect a reflection token r for (x, y) 6: Add {(x, y, r)} to Dcritic 7: Update C with next token prediction loss \u25b7Critic learning; Eq. 1 8: Initialize M with a pre-trained LM ",
+    "item": 37,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "BLEU",
+    "relation": "evaluates",
+    "concept_b": "Noise Robustness",
+    "sentence": "[64], [71] StrategyQA [148] [14], [24], [48], [51], [55], [58] Fact Checking/Verification FEVER [149] [4], [13], [27], [34], [42], [50] PubHealth [150] [25], [67] Text Generation Biography [151] [67] Text Summarization WikiASP [152] [24] XSum [153] [17] Text Classification VioLens [154] [19] TREC [155] [33] Sentiment SST-2 [156] [20], [33], [38] Code Search CodeSearchNet [157] [76] Robustness Evaluation NoMIRACL [56] [56] Math GSM8K [158] [73] Machine Translation JRC-Acquis [159] [17] 14 TABLE III SUMMARY OF METRICS APPLICABLE FOR EVALUATION ASPECTS OF RAG Context Relevance Faithfulness Answer Relevance Noise Robustness Negative Rejection Information Integration Counterfactual Robustness Accuracy \u2713 \u2713 \u2713 \u2713 \u2713 \u2713 \u2713 EM \u2713 Recall \u2713 Precision \u2713 \u2713 R-Rate \u2713 Cosine Similarity \u2713 Hit Rate \u2713 MRR \u2713 NDCG \u2713 BLEU \u2713 \u2713 \u2713 ROUGE/ROUGE-L \u2713 \u2713 \u2713 The specific metrics for each evaluation aspect are sum- marized in Table III.",
+    "item": 38,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "HybridRAG",
+    "relation": "compares_with",
+    "concept_b": "VectorRAG",
+    "sentence": "HybridRAG does a good job overall, as whenever VectorRAG fails to fetch correct context in extractive questions it falls back to GraphRAG to generate the answer.",
+    "item": 39,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "Jimmy Ba",
+    "relation": "author",
+    "concept_b": "AlpacaFarm",
+    "sentence": "11495, 2023. URL https://arxiv.org/abs/2309.11495. Emily Dinan, Stephen Roller, Kurt Shuster, Angela Fan, Michael Auli, and Jason Weston. Wizard of wikipedia: Knowledge-powered conversational agents. In International Conference on Learning ",
+    "item": 40,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "SELF-RAG",
+    "relation": "uses",
+    "concept_b": "reflection tokens",
+    "sentence": "SELF-RAG uses reflection tokens to decide the need for retrieval and to self-evaluate generation quality.",
+    "item": 41,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "Self-RAG",
+    "relation": "applied_to",
+    "concept_b": "PubHealth",
+    "sentence": "For SELF-RAG inference on PubHealth and ARC-C, instead of determining the output with the highest score 4 as in other tasks, we aggregate the scores for each option and select the answer option with the highest score.",
+    "item": 42,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "M. Lapata",
+    "relation": "authored",
+    "concept_b": "Don't give me the details, just the summary! topic-aware convolutional neural networks for extreme summarization",
+    "sentence": "Neural text generation from structured data with application to the biography domain,\u201d arXiv preprint arXiv:1603.07771, 2016. [152] H. Hayashi, P. Budania, P. Wang, C. Ackerson, R. Neervannan, and G. Neubig, \u201cWikiasp: A dataset for multi-do",
+    "item": 43,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "instruction-tuning of retrieval systems",
+    "relation": "studied_by",
+    "concept_b": "Asai et al. (2023b)",
+    "sentence": "a embeddings based on 2018 English Wikipedia. On PopQA, where question and answer pairs are created based on WikiData in 2022, we found that the 2018 Wikipedia sometimes lacks articles about some entities that have been more recently added ",
+    "item": 44,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "evaluation framework",
+    "relation": "outputs to",
+    "concept_b": "JSON format",
+    "sentence": "ect references to the context in the generated responses. For the core language processing task, we integrate OpenAI\u2019s GPT-3.5-turbo model which processes the formatted context and query to generate natural language responses that are infor",
+    "item": 45,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "HybridRAG",
+    "relation": "uses",
+    "concept_b": "GraphRAG",
+    "sentence": "For the proposed HybridRAG technique, upon obtaining all the contextual information from VectorRAG and GraphRAG, we con- catenate these contexts to form a unified context utilizing both techniques.",
+    "item": 46,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "RAG",
+    "relation": "alias_of",
+    "concept_b": "Retrieval-Augmented Generation",
+    "sentence": "Retrieval-Augmented Generation (RAG), an ad hoc approach that augments LMs with retrieval of relevant knowledge, decreases such issues.",
+    "item": 47,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "Large Language Models",
+    "relation": "enables",
+    "concept_b": "Information Extraction from Financial Documents",
+    "sentence": "nique has applications beyond the financial domain. 1 INTRODUCTION For the financial analyst, it is crucial to extract and analyze infor- mation from unstructured data sources like news articles, earnings reports, and other financial docume",
+    "item": 48,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "fine-tuning",
+    "relation": "other",
+    "concept_b": "Retriever",
+    "sentence": "fine-tuning the retriever for better retrieval results",
+    "item": 49,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "NSE",
+    "relation": "alias_of",
+    "concept_b": "National Stock Exchange",
+    "sentence": "The NIFTY 50 is popular index in the Indian stock market that represents the weighted average of 50 of the largest Indian companies listed on the National Stock Exchange (NSE).",
+    "item": 50,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "Faithfulness",
+    "relation": "assesses",
+    "concept_b": "Generation Quality",
+    "sentence": "on Quality Context Relevance Faithfulness Answer Relevance * * * CRUD\u2020 Retrieval Quality Generation Quality Creative Generation Knowledge-intensive QA Error Correction Summarization BLEU ROUGE-L BertScore RAGQuestEval \u2020 represents a benchmark, and \u2021 represents a tool.",
+    "item": 51,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "E. Bakhturina",
+    "relation": "authored",
+    "concept_b": "Retrieval meets long context large language models",
+    "sentence": "amanian, E. Bakhturina, M. Shoeybi, and B. Catanzaro, \u201cRetrieval meets long context large language models,\u201d arXiv preprint arXiv:2310.03025, 2023. [61] H. Trivedi, N. Balasubramanian, T. Khot, and A. Sabharwal, \u201cInterleav- ing retrieval wit",
+    "item": 52,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "HybridRAG",
+    "relation": "enhances",
+    "concept_b": "question-answer systems",
+    "sentence": "ration (RAG) (referred to as VectorRAG techniques which utilize vector databases for information retrieval) due to challenges such as domain specific terminology and complex formats of the documents. We introduce a novel approach based on a",
+    "item": 53,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "SELF-RAG",
+    "relation": "evaluated_on",
+    "concept_b": "reasoning",
+    "sentence": "Empirical results on six tasks, including reasoning and long-form generation, demonstrate that SELF- RAG significantly outperforms pre-trained and instruction-tuned LLMs that have more parameters and widely adopted RAG approaches with",
+    "item": 54,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "Modular RAG",
+    "relation": "extends",
+    "concept_b": "Naive RAG",
+    "sentence": "Modular RAG builds upon the foundational principles of Advanced and Naive RAG, illustrating a progres- sion and refinement within the RAG family",
+    "item": 55,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "RLHF",
+    "relation": "authored_by",
+    "concept_b": "Ouyang et al.",
+    "sentence": "RLHF (Ouyang et al.",
+    "item": 56,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "Self-Mem",
+    "relation": "retrieves from",
+    "concept_b": "Dataset-base",
+    "sentence": "SUMMARY OF RAG METHODS Method Retrieval Source Retrieval Data Type Retrieval Granularity Augmentation Stage Retrieval process CoG [29] Wikipedia Text Phrase Pre-training Iterative DenseX [30] FactoidWiki Text Proposition Inference Once EAR [31] Dataset-base Text Sentence Tuning Once UPRISE [20] Dataset-base Text Sentence Tuning Once RAST [32] Dataset-base Text Sentence Tuning Once Self-Mem [17] Dataset-base Text Sentence Tuning Iterative FLARE [24] Search Engine,Wikipedia Text Sentence Tuning Adaptive PGRA [33] Wikipedia Text Sentence Inference Once FILCO [34] Wikipedia Text Sentence Inference Once RADA [35] Dataset-base Text Sentence Inference Once Filter-rerank [36] Synthesized dataset Text Sentence Inference Once R-GQA [37] Dataset-base Text Sentence Pair Tuning Once LLM-R [38] Dataset-base Text Sentence Pair Inference Iterative TIGER [39] Dataset-base Text Item-base Pre-training Once LM-Indexer [40] Dataset-base Text Item-base Tuning Once BEQUE [9] Dataset-base Text Item-base Tuning Once CT-RAG [41] Synthesized dataset Text Item-base Tuning Once Atlas [42] Wikipedia, Common Crawl Text Chunk Pre-training Iterative RAVEN [43] Wikipedia Text Chunk Pre-training Once RETRO++ [44] Pr",
+    "item": 57,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "Self-RAG",
+    "relation": "uses",
+    "concept_b": "Retrieval model",
+    "sentence": "based predictions on most reflection token categories (Appendix Table 5). 3.2.2 TRAINING THE GENERATOR MODEL Data collection for generator. Given an input-output pair (x, y), we augment the original output y using the retrieval and critic m",
+    "item": 58,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "E. Shareghi",
+    "relation": "authored",
+    "concept_b": "Generating synthetic speech from spokenvocab for speech translation",
+    "sentence": "[179] J. Zhao, G. Haffar, and E. Shareghi, \u201cGenerating synthetic speech from spokenvocab for speech translation,\u201d arXiv preprint arXiv:2210.08174, 2022. [180] D. M. Chan, S. Ghosh, A. Rastrow, and B. Hoffmeister, \u201cUsing external off-policy ",
+    "item": 59,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "NSE",
+    "relation": "alias_of",
+    "concept_b": "National Stock Exchange",
+    "sentence": "e National Stock Exchange (NSE).",
+    "item": 60,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "Danqi Chen",
+    "relation": "author",
+    "concept_b": "Enabling Large Language Models to Generate Text with Citations",
+    "sentence": "11495, 2023. URL https://arxiv.org/abs/2309.11495. Emily Dinan, Stephen Roller, Kurt Shuster, Angela Fan, Michael Auli, and Jason Weston. Wizard of wikipedia: Knowledge-powered conversational agents. In International Conference on Learning ",
+    "item": 61,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "Astronomy Book",
+    "relation": "covers",
+    "concept_b": "Universe",
+    "sentence": "a general audience. The book was written by Pierre-Yves Bely, Carol Christian, and Jean-Rene Roy, and published in English by Cambridge University Press in 2010. It was originally written in French. The content within the book is written us",
+    "item": 62,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "Self-RAG",
+    "relation": "comprises",
+    "concept_b": "critic model",
+    "sentence": "r evaluating retrieved passages and the quality of a given task output (Section 3.2.1). Using the critic model, we update the training corpus by inserting reflection tokens into task outputs offline. Subsequently, we train the final generat",
+    "item": 63,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "fine-grained human feedback",
+    "relation": "improves",
+    "concept_b": "language model training",
+    "sentence": "Fine-grained human feedback gives better rewards for language model training",
+    "item": 64,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "Think and retrieval",
+    "relation": "uses",
+    "concept_b": "hypothesis knowledge graph",
+    "sentence": "Think and retrieval: A hypothesis knowledge graph enhanced medical large language models",
+    "item": 65,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "SELF-RAG",
+    "relation": "example_of",
+    "concept_b": "adaptive retrieval",
+    "sentence": "Adaptive retrieval methods, exemplified by Flare [24] and Self-RAG [25], refine the RAG framework by enabling LLMs to actively determine the optimal moments and content for retrieval",
+    "item": 66,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "PRCA",
+    "relation": "example_of",
+    "concept_b": "retrieval question answering",
+    "sentence": "Prca: Fitting black-box large language models for retrieval question answer- ing via pluggable reward-driven contextual adapter",
+    "item": 67,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "adaptive retrieval",
+    "relation": "improves",
+    "concept_b": "RAG",
+    "sentence": "Adaptive retrieval methods, exemplified by Flare [24] and Self-RAG [25], refine the RAG framework by enabling LLMs to actively determine the optimal moments and content for retrieval",
+    "item": 68,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "FinanceBench",
+    "relation": "created_by",
+    "concept_b": "Anand Kannappan",
+    "sentence": "arXiv preprint arXiv:2105.07624, 2021. [34] Pranab Islam, Anand Kannappan, Douwe Kiela, Rebecca Qian, Nino Scherrer, and Bertie Vidgen. Financebench: A new benchmark for financial question answering. arXiv preprint arXiv:2311.11944, 2023. [",
+    "item": 69,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "BIOS",
+    "relation": "stored_in",
+    "concept_b": "ROM",
+    "sentence": "Examples of non-volatile memory are flash memory (used as secondary memory) and ROM, PROM, EPROM and EEPROM memory (used for storing firmware such as BIOS).",
+    "item": 70,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "BLIP-2",
+    "relation": "enables",
+    "concept_b": "image-to-text conversion",
+    "sentence": "stack, laying the groundwork for advanced enterprise applications. However, a fully integrated, comprehensive platform concept is still in the future, requiring further innovation and development. F. Multi-modal RAG RAG has transcended its ",
+    "item": 71,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "open-domain QA",
+    "relation": "uses",
+    "concept_b": "Google Programmable Search",
+    "sentence": "For bio generation and open-domain QA tasks, we additionally retrieve five documents using Google Programmable Search",
+    "item": 72,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "Zeqiu Wu",
+    "relation": "author",
+    "concept_b": "Fine-grained human feedback gives better rewards for language model training",
+    "sentence": "URL https://arxiv. org/abs/2307.09288. Yizhong Wang, Hamish Ivison, Pradeep Dasigi, Jack Hessel, Tushar Khot, Khyathi Raghavi Chandu, David Wadden, Kelsey MacMillan, Noah A Smith, Iz Beltagy, et al. How far can camels go? exploring the stat",
+    "item": 73,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "PubHealth",
+    "relation": "is_used_for",
+    "concept_b": "Fact verification",
+    "sentence": "Closed-set tasks include two datasets, i.e., a fact verification dataset about public health (PubHealth; Zhang et al.",
+    "item": 74,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "NetworkxEntityGraph",
+    "relation": "part_of",
+    "concept_b": "LangChain",
+    "sentence": "We use the NetworkxEntityGraph class from the LangChain library to create and manage this graph structure",
+    "item": 75,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "Naive RAG",
+    "relation": "precedes",
+    "concept_b": "Advanced RAG",
+    "sentence": "rst extracts facts pertinent to the input query from a knowledge graph, then integrates these facts as hints within the input, enhancing performance in knowledge graph question-answering tasks. VIII. CONCLUSION The summary of this paper, as",
+    "item": 76,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "LLMs",
+    "relation": "defines",
+    "concept_b": "in context learning",
+    "sentence": "LLM demonstrating powerful in context learning (ICL) capabilities",
+    "item": 77,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "Ma et al.",
+    "relation": "proposes",
+    "concept_b": "Filter-Reranker paradigm",
+    "sentence": "el\u2019s answers. Ma et al. [103] propose the \u201cFilter-Reranker\u201d paradigm, which combines the strengths of LLMs and SLMs. In this paradigm, SLMs serve as filters, while LLMs function as reordering agents. The research shows that instructing LLMs",
+    "item": 78,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "DenseX",
+    "relation": "uses",
+    "concept_b": "propositions",
+    "sentence": "DenseX [30]proposed the concept of using propositions as retrieval units.",
+    "item": 79,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "Natural Questions",
+    "relation": "part_of",
+    "concept_b": "KILT",
+    "sentence": "Natural Questions (Kwiatkowski et al., 2019), Wizard of Wikipedia (Dinan et al., 2019) and FEVER (Thorne et al., 2018) from the KILT benchmark (Petroni et al., 2021)",
+    "item": 80,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "Nisan Stiennon",
+    "relation": "author",
+    "concept_b": "Fine-tuning language models from human preferences",
+    "sentence": ". Interpretable unified language checking. arXiv preprint arXiv:2304.03728, 2023. URL https://arxiv.org/abs/2304.03728. Andy Zhou, Kai Yan, Michal Shlapentokh-Rothman, Haohan Wang, and Yu-Xiong Wang. Language agent tree search unifies reaso",
+    "item": 81,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "GraphRAG",
+    "relation": "compares_with",
+    "concept_b": "VectorRAG",
+    "sentence": "Overall GraphRAG performs better in extractive questions com- pared to VectorRAG.",
+    "item": 82,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "RAG",
+    "relation": "example_of",
+    "concept_b": "long-document question answering",
+    "sentence": "long-document question answering, previously reliant on RAG, can now incorporate the entire document directly into the prompt.",
+    "item": 83,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "Answer probability aggregation",
+    "relation": "applied_to",
+    "concept_b": "PubHealth",
+    "sentence": "y, and fluency. Throughout these experiments, we conduct zero-shot evaluations, where we provide instruc- tions describing tasks without few-shot demonstrations (Wei et al., 2022; Sanh et al., 2022). Details of our experiments\u2019 settings, in",
+    "item": 84,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "word embeddings",
+    "relation": "uses",
+    "concept_b": "text classification",
+    "sentence": "Word embeddings are useful for tasks such as sentiment analysis, text classification, predicting the next word in a sequence, and understanding synonyms and analogies.",
+    "item": 85,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "RAG",
+    "relation": "part_of",
+    "concept_b": "inference",
+    "sentence": "research on RAG initially focused on leveraging the powerful in context learning abilities of LLMs, primarily concentrating on the inference stage",
+    "item": 86,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "Question Answering",
+    "relation": "uses_metric",
+    "concept_b": "F1 score",
+    "sentence": "I. B. Evaluation Target Historically, RAG models assessments have centered on their execution in specific downstream tasks. These evaluations employ established metrics suitable to the tasks at hand. For instance, question answering evaluat",
+    "item": 87,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "Graph-Toolformer",
+    "relation": "uses",
+    "concept_b": "Self-Ask",
+    "sentence": "Graph-Toolformer, for instance, di- vides its retrieval process into distinct steps where LLMs proactively use retrievers, apply Self-Ask techniques, and em- ploy few-shot prompts to initiate search queries",
+    "item": 88,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "summer vacation essay",
+    "relation": "describes",
+    "concept_b": "Santorini",
+    "sentence": "rite an essay of your best summer vacation Output: My best summer vacation was a magical escape to the coastal town of Santorini. The azure waters, charming white-washed building are unforgettable. Critic LM Output: 1 of 50 states names com",
+    "item": 89,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "fine-tuning",
+    "relation": "other",
+    "concept_b": "generator",
+    "sentence": "fine-tuning the generator for more personalized outputs",
+    "item": 90,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "HybridRAG",
+    "relation": "supports",
+    "concept_b": "Financial Decision-making",
+    "sentence": "tes the strengths of both Knowledge Graphs (KGs) and advanced language models, represents a leap forward in our ability to extract and interpret complex information from unstructured financial texts. The hybrid RAG system, by combining trad",
+    "item": 91,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "GraphRAG",
+    "relation": "creates",
+    "concept_b": "Knowledge graphs",
+    "sentence": "create knowledge triplets along with metadata. It will be covered in more detail in section 4.1 Figure 2: A schematic diagram describing knowledge graph creation process of GraphRAG. 2.3.1 HybridRAG. For the HybridRAG technique, we propose ",
+    "item": 92,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "LLM-Embedder",
+    "relation": "exploits",
+    "concept_b": "LLM",
+    "sentence": "Another approach, LLM-Embedder [97], exploits LLMs to generate reward signals across multiple downstream tasks.",
+    "item": 93,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "automated knowledge extraction",
+    "relation": "processes",
+    "concept_b": "Corporate Documents",
+    "sentence": "of the entire document, allowing for scalable processing of large documents while maintaining local context within each chunk. We have added explicit instruction on obtaining metadata following Ref. [8] for both VectorRAG and GraphRAG. Fina",
+    "item": 94,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "Table 9",
+    "relation": "demonstrates",
+    "concept_b": "RETRIEVE",
+    "sentence": "Table 9 shows the instruction and demonstrations used to collect the three-way output tokens for Retrieve given instruction, preceding sentences, and previously retrieved passages.",
+    "item": 95,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "RAM",
+    "relation": "alias_of",
+    "concept_b": "random-access memory",
+    "sentence": "Computer memory operates at a high speed, for example random-access memory (RAM), as a distinction from storage that provides slow-to-access information but offers higher capacities.",
+    "item": 96,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "J. Weston",
+    "relation": "author",
+    "concept_b": "ELI5: Long Form Question Answering",
+    "sentence": "D. Grangier, J. Weston, and M. Auli, \u201cEli5: Long form question answering,\u201d arXiv preprint arXiv:1907.09190, 2019. [122] T. Ko\u02c7cisk`y, J. Schwarz, P. Blunsom, C. Dyer, K. M. Hermann, G. Melis, and E. Grefenstette, \u201cThe narrativeqa reading co",
+    "item": 97,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "Cambridge University Press",
+    "relation": "published",
+    "concept_b": "Astronomy Book",
+    "sentence": "a general audience. The book was written by Pierre-Yves Bely, Carol Christian, and Jean-Rene Roy, and published in English by Cambridge University Press in 2010. It was originally written in French. The content within the book is written us",
+    "item": 98,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "ChatGPT",
+    "relation": "motivated",
+    "concept_b": "Naive RAG",
+    "sentence": "nce of the RAG process applied to question answering. It mainly consists of 3 steps. 1) Indexing. Documents are split into chunks, encoded into vectors, and stored in a vector database. 2) Retrieval. Retrieve the Top k chunks most relevant ",
+    "item": 99,
+    "relation_supported": null,
+    "direction_supported": null
+  },
+  {
+    "concept_a": "Xu et al. (2023)",
+    "relation": "proposes",
+    "concept_b": "summarization model",
+    "sentence": "sets, SELF-RAG enables retrieval on demand and selection of the best possible model output via fine-grained self-reflection, making it widely applicable and more robust and controllable. Yoran et al. (2023) use a natural language inference ",
+    "item": 100,
+    "relation_supported": null,
+    "direction_supported": null
+  }
+]

@@ -1,0 +1,109 @@
+{
+  "variant": {
+    "builder": "atomic",
+    "prompt_version": "g1-3",
+    "max_usd": 1.6,
+    "spent_usd": 1.087894,
+    "documents": 3,
+    "complete": true,
+    "code": {
+      "commit": "68e6cd53041ad9edc12b7d59c4e965a927310900",
+      "dirty": false,
+      "changed_files": []
+    },
+    "mode": {
+      "llm": "live",
+      "embed": "fake"
+    },
+    "slice_hashes": {
+      "vectors_sha256": "cf3edd194f17f2407d48e7a943c6009fcb7a725134f35513af6f149109d0c465",
+      "chunks_sha256": "ed1b3bb46c099f702c4515137d6e2344c7c82302d4df95c5a64ffe8a563f1ea9"
+    },
+    "graph_sha256": "d29a863a44482cdf4f7a353c63686ee8d572d1f1d984cd617cc5f5984bb962db"
+  },
+  "documents": [
+    {
+      "arxiv_id": "2310.11511v1",
+      "doc_id": "d9eaa1398abac0df",
+      "status": "ready",
+      "chunks": 112,
+      "nodes": 329,
+      "edges": 79,
+      "extraction_failures": 0,
+      "cost_usd": 0.430429,
+      "build_report": {
+        "builder": "atomic",
+        "prompt_version": "g1-3",
+        "concepts": 559,
+        "relations": 79,
+        "drops": {
+          "alias_links_added": 8,
+          "concept_label_too_short": 2,
+          "concept_no_label": 1,
+          "concept_note_missing_label": 74,
+          "concept_note_not_verbatim": 145,
+          "kind_other": 3,
+          "relation_evidence_missing_label": 73,
+          "relation_evidence_not_one_sentence": 31,
+          "relation_evidence_not_verbatim": 7,
+          "relation_type_other": 4,
+          "relation_unknown_endpoint": 155
+        }
+      }
+    },
+    {
+      "arxiv_id": "2312.10997v5",
+      "doc_id": "396a0fadeb4cd40f",
+      "status": "ready",
+      "chunks": 117,
+      "nodes": 339,
+      "edges": 89,
+      "extraction_failures": 0,
+      "cost_usd": 0.451694,
+      "build_report": {
+        "builder": "atomic",
+        "prompt_version": "g1-3",
+        "concepts": 529,
+        "relations": 89,
+        "drops": {
+          "alias_links_added": 10,
+          "concept_duplicate": 1,
+          "concept_note_missing_label": 74,
+          "concept_note_not_verbatim": 327,
+          "kind_other": 9,
+          "relation_evidence_missing_label": 53,
+          "relation_evidence_not_one_sentence": 2,
+          "relation_evidence_not_verbatim": 10,
+          "relation_type_other": 5,
+          "relation_unknown_endpoint": 211
+        }
+      }
+    },
+    {
+      "arxiv_id": "2408.04948v1",
+      "doc_id": "ac529ab762fd1672",
+      "status": "ready",
+      "chunks": 56,
+      "nodes": 128,
+      "edges": 53,
+      "extraction_failures": 0,
+      "cost_usd": 0.205771,
+      "build_report": {
+        "builder": "atomic",
+        "prompt_version": "g1-3",
+        "concepts": 261,
+        "relations": 53,
+        "drops": {
+          "alias_links_added": 11,
+          "concept_note_missing_label": 36,
+          "concept_note_not_verbatim": 83,
+          "kind_other": 6,
+          "relation_evidence_missing_label": 46,
+          "relation_evidence_not_verbatim": 2,
+          "relation_type_other": 3,
+          "relation_unknown_endpoint": 105
+        }
+      }
+    }
+  ]
+}

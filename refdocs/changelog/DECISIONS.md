@@ -645,6 +645,8 @@ strings validated against the template's slots).
 - *Audit.* 50 edges per graph, fixed seed, mixed and blind (`audit` command), read by a person; reported beside the gate, never folded into it.
 - *Declared differences:* the atomic extractor allows 25 concepts and 40 relations per chunk and 3,072 output tokens; the baseline 30 entities, 40 relations and 2,048. One build is one sample (no temperature is set).
 
+**Subset run, 2026-10-07 (builder g1-3).** Reported in `refdocs/evidence/20261007T051315Z-g1-subset.md`. The registered gate did **not** pass: concept coverage held (98.3 against 99.0 percent) but the share of node-to-chunk links owned by the largest one percent of nodes was 14.75 percent against 14.19 (a margin of 0.0056); retrieval held (hybrid +0.0096 and graph +0.0048 mean paired nDCG@10 over 19 questions, 6 better and 7 worse for hybrid; the flat control identical; descriptive only). By the amended D-34 a failed gate is a reason to improve the design and measure again, not to drop the direction, and the gate is not reinterpreted. What the run shows is a graph one third the size with a tenth of the edges that retrieves about as well, whose edges are mostly sensible where the baseline's are often noise, but that is thin: 73 percent of its nodes have no edge and only 39 percent of passages carry a relation, because about three quarters of the proposed relations are lost (221 of about 916 survive).
+
 ## Working assumptions (`ASSUMED:`)
 
 Not decisions; guesses made to keep moving. Each one must be confirmed or killed before anything

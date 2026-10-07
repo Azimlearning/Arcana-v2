@@ -80,6 +80,8 @@ Rebuild the graph of one paper (the shortest in the manifest by chunk count: 230
 
 **Verify:** the ledger delta matches the confirmed estimate within the ceiling; the pinned hashes are unchanged; results files are committed; the evidence record says what was and was not shown.
 
+**Reality (G1.5 done 2026-10-07):** Confirmed by Azim ("okay sure") at a $1.60 ceiling. Slice of the three papers the rule chose (285 chunks), atomic rebuild at g1-3: **$1.0879** (0 extraction failures), then the comparison on the 19 answerable questions (19 query embeddings, $0.00006). **The registered gate failed on one clause by 0.0056** (the share of node-to-chunk links owned by the largest one percent of nodes: 14.75 percent against 14.19); concept coverage, the retrieval clause and the validity flag passed; hybrid nDCG@10 +0.0096 and graph +0.0048 (descriptive; 6 better, 6 tied, 7 worse for hybrid), the flat control identical. The atomic graph has a third of the nodes and a tenth of the edges, 73 percent of its nodes have no edge and 39 percent of passages carry a relation: the strictness costs about three quarters of the proposed relations (221 of about 916 survive). Full numbers, the blind audit sample (100 items, key kept apart) and a qualitative read: `refdocs/evidence/20261007T051315Z-g1-subset.md`. No amendment was made after seeing these numbers. The audit sample has not been read by a person yet.
+
 ### Task G1.6: The full run (needs the cap raised by Azim; may not happen in this phase)
 
 Same as G1.5 over all 16 papers and all 20 questions, after Azim raises `LLM_MONTHLY_CAP_USD` and confirms about $5.8. If it is not done, the record says so and why.
