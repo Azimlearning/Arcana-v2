@@ -4,9 +4,16 @@
 // the notes screen provides `openPage` through this context and a page name renders as a button when it is there, and as plain
 // text when it is not (a saved view, a test, any screen that has no notes view).
 
+import type { LearnerSignal } from "@arcana/schema";
 import { createContext, useContext } from "react";
 
-export const NotesNav = createContext<{ openPage: (id: string) => void } | null>(null);
+export interface NotesNavValue {
+  openPage: (id: string) => void;
+  /** Record the learner's own rating of a page. Absent when the screen cannot (no buttons are drawn then). */
+  rate?: (pageId: string, signal: LearnerSignal) => Promise<boolean>;
+}
+
+export const NotesNav = createContext<NotesNavValue | null>(null);
 
 export function useNotesNav() {
   return useContext(NotesNav);

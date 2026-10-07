@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { envelope, jsonResponse, layout, savedPattern, sourceList } from "@/test/fixtures";
 
-import { deletePattern, fetchNotes, fetchWorkspace, isSavedPattern, listPatterns, reverifyPattern, savePattern } from "./api";
+import { deletePattern, fetchNotes, fetchWorkspace, recordLearnerEvent, isSavedPattern, listPatterns, reverifyPattern, savePattern } from "./api";
 
 const prebuilt = layout([{ blockId: "workspace-sources", panel: "sources", region: "main" as const, order: 0 }], {
   origin: "prebuilt",
@@ -192,5 +192,26 @@ describe("fetchNotes", () => {
     if (!refused.result.ok) expect(refused.result.error.message).toBe("No such page.");
     const down = await fetchNotes({}, { fetchImpl: (async () => { throw new TypeError("offline"); }) as unknown as typeof fetch });
     expect(down.ok).toBe(false);
+  });
+});
+
+
+describe("recordLearnerEvent", () => {
+  it("posts the page and the signal to /learner/events and says whether the server saved it", async () => {
+    const fetchImpl = vi.fn(async () => jsonResponse({ pageId: "rag", mastery: { score: 0.6667, events: 1 } }));
+    expect(await recordLearnerEvent("rag", "know", { fetchImpl: fetchImpl as unknown as typeof fetch, baseUrl: "http://api" })).toBe(true);
+    const [url, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("http://api/learner/events");
+    expect(init.method).toBe("POST");
+    expect(JSON.parse(String(init.body))).toEqual({ pageId: "rag", signal: "know" });
+  });
+
+  it("is false for a refusal and for a server that cannot be reached", async () => {
+    const refused = vi.fn(async () => jsonResponse(envelope({ code: "not_found" }), 404));
+    expect(await recordLearnerEvent("x", "know", { fetchImpl: refused as unknown as typeof fetch })).toBe(false);
+    const down = async () => {
+      throw new TypeError("offline");
+    };
+    expect(await recordLearnerEvent("x", "know", { fetchImpl: down as unknown as typeof fetch })).toBe(false);
   });
 });

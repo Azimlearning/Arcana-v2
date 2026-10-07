@@ -69,7 +69,7 @@ describe("NotesGraph: ready", () => {
 
   it("marks the page you are on in the accessible name", () => {
     render(<NotesGraph block={notesGraph("ready", { focusId: "rag" })} />);
-    expect(screen.getByRole("button", { name: /^Retrieval-Augmented Generation, in 2 passages, linked to 2 pages, the page you are on/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Retrieval-Augmented Generation, in 2 passages, linked to 2 pages, not rated yet, the page you are on/ })).toBeInTheDocument();
   });
 
   it("opens another page from the diagram or the list, and not the page you are already on", () => {
@@ -116,6 +116,36 @@ describe("NotesGraph: ready", () => {
   });
 });
 
+describe("NotesGraph: the learner's mastery", () => {
+  const withMastery = () => {
+    const block = notesGraph("ready");
+    block.data.nodes[0]!.mastery = 0.8;
+    block.data.nodes[1]!.mastery = 0.5;
+    block.data.nodes[2]!.mastery = 0.2;
+    return block;
+  };
+
+  it("colours a page by mastery and says the same in words in its name and in the list, with a legend", () => {
+    const { container } = render(<NotesGraph block={withMastery()} />);
+    expect(screen.getByRole("button", { name: /^Retrieval-Augmented Generation, in 2 passages, linked to 2 pages, comfortable/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Self-RAG, in 1 passage, linked to 2 pages, getting there/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^large language models, in 1 passage, linked to 1 page, needs work/ })).toBeInTheDocument();
+    const fills = Array.from(container.querySelectorAll("svg circle")).map((c) => c.getAttribute("class"));
+    expect(new Set(fills).size).toBe(3);
+    const list = within(screen.getByRole("region", { name: "Pages" })).getAllByRole("listitem");
+    expect(list[0]).toHaveTextContent("comfortable");
+    expect(list[2]).toHaveTextContent("needs work");
+    expect(screen.getByText("Colour shows what you know:")).toBeInTheDocument();
+  });
+
+  it("draws no legend and no mastery words when nothing has been rated, and says not rated yet in a page's name", () => {
+    render(<NotesGraph block={notesGraph("ready")} />);
+    expect(screen.queryByText("Colour shows what you know:")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Self-RAG, in 1 passage, linked to 2 pages, not rated yet/ })).toBeInTheDocument();
+    expect(within(screen.getByRole("region", { name: "Pages" })).getAllByRole("listitem")[0]).not.toHaveTextContent("comfortable");
+  });
+});
+
 describe("NotesGraph: which lines are drawn", () => {
   const lines = (container: HTMLElement) => container.querySelectorAll("svg g[aria-hidden] line");
 
@@ -128,7 +158,7 @@ describe("NotesGraph: which lines are drawn", () => {
 
   it("names an inner-circle page in the diagram only when it is chosen (the list below names every page)", () => {
     const many = notesGraph("ready", {
-      nodes: Array.from({ length: 20 }, (_, i) => ({ id: `p${i}`, label: `Page ${i}`, kind: null, passages: 1, documents: 1, degree: 0 })),
+      nodes: Array.from({ length: 20 }, (_, i) => ({ id: `p${i}`, label: `Page ${i}`, kind: null, passages: 1, documents: 1, degree: 0, mastery: null })),
       edges: [],
     });
     const { container } = render(<NotesGraph block={many} />);

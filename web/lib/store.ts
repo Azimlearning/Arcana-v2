@@ -51,6 +51,7 @@ export function toErrorBlock(block: UIBlock, error: ErrorEnvelope): UIBlock {
           mentions: [],
           mentionsLeftOut: 0,
           citations: [],
+          mastery: null,
         },
       };
     case "NotesGraph":

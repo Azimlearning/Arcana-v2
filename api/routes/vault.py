@@ -33,7 +33,7 @@ async def notes(
     query: str = Query(default="", max_length=MAX_QUERY_CHARS),
 ) -> WorkspaceResponse:
     container = request.app.state.container
-    layout, blocks = compose_notes(container.vault(), container.docs, page or None, query)
+    layout, blocks = compose_notes(container.vault(), container.docs, page or None, query, container.learner_store)
     return WorkspaceResponse(layout=layout, blocks=blocks)
 
 

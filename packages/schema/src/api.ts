@@ -3,6 +3,7 @@
 import type { UIBlock } from "./blocks";
 import type { ErrorEnvelope } from "./errors";
 import type { LayoutSpec } from "./layout";
+import type { Mastery } from "./payloads";
 
 export type ChatRole = "user" | "assistant";
 
@@ -70,3 +71,20 @@ export interface DoneEvent {
 }
 
 export type StreamEvent = BlockEvent | LayoutEvent | StreamErrorEvent | DoneEvent;
+
+// ── The learner layer (M2.7, D-35 A6): POST /learner/events, DELETE /learner ──────────────────────────────────────────
+
+/** How the learner rates their own grasp of a concept. Quiz results join as `quiz_correct` and `quiz_wrong` (P5). */
+export type LearnerSignal = "know" | "unsure" | "dont_know";
+
+export interface LearnerEventRequest {
+  /** A page of the vault. The server refuses an id it does not hold. */
+  pageId: string;
+  signal: LearnerSignal;
+}
+
+export interface LearnerEventResponse {
+  pageId: string;
+  /** The page's mastery after this event. */
+  mastery: Mastery;
+}

@@ -15,6 +15,7 @@ import { useState } from "react";
 
 import { EmptyState, ErrorState, Frame, LoadingState, PartialState } from "./BlockStates";
 import { safeId } from "./ids";
+import { BAND_FILL, BAND_SWATCH, BAND_WORDS, band } from "./mastery";
 import { useNotesNav } from "./notesNav";
 import { ringLayout } from "./notesLayout";
 
@@ -137,7 +138,7 @@ function Body({ block }: { block: NotesGraphBlock }) {
               role="button"
               tabIndex={0}
               aria-pressed={on}
-              aria-label={`${node.label}, in ${node.passages} ${node.passages === 1 ? "passage" : "passages"}, linked to ${node.degree} ${node.degree === 1 ? "page" : "pages"}${isFocus ? ", the page you are on" : ""}`}
+              aria-label={`${node.label}, in ${node.passages} ${node.passages === 1 ? "passage" : "passages"}, linked to ${node.degree} ${node.degree === 1 ? "page" : "pages"}, ${BAND_WORDS[band(node.mastery)]}${isFocus ? ", the page you are on" : ""}`}
               onClick={() => choose(node.id)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
@@ -152,7 +153,7 @@ function Body({ block }: { block: NotesGraphBlock }) {
                 cx={place.x}
                 cy={place.y}
                 r={isFocus ? layout.nodeRadius + 3 : layout.nodeRadius}
-                className={on || isFocus ? "fill-emerald-600" : "fill-stone-100"}
+                className={on ? "fill-emerald-600" : BAND_FILL[band(node.mastery)]}
                 stroke={isFocus ? "#047857" : "#78716c"}
                 strokeWidth={isFocus ? 3 : 1.5}
               />
@@ -171,6 +172,18 @@ function Body({ block }: { block: NotesGraphBlock }) {
         })}
       </svg>
 
+      {nodes.some((n) => n.mastery !== null) && (
+        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-stone-600">
+          <span>Colour shows what you know:</span>
+          {(["comfortable", "getting-there", "needs-work", "none"] as const).map((b) => (
+            <span key={b} className="inline-flex items-center gap-1">
+              <span className={`inline-block h-2.5 w-2.5 rounded-full border border-stone-400 ${BAND_SWATCH[b]}`} aria-hidden="true" />
+              {BAND_WORDS[b]}
+            </span>
+          ))}
+        </p>
+      )}
+
       <section aria-label="Pages">
         <h3 className="mb-1 text-xs font-medium uppercase tracking-wide text-stone-500">Pages ({nodes.length})</h3>
         <ul className="space-y-1 text-sm">
@@ -187,6 +200,7 @@ function Body({ block }: { block: NotesGraphBlock }) {
               <span className="text-xs text-stone-500">
                 {node.passages} {node.passages === 1 ? "passage" : "passages"} · {node.documents}{" "}
                 {node.documents === 1 ? "document" : "documents"} · {node.degree} {node.degree === 1 ? "link" : "links"}
+                {node.mastery !== null && ` · ${BAND_WORDS[band(node.mastery)]}`}
               </span>
             </li>
           ))}

@@ -12,7 +12,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { renderBlock } from "@/components/genui/registry";
 import { NotesNav } from "@/components/genui/notesNav";
 import { Shell } from "@/components/shell/Shell";
-import { fetchNotes } from "@/lib/api";
+import type { LearnerSignal } from "@arcana/schema";
+
+import { fetchNotes, recordLearnerEvent } from "@/lib/api";
 import { placeBlocksByRegion } from "@/lib/layout";
 
 /** What the server last sent, and the choice (`key`) it answered. An answer to an earlier choice is not shown. */
@@ -27,6 +29,7 @@ export function NotesWorkspace() {
   const [draft, setDraft] = useState("");
   const [query, setQuery] = useState("");
   const [answer, setAnswer] = useState<Answer | null>(null);
+  const [version, setVersion] = useState(0); // bumped after a rating: the same page is fetched again, quietly, with it
   const key = `${page ?? ""}|${query}`;
 
   useEffect(() => {
@@ -40,7 +43,13 @@ export function NotesWorkspace() {
       );
     });
     return () => abort.abort();
-  }, [page, query, key]);
+  }, [page, query, key, version]);
+
+  const rate = useCallback(async (pageId: string, signal: LearnerSignal) => {
+    const saved = await recordLearnerEvent(pageId, signal);
+    if (saved) setVersion((v) => v + 1);
+    return saved;
+  }, []);
 
   const view = useMemo<View>(
     () =>
@@ -53,7 +62,7 @@ export function NotesWorkspace() {
   );
 
   const openPage = useCallback((id: string) => setPage(id), []);
-  const nav = useMemo(() => ({ openPage }), [openPage]);
+  const nav = useMemo(() => ({ openPage, rate }), [openPage, rate]);
 
   const layout = view.state === "ready" ? view.layout : null;
   const byRegion = useMemo(

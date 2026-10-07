@@ -377,6 +377,7 @@ export function conceptPage(
           ],
           mentions: [{ citationId: "c1" }, { citationId: "c3" }],
           mentionsLeftOut: 3,
+          mastery: null,
           citations: [
             { id: "c1", chunkId: "d_c_1", docId: "d", docTitle: TITLE, page: 1, quote: "Retrieval-Augmented Generation (RAG) combines retrieval with generation." },
             { id: "c2", chunkId: "d_c_2", docId: "d", docTitle: TITLE, page: null, quote: "Self-RAG extends RAG with reflection tokens." },
@@ -397,6 +398,7 @@ export function conceptPage(
           mentions: [],
           mentionsLeftOut: 0,
           citations: [],
+          mastery: null,
         },
   };
 }
@@ -416,9 +418,9 @@ export function notesGraph(
       query: "",
       nodes: content
         ? [
-            { id: "rag", label: "Retrieval-Augmented Generation", kind: "concept", passages: 2, documents: 2, degree: 2 },
-            { id: "self_rag", label: "Self-RAG", kind: "method", passages: 1, documents: 1, degree: 2 },
-            { id: "llm", label: "large language models", kind: null, passages: 1, documents: 1, degree: 1 },
+            { id: "rag", label: "Retrieval-Augmented Generation", kind: "concept", passages: 2, documents: 2, degree: 2, mastery: null },
+            { id: "self_rag", label: "Self-RAG", kind: "method", passages: 1, documents: 1, degree: 2, mastery: null },
+            { id: "llm", label: "large language models", kind: null, passages: 1, documents: 1, degree: 1, mastery: null },
           ]
         : [],
       edges: content

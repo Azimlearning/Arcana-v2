@@ -12,10 +12,12 @@ is counted in `linksLeftOut` / `mentionsLeftOut`.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
 from api.genui.evidence import QUOTE_CHARS
 from api.genui.text import MIN_QUOTE_CHARS, normalise
+from api.learner.mastery import MasteryScore
 from api.stores.doc_store import Chunk, DocStore
 from api.vault.text import fold, occurs, split_sentences
 from api.vault.types import ConceptPage, PageLink, Vault
@@ -123,8 +125,11 @@ def _round_robin(chunks: list[Chunk]) -> list[Chunk]:
     return ordered
 
 
-def derive_concept_page(vault: Vault, docs: DocStore, page_id: str) -> dict[str, Any] | None:
-    """The data of a `ready` ConceptPage for `page_id`, or None if the vault has no such page."""
+def derive_concept_page(
+    vault: Vault, docs: DocStore, page_id: str, mastery: Mapping[str, MasteryScore] | None = None
+) -> dict[str, Any] | None:
+    """The data of a `ready` ConceptPage for `page_id`, or None if the vault has no such page. `mastery` is the learner's snapshot
+    (D-35 A6): a page it does not hold has none."""
     page = vault.pages.get(page_id)
     if page is None:
         return None
@@ -225,10 +230,18 @@ def derive_concept_page(vault: Vault, docs: DocStore, page_id: str) -> dict[str,
         "mentions": shown_mentions,
         "mentionsLeftOut": len(page.mention_chunk_ids) - len(shown_mentions),
         "citations": cites.items,
+        "mastery": _mastery(mastery, page_id),
     }
 
 
-def _node(vault: Vault, docs: DocStore, page_id: str, documents: dict[str, int]) -> dict[str, Any]:
+def _mastery(snapshot: Mapping[str, MasteryScore] | None, page_id: str) -> dict[str, Any] | None:
+    held = None if snapshot is None else snapshot.get(page_id)
+    return None if held is None else {"score": held.score, "events": held.events}
+
+
+def _node(
+    vault: Vault, docs: DocStore, page_id: str, documents: dict[str, int], mastery: Mapping[str, MasteryScore] | None
+) -> dict[str, Any]:
     page = vault.pages[page_id]
     if page_id not in documents:
         documents[page_id] = len(
@@ -241,6 +254,7 @@ def _node(vault: Vault, docs: DocStore, page_id: str, documents: dict[str, int])
         "passages": len(page.mention_chunk_ids),
         "documents": documents[page_id],
         "degree": len({x.dst if x.src == page_id else x.src for x in vault.links_of(page_id)}),
+        "mastery": None if mastery is None or page_id not in mastery else mastery[page_id].score,
     }
 
 
@@ -249,7 +263,11 @@ def _matches(page: ConceptPage, key: str) -> bool:
 
 
 def derive_notes_graph(
-    vault: Vault, docs: DocStore, focus_id: str | None, query: str
+    vault: Vault,
+    docs: DocStore,
+    focus_id: str | None,
+    query: str,
+    mastery: Mapping[str, MasteryScore] | None = None,
 ) -> dict[str, Any] | None:
     """The data of a NotesGraph: local to `focus_id` (None if the vault has no such page) or the overview narrowed by `query`."""
     key = fold(query.strip())
@@ -301,7 +319,7 @@ def derive_notes_graph(
     return {
         "focusId": focus_id,
         "query": query.strip(),
-        "nodes": [_node(vault, docs, p, documents) for p in chosen],
+        "nodes": [_node(vault, docs, p, documents, mastery) for p in chosen],
         "edges": edges,
         "nodesLeftOut": left_out,
     }

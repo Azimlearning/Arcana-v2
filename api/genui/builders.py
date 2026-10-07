@@ -97,6 +97,7 @@ _EMPTY_PAGE = {
     "mentions": [],
     "mentionsLeftOut": 0,
     "citations": [],
+    "mastery": None,
 }
 
 

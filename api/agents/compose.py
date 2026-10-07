@@ -47,6 +47,7 @@ from api.genui.templates import (
     register_template,
 )
 from api.genui.validate import validate_block, validate_layout
+from api.learner.store import LearnerStore
 from api.stores.doc_store import DocStore, Document
 from api.vault.types import Vault
 from api.vault.view import derive_concept_page, derive_notes_graph
@@ -505,26 +506,33 @@ NOTES_GRAPH_ID = "notes-graph"
 
 
 def compose_notes(
-    vault: Vault | None, docs: DocStore, page_id: str | None = None, query: str = ""
+    vault: Vault | None,
+    docs: DocStore,
+    page_id: str | None = None,
+    query: str = "",
+    learner: LearnerStore | None = None,
 ) -> tuple[LayoutSpec, list[UIBlock]]:
     """The notes view (M2.6, D-35): a `ConceptPage` for `page_id` (when given) and the `NotesGraph` around it, placed by the
     layout. With no `page_id` it is the overview graph narrowed by `query`. No model call. A page the vault does not hold is a
     NotFound the caller answers with an error envelope; a missing vault gives `empty` placeholders, never a half-built view.
     Everything is validated before it is returned, and this does not swallow a failure."""
     graph_builder, page_builder = BUILDERS["NotesGraph"], BUILDERS["ConceptPage"]
+    # One snapshot of the learner's mastery for this request: a score depends on the clock, so the blocks are built and checked from
+    # the same reading (D-35 A6).
+    mastery = learner.mastery(vault.pages) if learner is not None and vault is not None else None
     blocks: list[UIBlock] = []
     admitted: list[tuple[str, str]] = []
     if vault is None or not vault.pages:
         empty = validate_block(graph_builder(NOTES_GRAPH_ID, "empty", query=query.strip()), docs, vault=vault)
         return validate_layout(compose_notes_layout([(empty.id, "NotesGraph")]), {empty.id}), [empty]
     if page_id is not None:
-        data = derive_concept_page(vault, docs, page_id)
+        data = derive_concept_page(vault, docs, page_id, mastery)
         if data is None:
             raise NotFound(f"The vault has no page {page_id!r}.")
-        page = validate_block(page_builder(f"page:{page_id}", "ready", data=data), docs, vault=vault)
+        page = validate_block(page_builder(f"page:{page_id}", "ready", data=data), docs, vault=vault, mastery=mastery)
         blocks.append(page)
         admitted.append((page.id, "ConceptPage"))
-    graph_data = derive_notes_graph(vault, docs, page_id, query)
+    graph_data = derive_notes_graph(vault, docs, page_id, query, mastery)
     if graph_data is None:
         raise NotFound(f"The vault has no page {page_id!r}.")
     status = "ready" if graph_data["nodes"] else "empty"
@@ -532,6 +540,7 @@ def compose_notes(
         graph_builder(NOTES_GRAPH_ID, status, data=graph_data if graph_data["nodes"] else None, query=graph_data["query"]),
         docs,
         vault=vault,
+        mastery=mastery,
     )
     blocks.append(graph)
     admitted.append((graph.id, "NotesGraph"))

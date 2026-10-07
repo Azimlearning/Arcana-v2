@@ -105,6 +105,35 @@ describe("NotesWorkspace", () => {
     expect(await screen.findByText("There are no pages yet.")).toBeInTheDocument();
   });
 
+  it("records a rating and shows the page again with it, without blanking the page meanwhile", async () => {
+    const posted: unknown[] = [];
+    answer = () => jsonResponse(focused());
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string, init?: RequestInit) => {
+        const url = new URL(input);
+        if (url.pathname === "/learner/events") {
+          posted.push(JSON.parse(String(init?.body)));
+          return jsonResponse({ pageId: "rag", mastery: { score: 0.6667, events: 1 } });
+        }
+        calls.push(url);
+        return answer(url);
+      }),
+    );
+    render(<NotesWorkspace />);
+    const article = await screen.findByRole("article", { name: "Retrieval-Augmented Generation" });
+    expect(screen.getByRole("region", { name: "Your mastery" })).toHaveTextContent("You have not rated this concept yet.");
+    const rated = focused();
+    (rated.blocks[0] as ReturnType<typeof conceptPage>).data.mastery = { score: 0.6667, events: 1 };
+    answer = () => jsonResponse(rated);
+    const before = calls.length;
+    fireEvent.click(within(article).getByRole("button", { name: "I know this" }));
+    await waitFor(() => expect(posted).toEqual([{ pageId: "rag", signal: "know" }]));
+    await waitFor(() => expect(screen.getByRole("region", { name: "Your mastery" })).toHaveTextContent("Getting there (67 percent, from 1 rating)."));
+    expect(calls.length).toBe(before + 1); // the same page, fetched once more
+    expect(screen.queryByText("Opening the notes…")).not.toBeInTheDocument();
+  });
+
   it("reaches no further than the notes endpoint (nothing is sent to a model)", async () => {
     render(<NotesWorkspace />);
     await screen.findByRole("group", { name: /Page graph/ });

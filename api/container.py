@@ -10,6 +10,7 @@ from api.fakes import fake_llm_responder
 from api.genui.templates import ensure_builtin_registered
 from api.ingestion.embed import Embedder, build_embedder
 from api.ingestion.pipeline import IngestDeps
+from api.learner.store import LearnerStore, SqliteLearnerStore
 from api.llm.factory import build_llm_service
 from api.llm.ledger import SpendLedger
 from api.llm.service import LLMService
@@ -42,6 +43,7 @@ class Container:
     embedder: Embedder
     uploads_dir: Path
     vault_store: VaultStore
+    learner_store: LearnerStore
 
     @property
     def ingest_deps(self) -> IngestDeps:
@@ -98,4 +100,5 @@ def build_container(settings: Settings) -> Container:
         embedder=build_embedder(settings, ledger),
         uploads_dir=data / "uploads",
         vault_store=JsonVaultStore(data / "vault.json"),
+        learner_store=SqliteLearnerStore(data / "learner.db"),
     )

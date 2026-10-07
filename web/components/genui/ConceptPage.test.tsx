@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { TITLE, conceptPage, envelope } from "@/test/fixtures";
@@ -107,5 +107,54 @@ describe("ConceptPage: opening another page", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "Self-RAG" })[0]!);
     expect(openPage).toHaveBeenCalledWith("self_rag");
     expect(screen.queryByRole("button", { name: "Retrieval-Augmented Generation" })).not.toBeInTheDocument();
+  });
+});
+
+
+describe("ConceptPage: the learner's mastery", () => {
+  const rated = (score: number, events: number) => conceptPage("ready", { mastery: { score, events } });
+
+  it("says the concept is not rated yet, in words, with no meter", () => {
+    render(<ConceptPage block={conceptPage("ready")} />);
+    const section = screen.getByRole("region", { name: "Your mastery" });
+    expect(section).toHaveTextContent("You have not rated this concept yet.");
+    expect(within(section).queryByRole("meter")).not.toBeInTheDocument();
+    expect(within(section).queryByRole("button")).not.toBeInTheDocument(); // the screen cannot record: no buttons
+  });
+
+  it("says where the learner stands in words and as a meter, never as a mark", () => {
+    const { rerender } = render(<ConceptPage block={rated(0.7, 3)} />);
+    const section = () => screen.getByRole("region", { name: "Your mastery" });
+    expect(section()).toHaveTextContent("Comfortable (70 percent, from 3 ratings).");
+    expect(within(section()).getByRole("meter", { name: "Mastery" })).toHaveAttribute("aria-valuetext", "comfortable, 70 percent");
+    rerender(<ConceptPage block={rated(0.5, 1)} />);
+    expect(section()).toHaveTextContent("Getting there (50 percent, from 1 rating).");
+    rerender(<ConceptPage block={rated(0.3333, 2)} />);
+    expect(section()).toHaveTextContent("Needs work (33 percent, from 2 ratings).");
+    expect(section()).toHaveTextContent("A belief that fades over a few weeks, not a mark.");
+  });
+
+  it("offers the three ratings when the screen can record them and sends the one chosen", async () => {
+    const rate = vi.fn(async () => true);
+    render(
+      <NotesNav.Provider value={{ openPage: vi.fn(), rate }}>
+        <ConceptPage block={conceptPage("ready")} />
+      </NotesNav.Provider>,
+    );
+    const section = screen.getByRole("region", { name: "Your mastery" });
+    expect(within(section).getAllByRole("button").map((b) => b.textContent)).toEqual(["I know this", "Not sure", "I don't know this yet"]);
+    fireEvent.click(within(section).getByRole("button", { name: "Not sure" }));
+    await waitFor(() => expect(rate).toHaveBeenCalledWith("rag", "unsure"));
+    expect(within(section).queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("says so, as an alert, when a rating could not be saved", async () => {
+    render(
+      <NotesNav.Provider value={{ openPage: vi.fn(), rate: async () => false }}>
+        <ConceptPage block={conceptPage("ready")} />
+      </NotesNav.Provider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "I know this" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Your rating could not be saved.");
   });
 });

@@ -128,6 +128,7 @@ class ConceptPageData(BaseModel):
     mentions: list[PageSentence]
     mentionsLeftOut: int
     citations: list[Citation]
+    mastery: Mastery | None
 
 
 class DoneEvent(BaseModel):
@@ -221,6 +222,24 @@ class LayoutSpec(BaseModel):
     placements: list[Placement]
 
 
+class LearnerEventRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    pageId: str
+    signal: LearnerSignal
+
+
+class LearnerEventResponse(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    pageId: str
+    mastery: Mastery
+
+
+class Mastery(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    score: float
+    events: int
+
+
 class NotesEdge(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
     source: str
@@ -255,6 +274,7 @@ class NotesNode(BaseModel):
     passages: int
     documents: int
     degree: int
+    mastery: float | None
 
 
 class PageClaimItem(BaseModel):
@@ -450,6 +470,8 @@ LayoutMode = Literal['basic', 'research', 'exploration']
 
 LayoutOrigin = Literal['prebuilt', 'adaptive']
 
+LearnerSignal = Literal['know', 'unsure', 'dont_know']
+
 PageLinkDirection = Literal['out', 'in']
 
 PageLinkKind = Literal['asserted', 'co_mention']
@@ -504,6 +526,9 @@ GridRow.model_rebuild()
 IngestResponse.model_rebuild()
 LayoutEvent.model_rebuild()
 LayoutSpec.model_rebuild()
+LearnerEventRequest.model_rebuild()
+LearnerEventResponse.model_rebuild()
+Mastery.model_rebuild()
 NotesEdge.model_rebuild()
 NotesGraph.model_rebuild()
 NotesGraphData.model_rebuild()

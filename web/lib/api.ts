@@ -4,6 +4,7 @@ import type {
   ErrorEnvelope,
   IngestResponse,
   LayoutMode,
+  LearnerSignal,
   PatternState,
   SavedPattern,
   SavePatternRequest,
@@ -177,6 +178,25 @@ export async function fetchNotes(
     // not JSON
   }
   return { ok: false, error: clientError("The server sent an unreadable response.", false) };
+}
+
+/** Record the learner's own rating of a page of the vault (D-35 A6). True when the server saved it. */
+export async function recordLearnerEvent(
+  pageId: string,
+  signal: LearnerSignal,
+  options: { baseUrl?: string; fetchImpl?: typeof fetch } = {},
+): Promise<boolean> {
+  const { baseUrl = API_BASE, fetchImpl = fetch } = options;
+  try {
+    const response = await fetchImpl(`${baseUrl}/learner/events`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pageId, signal }),
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
 }
 
 // ── saved views (patterns) ───────────────────────────────────────────────────

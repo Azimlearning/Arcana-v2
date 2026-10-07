@@ -267,6 +267,8 @@ export interface ConceptPageData {
   /** @int */
   mentionsLeftOut: number;
   citations: Citation[];
+  /** The learner's mastery of this concept, or null when they have no events for it. */
+  mastery: Mastery | null;
 }
 
 /** A page as the notes graph draws it: how many passages and documents mention it and how many pages it is linked to. */
@@ -280,6 +282,8 @@ export interface NotesNode {
   documents: number;
   /** @int */
   degree: number;
+  /** The learner's mastery score in [0, 1], or null when they have no events for this page. */
+  mastery: number | null;
 }
 
 /** A link between two pages, drawn as a line: asserted (`relation` as stored) or co-mentioned; `passages` is its strength. */
@@ -306,4 +310,17 @@ export interface NotesGraphData {
   edges: NotesEdge[];
   /** @int */
   nodesLeftOut: number;
+}
+
+// ── The learner layer (M2.7, D-35 A6) ────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * What the learner knows about one concept, from their own events (self-ratings now, quiz results later): `score` is a belief in
+ * [0, 1] that decays towards ignorance (D-35 A6), `events` how many events there have been. A page with no events has no
+ * mastery (null), which is not the same as a low one.
+ */
+export interface Mastery {
+  score: number;
+  /** @int */
+  events: number;
 }

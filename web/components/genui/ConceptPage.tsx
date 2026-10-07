@@ -14,10 +14,12 @@
 // Keyboard order: the page's own name, then each section's items; another page's name is a button when the screen can open it
 // (`PageName`). Document text renders as text, never as markup.
 
-import type { Citation, ConceptPage as ConceptPageBlock, PageLinkItem } from "@arcana/schema";
+import type { Citation, ConceptPage as ConceptPageBlock, LearnerSignal, PageLinkItem } from "@arcana/schema";
+import { useState } from "react";
 
 import { EmptyState, ErrorState, Frame, LoadingState, PartialState } from "./BlockStates";
-import { PageName } from "./notesNav";
+import { BAND_SWATCH, BAND_WORDS, band } from "./mastery";
+import { PageName, useNotesNav } from "./notesNav";
 
 export function ConceptPage({ block }: { block: ConceptPageBlock }) {
   const { meta } = block;
@@ -88,6 +90,73 @@ function LinkLine({ link, self }: { link: PageLinkItem; self: { id: string; labe
   );
 }
 
+const RATINGS: { signal: LearnerSignal; label: string }[] = [
+  { signal: "know", label: "I know this" },
+  { signal: "unsure", label: "Not sure" },
+  { signal: "dont_know", label: "I don't know this yet" },
+];
+
+/** What the learner knows about this concept, in words and a bar, and their three ways to say it (when the screen can record). */
+function Mastery({ block }: { block: ConceptPageBlock }) {
+  const nav = useNotesNav();
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const m = block.data.mastery;
+  const state = band(m?.score ?? null);
+  const rate = nav?.rate;
+  return (
+    <section aria-label="Your mastery" className="rounded border border-stone-200 bg-stone-50 p-3 text-sm">
+      <h3 className="text-xs font-medium uppercase tracking-wide text-stone-500">Your mastery</h3>
+      <div className="mt-1 flex items-center gap-2">
+        <span className={`inline-block h-3 w-3 rounded-full border border-stone-400 ${BAND_SWATCH[state]}`} aria-hidden="true" />
+        <span>
+          {m === null
+            ? "You have not rated this concept yet."
+            : `${BAND_WORDS[state][0]!.toUpperCase()}${BAND_WORDS[state].slice(1)} (${Math.round(m.score * 100)} percent, from ${m.events} ${m.events === 1 ? "rating" : "ratings"}).`}
+        </span>
+      </div>
+      {m !== null && (
+        <div
+          role="meter"
+          aria-label="Mastery"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(m.score * 100)}
+          aria-valuetext={`${BAND_WORDS[state]}, ${Math.round(m.score * 100)} percent`}
+          className="mt-2 h-1.5 w-full rounded bg-stone-200"
+        >
+          <div className={`h-1.5 rounded ${BAND_SWATCH[state]} border border-stone-400`} style={{ width: `${Math.round(m.score * 100)}%` }} />
+        </div>
+      )}
+      {rate && (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {RATINGS.map((r) => (
+            <button
+              key={r.signal}
+              type="button"
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                setFailed(!(await rate(block.data.page.id, r.signal)));
+                setBusy(false);
+              }}
+              className="rounded border border-stone-300 bg-white px-2 py-1 text-xs hover:bg-stone-100 disabled:opacity-50"
+            >
+              {r.label}
+            </button>
+          ))}
+        </div>
+      )}
+      {failed && (
+        <p role="alert" className="mt-1 text-xs text-red-700">
+          Your rating could not be saved.
+        </p>
+      )}
+      <p className="mt-1 text-xs text-stone-500">A belief that fades over a few weeks, not a mark.</p>
+    </section>
+  );
+}
+
 function Body({ block }: { block: ConceptPageBlock }) {
   const d = block.data;
   const cite = new Map(d.citations.map((c) => [c.id, c]));
@@ -105,6 +174,8 @@ function Body({ block }: { block: ConceptPageBlock }) {
         </p>
         {d.aliases.length > 0 && <p className="text-sm text-stone-600">Also written: {d.aliases.join(", ")}.</p>}
       </header>
+
+      <Mastery block={block} />
 
       <section aria-label="Definitions">
         <h3 className="text-xs font-medium uppercase tracking-wide text-stone-500">Definitions</h3>
