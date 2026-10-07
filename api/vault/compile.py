@@ -67,7 +67,9 @@ def compile_vault(graph: GraphStore, docs: DocStore, claims: Iterable[ClaimDraft
         mentioned = {c for m in members for c in m.chunk_ids if c in stored}
         for key in keys:
             mentioned.update(
-                chunks[i].id for i in _candidates(key, postings) if occurs(folded[i], key)
+                chunks[i].id
+                for i in _candidates(key, postings, len(chunks))
+                if occurs(folded[i], key)
             )
         label, aliases = _display(members)
         pages[root] = ConceptPage(
@@ -195,12 +197,13 @@ def _postings(folded: Sequence[str]) -> dict[str, set[int]]:
     return postings
 
 
-def _candidates(key: str, postings: dict[str, set[int]]) -> list[int]:
+def _candidates(key: str, postings: dict[str, set[int]], total: int) -> list[int]:
     """The passages that hold every alphanumeric token of the folded label. A superset of the passages that contain the label
-    (the regex confirms), so the index only prunes."""
+    (the regex confirms), so the index only prunes. A label with no ASCII alphanumeric token ("αβγ") cannot be pruned: every
+    passage is a candidate."""
     parts = tokens(key)
     if not parts:
-        return []
+        return list(range(total))
     sets = sorted((postings.get(t, set()) for t in set(parts)), key=len)
     found = set(sets[0])
     for other in sets[1:]:
@@ -243,11 +246,10 @@ def _co_mentions(
     folded: Sequence[str],
     index: dict[str, int],
 ) -> list[PageLink]:
-    eligible = {
-        pid for pid, p in pages.items() if p.kind not in NO_CO_MENTION_KINDS and label_keys[pid]
-    }
+    scannable = {pid for pid in pages if label_keys[pid]}
+    eligible = {pid for pid in scannable if pages[pid].kind not in NO_CO_MENTION_KINDS}
     here: dict[int, list[str]] = {}
-    for pid in sorted(eligible):
+    for pid in sorted(scannable):
         for chunk_id in pages[pid].mention_chunk_ids:
             here.setdefault(index[chunk_id], []).append(pid)
     found: dict[tuple[str, str], tuple[list[str], str]] = {}
@@ -259,12 +261,15 @@ def _co_mentions(
             if looks_bibliographic(sentence):
                 continue
             sentence_folded = fold(sentence)
-            named = [
+            named_all = [
                 pid
                 for pid in candidates
                 if any(occurs(sentence_folded, k) for k in label_keys[pid])
             ]
-            if not 2 <= len(named) <= MAX_SENTENCE_PAGES:
+            if len(named_all) > MAX_SENTENCE_PAGES:
+                continue  # the cap counts every page the sentence names, people and organisations included (A3)
+            named = [pid for pid in named_all if pid in eligible]
+            if len(named) < 2:
                 continue
             for a, b in combinations(sorted(named), 2):
                 entry = found.setdefault((a, b), ([], sentence))
@@ -285,7 +290,7 @@ def _claims(
     notes: list[ClaimNote] = []
     dropped = 0
     seen: set[tuple[str, str]] = set()
-    for draft in drafts:
+    for draft in sorted(drafts, key=lambda d: (d.doc_id, d.chunk_id, d.sentence, d.concept_ids)):
         pages = tuple(sorted({page_of[n] for n in draft.concept_ids if n in page_of}))
         key = (draft.chunk_id, fold(draft.sentence))
         if not pages or draft.chunk_id not in stored or key in seen:

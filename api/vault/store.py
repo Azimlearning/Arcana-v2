@@ -26,7 +26,15 @@ class VaultStore(ABC):
         """Page id to the embedding of its display label, for the pages that have one."""
 
     @abstractmethod
-    def put_label_vectors(self, vectors: dict[str, list[float]]) -> None: ...
+    def label_meta(self) -> dict[str, object]:
+        """Where the label vectors came from: `mode` (fake or live), `model`, `dim` and `labels_sha256` (a hash of the page ids
+        and labels they were made for). Empty if there are no vectors. A comparison refuses vectors whose provenance does not
+        match the run (fake vectors compared with live question embeddings are meaningless)."""
+
+    @abstractmethod
+    def put_label_vectors(
+        self, vectors: dict[str, list[float]], meta: dict[str, object]
+    ) -> None: ...
 
     @abstractmethod
     def save(self) -> None:

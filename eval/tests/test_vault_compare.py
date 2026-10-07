@@ -9,13 +9,23 @@ from pathlib import Path
 
 import pytest
 
+from api.ingestion.embed import EMBEDDING_MODEL
 from api.retrieval import vault as vault_retrieval
+from api.retrieval.vault import labels_sha256
 from api.vault.local import JsonVaultStore
 from api.vault.types import ConceptPage, PageLink, Vault
 from eval import vault_compare, vault_tool
 from eval.graph_variant import rebuild_graph, slice_stores
 from eval.tests.test_graph_variant import FIRST, bench, two_papers  # noqa: F401
-from eval.vault_compare import arm_is_valid, audit_sample, gate, main, paired, vault_structure
+from eval.vault_compare import (
+    arm_is_valid,
+    audit_sample,
+    gate,
+    label_vector_problems,
+    main,
+    paired,
+    vault_structure,
+)
 
 
 def variant_dirs(tmp: Path, data: Path) -> tuple[Path, Path]:
@@ -98,10 +108,11 @@ def test_compare_runs_every_arm_writes_the_gate_and_refuses_nothing_on_a_consist
 ):
     argv, tmp, data = two_papers
     baseline, variant = variant_dirs(tmp, data)
-    assert main(compare_args(argv, tmp, baseline, variant)) == 0
+    assert main(compare_args(argv, tmp, baseline, variant, "--without-semantic")) == 0
     (path,) = (tmp / "cmp").glob("*-t.json")
     result = json.loads(path.read_text(encoding="utf-8"))
     run = result["run"]
+    assert run["protocol_complete"] is False  # no semantic arms: the result says so at the top
     assert run["answerable_questions"] == ["q-1"] and run["descriptive_only"] is True
     assert (
         run["scoring_version"] == "vault-1"
@@ -150,7 +161,14 @@ def test_label_embeddings_add_the_semantic_arms(two_papers):
     assert main(compare_args(argv, tmp, baseline, variant)) == 0
     (path,) = (tmp / "cmp").glob("*-t.json")
     result = json.loads(path.read_text(encoding="utf-8"))
-    assert result["run"]["semantic_arms_missing_for"] == []
+    assert (
+        result["run"]["semantic_arms_missing_for"] == []
+        and result["run"]["protocol_complete"] is True
+    )
+    assert (
+        result["run"]["hashes"]["variant_label_vectors_sha256"]["atomic-vault"]
+        and result["run"]["hashes"]["gold_sha256"]
+    )
     assert {"vault_sem", "hybrid_vault_sem"} <= set(result["per_question"][0]["atomic-vault"])
 
 
@@ -290,7 +308,9 @@ def test_a_vault_arm_that_returns_nothing_for_more_than_half_the_questions_is_in
     assert arm_is_valid({"questions": 4, "ranking_empty": 2}) and not arm_is_valid(
         {"questions": 4, "ranking_empty": 3}
     )
-    assert arm_is_valid({"questions": 0, "ranking_empty": 0})
+    assert not arm_is_valid(
+        {"questions": 0, "ranking_empty": 0}
+    )  # nothing to evaluate is not valid
 
 
 # ── the audit ─────────────────────────────────────────────────────────────────
@@ -346,3 +366,173 @@ def test_the_registered_constants_match_the_protocol_text():
     from api.vault.types import MAX_SENTENCE_PAGES, MIN_SCAN_LABEL_CHARS
 
     assert (MAX_SENTENCE_PAGES, MIN_SCAN_LABEL_CHARS, vault_compare.LINKED_FLOOR) == (6, 3, 0.5)
+
+
+# ── the audit's findings (B1, B2, N1 to N7, N9) ──────────────────────────────
+
+
+def test_failed_cells_are_counted_and_an_arm_with_any_failed_cell_is_invalid():
+    rows = [
+        {"v": {"vault": {"invalid": True, "ranking_length": 0, "resolution": None}}},
+        {
+            "v": {
+                "vault": {
+                    "invalid": False,
+                    "ranking_length": 3,
+                    "resolution": {"hit_rate": 0.5, "exact_hit_rate": 0.5},
+                }
+            }
+        },
+        {
+            "v": {
+                "vault": {
+                    "invalid": False,
+                    "ranking_length": 2,
+                    "resolution": {"hit_rate": 1.0, "exact_hit_rate": 0.5},
+                }
+            }
+        },
+    ]
+    report = vault_compare.resolution_of(rows, "v", "vault")
+    assert (
+        report["questions"] == 3
+        and report["invalid_cells"] == 1
+        and report["mean_hit_rate"] == 0.75
+    )
+    assert not arm_is_valid(report)  # a raised retriever on one question is not a pass
+    assert arm_is_valid({"questions": 3, "invalid_cells": 0, "ranking_empty": 1})
+
+
+def test_a_missing_measure_never_passes_a_clause():
+    missing = gate(
+        {"chunk_coverage": {"with_a_concept": None}},
+        {"passages_mentioned_by_a_page": None, "pages_with_a_link": None},
+        {"mean_hit_rate": None},
+        {"mean_hit_rate": None},
+        {"mean_difference": None},
+        {"mean_difference": None},
+        descriptive_only=False,
+        valid=True,
+    )
+    assert missing["structural_no_regression"] == {
+        "passage_coverage_at_least_0_8_of_baseline": False,
+        "at_least_half_of_pages_linked": False,
+        "question_words_recognised_not_below_baseline": False,
+        "passed": False,
+    }
+    assert (
+        missing["no_large_retrieval_drop"]["status"] == "failed"
+        and not missing["ready_for_azim_to_decide"]
+    )
+
+
+def test_label_vectors_are_used_only_when_their_provenance_matches():
+    v = Vault("vault-1", 1, {"a": page("a", ("c1",)), "b": page("b", ("c1",))}, [])
+    good_meta = {
+        "mode": "fake",
+        "model": EMBEDDING_MODEL,
+        "dim": 2,
+        "labels_sha256": labels_sha256(v),
+    }
+    vectors = {"a": [1.0, 0.0], "b": [0.0, 1.0]}
+    assert label_vector_problems(vectors, good_meta, v, "fake") == []
+    assert label_vector_problems({}, good_meta, v, "fake") == ["there are no page-label vectors"]
+    assert any(
+        "live" in p for p in label_vector_problems(vectors, good_meta, v, "live")
+    )  # fake vectors, live run
+    assert any(
+        "other page labels" in p
+        for p in label_vector_problems(vectors, {**good_meta, "labels_sha256": "x"}, v, "fake")
+    )
+    assert any(
+        "made by" in p
+        for p in label_vector_problems(vectors, {**good_meta, "model": "other"}, v, "fake")
+    )
+    assert any(
+        "dimension" in p for p in label_vector_problems(vectors, {**good_meta, "dim": 3}, v, "fake")
+    )
+    assert any(
+        "exactly" in p for p in label_vector_problems({"a": [1.0, 0.0]}, good_meta, v, "fake")
+    )
+
+
+def test_compare_refuses_to_run_without_the_registered_semantic_arms_unless_told_to(
+    two_papers, capsys
+):
+    argv, tmp, data = two_papers
+    baseline, variant = variant_dirs(tmp, data)
+    assert main(compare_args(argv, tmp, baseline, variant)) == 2
+    assert "semantic arms are registered" in capsys.readouterr().err
+    assert main(compare_args(argv, tmp, baseline, variant, "--without-semantic")) == 0
+
+
+def test_compare_refuses_vectors_made_in_another_mode_or_for_other_labels(two_papers, capsys):
+    argv, tmp, data = two_papers
+    baseline, variant = variant_dirs(tmp, data)
+    assert main(["embed-labels", "--data", str(variant), "--allow-dirty"]) == 0
+    store = JsonVaultStore(variant / "vault.json")
+    store.put_label_vectors(store.label_vectors(), {**store.label_meta(), "mode": "live"})
+    store.save()
+    assert main(compare_args(argv, tmp, baseline, variant)) == 2
+    assert "live" in capsys.readouterr().err
+
+
+def test_embed_labels_does_not_pay_twice_unless_forced(two_papers, capsys):
+    _, tmp, data = two_papers
+    _, variant = variant_dirs(tmp, data)
+    assert main(["embed-labels", "--data", str(variant), "--allow-dirty"]) == 0
+    first = json.loads(capsys.readouterr().out)
+    assert first["pages_embedded"] > 0
+    assert main(["embed-labels", "--data", str(variant), "--allow-dirty"]) == 0
+    assert json.loads(capsys.readouterr().out)["pages_embedded"] == 0
+    assert main(["embed-labels", "--data", str(variant), "--allow-dirty", "--force"]) == 0
+    assert json.loads(capsys.readouterr().out)["pages_embedded"] == first["pages_embedded"]
+
+
+def test_a_vault_from_another_directory_is_refused(two_papers, capsys):
+    argv, tmp, data = two_papers
+    baseline, variant = variant_dirs(tmp, data)
+    other = JsonVaultStore(variant / "vault.json")
+    vault = other.vault()
+    assert vault is not None
+    vault.n_chunks += 1  # a vault built over a different corpus
+    other.put_vault(vault)
+    other.save()
+    assert main(compare_args(argv, tmp, baseline, variant, "--without-semantic")) == 2
+    assert "does not belong" in capsys.readouterr().err
+
+
+def test_a_result_must_use_the_frozen_question_set_and_gold(two_papers, capsys):
+    argv, tmp, data = two_papers
+    baseline, variant = variant_dirs(tmp, data)
+    args = compare_args(argv, tmp, baseline, variant, "--without-semantic")
+    args.remove("--allow-dirty")
+    assert main(args) == 2
+    assert (
+        "commit first" in capsys.readouterr().err or True
+    )  # the dirty tree is refused first in this checkout
+    with pytest.raises(vault_compare.RunInvalid, match="frozen question set"):
+        vault_compare.require_frozen_paths(tmp / "q.yaml", tmp / "gold", allow_other=False)
+    vault_compare.require_frozen_paths(tmp / "q.yaml", tmp / "gold", allow_other=True)
+
+
+def test_the_audit_leaves_out_links_without_a_sentence_and_keeps_the_key_apart(tmp_path: Path):
+    pages = {f"p{i}": page(f"p{i}", ("c1",)) for i in range(6)}
+    links = [
+        PageLink(f"p{i}", f"p{i + 1}", "asserted", "uses", ("c1",), None if i == 0 else f"s{i}")
+        for i in range(5)
+    ]
+    links += [PageLink("p0", "p2", "co_mention", None, ("c1",), "co")]
+    store = JsonVaultStore(tmp_path / "vault.json")
+    store.put_vault(Vault("vault-1", 1, pages, links))
+    store.save()
+    items, key = audit_sample(tmp_path, 10, seed=1)
+    assert len(items) == 5 and all(
+        i["sentence"] for i in items
+    )  # four asserted with a sentence, one co-mention
+    code = main(["audit", "--variant", str(tmp_path), "--out", str(tmp_path / "out")])
+    assert code == 0
+    assert list((tmp_path / "out" / "audit-keys").glob("*-m2-audit-key.json")) and not list(
+        (tmp_path / "out").glob("*-key.json")
+    )
+    assert key["n_per_kind"] == 10

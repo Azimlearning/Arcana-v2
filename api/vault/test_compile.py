@@ -277,14 +277,17 @@ def test_a_vault_survives_the_store_round_trip_with_its_label_vectors(tmp_path: 
     v = compile_vault(*world(tmp_path))
     store = JsonVaultStore(tmp_path / "vault.json")
     store.put_vault(v)
-    store.put_label_vectors({"rag": [0.5, 0.25], "ghost": [1.0]})
+    store.put_label_vectors({"rag": [0.5, 0.25], "ghost": [1.0]}, {"mode": "fake", "dim": 2})
     store.put_vault(v)  # a rebuild drops vectors of pages that no longer exist
     assert set(store.label_vectors()) == {"rag"}
     store.save()
     again = JsonVaultStore(tmp_path / "vault.json")
     loaded = again.vault()
     assert isinstance(loaded, Vault) and loaded.sha256() == v.sha256()
-    assert again.label_vectors() == {"rag": [0.5, 0.25]}
+    assert again.label_vectors() == {"rag": [0.5, 0.25]} and again.label_meta() == {
+        "mode": "fake",
+        "dim": 2,
+    }
     assert JsonVaultStore(tmp_path / "none.json").vault() is None
 
 
@@ -329,3 +332,69 @@ def test_a_reference_entry_makes_no_co_mention_but_a_prose_citation_does(tmp_pat
     pair = [link for link in v.links if link.kind == "co_mention" and link.src == "dense_retrieval"]
     assert [(link.dst, link.chunk_ids) for link in pair] == [("language_model", ("c9",))]
     assert looks_bibliographic(ref) and not looks_bibliographic(prose)
+
+
+def test_the_cap_counts_people_and_organisations_too(tmp_path: Path):
+    concepts = [Node(f"idea{i}", f"idea{i}", None, ("d1",), ("c9",), None, None) for i in range(4)]
+    people = [
+        Node(f"person{i}", f"person{i}", "person", ("d1",), ("c9",), "person", None)
+        for i in range(3)
+    ]
+    text = (
+        " ".join(n.label for n in concepts + people) + "."
+    )  # seven pages named, three of them people
+    v = compile_vault(
+        *world(
+            tmp_path, extra_chunks=[Chunk("c9", "d1", 9, 1, text)], extra_nodes=concepts + people
+        )
+    )
+    assert not [
+        link for link in v.links if link.kind == "co_mention" and link.chunk_ids == ("c9",)
+    ]  # 7 > 6: none
+    few = [Node(f"idea{i}", f"idea{i}", None, ("d1",), ("c8",), None, None) for i in range(3)]
+    two_people = [
+        Node(f"person{i}", f"person{i}", "person", ("d1",), ("c8",), "person", None)
+        for i in range(2)
+    ]
+    text = (
+        " ".join(n.label for n in few + two_people) + "."
+    )  # five named, two are people: links among the three concepts only
+    d = tmp_path / "ok"
+    d.mkdir()
+    w = compile_vault(
+        *world(d, extra_chunks=[Chunk("c8", "d1", 8, 1, text)], extra_nodes=few + two_people)
+    )
+    pairs = {
+        (link.src, link.dst)
+        for link in w.links
+        if link.kind == "co_mention" and link.chunk_ids == ("c8",)
+    }
+    assert pairs == {("idea0", "idea1"), ("idea0", "idea2"), ("idea1", "idea2")}
+
+
+def test_a_label_with_no_ascii_alphanumeric_token_is_still_found(tmp_path: Path):
+    node = Node("alpha_beta_gamma", "αβγ", None, ("d1",), ("c8",), None, None)
+    chunk = Chunk("c8", "d1", 8, 1, "The αβγ divergence is used here.")
+    v = compile_vault(
+        *world(
+            tmp_path,
+            extra_chunks=[chunk, Chunk("c9", "d1", 9, 1, "Also αβγ appears again.")],
+            extra_nodes=[node],
+        )
+    )
+    assert v.pages["alpha_beta_gamma"].mention_chunk_ids == (
+        "c8",
+        "c9",
+    )  # c9 is found only by the server's scan
+
+
+def test_claim_order_does_not_change_the_vault(tmp_path: Path):
+    g, docs = world(tmp_path)
+    drafts = [
+        ClaimDraft("c1", "d1", "RAG improves factuality.", ("rag",)),
+        ClaimDraft("c2", "d1", "Reflection tokens guide the model.", ("reflection_token",)),
+    ]
+    assert (
+        compile_vault(g, docs, claims=drafts).sha256()
+        == compile_vault(g, docs, claims=drafts[::-1]).sha256()
+    )

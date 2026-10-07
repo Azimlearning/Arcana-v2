@@ -26,6 +26,8 @@ FROZEN with the protocol: the weights above and VAULT_SCORING_VERSION. Changing 
 
 from __future__ import annotations
 
+import hashlib
+import json
 import math
 from collections.abc import Sequence
 from typing import Literal
@@ -219,7 +221,11 @@ class VaultRetriever:
 
 
 def _cosine(a: Sequence[float], b: Sequence[float]) -> float:
-    dot = sum(x * y for x, y in zip(a, b, strict=False))
+    if len(a) != len(b):
+        raise ValueError(
+            f"vectors of different lengths ({len(a)} and {len(b)}): the page labels were embedded by another model"
+        )
+    dot = sum(x * y for x, y in zip(a, b, strict=True))
     na = math.sqrt(sum(x * x for x in a))
     nb = math.sqrt(sum(y * y for y in b))
     return dot / (na * nb) if na and nb else 0.0
@@ -230,3 +236,9 @@ async def embed_page_labels(vault: Vault, embedder: Embedder) -> dict[str, list[
     ids = sorted(vault.pages)
     vectors = await embedder.embed([vault.pages[i].label for i in ids])
     return dict(zip(ids, vectors, strict=True))
+
+
+def labels_sha256(vault: Vault) -> str:
+    """A hash of the page ids and display labels, so label vectors can be tied to the vault they were made for."""
+    body = json.dumps(sorted((pid, p.label) for pid, p in vault.pages.items()), ensure_ascii=False)
+    return hashlib.sha256(body.encode("utf-8")).hexdigest()

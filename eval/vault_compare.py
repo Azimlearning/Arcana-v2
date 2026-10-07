@@ -15,7 +15,7 @@ after seeing results; the same text is in D-35, with amendments A1 and A2):
              refused. Retrieval is scored on the questions whose gold has a passage in the slice; fewer than ten means descriptive.
   Vault      pages: union-find over `alias_of` edges and equal compact ids; mentions: a member's chunk list, or a member label of
              3+ characters found as a whole word, blind to hyphenation, anywhere in the corpus; asserted links lifted from edges;
-             co-mention links: two pages whose labels occur in one sentence, none from a sentence naming more than 6 pages, none from
+             co-mention links: two pages whose labels occur in one sentence, none from a sentence naming more than 6 pages (A3: people and organisations count toward the 6), none from
              pages of kind person or organisation, and (A1) none from a sentence with a strong bibliography marker (arXiv, preprint,
              proceedings, doi, pp., journal of, conference on, association for computational); spread idf = ln(1 + N/df)/ln(1 + N).
   Arms       over every directory the frozen `graph`, `hybrid` and the control `flat`; over every variant the vault arms `vault`
@@ -30,15 +30,22 @@ after seeing results; the same text is in D-35, with amendments A1 and A2):
   Primary    Recall@10 and nDCG@10 per question and arm, paired differences with improved, tied and worsened counts; the vault arms
              against the SAME directory's frozen arms (the improvement question) and against the BASELINE directory's frozen arms.
              Descriptive only below ten answerable questions; no significance is claimed. Model-judged scores are never primary.
+             HEADLINE pairs, named before the run: `hybrid_vault` against the same directory's `hybrid`, and `vault` against the same
+             directory's `graph`. The sem arms and the ablations are exploratory and are reported as such.
   Gate       a variant's vault passes `no structural regression` if ALL hold: (1) the share of passages that at least one page
              mentions is at least 0.8 times the baseline graph's share of passages naming a concept; (2) at least 0.5 of the pages have
-             a link of either kind; (3) the mean fraction of the questions' content words the `vault` arm's resolver recognised is at
-             least the baseline `graph` arm's; (4) mean paired nDCG@10 of `hybrid_vault` against the baseline's `hybrid`, and of `vault`
+             a link of either kind (a declared target, set after the free probe showed 59 percent of Mark 1 nodes linked and seen
+             again after the first build showed 65.7 percent: disclosed, not blind); (3) the mean fraction of the questions' content words the `vault` arm's resolver recognised is at
+             least the baseline `graph` arm's (this reads the same node ids the g1-3 resolver reads, so at Look 2 it is expected to fail
+             by construction and says nothing about the vault; only clause 4 and the paired differences carry information there); (4) mean paired nDCG@10 of `hybrid_vault` against the baseline's `hybrid`, and of `vault`
              against the baseline's `graph`, is at least -0.05. The Mark 1 top-1% share of mention links is REPORTED, not gating
              (merging aliases into pages concentrates mentions by design; the spread discount is the mechanism and clause 4 measures
              it); so are links per page, pages with no link, the asserted and co-mention shares and the sem arms.
-  Validity   a vault arm is INVALID (flagged at the top) if it returns no passage for more than half of the answerable questions.
-  Looks      the same 19 questions have been read by Mark 1 (look 1); `vault-1` over the g1-3 graph is look 2; over an `atomic2` graph
+  Validity   a vault arm is INVALID (flagged) if any of its cells failed (the retriever raised), if there are no answerable
+             questions, or if it returns no passage for more than half of them; every vault arm present is checked. A run without
+             the semantic arms is protocol-incomplete and is refused unless --without-semantic is given, and then says so at the top.
+             Label vectors are used only if their recorded mode, model, dimension and label hash match this run and this vault.
+  Looks      the same 19 questions have been read by Mark 1 (look 1; the P1 full-corpus benchmark read the same questions over the pinned graph); `vault-1` over the g1-3 graph is look 2; over an `atomic2` graph
              look 3. A change to any constant after seeing a result is a new version, declared before the next run and counted.
   Spend      `embed-labels` embeds the pages' display labels once (a few thousand tokens); `compare` computes the questions' query
              embeddings; both are paid in live mode and need --allow-paid. No other paid step lives here.
@@ -48,6 +55,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import hashlib
 import json
 import math
 import random
@@ -62,15 +70,20 @@ sys.path.insert(
 
 from api.container import Container, build_container
 from api.core.logging import configure_logging
-from api.ingestion.embed import CachingEmbedder
+from api.ingestion.embed import EMBEDDING_MODEL, CachingEmbedder
 from api.retrieval.dense import DenseRetriever
 from api.retrieval.graph import GraphRetriever
 from api.retrieval.sparse import SparseRetriever
-from api.retrieval.vault import VAULT_SCORING_VERSION, VaultRetriever, embed_page_labels
+from api.retrieval.vault import (
+    VAULT_SCORING_VERSION,
+    VaultRetriever,
+    embed_page_labels,
+    labels_sha256,
+)
 from api.stores.preflight import check_corpus_parity
 from api.vault.local import JsonVaultStore
 from api.vault.types import Vault
-from eval import metrics
+from eval import frozen, metrics
 from eval.graph_quality import measure
 from eval.graph_variant import (
     COVERAGE_FLOOR,
@@ -87,6 +100,7 @@ from eval.run_ablation import (
     chunks_sha256,
     git_state,
     load_questions,
+    require_approved_gold,
     run_arm,
     sha256_file,
 )
@@ -166,21 +180,25 @@ def paired(
 
 
 def resolution_of(rows: list[dict[str, Any]], side: str, arm: str) -> dict[str, Any]:
-    cells = [r[side][arm] for r in rows if not r[side][arm]["invalid"]]
-    resolved = [c["resolution"] for c in cells if c.get("resolution")]
+    """Every answerable question's cell is counted: a cell whose retriever raised is `invalid`, never dropped."""
+    cells = [r[side][arm] for r in rows]
+    good = [c for c in cells if not c["invalid"]]
+    resolved = [c["resolution"] for c in good if c.get("resolution")]
     return {
         "questions": len(cells),
-        "ranking_empty": sum(1 for c in cells if c["ranking_length"] == 0),
+        "invalid_cells": len(cells) - len(good),
+        "ranking_empty": sum(1 for c in good if c["ranking_length"] == 0),
         "mean_hit_rate": mean([r["hit_rate"] for r in resolved]),
         "mean_exact_hit_rate": mean([r["exact_hit_rate"] for r in resolved]),
     }
 
 
 def arm_is_valid(report: dict[str, Any]) -> bool:
-    return (
-        not report["questions"]
-        or report["ranking_empty"] / report["questions"] <= EMPTY_GRAPH_LIMIT
-    )
+    """False with no questions, with any failed cell, or when more than half of the questions got nothing back."""
+    questions = report["questions"]
+    if not questions or report.get("invalid_cells", 0) > 0:
+        return False
+    return report["ranking_empty"] / questions <= EMPTY_GRAPH_LIMIT
 
 
 def gate(
@@ -196,16 +214,17 @@ def gate(
 ) -> dict[str, Any]:
     """The Mark 2 gate of D-35, evaluated and reported. It states facts; adopting the vault is Azim's decision."""
 
-    def number(value: float | None) -> float:
-        return value if value is not None else 0.0
+    def at_least(value: float | None, floor: float | None) -> bool:
+        """A missing measure never passes (None is not zero)."""
+        return value is not None and floor is not None and value >= floor
 
-    coverage = number(structure["passages_mentioned_by_a_page"]) >= COVERAGE_FLOOR * number(
-        baseline_graph["chunk_coverage"]["with_a_concept"]
+    base_coverage = baseline_graph["chunk_coverage"]["with_a_concept"]
+    coverage = at_least(
+        structure["passages_mentioned_by_a_page"],
+        None if base_coverage is None else COVERAGE_FLOOR * base_coverage,
     )
-    linked = number(structure["pages_with_a_link"]) >= LINKED_FLOOR
-    recognised = number(resolution_vault["mean_hit_rate"]) >= number(
-        resolution_baseline["mean_hit_rate"]
-    )
+    linked = at_least(structure["pages_with_a_link"], LINKED_FLOOR)
+    recognised = at_least(resolution_vault["mean_hit_rate"], resolution_baseline["mean_hit_rate"])
     structural = coverage and linked and recognised
 
     if descriptive_only:
@@ -216,9 +235,7 @@ def gate(
     else:
         diffs = (hybrid_vs_baseline["mean_difference"], vault_vs_baseline["mean_difference"])
         retrieval = {
-            "status": "passed"
-            if all(d is None or d >= -MAX_NDCG_DROP for d in diffs)
-            else "failed",
+            "status": "passed" if all(at_least(d, -MAX_NDCG_DROP) for d in diffs) else "failed",
             "hybrid_vault_vs_baseline_hybrid_mean_ndcg_difference": diffs[0],
             "vault_vs_baseline_graph_mean_ndcg_difference": diffs[1],
             "threshold": -MAX_NDCG_DROP,
@@ -234,6 +251,66 @@ def gate(
         "vault_arm_valid": valid,
         "ready_for_azim_to_decide": structural and valid and retrieval["status"] != "failed",
     }
+
+
+def require_frozen_paths(questions_path: Path, gold_dir: Path, allow_other: bool) -> None:
+    """A result must be computed from the frozen question set and gold, not from copies elsewhere."""
+    if allow_other:
+        return
+    if (
+        questions_path.resolve() != (ROOT / "eval" / "questions.yaml").resolve()
+        or gold_dir.resolve() != (ROOT / "eval" / "gold").resolve()
+    ):
+        raise RunInvalid("a result must use the frozen question set and gold in eval/")
+
+
+def gold_sha256(gold_dir: Path, question_ids: list[str]) -> str:
+    h = hashlib.sha256()
+    for qid in sorted(question_ids):
+        h.update(qid.encode("utf-8"))
+        h.update((gold_dir / f"{qid}.yaml").read_bytes())
+    return h.hexdigest()
+
+
+def vault_belongs_to_directory(vault: Vault, container: Container, directory: Path) -> list[str]:
+    """Ways a vault file differs from the directory it sits in (a stale or foreign vault would drive the vault arms while the
+    frozen arms read graph.json)."""
+    problems: list[str] = []
+    if vault.n_chunks != len(container.docs.all_chunks()):
+        problems.append("its passage count differs from the directory's")
+    in_vault = {n for p in vault.pages.values() for n in p.node_ids}
+    if in_vault != {n.id for n in container.graph.nodes()}:
+        problems.append("its pages do not hold exactly the directory's graph nodes")
+    record = directory / "vault_build.json"
+    if record.exists():
+        recorded = (
+            json.loads(record.read_text(encoding="utf-8")).get("hashes", {}).get("graph_sha256")
+        )
+        if recorded != sha256_file(directory / "graph.json"):
+            problems.append("the graph changed since the vault was built")
+    return problems
+
+
+def label_vector_problems(
+    vectors: dict[str, list[float]], meta: dict[str, Any], vault: Vault, embed_mode: str
+) -> list[str]:
+    """Why label vectors cannot be used in this run: missing, made for other labels, by another model or in another mode."""
+    if not vectors:
+        return ["there are no page-label vectors"]
+    problems: list[str] = []
+    if set(vectors) != set(vault.pages):
+        problems.append("the vectors do not cover exactly the vault's pages")
+    if meta.get("labels_sha256") != labels_sha256(vault):
+        problems.append("the vectors were made for other page labels")
+    if meta.get("mode") != embed_mode:
+        problems.append(
+            f"the vectors were made in {meta.get('mode')!r} mode, this run is {embed_mode!r}"
+        )
+    if meta.get("model") != EMBEDDING_MODEL:
+        problems.append(f"the vectors were made by {meta.get('model')!r}, not {EMBEDDING_MODEL!r}")
+    if {len(v) for v in vectors.values()} != {meta.get("dim")}:
+        problems.append("the vectors' dimension does not match the recorded one")
+    return problems
 
 
 async def compare(args: argparse.Namespace) -> dict[str, Any]:
@@ -252,6 +329,9 @@ async def compare(args: argparse.Namespace) -> dict[str, Any]:
         )
     configure_logging("WARNING")
 
+    questions_path, gold_dir = Path(args.questions_file), Path(args.gold_dir)
+    manifest_path = Path(args.manifest)
+    require_frozen_paths(questions_path, gold_dir, args.allow_dirty)
     for d in variant_dirs:
         if not (d / VAULT_FILE).exists():
             raise RunInvalid(f"{d} has no {VAULT_FILE}: build it with `vault_tool.py build`")
@@ -279,9 +359,21 @@ async def compare(args: argparse.Namespace) -> dict[str, Any]:
         if v is None:
             raise RunInvalid(f"{n}: the vault file is empty")
         vaults[n] = v
+        problems = vault_belongs_to_directory(v, containers[n], names[n])
+        if problems:
+            raise RunInvalid(
+                f"{n}: the vault does not belong to this directory: " + "; ".join(problems)
+            )
 
-    questions_path, gold_dir = Path(args.questions_file), Path(args.gold_dir)
     questions = load_questions(questions_path)
+    if live:  # the freeze is checked here as well as by pytest, as the runner does
+        golds = {q["id"]: metrics.load_gold(gold_dir, q["id"]) for q in questions}
+        require_approved_gold(golds, live)
+        drift = frozen.check_frozen(
+            questions_path, manifest_path, gold_dir, [q["id"] for q in questions]
+        )
+        if drift:
+            raise RunInvalid("the frozen benchmark assets changed: " + "; ".join(drift))
     corpus_texts = [c.text for c in base_chunks]
     embedder = CachingEmbedder(
         containers["baseline"].embedder
@@ -300,10 +392,27 @@ async def compare(args: argparse.Namespace) -> dict[str, Any]:
         return r
 
     sem: dict[str, dict[str, Any]] = {}
-    for n, s in stores.items():
-        vectors = s.label_vectors()
-        have = bool(vectors) and set(vectors) >= set(vaults[n].pages)
-        sem[n] = {"embedder": embedder, "label_vectors": vectors, "semantic": True} if have else {}
+    label_hashes: dict[str, str | None] = {}
+    for n, st in stores.items():
+        vectors = st.label_vectors()
+        label_hashes[n] = (
+            hashlib.sha256(json.dumps(sorted(vectors.items())).encode("utf-8")).hexdigest()
+            if vectors
+            else None
+        )
+        if args.without_semantic:
+            sem[n] = {}
+            continue
+        problems = label_vector_problems(
+            vectors, st.label_meta(), vaults[n], base_settings.arcana_embed_mode
+        )
+        if problems:
+            raise RunInvalid(
+                f"{n}: the semantic arms are registered and cannot run: "
+                + "; ".join(problems)
+                + " (run `embed-labels`, or pass --without-semantic and accept an incomplete protocol)"
+            )
+        sem[n] = {"embedder": embedder, "label_vectors": vectors, "semantic": True}
     missing_sem = [n for n in stores if not sem[n]]
 
     rows: list[dict[str, Any]] = []
@@ -350,7 +459,15 @@ async def compare(args: argparse.Namespace) -> dict[str, Any]:
                 )
         rows.append(row)
 
+    if not rows:
+        raise RunInvalid("no answerable question in this slice: there is nothing to compare")
     for r in rows:
+        for n in stores:
+            for arm in ("vault", "hybrid_vault"):
+                if r[n][arm]["invalid"]:
+                    raise RunInvalid(
+                        f"{n}: the {arm} arm failed on {r['question_id']} (the retriever raised)"
+                    )
         for n in names:
             if r[n]["flat"]["chunk_ids"] != r["baseline"]["flat"]["chunk_ids"]:
                 raise RunInvalid(
@@ -385,7 +502,9 @@ async def compare(args: argparse.Namespace) -> dict[str, Any]:
             }
         res_vault = resolution_of(rows, n, "vault")
         res_base = resolution_of(rows, "baseline", "graph")
-        valid = arm_is_valid(res_vault)
+        arm_reports = {arm: resolution_of(rows, n, arm) for arm in arms}
+        arm_validity = {arm: arm_is_valid(r) for arm, r in arm_reports.items()}
+        valid = bool(arm_validity) and all(arm_validity.values())
         structure = vault_structure(vaults[n])
         per_variant[n] = {
             "vault_structure": structure,
@@ -394,7 +513,9 @@ async def compare(args: argparse.Namespace) -> dict[str, Any]:
                 "vault": res_vault,
                 "baseline_graph": res_base,
                 "same_directory_graph": resolution_of(rows, n, "graph"),
+                "every_vault_arm": arm_reports,
             },
+            "arm_validity": arm_validity,
             "summary": summary,
             "semantic_arms_present": bool(sem[n]),
             "gate": gate(
@@ -429,12 +550,15 @@ async def compare(args: argparse.Namespace) -> dict[str, Any]:
                 "variant_vault_sha256": {n: vaults[n].sha256() for n in stores},
                 "vectors_sha256": sha256_file(baseline_dir / "vectors.npz"),
                 "chunks_sha256": base_hash,
+                "gold_sha256": gold_sha256(gold_dir, [r["question_id"] for r in rows]),
+                "variant_label_vectors_sha256": label_hashes,
             },
             "query_embeddings_computed": embedder.inner_calls,
             "answerable_questions": [r["question_id"] for r in rows],
             "skipped_questions": skipped,
             "descriptive_only": descriptive_only,
             "semantic_arms_missing_for": missing_sem,
+            "protocol_complete": not missing_sem,
             "control_arm_flat_differs": False,
         },
         "variants": per_variant,
@@ -454,10 +578,25 @@ async def embed_labels(args: argparse.Namespace) -> dict[str, Any]:
     vault = store.vault()
     if vault is None:
         raise RunInvalid(f"{data} has no {VAULT_FILE}")
+    existing = label_vector_problems(
+        store.label_vectors(), store.label_meta(), vault, settings.arcana_embed_mode
+    )
+    if not existing and not args.force:
+        return {
+            "pages_embedded": 0,
+            "spent_usd": 0.0,
+            "note": "usable vectors exist; pass --force to redo them",
+        }
     container = build_container(settings)
     before = container.ledger.month_total()
     vectors = await embed_page_labels(vault, container.embedder)
-    store.put_label_vectors(vectors)
+    meta = {
+        "mode": settings.arcana_embed_mode,
+        "model": EMBEDDING_MODEL,
+        "dim": len(next(iter(vectors.values()))) if vectors else 0,
+        "labels_sha256": labels_sha256(vault),
+    }
+    store.put_label_vectors(vectors, meta)
     store.save()
     return {
         "pages_embedded": len(vectors),
@@ -475,7 +614,9 @@ def audit_sample(variant: Path, n: int, seed: int) -> tuple[list[dict[str, Any]]
         raise RunInvalid(f"{variant} has no {VAULT_FILE}")
     rng = random.Random(seed)
     asserted = sorted(
-        (x for x in vault.links if x.kind == "asserted"),
+        (
+            x for x in vault.links if x.kind == "asserted" and x.evidence
+        ),  # no sentence would reveal the kind
         key=lambda x: (x.src, x.dst, x.relation or ""),
     )
     co = sorted((x for x in vault.links if x.kind == "co_mention"), key=lambda x: (x.src, x.dst))
@@ -488,7 +629,7 @@ def audit_sample(variant: Path, n: int, seed: int) -> tuple[list[dict[str, Any]]
                 "id": i,
                 "a": vault.pages[link.src].label,
                 "b": vault.pages[link.dst].label,
-                "sentence": link.evidence or "(no sentence stored)",
+                "sentence": link.evidence or "",
             }
         )
         key[str(i)] = {
@@ -527,6 +668,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     e.add_argument("--data", required=True)
     e.add_argument("--allow-paid", action="store_true")
+    e.add_argument("--force", action="store_true", help="embed again even if usable vectors exist")
     e.add_argument("--allow-dirty", action="store_true", help="for tests only")
     c = sub.add_parser("compare", help="run the frozen and the vault arms over every directory")
     c.add_argument("--baseline", required=True)
@@ -536,6 +678,12 @@ def main(argv: list[str] | None = None) -> int:
     c.add_argument("--questions-file", default=str(ROOT / "eval" / "questions.yaml"))
     c.add_argument("--gold-dir", default=str(ROOT / "eval" / "gold"))
     c.add_argument("--out", default=str(ROOT / "eval" / "results"))
+    c.add_argument("--manifest", default=str(ROOT / "eval" / "corpus" / "MANIFEST.json"))
+    c.add_argument(
+        "--without-semantic",
+        action="store_true",
+        help="run without the registered semantic arms; the result says the protocol is incomplete",
+    )
     c.add_argument("--label", default="m2-vault")
     c.add_argument("--allow-paid", action="store_true")
     c.add_argument(
@@ -562,7 +710,10 @@ def main(argv: list[str] | None = None) -> int:
             (out / f"{stamp}-m2-audit-sample.md").write_text(
                 audit_markdown(items), encoding="utf-8"
             )
-            (out / f"{stamp}-m2-audit-key.json").write_text(
+            (out / "audit-keys").mkdir(
+                exist_ok=True
+            )  # the key is kept apart from the sample a reader opens
+            (out / "audit-keys" / f"{stamp}-m2-audit-key.json").write_text(
                 json.dumps(key, indent=2), encoding="utf-8"
             )
             print(f"wrote {len(items)} items to {out}")
