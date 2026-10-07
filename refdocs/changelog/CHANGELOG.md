@@ -28,6 +28,14 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-07: G1.4 reviews and their fixes (before any live run): ceiling, protocol, alias links
+- **Changed:** `eval/graph_variant.py` (`CeilingGuard` on every call, a complete-rebuild record required, the gate replaced, resolution and validity reported, the control enforced, `choose` and `audit` commands, the protocol text amended), `eval/graph_quality.py` (coverage, concentration and label measures), `api/ingestion/atomic.py` (prompt g1-2: abbreviations linked by `alias_of` from their defining sentence instead of merged; one-sentence notes and evidence; a minimum label length), `api/ingestion/pipeline.py`, tests, the G1 plan and execution doc, D-34 (the amended protocol), the cost table in the plan.
+- **Decided:** the atomic builder merges nothing by judgement; the structural gate rests on measures a sentence-checking builder cannot pass by construction; the retrieval clause is `not_evaluable` when descriptive; the slice rule and the pilot rule are written before any choice. All amendments are before any live run, so none rests on a result.
+- **Deviations:** G1.4 is not finished: the second cost audit and the retrieval audit are applied, but Azim has not yet confirmed any spend.
+- **Verified:** `uv run pytest api eval/tests` (738 and 148 passed), `uv run ruff check api eval scripts`, `uv run pyright api eval`. No paid call; the pinned stores unchanged.
+- **Found by the audits:** `--max-usd` was a start gate, not a ceiling; the cost table used the free-form prompt's price ($0.0037) where the atomic prompt is about $0.0067 per chunk (pilot $0.15 to $0.37, subset $1.7 to $4.3, full $6.5 to $16.7); `compare` accepted a partial rebuild; the registered gate passed vacuously; the merge rules would have removed ids the frozen resolver reads.
+- **Known issues / next steps:** apply `choose` and re-measure the baseline with the new measures (free), then ask Azim to confirm the pilot (about $0.23, ceiling $0.40).
+
 ### 2026-10-07: G1.2 (the atomic-note builder on fakes) and G1.3 (the variant tool and the registered protocol)
 - **Changed:** `api/ingestion/atomic.py` (new), `api/ingestion/pipeline.py` (`build_graph`, `IngestDeps.builder`, the build report), `api/ingestion/extract.py`, `api/ingestion/types.py`, `api/ingestion/fakes.py`, `api/fakes.py`, `api/stores/graph_store.py` and `api/stores/local/networkx_graph.py` (optional `kind`, `note`, `evidence`), `eval/graph_variant.py` (new), tests (`api/ingestion/test_atomic.py`, `eval/tests/test_graph_variant.py`), the G1 execution doc (G1.2 and G1.3 Reality), D-34 (the registered protocol).
 - **Decided:** The plan's arms `graph_atomic` and `hybrid_atomic` are the frozen arms `graph` and `hybrid` run over a variant data directory, because the protocol stamp pins the arm table; the protocol (gate included) is registered in D-34 and in the tool's text before any live run. The default builder stays `freeform` until G1.7.

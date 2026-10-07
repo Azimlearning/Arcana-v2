@@ -11,10 +11,13 @@ What the model proposes, the server checks (the same discipline the answers alre
   - a relation is kept only if both ends are kept concepts and it carries **evidence**: one verbatim sentence of the
     chunk that names both ends; its type is one of a **closed vocabulary** (anything else is kept as `other` and counted);
   - every thing dropped is counted under a reason, so the cost of the rules is visible (`drops`);
-  - concepts are merged across chunks and documents by a **deterministic canonical form** (the free-form extractor's
-    slug) plus two audited alias rules, and every merge is recorded (`Merge`): an abbreviation defined in the text
-    ("Large Language Models (LLMs)") and an abbreviation that is the initials of exactly one known concept. No model is
-    asked to judge a merge.
+  - concepts are the same concept across chunks and documents when their canonical form is the same (the free-form
+    extractor's slug, with a plural abbreviation read as the abbreviation). **Nothing is merged by judgement:** an
+    abbreviation the text defines ("Large Language Models (LLMs)") is kept as its own node and linked to its long form by an
+    `alias_of` relation whose evidence is the defining sentence, so the frozen query resolver (which reads node ids, not
+    aliases) still finds a question that says "LLM" or "RAG", and the link is auditable. A rule that joined nodes across
+    documents by initials was removed after review: it raised the shared-node count without textual support and made the
+    result depend on the order of the papers.
 
 The prompt below was written from the corpus's general character before any live run and is frozen with the protocol
 (G1.3); it is not edited after seeing any evaluation result (constraint 9).
@@ -24,11 +27,12 @@ from __future__ import annotations
 
 import re
 from collections import Counter
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 
 from api.core.errors import IngestFailed
 from api.genui.evidence import label_in_quote, verified_quote
+from api.genui.text import MIN_LABEL_CHARS
 from api.ingestion.extract import PASSAGE_CLOSE, PASSAGE_OPEN, ExtractionResult, slug
 from api.llm.json_reply import parse_json_object
 from api.llm.models import ANTHROPIC_MODELS
@@ -39,7 +43,7 @@ from api.stores.doc_store import Chunk
 from api.stores.graph_store import Edge, Node
 
 BUILDER = "atomic"
-PROMPT_VERSION = "g1-1"
+PROMPT_VERSION = "g1-2"
 
 KINDS = ("concept", "method", "model", "dataset", "metric", "task", "person", "organisation")
 """What a note is about. Anything else the model says is stored as `other` and counted."""
@@ -58,8 +62,10 @@ RELATIONS = (
     "compares_with",
     "contrasts_with",
     "authored_by",
+    "alias_of",
 )
-"""The closed relation vocabulary. Authorship is one relation, not four spellings."""
+"""The closed relation vocabulary. Authorship is one relation, not four spellings. `alias_of` links an abbreviation the text
+defines to its long form; the builder adds it from the defining sentence, and the model may use it too."""
 
 ATOMIC_SYSTEM = (
     "You turn a passage of a document into small notes. Reply with ONE JSON object and nothing else: "
@@ -84,6 +90,18 @@ MAX_RELATIONS = 40
 MAX_LABEL_CHARS = 120
 ATOMIC_MAX_TOKENS = 3072
 """Larger than the free-form extractor's 2,048: every concept and relation also returns a sentence."""
+
+
+_SENTENCE_BREAK = re.compile(r"(?<=[.!?])\s+")
+
+
+def one_sentence(span: str, labels: Sequence[str]) -> str | None:
+    """The span itself if it is one sentence, else the first of its sentences that holds every label (still a verbatim
+    span), else None. A note or an evidence sentence is ONE sentence, enforced here and not left to the model."""
+    parts = [p for p in _SENTENCE_BREAK.split(span) if p]
+    if len(parts) <= 1:
+        return span
+    return next((p for p in parts if all(label_in_quote(p, label) for label in labels)), None)
 
 
 def concept_id(label: str) -> str:
@@ -167,6 +185,9 @@ def build_atomic_result(parsed: dict, chunk: Chunk) -> ExtractionResult:
         if node_id == "unknown":
             drops["concept_no_label"] += 1
             continue
+        if len(label) < MIN_LABEL_CHARS:
+            drops["concept_label_too_short"] += 1
+            continue
         proposed = concept.get("note")
         if not isinstance(proposed, str) or not proposed.strip():
             drops["concept_no_note"] += 1
@@ -175,7 +196,8 @@ def build_atomic_result(parsed: dict, chunk: Chunk) -> ExtractionResult:
         if note is None:
             drops["concept_note_not_verbatim"] += 1
             continue
-        if not label_in_quote(note, label):
+        note = one_sentence(note, [label])
+        if note is None or not label_in_quote(note, label):
             drops["concept_note_missing_label"] += 1
             continue
         by_label[label.lower()] = node_id
@@ -214,8 +236,13 @@ def build_atomic_result(parsed: dict, chunk: Chunk) -> ExtractionResult:
         if evidence is None:
             drops["relation_evidence_not_verbatim"] += 1
             continue
-        if not (label_in_quote(evidence, kept[src].label) and label_in_quote(evidence, kept[dst].label)):
+        both = [kept[src].label, kept[dst].label]
+        if not all(label_in_quote(evidence, label) for label in both):
             drops["relation_evidence_missing_label"] += 1
+            continue
+        evidence = one_sentence(evidence, both)
+        if evidence is None:
+            drops["relation_evidence_not_one_sentence"] += 1
             continue
         kind = str(relation.get("type", "")).strip().lower().replace(" ", "_").replace("-", "_")
         if kind not in RELATIONS:
@@ -228,7 +255,7 @@ def build_atomic_result(parsed: dict, chunk: Chunk) -> ExtractionResult:
     return ExtractionResult(nodes=list(kept.values()), edges=list(edges.values()), drops=dict(drops))
 
 
-# ── deterministic merging ─────────────────────────────────────────────────────
+# ── abbreviations the text defines ────────────────────────────────────────────
 
 _PARENTHESISED = re.compile(r"\(([A-Z][A-Za-z0-9]{1,9})\)")
 _WORDS = re.compile(r"[A-Za-z0-9]+")
@@ -240,118 +267,70 @@ def _letters(abbreviation: str) -> str:
     return abbreviation[:-1] if abbreviation.endswith("s") and abbreviation[:-1].isupper() else abbreviation
 
 
-def initials(label: str) -> str:
-    """The upper-case initials of a label's words, hyphens and spaces both separating words."""
-    return "".join(w[0].upper() for w in _WORDS.findall(label))
-
-
-def defined_aliases(text: str) -> dict[str, str]:
-    """The abbreviations a text defines, by the phrase before the parentheses: "Large Language Models (LLMs)" gives
-    {"llms": "Large Language Models", "llm": "Large Language Models"}. Accepted only if the phrase's last words spell the
-    abbreviation (so "the results (ROC)" is not an alias). Keys are lower case."""
-    found: dict[str, str] = {}
-    for match in _PARENTHESISED.finditer(text):
+def defined_pairs(text: str) -> list[tuple[str, str, str]]:
+    """The abbreviations a chunk defines, as (abbreviation as written, the phrase it stands for, the sentence that defines
+    it): "Large Language Models (LLMs)" gives ("LLMs", "Large Language Models", the whole sentence). Accepted only if the
+    phrase's last words spell the abbreviation (so "the results (ROC)" is not one) and the defining sentence is a verbatim
+    span of the whitespace-normalised chunk, short enough to cite."""
+    normal = " ".join(text.split())
+    found: list[tuple[str, str, str]] = []
+    for match in _PARENTHESISED.finditer(normal):
         abbreviation = match.group(1)
         letters = _letters(abbreviation)
-        words = list(_WORDS.finditer(text[: match.start()]))
-        if len(words) < len(letters) or len(letters) < 2:
+        words = list(_WORDS.finditer(normal[: match.start()]))
+        if len(letters) < 2 or len(words) < len(letters):
             continue
         tail = words[-len(letters) :]
         if "".join(w.group(0)[0].upper() for w in tail) != letters:
             continue
-        phrase = text[tail[0].start() : tail[-1].end()]
-        found[abbreviation.lower()] = phrase
-        found[letters.lower()] = phrase
+        phrase = normal[tail[0].start() : tail[-1].end()]
+        start = 0
+        for piece in _SENTENCE_BREAK.finditer(normal):
+            if piece.end() > match.start():
+                break
+            start = piece.end()
+        end_match = _SENTENCE_BREAK.search(normal, match.end())
+        sentence = normal[start : end_match.start() if end_match else len(normal)]
+        if len(sentence) <= 240 and label_in_quote(sentence, phrase) and label_in_quote(sentence, abbreviation):
+            found.append((abbreviation, phrase, sentence))
     return found
 
 
-def canonicalise(
-    result: ExtractionResult, aliases: Mapping[str, str], known: Mapping[str, str]
-) -> tuple[ExtractionResult, list[Merge]]:
-    """Fold abbreviations into the concept they stand for. `aliases` are the abbreviations the document defines
-    (`defined_aliases`); `known` maps the ids of concepts already in the graph to their labels, for the second rule: an
-    abbreviation (capitals only) that is the initials of exactly one known concept of two or more words joins it, and one
-    that is the initials of several is left alone and counted (`merge_ambiguous`). Returns the result with node and edge ids
-    remapped (an edge that becomes a self-loop is dropped and counted) and the merges made."""
-    merges: list[Merge] = []
-    remap: dict[str, str] = {}
-    relabel: dict[str, str] = {}
-    drops: Counter[str] = Counter(result.drops)
-    for node in result.nodes:
-        target_id, target_label, reason = node.id, node.label, ""
-        defined = aliases.get(node.label.strip().lower())
-        if defined is not None and concept_id(defined) != node.id:
-            target_id, target_label, reason = concept_id(defined), defined, "defined_in_text"
-        elif _ABBREVIATION.match(node.label.strip()):
-            letters = _letters(node.label.strip())
-            matches = [
-                i for i, label in known.items() if len(_WORDS.findall(label)) >= 2 and initials(label) == letters
-            ]
-            if len(matches) == 1 and matches[0] != node.id:
-                target_id, target_label, reason = matches[0], known[matches[0]], "initials_of_known"
-            elif len(matches) > 1:
-                drops["merge_ambiguous"] += 1
-        if reason:
-            remap[node.id] = target_id
-            relabel[node.id] = target_label
-            merges.append(Merge(node.label, target_id, reason))
-
-    nodes: dict[str, Node] = {}
-    for node in result.nodes:
-        new_id = remap.get(node.id, node.id)
-        merged = Node(
-            id=new_id,
-            label=relabel.get(node.id, node.label),
-            type=node.type,
-            doc_ids=node.doc_ids,
-            chunk_ids=node.chunk_ids,
-            kind=node.kind,
-            note=node.note,
-        )
-        nodes.setdefault(new_id, merged)
-    edges: dict[tuple[str, str, str], Edge] = {}
-    for edge in result.edges:
-        src, dst = remap.get(edge.src, edge.src), remap.get(edge.dst, edge.dst)
-        if src == dst:
-            drops["relation_self_loop_after_merge"] += 1
+def with_aliases(result: ExtractionResult, chunk: Chunk) -> ExtractionResult:
+    """Add, for every abbreviation the chunk defines, the abbreviation and its long form as notes and an `alias_of`
+    relation from the one to the other, the defining sentence being the note and the evidence. Independent of every other
+    chunk and document, so the result does not depend on the order the papers are built in."""
+    nodes = {n.id: n for n in result.nodes}
+    edges = {(e.src, e.dst, e.relation): e for e in result.edges}
+    added = 0
+    for abbreviation, phrase, sentence in defined_pairs(chunk.text):
+        short_id, long_id = concept_id(abbreviation), concept_id(phrase)
+        if short_id == long_id or "unknown" in (short_id, long_id):
             continue
-        edges.setdefault(
-            (src, dst, edge.relation),
-            Edge(src, dst, edge.relation, edge.chunk_id, edge.doc_id, edge.evidence),
-        )
-    return ExtractionResult(list(nodes.values()), list(edges.values()), dict(drops)), merges
-
-
-def finalise(
-    results: Iterable[ExtractionResult | None], chunks: Sequence[Chunk], known: Mapping[str, str]
-) -> tuple[list[ExtractionResult | None], list[Merge]]:
-    """Canonicalise every chunk's result with the abbreviations the whole document defines and the concepts already in
-    the graph. A chunk whose extraction failed stays None."""
-    aliases: dict[str, str] = {}
-    for chunk in chunks:
-        for key, phrase in defined_aliases(chunk.text).items():
-            aliases.setdefault(key, phrase)
-    merges: list[Merge] = []
-    out: list[ExtractionResult | None] = []
-    for result in results:
-        if result is None:
-            out.append(None)
-            continue
-        merged, made = canonicalise(result, aliases, known)
-        out.append(merged)
-        merges.extend(made)
-    return out, merges
+        for node_id, label in ((short_id, abbreviation), (long_id, phrase)):
+            nodes.setdefault(
+                node_id,
+                Node(node_id, label, "concept", (chunk.doc_id,), (chunk.id,), "concept", sentence),
+            )
+        if (short_id, long_id, "alias_of") not in edges:
+            edges[(short_id, long_id, "alias_of")] = Edge(
+                short_id, long_id, "alias_of", chunk.id, chunk.doc_id, sentence
+            )
+            added += 1
+    drops = dict(result.drops)
+    if added:
+        drops["alias_links_added"] = drops.get("alias_links_added", 0) + added
+    return ExtractionResult(list(nodes.values()), list(edges.values()), drops)
 
 
 @dataclass
 class BuildReport:
-    """What a document's graph build did, for the evidence record: the builder, the prompt version, what was dropped and
-    why, and every merge."""
+    """What a document's graph build did, for the evidence record: the builder, the prompt version, and what was dropped and
+    added, each under its reason."""
 
     builder: str = BUILDER
     prompt_version: str = PROMPT_VERSION
     drops: Counter[str] = field(default_factory=Counter)
-    merges: list[Merge] = field(default_factory=list)
     concepts: int = 0
     relations: int = 0
 
@@ -362,5 +341,4 @@ class BuildReport:
             "concepts": self.concepts,
             "relations": self.relations,
             "drops": dict(sorted(self.drops.items())),
-            "merges": [{"from": m.from_label, "to": m.to_id, "reason": m.reason} for m in self.merges],
         }

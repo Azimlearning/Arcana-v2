@@ -121,3 +121,20 @@ def test_the_command_refuses_a_missing_store_unknown_documents_and_a_dirty_tree(
     monkeypatch.setattr(graph_quality, "git_state", lambda: {"commit": "abc", "dirty": True, "changed_files": [" M x"]})
     assert main(["--data-dir", str(store), "--out", str(tmp_path / "o")]) == 2
     assert "commit first" in capsys.readouterr().err
+
+
+def test_coverage_concentration_and_the_label_check_are_what_they_should_be_on_the_tiny_graph():
+    m = measure(NODES, EDGES, CHUNKS)
+    assert m["chunk_coverage"] == {"chunks": 3, "with_a_concept": 1.0, "with_a_relation": 1.0}
+    assert m["edges_per_node"] == 0.8  # 4 edges over 5 nodes
+    # every node but the lonely one has degree 2: the top ten own all 8 edge ends; the top 1 percent is one node holding 2 of 6 links
+    assert m["hub_concentration"] == {"top10_degree_share": 1.0, "top_1_percent_share_of_chunk_links": 0.3333}
+    assert m["nodes_label_in_own_chunks"] == {"count": 4, "share": 0.8}  # the lonely node has no chunk to check
+
+
+def test_coverage_in_a_slice_counts_only_the_slices_chunks_and_an_empty_graph_covers_nothing():
+    sliced = measure(NODES, EDGES, CHUNKS, frozenset({"d2"}))
+    assert sliced["chunk_coverage"] == {"chunks": 1, "with_a_concept": 1.0, "with_a_relation": 1.0}
+    empty = measure([], [], CHUNKS)
+    assert empty["chunk_coverage"]["with_a_concept"] == 0.0 and empty["edges_per_node"] is None
+    assert empty["hub_concentration"] == {"top10_degree_share": None, "top_1_percent_share_of_chunk_links": None}

@@ -67,9 +67,7 @@ async def ingest_pdf(raw: bytes, filename: str, deps: IngestDeps) -> IngestResul
         _remove(doc_id, deps)  # same bytes ingested before: replace, never duplicate
 
     def failed(message: str, title: str = fallback_title) -> IngestResult:
-        deps.docs.put_document(
-            Document(doc_id, title, filename, "failed", len(raw), message, _now())
-        )
+        deps.docs.put_document(Document(doc_id, title, filename, "failed", len(raw), message, _now()))
         return IngestResult(doc_id, title, "failed", 0, 0, 0, 0, message)
 
     try:
@@ -130,9 +128,7 @@ async def ingest_pdf(raw: bytes, filename: str, deps: IngestDeps) -> IngestResul
         edges=edge_total,
         extraction_failures=extraction_failures,
     )
-    return IngestResult(
-        doc_id, title, "ready", len(chunks), node_total, edge_total, extraction_failures, None, report
-    )
+    return IngestResult(doc_id, title, "ready", len(chunks), node_total, edge_total, extraction_failures, None, report)
 
 
 async def build_graph(chunks: list[Chunk], deps: IngestDeps) -> tuple[int, int, int, dict | None]:
@@ -142,9 +138,8 @@ async def build_graph(chunks: list[Chunk], deps: IngestDeps) -> tuple[int, int, 
     results = await _extract_all(chunks, deps.llm, deps.builder)
     report: dict | None = None
     if deps.builder == "atomic":
-        known = {n.id: n.label for n in deps.graph.nodes()}
-        results, merges = atomic.finalise(results, chunks, known)
-        built = atomic.BuildReport(merges=merges)
+        results = [atomic.with_aliases(r, c) if r is not None else None for r, c in zip(results, chunks, strict=True)]
+        built = atomic.BuildReport()
         for r in results:
             if r is not None:
                 built.drops.update(r.drops)
@@ -181,9 +176,7 @@ async def _extract_all(
         raise
 
 
-def _write_graph(
-    results: list[ExtractionResult | None], graph: GraphStore
-) -> tuple[int, int, int]:
+def _write_graph(results: list[ExtractionResult | None], graph: GraphStore) -> tuple[int, int, int]:
     """Merge every chunk's nodes then edges into the graph. Returns (nodes, edges, malformed)."""
     node_ids: set[str] = set()
     edge_count = 0

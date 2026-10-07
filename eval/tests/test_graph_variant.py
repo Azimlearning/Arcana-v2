@@ -167,7 +167,15 @@ def test_compare_writes_the_paired_numbers_the_structure_and_the_registered_gate
     assert set(result["structure"]) == {"baseline", "variant"} and result["structure"]["variant"]["edges"] >= 0
     summary = result["retrieval"]["summary"]
     assert set(summary) == {"graph", "hybrid", "flat"} and summary["flat"]["ndcg_at_10"]["mean_difference"] == 0.0
-    assert set(result["gate"]) == {"structural_no_regression", "no_large_retrieval_drop"}
+    assert set(result["gate"]) == {
+        "structural_no_regression",
+        "no_large_retrieval_drop",
+        "graph_arm_valid",
+        "ready_for_azim_to_decide",
+        "reported_not_gating",
+    }
+    assert result["gate"]["no_large_retrieval_drop"]["status"] == "not_evaluable"  # one question: descriptive only
+    assert set(result["resolution"]) == {"baseline", "variant"} and "graph_arm_valid" in result
 
 
 def test_compare_refuses_directories_that_do_not_hold_the_same_corpus_and_vectors(two_papers, capsys):
@@ -218,30 +226,222 @@ def test_paired_differences_counts_and_means_are_what_they_should_be():
     assert paired([], "hybrid", "ndcg_at_10")["mean_difference"] is None
 
 
-def metrics_of(stated: float, relations: int, shared: float) -> dict:
-    return {
-        "edges_stated_in_one_sentence": {"share": stated},
-        "distinct_relations": relations,
-        "nodes_in_two_or_more_documents": {"share": shared},
+def metrics_of(coverage: float, top10: float, top_percent: float, **extra) -> dict:
+    base = {
+        "chunk_coverage": {"with_a_concept": coverage},
+        "hub_concentration": {"top10_degree_share": top10, "top_1_percent_share_of_chunk_links": top_percent},
+        "edges_stated_in_one_sentence": {"share": 0.35},
+        "distinct_relations": 100,
+        "nodes_in_two_or_more_documents": {"share": 0.1},
+        "edges_per_node": 1.2,
+        "nodes_with_no_edge": {"share": 0.2},
+        "nodes_label_in_own_chunks": {"share": 0.86},
     }
+    return base | extra
 
 
-def test_the_registered_gate_needs_all_three_structural_conditions_and_a_small_enough_retrieval_drop():
-    base = metrics_of(0.35, 100, 0.10)
-    ok = registered_gate(base, metrics_of(0.60, 40, 0.15), {"mean_difference": 0.0})
-    assert ok["structural_no_regression"]["passed"] and ok["no_large_retrieval_drop"]["passed"]
-    for worse in (metrics_of(0.30, 40, 0.15), metrics_of(0.60, 120, 0.15), metrics_of(0.60, 40, 0.05)):
-        assert not registered_gate(base, worse, {"mean_difference": 0.0})["structural_no_regression"]["passed"]
-    edge = registered_gate(base, metrics_of(0.6, 40, 0.15), {"mean_difference": -MAX_NDCG_DROP})
-    assert edge["no_large_retrieval_drop"]["passed"]  # exactly at the threshold is allowed
-    below = registered_gate(base, metrics_of(0.6, 40, 0.15), {"mean_difference": -MAX_NDCG_DROP - 0.01})
-    assert not below["no_large_retrieval_drop"]["passed"]
-    assert registered_gate(base, metrics_of(0.6, 40, 0.15), {"mean_difference": None})["no_large_retrieval_drop"][
-        "passed"
+def gate(variant: dict, hybrid: float | None = 0.0, graph: float | None = 0.0, **kw) -> dict:
+    options = {"descriptive_only": False, "graph_arm_valid": True} | kw
+    return registered_gate(
+        metrics_of(0.90, 0.20, 0.30), variant, {"mean_difference": hybrid}, {"mean_difference": graph}, **options
+    )
+
+
+def test_the_registered_gate_needs_all_three_structural_conditions():
+    ok = gate(metrics_of(0.80, 0.20, 0.30))  # exactly 0.8 of the baseline's coverage, no more concentrated
+    assert ok["structural_no_regression"]["passed"] and ok["ready_for_azim_to_decide"]
+    for worse in (metrics_of(0.71, 0.20, 0.30), metrics_of(0.90, 0.21, 0.30), metrics_of(0.90, 0.20, 0.31)):
+        got = gate(worse)
+        assert not got["structural_no_regression"]["passed"] and not got["ready_for_azim_to_decide"]
+    assert (
+        gate(metrics_of(0.71, 0.20, 0.30))["structural_no_regression"]["concept_coverage_at_least_0_8_of_baseline"]
+        is False
+    )
+
+
+def test_the_measures_a_sentence_checking_builder_passes_by_construction_are_reported_but_cannot_pass_or_fail_the_gate():
+    easy = metrics_of(0.90, 0.20, 0.30, edges_stated_in_one_sentence={"share": 1.0}, distinct_relations=14)
+    hard = metrics_of(0.90, 0.20, 0.30, edges_stated_in_one_sentence={"share": 0.0}, distinct_relations=5000)
+    assert gate(easy)["structural_no_regression"]["passed"] and gate(hard)["structural_no_regression"]["passed"]
+    reported = gate(easy)["reported_not_gating"]
+    assert reported["edges_stated_in_one_sentence"]["variant"] == {"share": 1.0} and "distinct_relations" in reported
+
+
+def test_the_retrieval_clause_reads_both_arms_is_not_evaluable_when_descriptive_and_never_passes_on_nothing():
+    good = metrics_of(0.9, 0.2, 0.3)
+    assert (
+        gate(good, hybrid=-MAX_NDCG_DROP, graph=0.1)["no_large_retrieval_drop"]["status"] == "passed"
+    )  # at the threshold
+    below = gate(good, hybrid=0.0, graph=-MAX_NDCG_DROP - 0.01)  # the graph arm alone fell too far
+    assert below["no_large_retrieval_drop"]["status"] == "failed" and not below["ready_for_azim_to_decide"]
+    assert (
+        gate(good, hybrid=-0.5, graph=-0.5, descriptive_only=True)["no_large_retrieval_drop"]["status"]
+        == "not_evaluable"
+    )
+    assert gate(good, hybrid=-0.5, descriptive_only=True)[
+        "ready_for_azim_to_decide"
+    ]  # the decision does not rest on it
+    assert (
+        gate(good, hybrid=None, graph=None)["no_large_retrieval_drop"]["status"] == "passed"
+    )  # no pairs, nothing worse
+    assert not gate(good, graph_arm_valid=False)["ready_for_azim_to_decide"]  # an invalid graph arm is never ready
+
+
+def cell(ranking: int, hit: float | None = 0.5, entities: int = 1) -> dict:
+    resolution = None if hit is None else {"hit_rate": hit, "exact_hit_rate": hit, "entities": [object()] * entities}
+    return {"invalid": False, "ranking_length": ranking, "resolution": resolution}
+
+
+def test_the_resolution_report_counts_questions_with_an_empty_graph_ranking_and_the_hit_rate():
+    rows = [
+        {"variant": {"graph": cell(10, 1.0)}},
+        {"variant": {"graph": cell(0, 0.0, 0)}},
+        {"variant": {"graph": cell(0, None)}},
     ]
+    report = graph_variant.resolution_report(rows, "variant")
+    assert report["questions"] == 3 and report["graph_ranking_empty"] == 2
+    assert report["mean_hit_rate"] == 0.5 and report["fraction_with_any_entity"] == 0.3333
+
+
+def test_a_graph_arm_is_invalid_when_it_returns_nothing_for_more_than_half_of_the_answerable_questions():
+    assert graph_variant.graph_arm_is_valid({"questions": 4, "graph_ranking_empty": 2})  # exactly half is allowed
+    assert not graph_variant.graph_arm_is_valid({"questions": 4, "graph_ranking_empty": 3})
+    assert graph_variant.graph_arm_is_valid({"questions": 0, "graph_ranking_empty": 0})  # nothing to judge
+
+
+def test_compare_refuses_a_control_that_differs_between_the_directories(two_papers, monkeypatch, capsys):
+    argv, tmp, data = two_papers
+    build_variant(tmp, data)
+    base = argv()
+    args = [
+        "compare",
+        "--baseline",
+        str(tmp / "slice"),
+        "--variant",
+        str(tmp / "variant"),
+        "--questions-file",
+        base[base.index("--questions-file") + 1],
+        "--gold-dir",
+        base[base.index("--gold-dir") + 1],
+        "--out",
+        str(tmp / "cmp"),
+        "--allow-dirty",
+    ]
+    original = graph_variant.run_arm
+    flat_calls = {"n": 0}
+
+    async def tampered(arm, question, retrievers, *rest):
+        entry = await original(arm, question, retrievers, *rest)
+        if arm == "flat":
+            flat_calls["n"] += 1
+            if flat_calls["n"] % 2 == 0:  # the second flat call of a question is the variant's
+                entry["chunk_ids"] = ["tampered", *entry["chunk_ids"]]
+        return entry
+
+    monkeypatch.setattr(graph_variant, "run_arm", tampered)
+    assert main(args) == 2 and "flat control" in capsys.readouterr().err
+    assert not list((tmp / "cmp").glob("*.json")) if (tmp / "cmp").exists() else True  # nothing was written
+
+
+def test_the_choose_rule_picks_papers_by_newly_answerable_questions_per_chunk_within_the_budget(two_papers):
+    argv, _, data = two_papers
+    base = argv()
+    out = graph_variant.choose_papers(
+        data, Path(base[base.index("--questions-file") + 1]), Path(base[base.index("--gold-dir") + 1])
+    )
+    assert out["papers"] == [FIRST] and out["answerable_questions"] == ["q-1"]  # only the first paper holds gold
+    assert out["questions_never_answerable_in_this_budget"] == ["q-2", "q-3"]
+    tiny = graph_variant.choose_papers(
+        data, Path(base[base.index("--questions-file") + 1]), Path(base[base.index("--gold-dir") + 1]), budget=1
+    )
+    assert tiny["papers"] == [] and tiny["chunks"] == 0  # nothing fits a one-chunk budget
+
+
+def test_the_audit_sample_is_seeded_blind_and_keeps_the_key_apart(two_papers):
+    _, tmp, data = two_papers
+    build_variant(tmp, data)
+    items, key = graph_variant.audit_sample(tmp / "slice", tmp / "variant", 3, 7)
+    again, key_again = graph_variant.audit_sample(tmp / "slice", tmp / "variant", 3, 7)
+    assert items == again and key == key_again  # the same seed gives the same sample
+    assert all(
+        "graph" not in item and item["relation_supported"] is None for item in items
+    )  # the reader cannot see which
+    assert set(key.values()) == {"baseline", "variant"} and len(key) == len(items) <= 6
+    assert "relation supported" in graph_variant.audit_markdown(items)
+    other, _ = graph_variant.audit_sample(tmp / "slice", tmp / "variant", 3, 8)
+    assert [i["concept_a"] for i in other] != [i["concept_a"] for i in items] or len(items) < 3
 
 
 def test_the_protocol_is_in_the_module_text_so_it_travels_with_every_result():
     doc = graph_variant.__doc__ or ""
     for phrase in ("PROTOCOL", "Registered", "-0.05", "DESCRIPTIVE", "Spend", "never touched"):
         assert phrase in doc or phrase.lower() in doc.lower()
+
+
+def test_the_ceiling_is_enforced_on_every_call_not_only_at_the_start_of_a_document(two_papers, monkeypatch):
+    """With the start-of-document projection out of the way, a ceiling below one call's worst case still stops the build
+    before the first request is sent: the document is discarded, the record says why, nothing is compared."""
+    monkeypatch.setattr(graph_variant, "EXPECTED_PER_CHUNK_USD", 0.0)
+    _, tmp, data = two_papers
+    slice_stores(data, tmp / "slice", [FIRST])
+    info = asyncio.run(rebuild_graph(tmp / "slice", tmp / "tight", "atomic", 0.01, allow_paid=False))
+    assert info["complete"] is False
+    report = json.loads((tmp / "tight" / "ingestion_report.json").read_text(encoding="utf-8"))
+    assert report[0]["status"] == "not_built_ceiling" and report[0].get("nodes") is None
+    from api.stores.local.networkx_graph import NetworkXGraphStore
+
+    assert NetworkXGraphStore(tmp / "tight" / "graph.json").nodes() == []  # the half-built document left nothing behind
+
+
+def test_the_guard_refuses_a_call_that_could_pass_the_ceiling_and_counts_calls_in_flight():
+    from types import SimpleNamespace
+
+    from api.llm.types import LLMRequest
+
+    class Inner:
+        def __init__(self):
+            self._ledger = SimpleNamespace(month_total=lambda: 0.0)
+            self.calls = 0
+
+        def remaining_usd(self):
+            return None
+
+        async def complete(self, request, budget=None):
+            self.calls += 1
+            return "ok"
+
+    request = LLMRequest(prompt="p", system="s", purpose="extract", tier="light", max_tokens=1000)
+    inner = Inner()
+    guard = graph_variant.CeilingGuard(inner, 0.0, 0.0061)  # type: ignore[arg-type]  # one call is $0.0050 at 1,000 output tokens, plus the input
+    assert asyncio.run(guard.complete(request)) == "ok" and inner.calls == 1  # alone it fits
+    tight = graph_variant.CeilingGuard(inner, 0.0, 0.004)  # type: ignore[arg-type]
+    with pytest.raises(graph_variant.CeilingReached):
+        asyncio.run(tight.complete(request))
+    assert inner.calls == 1  # refused before sending
+
+
+def test_compare_refuses_a_variant_with_no_complete_rebuild_record(two_papers, capsys):
+    argv, tmp, data = two_papers
+    build_variant(tmp, data)
+    record = tmp / "variant" / "variant.json"
+    info = json.loads(record.read_text(encoding="utf-8"))
+    info["complete"] = False
+    record.write_text(json.dumps(info), encoding="utf-8")
+    base = argv()
+    args = [
+        "compare",
+        "--baseline",
+        str(tmp / "slice"),
+        "--variant",
+        str(tmp / "variant"),
+        "--questions-file",
+        base[base.index("--questions-file") + 1],
+        "--gold-dir",
+        base[base.index("--gold-dir") + 1],
+        "--out",
+        str(tmp / "cmp"),
+        "--allow-dirty",
+    ]
+    assert main(args) == 2 and "complete rebuild record" in capsys.readouterr().err
+    record.unlink()
+    assert main(args) == 2

@@ -10,6 +10,7 @@ import pytest
 
 from api.core.errors import IngestFailed
 from api.fakes import fake_llm_responder
+from api.genui.evidence import label_in_quote
 from api.ingestion import atomic
 from api.ingestion.atomic import (
     ATOMIC_SYSTEM,
@@ -17,11 +18,10 @@ from api.ingestion.atomic import (
     RELATIONS,
     BuildReport,
     build_atomic_result,
-    canonicalise,
-    defined_aliases,
+    defined_pairs,
     estimate_atomic_cost_usd,
-    finalise,
-    initials,
+    one_sentence,
+    with_aliases,
 )
 from api.ingestion.extract import ExtractionResult, estimate_extraction_cost_usd
 from api.ingestion.pipeline import ingest_pdf
@@ -185,70 +185,87 @@ def test_the_limits_on_a_reply_are_enforced():
     assert len(build_atomic_result(reply(concepts=many, relations=[]), chunk).nodes) == atomic.MAX_CONCEPTS
 
 
-# ── deterministic merging ─────────────────────────────────────────────────────
+# ── abbreviations the text defines, and one-sentence notes ─────────────────────
+
+DEFINING = "We study Large Language Models (LLMs) and Retrieval-Augmented Generation (RAG) in this paper."
 
 
-def test_defined_abbreviations_are_found_only_when_the_phrase_spells_them():
-    found = defined_aliases(
-        "We study Large Language Models (LLMs) and Retrieval-Augmented Generation (RAG). The results (ROC) vary."
-    )
-    assert found["llms"] == found["llm"] == "Large Language Models"
-    assert found["rag"] == "Retrieval-Augmented Generation"
-    assert "roc" not in found  # "the results" does not spell ROC
-    assert defined_aliases("Nothing is defined here.") == {} and initials("Retrieval-Augmented Generation") == "RAG"
-
-
-def node(label: str, node_id: str | None = None) -> Node:
-    return Node(
-        node_id or atomic.concept_id(label),
-        label,
-        "concept",
-        ("d1",),
-        ("d1_c_1",),
-        "concept",
-        f"{label} is described here.",
-    )
-
-
-def test_an_abbreviation_defined_in_the_text_is_folded_into_its_phrase_and_the_merge_is_recorded():
-    result = ExtractionResult(
-        [node("LLMs"), node("Large Language Models")],
-        [Edge("llm", "large_language_model", "uses", "d1_c_1", "d1"), Edge("llm", "other", "uses", "d1_c_1", "d1")],
-    )
-    merged, merges = canonicalise(result, {"llms": "Large Language Models"}, {})
-    assert [n.id for n in merged.nodes] == ["large_language_model"] and merged.nodes[0].label == "Large Language Models"
-    assert [(m.from_label, m.to_id, m.reason) for m in merges] == [("LLMs", "large_language_model", "defined_in_text")]
-    # the first edge became a self-loop and is dropped and counted; the other still points at the remapped node
-    assert [(e.src, e.dst) for e in merged.edges] == [("large_language_model", "other")]
-    assert merged.drops == {"relation_self_loop_after_merge": 1}
-
-
-def test_an_abbreviation_that_is_the_initials_of_exactly_one_known_concept_joins_it_and_an_ambiguous_one_does_not():
-    known = {"retrieval_augmented_generation": "Retrieval-Augmented Generation", "knowledge_graph": "Knowledge Graph"}
-    merged, merges = canonicalise(ExtractionResult([node("RAG")], []), {}, known)
-    assert [n.id for n in merged.nodes] == ["retrieval_augmented_generation"]
-    assert [(m.to_id, m.reason) for m in merges] == [("retrieval_augmented_generation", "initials_of_known")]
-    ambiguous = {
-        "random_access_graph": "Random Access Graph",
-        "retrieval_augmented_generation": "Retrieval Augmented Generation",
-    }
-    left, none = canonicalise(ExtractionResult([node("RAG")], []), {}, ambiguous)
-    assert [n.id for n in left.nodes] == ["rag"] and none == [] and left.drops == {"merge_ambiguous": 1}
-    # a one-word known concept is never a target, and a lower-case word is never read as an abbreviation
-    assert canonicalise(ExtractionResult([node("RAG")], []), {}, {"rag_x": "Rag"})[1] == []
-    assert canonicalise(ExtractionResult([node("rag tag")], []), {}, known)[1] == []
-
-
-def test_merging_is_deterministic_and_finalise_uses_the_documents_own_definitions():
-    chunks = [
-        Chunk("c1", "d1", 0, 1, "We use Large Language Models (LLMs) here."),
-        Chunk("c2", "d1", 1, 1, "LLMs are used."),
+def test_defined_abbreviations_are_found_with_their_defining_sentence_only_when_the_phrase_spells_them():
+    found = defined_pairs(DEFINING + " The results (ROC) vary.")
+    assert [(a, p) for a, p, _ in found] == [
+        ("LLMs", "Large Language Models"),
+        ("RAG", "Retrieval-Augmented Generation"),
     ]
-    results = [ExtractionResult([node("Large Language Models")], []), ExtractionResult([node("LLMs")], []), None]
-    out_a, merges_a = finalise(results, chunks, {})
-    out_b, merges_b = finalise(results, chunks, {})
-    assert out_a == out_b and merges_a == merges_b
-    assert out_a[2] is None and [n.id for n in out_a[1].nodes] == ["large_language_model"]  # type: ignore[union-attr]
+    assert all(sentence == DEFINING for _, _, sentence in found)
+    assert defined_pairs("Nothing is defined here.") == []
+    assert defined_pairs("the results (ROC) vary") == []  # "the results" does not spell ROC
+
+
+def chunk_of(text: str) -> Chunk:
+    return Chunk("d1_c_9", "d1", 9, 1, text)
+
+
+def test_a_defined_abbreviation_stays_a_node_of_its_own_and_is_linked_to_its_long_form_by_the_defining_sentence():
+    result = with_aliases(ExtractionResult([], []), chunk_of(DEFINING))
+    ids = {n.id for n in result.nodes}
+    assert {"llm", "large_language_model", "rag", "retrieval_augmented_generation"} <= ids  # the abbreviation is kept
+    links = {(e.src, e.dst, e.relation) for e in result.edges}
+    assert ("llm", "large_language_model", "alias_of") in links and (
+        "rag",
+        "retrieval_augmented_generation",
+        "alias_of",
+    ) in links
+    labels = {n.id: n.label for n in result.nodes}
+    assert all(
+        e.evidence == DEFINING
+        and label_in_quote(e.evidence, labels[e.src])
+        and label_in_quote(e.evidence, labels[e.dst])
+        for e in result.edges
+    )
+    assert all(n.note == DEFINING for n in result.nodes) and result.drops == {"alias_links_added": 2}
+
+
+def test_alias_links_do_not_depend_on_other_chunks_or_the_order_of_documents_and_never_duplicate():
+    once = with_aliases(ExtractionResult([], []), chunk_of(DEFINING))
+    again = with_aliases(once, chunk_of(DEFINING))
+    assert {(e.src, e.dst) for e in again.edges} == {(e.src, e.dst) for e in once.edges} and len(again.edges) == len(
+        once.edges
+    )
+    assert with_aliases(ExtractionResult([], []), chunk_of(DEFINING)) == once  # a pure function of the chunk
+
+
+def test_a_note_or_evidence_that_spans_two_sentences_is_cut_to_the_one_that_holds_its_labels_or_dropped():
+    assert one_sentence("BM25 scores terms.", ["BM25"]) == "BM25 scores terms."
+    assert one_sentence("It was proposed in 2020. BM25 scores exact terms.", ["BM25"]) == "BM25 scores exact terms."
+    assert one_sentence("BM25 is sparse. Dense Retrieval is dense.", ["BM25", "Dense Retrieval"]) is None
+    text = "It was proposed in 2020. BM25 scores exact terms with an inverted index."
+    chunk = Chunk("c", "d", 0, 1, text)
+    concept = [{"label": "BM25", "kind": "method", "note": text}]
+    (node,) = build_atomic_result(reply(concepts=concept, relations=[]), chunk).nodes
+    assert node.note == "BM25 scores exact terms with an inverted index."  # one sentence, still verbatim
+    two = "BM25 is sparse and exact. Dense Retrieval is dense and soft."
+    relation = {"src": "BM25", "dst": "Dense Retrieval", "type": "contrasts_with", "evidence": two}
+    both = [
+        {"label": "BM25", "kind": "method", "note": "BM25 is sparse and exact."},
+        {"label": "Dense Retrieval", "kind": "method", "note": "Dense Retrieval is dense and soft."},
+    ]
+    result = build_atomic_result(reply(concepts=both, relations=[relation]), Chunk("c", "d", 0, 1, two))
+    assert result.edges == [] and result.drops == {"relation_evidence_not_one_sentence": 1}
+
+
+def test_a_label_shorter_than_the_minimum_is_dropped():
+    chunk = Chunk("c", "d", 0, 1, "The constant k is chosen by the user of the method.")
+    concept = [{"label": "k", "kind": "concept", "note": "The constant k is chosen by the user of the method."}]
+    assert build_atomic_result(reply(concepts=concept, relations=[]), chunk).drops == {"concept_label_too_short": 1}
+
+
+def test_a_build_report_lists_the_builder_prompt_version_and_drops():
+    from collections import Counter
+
+    report = BuildReport(drops=Counter({"concept_no_note": 2}))
+    out = report.as_dict()
+    assert out["builder"] == "atomic" and out["prompt_version"] == atomic.PROMPT_VERSION == "g1-2"
+    assert out["drops"] == {"concept_no_note": 2} and "merges" not in out
 
 
 def test_a_plural_abbreviation_gets_the_abbreviations_id_not_a_split_one():
@@ -263,14 +280,16 @@ def test_a_plural_abbreviation_gets_the_abbreviations_id_not_a_split_one():
     assert atomic.concept_id("...") == "unknown"
 
 
-def test_a_build_report_lists_the_builder_prompt_version_drops_and_merges():
-    from collections import Counter
-
-    report = BuildReport(drops=Counter({"concept_no_note": 2}))
-    report.merges.append(atomic.Merge("LLMs", "large_language_model", "defined_in_text"))
-    out = report.as_dict()
-    assert out["builder"] == "atomic" and out["prompt_version"] == atomic.PROMPT_VERSION
-    assert out["drops"] == {"concept_no_note": 2} and out["merges"][0]["reason"] == "defined_in_text"
+def node(label: str, node_id: str | None = None) -> Node:
+    return Node(
+        node_id or atomic.concept_id(label),
+        label,
+        "concept",
+        ("d1",),
+        ("d1_c_1",),
+        "concept",
+        f"{label} is described here.",
+    )
 
 
 # ── the store ─────────────────────────────────────────────────────────────────
@@ -360,5 +379,5 @@ async def test_the_default_builder_is_the_free_form_one_and_reports_nothing_new(
 def test_the_prompt_is_frozen_text_with_a_version(tmp_path):
     """The prompt may only change with the version: the protocol (G1.3) pins both."""
     digest = hashlib.sha256(ATOMIC_SYSTEM.encode()).hexdigest()
-    assert atomic.PROMPT_VERSION == "g1-1" and len(digest) == 64
+    assert atomic.PROMPT_VERSION == "g1-2" and len(digest) == 64
     assert json.dumps(sorted(KINDS)) and atomic.ATOMIC_MARKER in ATOMIC_SYSTEM

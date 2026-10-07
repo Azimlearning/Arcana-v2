@@ -155,7 +155,30 @@ def measure(
     word_count = lambda label: len(label.split())  # noqa: E731
     node_total = len(node_list)
 
+    # Coverage, concentration and the label check: defined the same for any graph, and not satisfied by construction
+    # by a builder that checks sentences (G1.4).
+    in_scope = [c for c in chunk_texts if doc_ids is None or c.split("_c_", 1)[0] in doc_ids]
+    with_node = {c for n in node_list for c in n.chunk_ids}
+    with_edge = {e.chunk_id for e in edge_list}
+    chunk_total = len(in_scope)
+    total_degree = sum(degree.values())
+    top10 = sum(d for _, d in degree.most_common(10))
+    links = sorted((len(n.chunk_ids) for n in node_list), reverse=True)
+    top_percent = links[: max(1, -(-node_total // 100))] if node_total else []
+    own_chunks = sum(1 for n in node_list if any(label_in_quote(chunk_texts.get(c, ""), n.label) for c in n.chunk_ids))
+
     return {
+        "chunk_coverage": {
+            "chunks": chunk_total,
+            "with_a_concept": share(len(with_node & set(in_scope)), chunk_total),
+            "with_a_relation": share(len(with_edge & set(in_scope)), chunk_total),
+        },
+        "edges_per_node": round(total / node_total, 4) if node_total else None,
+        "hub_concentration": {
+            "top10_degree_share": share(top10, total_degree),
+            "top_1_percent_share_of_chunk_links": share(sum(top_percent), sum(links)),
+        },
+        "nodes_label_in_own_chunks": {"count": own_chunks, "share": share(own_chunks, node_total)},
         "documents": None if doc_ids is None else sorted(doc_ids),
         "nodes": node_total,
         "edges": total,
@@ -193,7 +216,10 @@ def measure(
 
 
 PROTOCOL = (
-    "Structure only, no model call. Definitions: an edge is 'stated in the chunk' when its source chunk's text contains "
+    "Structure only, no model call. Coverage is the share of the chunks in scope that any node (or any edge) names; hub "
+    "concentration is the share of all edge ends owned by the ten largest nodes, and the share of all node-to-chunk links "
+    "owned by the largest one percent of nodes; the label check asks whether a node's label occurs as a whole word in "
+    "one of its own chunks. Definitions: an edge is 'stated in the chunk' when its source chunk's text contains "
     "both endpoint labels as whole words; 'stated in one sentence' when one sentence of that chunk contains both; a "
     "'generic relation' is one of a fixed list of co-occurrence words; a 'co-mention' is a generic relation or an edge "
     "no single sentence of its chunk states; 'drawable' is stated in one sentence of at least the minimum quote length "
