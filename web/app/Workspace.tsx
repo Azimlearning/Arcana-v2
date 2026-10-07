@@ -14,6 +14,7 @@ import { LayoutSwitch } from "@/components/shell/LayoutSwitch";
 import { SaveView, type SaveOutcome } from "@/components/shell/SaveView";
 import { SavedViews, refusalWords } from "@/components/shell/SavedViews";
 import { Shell } from "@/components/shell/Shell";
+import { Studio } from "@/components/shell/Studio";
 import { TracePanel } from "@/components/TracePanel";
 import { deletePattern, fetchWorkspace, listPatterns, reverifyPattern, savePattern, uploadPdf } from "@/lib/api";
 import { flattenPlaced, placeBlocksByRegion } from "@/lib/layout";
@@ -183,6 +184,26 @@ export function Workspace() {
     </div>
   );
 
+  // The studio shelf: the generators (inert until the Studio agent, P5), the saved views, and any block the layout places
+  // there. A layout with no shelf region (a version 1 layout, or one from an older server) would leave these nowhere to
+  // go, so they are shown after the graph area instead and the saved views stay reachable.
+  const shelf = (
+    <div className="space-y-4 p-1">
+      <Studio />
+      <SavedViews
+        patterns={patterns}
+        busy={turn === "streaming"}
+        message={savedMessage}
+        staleId={staleId}
+        onApply={(id) => void showView(id)}
+        onDelete={(id) => void removeView(id)}
+        onReverify={(id) => void checkAgain(id)}
+      />
+      {byRegion.studio.shelf.map(withSave)}
+    </div>
+  );
+  const studioHasShelf = layout.panels.some((p) => p.id === "studio" && p.regions.some((r) => r.id === "shelf"));
+
   const panels: Record<PanelId, Partial<Record<RegionId, React.ReactNode>>> = {
     sources: {
       main: (
@@ -280,9 +301,10 @@ export function Workspace() {
           ) : (
             byRegion.studio.main.map(withSave)
           )}
+          {!studioHasShelf && shelf}
         </div>
       ),
-      shelf: <div className="space-y-4 p-1">{byRegion.studio.shelf.map(withSave)}</div>,
+      shelf: studioHasShelf ? shelf : undefined,
     },
   };
 
@@ -292,22 +314,11 @@ export function Workspace() {
       header={
         <>
           <span className="text-lg font-semibold text-stone-900">Arcana</span>
-          <div className="flex items-start gap-3">
-            <LayoutSwitch
-              choice={layoutChoice}
-              adaptiveAvailable={layouts.adaptive !== null}
-              onChoose={(choice) => useWorkspace.getState().chooseLayout(choice)}
-            />
-            <SavedViews
-              patterns={patterns}
-              busy={turn === "streaming"}
-              message={savedMessage}
-              staleId={staleId}
-              onApply={(id) => void showView(id)}
-              onDelete={(id) => void removeView(id)}
-              onReverify={(id) => void checkAgain(id)}
-            />
-          </div>
+          <LayoutSwitch
+            choice={layoutChoice}
+            adaptiveAvailable={layouts.adaptive !== null}
+            onChoose={(choice) => useWorkspace.getState().chooseLayout(choice)}
+          />
         </>
       }
       panels={panels}

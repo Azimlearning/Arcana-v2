@@ -28,6 +28,13 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-07: P2b task F4 (the Studio area and the shelf)
+- **Changed:** `web/components/shell/Studio.tsx` (new, inert generator list), `SavedViews.tsx` (an always-visible shelf section with state words and use counts, no longer a header dropdown), `SaveView.tsx` (wording), `web/app/Workspace.tsx` (shelf content; the header keeps only the layout switch; a fallback when a layout has no shelf region), tests (`Studio.test.tsx`, `SavedViews.test.tsx`, `Workspace.test.tsx`), the execution doc (F4 Reality).
+- **Decided:** Generators are drawn as inert list items, not disabled buttons, so nothing in them can be focused or activated before they exist. A layout with no shelf region shows the shelf content after the graph area.
+- **Deviations:** none from the plan.
+- **Verified:** `pnpm -r typecheck`, `pnpm -r lint`, `pnpm -r test` (222 passed), `pnpm --filter web build` (exit 0). Not yet seen in a browser.
+- **Known issues / next steps:** F5 (a real browser run to tune the sizes and check the `flex-grow` transition and the 1440 px crowding, the reviews, and the wrap-up docs).
+
 ### 2026-10-07: P2b task F3 (the shell draws regions)
 - **Changed:** `web/components/shell/Panel.tsx` (regions, direction, landmarks, animation), `Shell.tsx`, `web/lib/layout.ts` (`placeBlocksByRegion`, `flattenPlaced`, `REGION_ORDER`), `web/app/Workspace.tsx` (chat main and secondary, studio main and shelf), tests (`Shell.test.tsx`, `layout.test.ts`, `Workspace.test.tsx`), the execution doc (F3 Reality).
 - **Decided:** Region landmarks only when a panel is split; a region the layout lists with no content is drawn empty (its size is the layout's to give).

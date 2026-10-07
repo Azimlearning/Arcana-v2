@@ -419,9 +419,45 @@ describe("Workspace", () => {
     expect(chatCalls).toEqual([]); // but no question was sent
   });
 
+  describe("the Studio shelf", () => {
+    it("keeps the generators and the saved views in the studio's shelf, and none of it in the header", async () => {
+      routes["/workspace"] = () => jsonResponse(workspace());
+      routes["/patterns"] = () => jsonResponse({ patterns: [savedPattern()] });
+      render(<Workspace />);
+      const shelf = await screen.findByRole("region", { name: "Outputs" });
+      expect(within(shelf).getByRole("list", { name: "Saved views" })).toBeInTheDocument();
+      const studio = document.querySelector('[data-panel="studio"]') as HTMLElement;
+      expect(studio).toContainElement(shelf);
+      expect(within(studio).getByText("Slides")).toBeInTheDocument();
+      expect(within(screen.getByRole("banner")).queryByText(/Saved views/)).not.toBeInTheDocument();
+    });
+
+    it("shows the graph area above the shelf in the prebuilt layout, saying where graphs appear in Basic", async () => {
+      routes["/workspace"] = () => jsonResponse(workspace());
+      render(<Workspace />);
+      const main = await screen.findByText(/In Basic, graphs and connections appear below the answer/);
+      const regions = Array.from(document.querySelectorAll('[data-panel="studio"] [data-region]'));
+      expect(regions.map((r) => r.getAttribute("data-region"))).toEqual(["main", "shelf"]);
+      expect(regions[0]).toContainElement(main);
+    });
+
+    it("still shows the generators and the saved views when the layout has no shelf region (they follow the graph area)", async () => {
+      routes["/workspace"] = () => jsonResponse(workspace());
+      routes["/patterns"] = () => jsonResponse({ patterns: [savedPattern()] });
+      routes["/chat"] = () => answerWith(layout(places(), { panels: researchPanels(20, 45, 35) })); // one main region per panel
+      render(<Workspace />);
+      ask();
+      await screen.findByText(/Dense retrieval embeds passages/);
+      const studio = document.querySelector('[data-panel="studio"]') as HTMLElement;
+      expect(studio.querySelector('[data-region="shelf"]')).toBeNull();
+      expect(await within(studio).findByRole("list", { name: "Saved views" })).toBeInTheDocument();
+      expect(within(studio).getByText("Quiz")).toBeInTheDocument();
+    });
+  });
+
   describe("saved views", () => {
     const openList = async () => {
-      fireEvent.click(await screen.findByText(/Saved views \(/));
+      await screen.findByRole("list", { name: "Saved views" }); // the shelf shows them without opening anything
     };
 
     /** The apply stream the server sends for a saved graph: one block (an apply id) and its layout. */
@@ -538,7 +574,7 @@ describe("Workspace", () => {
       fireEvent.click(await within(studio).findByRole("button", { name: "Save this view" }));
       fireEvent.change(within(studio).getByLabelText("Name"), { target: { value: "My graph" } });
       fireEvent.click(within(studio).getByRole("button", { name: "Save" }));
-      expect(await within(studio).findByText(/Saved\. You will find it under Saved views/)).toBeInTheDocument();
+      expect(await within(studio).findByText(/Saved\. You will find it on the Studio shelf/)).toBeInTheDocument();
       expect(body).toEqual({ turnId: "turn-1", templateId: "GraphView", name: "My graph" });
     });
 

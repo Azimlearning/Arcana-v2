@@ -1,11 +1,12 @@
 "use client";
 
-// The user's saved views (D-31): the views they kept from earlier answers, listed beside the Basic and Adaptive switch as
+// The user's saved views (D-31), kept on the Studio's outputs shelf (D-32): the views they kept from earlier answers, as
 // their own prebuilt versions. Choosing one shows it again without asking the question again (no model is called); a view
-// that can no longer be shown says why in plain words and shows nothing; any can be deleted. The list holds names and
-// kinds only: a saved view carries no evidence, it is re-checked against your documents each time it is shown.
+// that can no longer be shown says why in plain words and shows nothing; any can be deleted. Each says in words where it is
+// in its life (saved, or checked again) and how often it was shown. The list holds names and kinds only: a saved view
+// carries no evidence, it is re-checked against your documents each time it is shown.
 
-import type { ErrorEnvelope, PatternRefusalReason, SavedPattern } from "@arcana/schema";
+import type { ErrorEnvelope, PatternRefusalReason, PatternState, SavedPattern } from "@arcana/schema";
 
 /** What each kind of view is called to a reader. A template not listed is shown under its own name. */
 const KIND_WORDS: Record<string, string> = {
@@ -14,6 +15,15 @@ const KIND_WORDS: Record<string, string> = {
   ConceptMap: "Connection path",
   SourceList: "Source list",
 };
+
+/** Where a saved view is in its life, in words (typed over the schema's states, so a new state fails typecheck here). */
+const STATE_WORDS: Record<PatternState, string> = {
+  generated: "Made, not yet checked",
+  verified: "Checked again",
+  saved: "Saved",
+};
+
+const shown = (count: number) => (count === 1 ? "shown once" : count === 0 ? "not shown yet" : `shown ${count} times`);
 
 /** Why a saved view could not be shown. Typed over the reasons the server names; anything else gets a generic sentence. */
 const REFUSAL_WORDS: Record<PatternRefusalReason, string> = {
@@ -50,49 +60,46 @@ export function SavedViews({
   onReverify?: (id: string) => void;
 }) {
   return (
-    <div className="relative">
-      <details className="text-sm">
-        <summary className="cursor-pointer select-none rounded-md border border-stone-300 bg-white px-3 py-1 text-stone-700 hover:bg-stone-100">
-          Saved views ({patterns.length})
-        </summary>
-        <div className="absolute right-0 z-10 mt-1 w-80 rounded-lg border border-stone-200 bg-white p-3 shadow-lg">
-          {patterns.length === 0 ? (
-            <p className="text-stone-500">No saved views yet. Save one from the dashboard after an answer.</p>
-          ) : (
-            <ul aria-label="Saved views" className="space-y-2">
-              {patterns.map((pattern) => (
-                <li key={pattern.id} className="flex items-center justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="truncate font-medium text-stone-800">{pattern.name}</div>
-                    <div className="text-xs text-stone-500">{KIND_WORDS[pattern.templateId] ?? pattern.templateId}</div>
-                  </div>
-                  <div className="flex shrink-0 gap-1">
-                    <button
-                      type="button"
-                      disabled={busy}
-                      aria-label={`Show ${pattern.name}`}
-                      onClick={() => onApply(pattern.id)}
-                      className="rounded border border-stone-300 px-2 py-0.5 hover:bg-stone-100 disabled:opacity-40"
-                    >
-                      Show
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={`Delete ${pattern.name}`}
-                      onClick={() => onDelete(pattern.id)}
-                      className="rounded border border-stone-300 px-2 py-0.5 text-red-700 hover:bg-red-50"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </details>
+    <section aria-label="Saved views section" className="space-y-2 text-sm">
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">Saved views ({patterns.length})</h2>
+      {patterns.length === 0 ? (
+        <p className="text-stone-500">Nothing here yet. Save a view from the dashboard after an answer.</p>
+      ) : (
+        <ul aria-label="Saved views" className="space-y-2">
+          {patterns.map((pattern) => (
+            <li key={pattern.id} className="space-y-1 rounded-lg border border-stone-200 bg-white p-2">
+              <div className="min-w-0">
+                <div className="font-medium text-stone-800">{pattern.name}</div>
+                <div className="text-xs text-stone-500">
+                  {KIND_WORDS[pattern.templateId] ?? pattern.templateId} · {pattern.id === staleId ? "Needs checking" : STATE_WORDS[pattern.state]} ·{" "}
+                  {shown(pattern.useCount)}
+                </div>
+              </div>
+              <div className="flex gap-1">
+                <button
+                  type="button"
+                  disabled={busy}
+                  aria-label={`Show ${pattern.name}`}
+                  onClick={() => onApply(pattern.id)}
+                  className="rounded border border-stone-300 px-2 py-0.5 hover:bg-stone-100 disabled:opacity-40"
+                >
+                  Show
+                </button>
+                <button
+                  type="button"
+                  aria-label={`Delete ${pattern.name}`}
+                  onClick={() => onDelete(pattern.id)}
+                  className="rounded border border-stone-300 px-2 py-0.5 text-red-700 hover:bg-red-50"
+                >
+                  Delete
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
       {message && (
-        <div className="mt-1 max-w-80 text-xs">
+        <div className="text-xs">
           <p role="alert" className="text-red-700">
             {message}
           </p>
@@ -108,6 +115,6 @@ export function SavedViews({
           )}
         </div>
       )}
-    </div>
+    </section>
   );
 }

@@ -22,7 +22,7 @@ export function SaveView({
   if (outcome?.ok) {
     return (
       <p role="status" className="mt-2 text-xs text-emerald-700">
-        Saved. You will find it under Saved views.
+        Saved. You will find it on the Studio shelf, under Saved views.
       </p>
     );
   }

@@ -23,12 +23,9 @@ describe("refusalWords", () => {
 });
 
 describe("SavedViews", () => {
-  const open = () => fireEvent.click(screen.getByText(/Saved views \(/));
-
   it("says there are none yet, with how to save one", () => {
     render(<SavedViews patterns={[]} busy={false} message={null} onApply={vi.fn()} onDelete={vi.fn()} />);
-    open();
-    expect(screen.getByText(/No saved views yet/)).toBeInTheDocument();
+    expect(screen.getByText(/Nothing here yet/)).toBeInTheDocument();
     expect(screen.getByText("Saved views (0)")).toBeInTheDocument();
   });
 
@@ -36,7 +33,6 @@ describe("SavedViews", () => {
     const onApply = vi.fn();
     const onDelete = vi.fn();
     render(<SavedViews patterns={[savedPattern(), savedPattern({ id: "p-2", name: "Other" })]} busy={false} message={null} onApply={onApply} onDelete={onDelete} />);
-    open();
     fireEvent.click(screen.getByRole("button", { name: "Show Other" }));
     fireEvent.click(screen.getByRole("button", { name: "Delete Dense vs BM25" }));
     expect(onApply).toHaveBeenCalledWith("p-2");
@@ -45,7 +41,6 @@ describe("SavedViews", () => {
 
   it("cannot start a second view while one is being shown", () => {
     render(<SavedViews patterns={[savedPattern()]} busy message={null} onApply={vi.fn()} onDelete={vi.fn()} />);
-    open();
     expect(screen.getByRole("button", { name: "Show Dense vs BM25" })).toBeDisabled();
   });
 
@@ -54,10 +49,39 @@ describe("SavedViews", () => {
     const { container } = render(
       <SavedViews patterns={[savedPattern({ name: hostile })]} busy={false} message="Your documents no longer support this view." onApply={vi.fn()} onDelete={vi.fn()} />,
     );
-    open();
     expect(screen.getByRole("alert")).toHaveTextContent("Your documents no longer support this view.");
     expect(container.querySelector("img")).toBeNull();
     expect(within(screen.getByRole("list", { name: "Saved views" })).getByText(hostile)).toBeInTheDocument();
+  });
+});
+
+describe("SavedViews: where each view is in its life", () => {
+  const render1 = (patterns: ReturnType<typeof savedPattern>[], staleId: string | null = null) =>
+    render(<SavedViews patterns={patterns} busy={false} message={null} staleId={staleId} onApply={vi.fn()} onDelete={vi.fn()} />);
+
+  it("says the kind, the state in words and how often it was shown", () => {
+    render1([
+      savedPattern({ id: "a", name: "A", state: "saved", useCount: 0 }),
+      savedPattern({ id: "b", name: "B", state: "verified", useCount: 1 }),
+      savedPattern({ id: "c", name: "C", state: "generated", useCount: 3 }),
+    ]);
+    const items = within(screen.getByRole("list", { name: "Saved views" })).getAllByRole("listitem");
+    expect(items[0]).toHaveTextContent("Connection graph · Saved · not shown yet");
+    expect(items[1]).toHaveTextContent("Connection graph · Checked again · shown once");
+    expect(items[2]).toHaveTextContent("Connection graph · Made, not yet checked · shown 3 times");
+  });
+
+  it("says Needs checking for the view whose layout moved on", () => {
+    render1([savedPattern({ id: "a", name: "A" }), savedPattern({ id: "b", name: "B" })], "b");
+    const items = within(screen.getByRole("list", { name: "Saved views" })).getAllByRole("listitem");
+    expect(items[0]).toHaveTextContent("Saved");
+    expect(items[1]).toHaveTextContent("Needs checking");
+  });
+
+  it("is a labelled section for the outputs shelf, always shown (nothing to open)", () => {
+    render1([]);
+    expect(screen.getByRole("region", { name: "Saved views section" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Saved views (0)" })).toBeInTheDocument();
   });
 });
 
