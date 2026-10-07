@@ -1,0 +1,506 @@
+{
+  "seed": 20261007,
+  "n_per_kind": 50,
+  "key": {
+    "1": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 2
+    },
+    "2": {
+      "kind": "asserted",
+      "relation": "authored_by",
+      "passages": 1
+    },
+    "3": {
+      "kind": "asserted",
+      "relation": "evaluated_on",
+      "passages": 1
+    },
+    "4": {
+      "kind": "asserted",
+      "relation": "compares_with",
+      "passages": 1
+    },
+    "5": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 2
+    },
+    "6": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 1
+    },
+    "7": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 1
+    },
+    "8": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 1
+    },
+    "9": {
+      "kind": "asserted",
+      "relation": "uses",
+      "passages": 1
+    },
+    "10": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 3
+    },
+    "11": {
+      "kind": "asserted",
+      "relation": "uses",
+      "passages": 1
+    },
+    "12": {
+      "kind": "asserted",
+      "relation": "uses",
+      "passages": 1
+    },
+    "13": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 1
+    },
+    "14": {
+      "kind": "asserted",
+      "relation": "evaluates",
+      "passages": 1
+    },
+    "15": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 2
+    },
+    "16": {
+      "kind": "asserted",
+      "relation": "part_of",
+      "passages": 1
+    },
+    "17": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 1
+    },
+    "18": {
+      "kind": "asserted",
+      "relation": "uses",
+      "passages": 1
+    },
+    "19": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 3
+    },
+    "20": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 2
+    },
+    "21": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 2
+    },
+    "22": {
+      "kind": "asserted",
+      "relation": "uses",
+      "passages": 1
+    },
+    "23": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 1
+    },
+    "24": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 3
+    },
+    "25": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 3
+    },
+    "26": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 1
+    },
+    "27": {
+      "kind": "asserted",
+      "relation": "part_of",
+      "passages": 1
+    },
+    "28": {
+      "kind": "asserted",
+      "relation": "improves",
+      "passages": 1
+    },
+    "29": {
+      "kind": "asserted",
+      "relation": "uses",
+      "passages": 1
+    },
+    "30": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 1
+    },
+    "31": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 1
+    },
+    "32": {
+      "kind": "asserted",
+      "relation": "part_of",
+      "passages": 1
+    },
+    "33": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 1
+    },
+    "34": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 1
+    },
+    "35": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 1
+    },
+    "36": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 2
+    },
+    "37": {
+      "kind": "asserted",
+      "relation": "part_of",
+      "passages": 1
+    },
+    "38": {
+      "kind": "asserted",
+      "relation": "other",
+      "passages": 1
+    },
+    "39": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 1
+    },
+    "40": {
+      "kind": "asserted",
+      "relation": "evaluated_on",
+      "passages": 1
+    },
+    "41": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 2
+    },
+    "42": {
+      "kind": "asserted",
+      "relation": "other",
+      "passages": 1
+    },
+    "43": {
+      "kind": "asserted",
+      "relation": "compares_with",
+      "passages": 1
+    },
+    "44": {
+      "kind": "asserted",
+      "relation": "uses",
+      "passages": 1
+    },
+    "45": {
+      "kind": "asserted",
+      "relation": "part_of",
+      "passages": 1
+    },
+    "46": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 2
+    },
+    "47": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 1
+    },
+    "48": {
+      "kind": "asserted",
+      "relation": "defines",
+      "passages": 1
+    },
+    "49": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 1
+    },
+    "50": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 1
+    },
+    "51": {
+      "kind": "asserted",
+      "relation": "authored_by",
+      "passages": 1
+    },
+    "52": {
+      "kind": "asserted",
+      "relation": "compares_with",
+      "passages": 1
+    },
+    "53": {
+      "kind": "asserted",
+      "relation": "uses",
+      "passages": 1
+    },
+    "54": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 2
+    },
+    "55": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 1
+    },
+    "56": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 5
+    },
+    "57": {
+      "kind": "asserted",
+      "relation": "uses",
+      "passages": 1
+    },
+    "58": {
+      "kind": "asserted",
+      "relation": "authored_by",
+      "passages": 1
+    },
+    "59": {
+      "kind": "asserted",
+      "relation": "uses",
+      "passages": 1
+    },
+    "60": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 1
+    },
+    "61": {
+      "kind": "asserted",
+      "relation": "other",
+      "passages": 1
+    },
+    "62": {
+      "kind": "asserted",
+      "relation": "part_of",
+      "passages": 1
+    },
+    "63": {
+      "kind": "asserted",
+      "relation": "uses",
+      "passages": 1
+    },
+    "64": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 1
+    },
+    "65": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 12
+    },
+    "66": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 2
+    },
+    "67": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 1
+    },
+    "68": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 2
+    },
+    "69": {
+      "kind": "asserted",
+      "relation": "part_of",
+      "passages": 1
+    },
+    "70": {
+      "kind": "asserted",
+      "relation": "uses",
+      "passages": 1
+    },
+    "71": {
+      "kind": "asserted",
+      "relation": "improves",
+      "passages": 1
+    },
+    "72": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 2
+    },
+    "73": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 1
+    },
+    "74": {
+      "kind": "asserted",
+      "relation": "uses",
+      "passages": 1
+    },
+    "75": {
+      "kind": "asserted",
+      "relation": "compares_with",
+      "passages": 1
+    },
+    "76": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 1
+    },
+    "77": {
+      "kind": "asserted",
+      "relation": "evaluates",
+      "passages": 1
+    },
+    "78": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 1
+    },
+    "79": {
+      "kind": "asserted",
+      "relation": "causes",
+      "passages": 1
+    },
+    "80": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 2
+    },
+    "81": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 1
+    },
+    "82": {
+      "kind": "asserted",
+      "relation": "authored_by",
+      "passages": 1
+    },
+    "83": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 1
+    },
+    "84": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 7
+    },
+    "85": {
+      "kind": "asserted",
+      "relation": "other",
+      "passages": 1
+    },
+    "86": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 1
+    },
+    "87": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 2
+    },
+    "88": {
+      "kind": "asserted",
+      "relation": "improves",
+      "passages": 1
+    },
+    "89": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 1
+    },
+    "90": {
+      "kind": "asserted",
+      "relation": "part_of",
+      "passages": 1
+    },
+    "91": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 2
+    },
+    "92": {
+      "kind": "asserted",
+      "relation": "uses",
+      "passages": 2
+    },
+    "93": {
+      "kind": "asserted",
+      "relation": "evaluates",
+      "passages": 2
+    },
+    "94": {
+      "kind": "asserted",
+      "relation": "part_of",
+      "passages": 1
+    },
+    "95": {
+      "kind": "asserted",
+      "relation": "uses",
+      "passages": 2
+    },
+    "96": {
+      "kind": "asserted",
+      "relation": "part_of",
+      "passages": 1
+    },
+    "97": {
+      "kind": "co_mention",
+      "relation": null,
+      "passages": 1
+    },
+    "98": {
+      "kind": "asserted",
+      "relation": "uses",
+      "passages": 2
+    },
+    "99": {
+      "kind": "asserted",
+      "relation": "evaluated_on",
+      "passages": 1
+    },
+    "100": {
+      "kind": "asserted",
+      "relation": "evaluated_on",
+      "passages": 1
+    }
+  }
+}

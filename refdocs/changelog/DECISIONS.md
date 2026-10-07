@@ -699,6 +699,8 @@ strings validated against the template's slots).
 
 **Spend.** Only the `atomic2` rebuild (extraction, under the cap and a `--max-usd` ceiling enforced per call, confirmed by Azim beforehand) and embeddings (the questions' query embeddings and the page labels, under $0.001 together) are paid.
 
+**Look 2 result, 2026-10-07 (`vault-1` over the g1-3 graph).** Reported in `refdocs/evidence/20261007T060911Z-m2-look2.md`; no amendment was made after seeing it. The gate did not pass because clause 3 (question words recognised) failed by construction, as A3 said it would (0.3886 against 0.5463; the vault reads the same node ids as the g1-3 resolver); clauses 1, 2 and 4 passed. The headline pairs (19 questions, descriptive): **`vault` against the frozen `graph` over the same nodes: nDCG@10 0.1408 to 0.2268, 8 better, 10 tied, 1 worse; `hybrid_vault` against the frozen `hybrid`: 0.3706 to 0.3454, 5 better, 7 tied, 7 worse.** The vault is a much stronger graph signal on its own and does not improve the fused arm; the `flat` control (0.3826) is still the best arm. Ablations: the spread discount carries the gain (without it the gain nearly vanishes); co-mentions add a little; the semantic step as registered did not help. Cost $0.000445. Candidates for a `vault-2` are recorded in the evidence and not applied.
+
 ## Working assumptions (`ASSUMED:`)
 
 Not decisions; guesses made to keep moving. Each one must be confirmed or killed before anything

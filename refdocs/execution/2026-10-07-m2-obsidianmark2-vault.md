@@ -47,6 +47,8 @@ Build the vault over `data/g1/slice-atomic` and `data/g1/slice-base`, run the co
 
 **Verify:** the results reproduce on a second run; the flat control identical; the pinned and Mark 1 hashes unchanged before and after.
 
+**Reality (M2.3 done 2026-10-07):** the page labels were embedded ($0.000381) and the compare run on commit `92624f7` ($0.000064 for 19 question embeddings; $0.000445 in all; month total $7.556145). Result and reading in `refdocs/evidence/20261007T060911Z-m2-look2.md`. **Headline:** the vault is a clearly stronger graph signal (`vault` against the frozen `graph` over the same nodes: nDCG@10 0.1408 to 0.2268, 8 better, 10 tied, 1 worse) and does not improve the hybrid (0.3706 to 0.3454, 5 better, 7 worse); the `flat` control (0.3826) is still best; the spread discount carries the gain; the semantic step hurt; clause 3 of the gate failed by construction as D-35 A3 had said. The 100-item link audit sample (kind hidden, key in `eval/results/audit-keys/`) is for Azim; my read of 24 items found the asserted links good and the co-mention links noisy (reference titles without a marker). `vault-2` candidates are recorded, not applied.
+
 ### Task M2.4: The builder `atomic2` on fakes (directions B and D)
 
 **Files:** `api/ingestion/atomic2.py`, an `ExtractionResult.claims` field (optional, default empty), `IngestDeps.builder` value `atomic2`, a fake extractor, tests, `api/core/settings.py` (the builder setting accepts the new value).

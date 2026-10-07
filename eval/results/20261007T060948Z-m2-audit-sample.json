@@ -1,0 +1,602 @@
+[
+  {
+    "id": 1,
+    "a": "2018 English Wikipedia",
+    "b": "Wikipedia",
+    "sentence": "By default, we use Contriever-MS MARCO to retrieve the top five documents from Wikipedia, and use official Wikipedia embeddings based on 2018 English Wikipedia."
+  },
+  {
+    "id": 2,
+    "a": "RLHF",
+    "b": "Ouyang et al.",
+    "sentence": "RLHF (Ouyang et al."
+  },
+  {
+    "id": 3,
+    "a": "retrieval augmented generation (RAG)",
+    "b": "open-domain question-answering",
+    "sentence": "Improving the domain adaptation of retrieval augmented generation (rag) models for open domain question answer- ing"
+  },
+  {
+    "id": 4,
+    "a": "SELF-RAG",
+    "b": "Critic",
+    "sentence": "a large performance gap between SELF-RAG and No Retriever or Critic baselines across tasks"
+  },
+  {
+    "id": 5,
+    "a": "critic model",
+    "b": "retrieval",
+    "sentence": "Once we train the critic model, we first run it on input data from the aforementioned datasets, to predict whether retrieval is needed or not."
+  },
+  {
+    "id": 6,
+    "a": "inference",
+    "b": "ISSUP",
+    "sentence": "We also conduct ablation on our inference-time algorithm, including No retrieval disables retrieval during inference; Hard constraints indicates the model performance that retrieves when Retrieve =Yes instead of using the adaptive threshold; Retrieve top 1 always retrieves and uses the top one document only, similar to standard RAG approaches; Remove ISSUP indicates the model performance that removes ISSUP score only during critique-guided beam search in Eq."
+  },
+  {
+    "id": 7,
+    "a": "language models",
+    "b": "parametric and non-parametric memories",
+    "sentence": "When not to trust language models: Investigating effectiveness of parametric and non-parametric memories."
+  },
+  {
+    "id": 8,
+    "a": "retrieval",
+    "b": "SELF-RAG 7B",
+    "sentence": "35.8 51.2 5.0 7.5 SAIL*7B \u2013 \u2013 69.2 48.4 \u2013 \u2013 \u2013 \u2013 \u2013 \u2013 Llama213B 45.7 47.0 30.2 26.0 77.5 16.3 20.5 24.7 2.3 3.6 Alpaca13B 46.1 66.9 51.1 57.6 77.7 34.8 36.7 56.6 2.0 3.8 Our SELF-RAG 7B 54.9 66.4 72.4 67.3 81.2 30.0 35.7 74.3 66.9 67.8 Our SELF-RAG 13B 55.8 69.3 74.5 73.1 80.2 31.7 37.0 71.6 70.3 71.3 5 RESULTS AND ANALYSIS 5.1 MAIN RESULTS Comparison against baselines without retrieval."
+  },
+  {
+    "id": 9,
+    "a": "Retrieval-generation synergy",
+    "b": "large language models",
+    "sentence": "Retrieval- generation synergy augmented large language models"
+  },
+  {
+    "id": 10,
+    "a": "HybridRAG",
+    "b": "retrieval",
+    "sentence": "HybridRAG: Integrating Knowledge Graphs and Vector Retrieval Augmented Generation for Efficient Information Extraction Bhaskarjit Sarmah bhaskarjit.sarmah@blackrock.com BlackRock, Inc."
+  },
+  {
+    "id": 11,
+    "a": "Tree of clarifications",
+    "b": "large language models",
+    "sentence": "Tree of clarifica- tions: Answering ambiguous questions with retrieval-augmented large language models"
+  },
+  {
+    "id": 12,
+    "a": "GPT-4",
+    "b": "reflection tokens",
+    "sentence": "instructions and demonstrations used to prompt GPT-4 to collect reflection tokens"
+  },
+  {
+    "id": 13,
+    "a": "hallucination in large language models",
+    "b": "language models",
+    "sentence": "Chain-of-verification reduces hallucination in large language models."
+  },
+  {
+    "id": 14,
+    "a": "question answering",
+    "b": "F1",
+    "sentence": "question answering evaluations might rely on EM and F1 scores"
+  },
+  {
+    "id": 15,
+    "a": "answer relevance score",
+    "b": "relevance",
+    "sentence": "Finally, the answer relevance score (AR) is computed as the aver- age similarity across all generated questions: \ud835\udc34\ud835\udc45="
+  },
+  {
+    "id": 16,
+    "a": "retrieval",
+    "b": "Naive RAG",
+    "sentence": "Naive RAG mainly consists of three parts: indexing, retrieval and generation."
+  },
+  {
+    "id": 17,
+    "a": "Recursive retrieval",
+    "b": "relevance",
+    "sentence": "Recursive Retrieval Recursive retrieval is often used in information retrieval and NLP to improve the depth and relevance of search results."
+  },
+  {
+    "id": 18,
+    "a": "Retrieval-Augmented Generation",
+    "b": "fine-tuning",
+    "sentence": "the RAG system can more easily integrate with other technologies (such as fine-tuning or reinforcement learning)"
+  },
+  {
+    "id": 19,
+    "a": "Critic",
+    "b": "retrieve",
+    "sentence": "These tokens come in two varieties: \u201cretrieve\u201d and \u201ccritic\u201d."
+  },
+  {
+    "id": 20,
+    "a": "information integration",
+    "b": "negative rejection",
+    "sentence": "2) Required Abilities: RAG evaluation also encompasses four abilities indicative of its adaptability and efficiency: noise robustness, negative rejection, information integration, and counterfactual robustness [167], [168]."
+  },
+  {
+    "id": 21,
+    "a": "Multitask prompted training enables zero-shot task generalization",
+    "b": "zero-shot task generalization",
+    "sentence": "Multitask prompted training enables zero-shot task generalization."
+  },
+  {
+    "id": 22,
+    "a": "bio generation",
+    "b": "Google Programmable Search",
+    "sentence": "For bio generation and open-domain QA tasks, we additionally retrieve five documents using Google Programmable Search"
+  },
+  {
+    "id": 23,
+    "a": "instruction tuning",
+    "b": "Ra-dit",
+    "sentence": "Ra-dit: Retrieval- augmented dual instruction tuning, 2023."
+  },
+  {
+    "id": 24,
+    "a": "Natural Language Processing",
+    "b": "word embeddings",
+    "sentence": "Instruction Explain the use of word embeddings in Natural Language Processing."
+  },
+  {
+    "id": 25,
+    "a": "financial documents",
+    "b": "Information Extraction",
+    "sentence": "We introduce a novel approach based on a combination, called HybridRAG, of the Knowledge Graphs (KGs) based RAG techniques (called GraphRAG) and VectorRAG techniques to enhance question-answer (Q&A) systems for infor- mation extraction from financial documents that is shown to be capable of generating accurate and contextually relevant answers."
+  },
+  {
+    "id": 26,
+    "a": "Knowledge Graph",
+    "b": "Knowledge Graph index",
+    "sentence": "Knowledge Graph index."
+  },
+  {
+    "id": 27,
+    "a": "entity resolution",
+    "b": "KG completion",
+    "sentence": "KG completion technique infers missing entities and relationships within the graph using meth- ods such as link prediction and entity resolution."
+  },
+  {
+    "id": 28,
+    "a": "adaptive retrieval",
+    "b": "Retrieval-Augmented Generation",
+    "sentence": "Adaptive retrieval methods, exemplified by Flare [24] and Self-RAG [25], refine the RAG framework by enabling LLMs to actively determine the optimal moments and content for retrieval"
+  },
+  {
+    "id": 29,
+    "a": "GraphRAG",
+    "b": "Knowledge Graph",
+    "sentence": "GraphRAG combines the capabilities of KGs with RAG to improve traditional NLP tasks"
+  },
+  {
+    "id": 30,
+    "a": "ALCE",
+    "b": "generation",
+    "sentence": "We limit the maximum generation length to 100 tokens for all baselines to avoid this issue, rather than the original 300 tokens in the ALCE paper."
+  },
+  {
+    "id": 31,
+    "a": "Information Extraction",
+    "b": "LLM chain",
+    "sentence": "We implement a two-tiered LLM chain for content refinement and information extraction."
+  },
+  {
+    "id": 32,
+    "a": "FEVER",
+    "b": "KILT",
+    "sentence": "Natural Questions (Kwiatkowski et al., 2019), Wizard of Wikipedia (Dinan et al., 2019) and FEVER (Thorne et al., 2018) from the KILT benchmark (Petroni et al., 2021)"
+  },
+  {
+    "id": 33,
+    "a": "attribution",
+    "b": "large language models",
+    "sentence": "Automatic evaluation of attribution by large language models."
+  },
+  {
+    "id": 34,
+    "a": "Retrieval-Augmented Generation",
+    "b": "SLMs",
+    "sentence": "Another trend is to introduce SLMs with specific functionalities into RAG and fine-tuned by the results of RAG system."
+  },
+  {
+    "id": 35,
+    "a": "Retrieval-Augmented Generation",
+    "b": "random-access memory",
+    "sentence": "Retrieval-Augmented Generation (RAG) augments the input space of LMs with retrieved text passages (Guu et al., 2020; Lewis et al., 2020), leading to large improvements in knowledge-intensive tasks after fine-tuning or used with off-the-shelf LMs (Ram et al., 2023)."
+  },
+  {
+    "id": 36,
+    "a": "Bio",
+    "b": "Wikipedia",
+    "sentence": "For bio generation and open-domain QA tasks, we additionally retrieve five documents using Google Programmable Search9 and search documents from English Wikipedia."
+  },
+  {
+    "id": 37,
+    "a": "Customization",
+    "b": "Retrieval-Augmented Generation",
+    "sentence": "In the development of RAG technology, there is a clear trend towards different specialization directions, such as: 1) Customization - tailoring RAG to meet specific requirements."
+  },
+  {
+    "id": 38,
+    "a": "Recursive retrieval",
+    "b": "multi-hop retrieval",
+    "sentence": "To address specific data scenarios, recursive retrieval and multi-hop retrieval techniques are utilized together."
+  },
+  {
+    "id": 39,
+    "a": "Knowledge Graph (KG)",
+    "b": "retrieval",
+    "sentence": "On the Knowledge Graph (KG), retrieval granularity includes Entity, Triplet, and sub-Graph."
+  },
+  {
+    "id": 40,
+    "a": "Ignatius",
+    "b": "Rest Days",
+    "sentence": "We find a good description of this in sources such as the book Rest Days which states: Early Christian observance of both the spiritual seventh-day sabbath and a Lord\u00b4s Day assembly is evidenced in Ignatius\u00b4s letter to the Magnesians ca."
+  },
+  {
+    "id": 41,
+    "a": "Knowledge Graph",
+    "b": "triplet",
+    "sentence": "On the Knowledge Graph (KG), retrieval granularity includes Entity, Triplet, and sub-Graph."
+  },
+  {
+    "id": 42,
+    "a": "fine-tuning",
+    "b": "generator",
+    "sentence": "fine-tuning the generator for more personalized outputs"
+  },
+  {
+    "id": 43,
+    "a": "SAIL",
+    "b": "Alpaca dataset",
+    "sentence": "This is similar to SAIL (Luo et al., 2023), and we use our instruction-output data instead of using the Alpaca dataset (Dubois et al., 2023), as in SAIL."
+  },
+  {
+    "id": 44,
+    "a": "HybridRAG",
+    "b": "Knowledge Graph",
+    "sentence": "This system, called HybridRAG, which integrates the strengths of both Knowledge Graphs (KGs) and advanced language models, represents a leap forward in our ability to extract and interpret complex information from unstructured financial"
+  },
+  {
+    "id": 45,
+    "a": "Modular RAG",
+    "b": "Retrieval-Augmented Generation",
+    "sentence": "advanced RAG, and modular RAG"
+  },
+  {
+    "id": 46,
+    "a": "Dgen",
+    "b": "reflection tokens",
+    "sentence": "At the end of the output, y (or yT ), C predicts the overall utility token ISUSE , and an augmented output with reflection tokens and the original input pair is added to Dgen."
+  },
+  {
+    "id": 47,
+    "a": "Making retrieval-augmented language models robust to irrelevant context",
+    "b": "retrieval-augmented language models",
+    "sentence": "Making retrieval-augmented language models robust to irrelevant context, 2023."
+  },
+  {
+    "id": 48,
+    "a": "large language models",
+    "b": "in context learning",
+    "sentence": "LLM demonstrating powerful in context learning (ICL) capabilities"
+  },
+  {
+    "id": 49,
+    "a": "chunked retrieval",
+    "b": "inference",
+    "sentence": "On one hand, providing LLMs with a large amount of context at once will significantly impact its inference speed, while chunked retrieval and on-demand input can significantly improve operational efficiency."
+  },
+  {
+    "id": 50,
+    "a": "ASQA",
+    "b": "generation",
+    "sentence": "Bio Generation Tell me a bio about [Person Name] ASQA (baseline) Instruction: Write an accurate, engaging, and concise answer for the given question using only the provided search results (some of which might be irrelevant) and cite them properly."
+  },
+  {
+    "id": 51,
+    "a": "Hannaneh Hajishirzi",
+    "b": "University of Washington",
+    "sentence": "Akari Asai\u2020, Zeqiu Wu\u2020, Yizhong Wang\u2020\u00a7, Avirup Sil\u2021, Hannaneh Hajishirzi\u2020\u00a7 \u2020University of Washington"
+  },
+  {
+    "id": 52,
+    "a": "SELF-RAG",
+    "b": "Llama2-chat",
+    "sentence": "SELF-RAG outperforms retrieval-augmented ChatGPT on four tasks, Llama2-chat (Touvron et al., 2023) and Alpaca (Dubois et al., 2023) on all tasks."
+  },
+  {
+    "id": 53,
+    "a": "open-domain QA",
+    "b": "Google Programmable Search",
+    "sentence": "For bio generation and open-domain QA tasks, we additionally retrieve five documents using Google Programmable Search"
+  },
+  {
+    "id": 54,
+    "a": "language modeling",
+    "b": "Natural Language Processing",
+    "sentence": "Evidence: Word embedding Word embedding is the collective name for a set of language modeling and feature learning techniques in natural language processing (NLP) where words or phrases from the vocabulary are mapped to vectors of real numbers."
+  },
+  {
+    "id": 55,
+    "a": "earnings call transcripts",
+    "b": "REALM",
+    "sentence": "The dataset of the earning call documents of Nifty 50 companies is widely recognized in the investment realm and is esteemed as an authoritative and extensive collection of earnings call transcripts."
+  },
+  {
+    "id": 56,
+    "a": "reasoning",
+    "b": "retrieval",
+    "sentence": "f nodes (representing paragraphs or structures in the documents, such as pages and tables) and edges (indicating semantic/lexical similarity between paragraphs or relationships within the document structure), effectively addressing knowl- edge retrieval and reasoning problems in a multi-document environment."
+  },
+  {
+    "id": 57,
+    "a": "Think and retrieval",
+    "b": "hypothesis knowledge graph",
+    "sentence": "Think and retrieval: A hypothesis knowledge graph enhanced medical large language models"
+  },
+  {
+    "id": 58,
+    "a": "Akari Asai",
+    "b": "University of Washington",
+    "sentence": "Akari Asai\u2020, Zeqiu Wu\u2020, Yizhong Wang\u2020\u00a7, Avirup Sil\u2021, Hannaneh Hajishirzi\u2020\u00a7 \u2020University of Washington"
+  },
+  {
+    "id": 59,
+    "a": "SELF-RAG",
+    "b": "ISREL",
+    "sentence": "SELF-RAG generates ISREL =Irrelevant, indicating that the following answers may not be factually grounded"
+  },
+  {
+    "id": 60,
+    "a": "HotpotQA",
+    "b": "open-domain question-answering",
+    "sentence": "For open-domain question-answering (ODQA) tasks, the primary retrieval sources are Wikipedia Dump with the current major versions including HotpotQA 4 (1st October , 2017), DPR5 (20 December, 2018)."
+  },
+  {
+    "id": 61,
+    "a": "call transcripts",
+    "b": "Q&A pairs",
+    "sentence": "These call transcripts documents consist of questions and an- swers between financial analysts and the company representatives for the respective companies, hence, there already exist certain Q&A pairs within these documents"
+  },
+  {
+    "id": 62,
+    "a": "Routing",
+    "b": "Retrieval-Augmented Generation",
+    "sentence": "Routing in the RAG system navigates through diverse data sources, selecting the optimal pathway for a query, whether it involves summarization, specific database searches, or merging different information streams"
+  },
+  {
+    "id": 63,
+    "a": "retrieval-augmented techniques",
+    "b": "pre-training",
+    "sentence": "enhance language models in the pre-training stage through retrieval-augmented techniques"
+  },
+  {
+    "id": 64,
+    "a": "ChatGPT",
+    "b": "LLamaIndex",
+    "sentence": "Key tools like LangChain and LLamaIndex have quickly gained popularity with the emergence of ChatGPT, providing extensive RAG- related APIs and becoming essential in the realm of LLMs.The emerging technology stack, while not as rich in features as LangChain and LLamaIndex, stands out through its specialized products."
+  },
+  {
+    "id": 65,
+    "a": "generation",
+    "b": "SELF-RAG",
+    "sentence": "We introduce a new framework called Self-Reflective Retrieval-Augmented Gen- eration (SELF-RAG) that enhances an LM\u2019s quality and factuality through retrieval and self-reflection."
+  },
+  {
+    "id": 66,
+    "a": "generation",
+    "b": "PopQA",
+    "sentence": "S & P 92.5 70.0 ISREL 95.0 90.0 ISSUP 90.0 85.0 (d) Human evaluation on PopQA and Bio generation."
+  },
+  {
+    "id": 67,
+    "a": "analogy detection",
+    "b": "Fully supported",
+    "sentence": "Score [Fully supported] Explanation The output sentence discusses the application of word embeddings, and the evidence mentions all of the applications syntactic parsing, sentiment analysis, next token predictions as well as analogy detection as the applicat"
+  },
+  {
+    "id": 68,
+    "a": "ChatGPT",
+    "b": "pre-training",
+    "sentence": "This early stage was characterized by foundational work aimed at refining pre-training techniques [3]\u2013[5].The subsequent arrival of ChatGPT [6] marked a pivotal moment, with LLM demonstrating powerful in context learning (ICL) capabilities."
+  },
+  {
+    "id": 69,
+    "a": "Modular RAG",
+    "b": "fine-tuning",
+    "sentence": "As research progresses, Modular RAG has become more integrated with fine-tuning techniques."
+  },
+  {
+    "id": 70,
+    "a": "CoT Collection",
+    "b": "Chain-of-thought fine-tuning",
+    "sentence": "The cot collection: Improving zero-shot and few-shot learning of language models via chain-of-thought fine-tuning"
+  },
+  {
+    "id": 71,
+    "a": "domain specialization",
+    "b": "large language models",
+    "sentence": "Domain spe- cialization as the key to make large language models disruptive: A comprehensive survey."
+  },
+  {
+    "id": 72,
+    "a": "generation",
+    "b": "segment-level beam search",
+    "sentence": "We conduct a segment-level beam search (with the beam size=B) to obtain the top-B segment continuations at each timestamp t, and return the best sequence at the end of generation."
+  },
+  {
+    "id": 73,
+    "a": "generation",
+    "b": "retrieval source",
+    "sentence": "Retrieval Source RAG relies on external knowledge to enhance LLMs, while the type of retrieval source and the granularity of retrieval units both affect the final generation results."
+  },
+  {
+    "id": 74,
+    "a": "TableGPT",
+    "b": "large language models",
+    "sentence": "When dealing with semi-structured data, one approach involves lever- aging the code capabilities of LLMs to execute Text-2-SQL queries on tables within databases, such as TableGPT [85]."
+  },
+  {
+    "id": 75,
+    "a": "Retrieval-Augmented Generation",
+    "b": "fine-tuning",
+    "sentence": "RAG is often compared with Fine-tuning (FT) and prompt engineering"
+  },
+  {
+    "id": 76,
+    "a": "large language models",
+    "b": "LLM fine-tuning",
+    "sentence": "LLM Fine-tuning Targeted fine-tuning based on the scenario and data char- acteristics on LLMs can yield better results."
+  },
+  {
+    "id": 77,
+    "a": "fact checking",
+    "b": "accuracy",
+    "sentence": "fact-checking tasks often hinge on Accuracy as the primary metric"
+  },
+  {
+    "id": 78,
+    "a": "AutoGPT",
+    "b": "Toolformer",
+    "sentence": "These methods are part of a broader trend wherein LLMs employ active judgment in their operations, as seen in model agents like AutoGPT, Toolformer, and Graph- Toolformer [107]\u2013[109]."
+  },
+  {
+    "id": 79,
+    "a": "Multitask prompted training",
+    "b": "zero-shot task generalization",
+    "sentence": "Multitask prompted training enables zero-shot task generalization"
+  },
+  {
+    "id": 80,
+    "a": "analogy detection",
+    "b": "Embeddings",
+    "sentence": "Word and phrase embeddings, when used as the underlying input representation, have been shown to boost the performance in NLP tasks such as syntactic parsing, sentiment analysis, next token predictions as well and analogy detection."
+  },
+  {
+    "id": 81,
+    "a": "GPT-3",
+    "b": "reinforcement learning",
+    "sentence": "WebGPT [110] integrates a reinforcement learning frame- work to train the GPT-3 model in autonomously using a search engine during text generation."
+  },
+  {
+    "id": 82,
+    "a": "GPT-4",
+    "b": "OpenAI",
+    "sentence": "A state-of-the-art LLM like GPT-4 (OpenAI, 2023) can be effectively"
+  },
+  {
+    "id": 83,
+    "a": "Joint application design",
+    "b": "retrieve",
+    "sentence": "then assign each team member specific responsibilities based on their individual skillsets and strengths.[ Retrieve =Yes]<p>Joint application design \u2013 Subject Matter Experts: These are the business users, the IS professionals, and the outside experts that will be needed for a successful workshop."
+  },
+  {
+    "id": 84,
+    "a": "GraphRAG",
+    "b": "Knowledge Graph",
+    "sentence": "We introduce a novel approach based on a combination, called HybridRAG, of the Knowledge Graphs (KGs) based RAG techniques (called GraphRAG) and VectorRAG techniques to enhance question-answer (Q&A) systems for infor- mation extraction from financial documents that is shown to be capable of generating accurate and contextually relevant answers."
+  },
+  {
+    "id": 85,
+    "a": "reflection tokens",
+    "b": "reward models",
+    "sentence": "Reflection tokens, inspired by reward models used in reinforcement learning (Ziegler et al., 2019; Ouyang et al., 2022), are inserted offline into the original corpus by a trained critic model"
+  },
+  {
+    "id": 86,
+    "a": "language modeling",
+    "b": "pre-training",
+    "sentence": "GenRead [13] replaces the retriever with an LLM generator, finding that LLM-generated contexts often contain more accurate answers due to better alignment with the pre-training objectives of causal language modeling."
+  },
+  {
+    "id": 87,
+    "a": "Critique",
+    "b": "generator",
+    "sentence": "separate reward models during training, we compute critique offline and directly insert them into the training corpus, where the generator LM is trained with a standard LM objective."
+  },
+  {
+    "id": 88,
+    "a": "HybridRAG",
+    "b": "GraphRAG",
+    "sentence": "HybridRAG which retrieves context from both vector database and KG outperforms both traditional VectorRAG and GraphRAG indi- vidually"
+  },
+  {
+    "id": 89,
+    "a": "fine-tuning",
+    "b": "LSR",
+    "sentence": "In addition to supplementing domain knowledge, another purpose of fine-tuning is to align the retriever and generator, for example, using the results of LLM as the supervision signal for fine-tuning, known as LSR (LM-supervised Retriever)."
+  },
+  {
+    "id": 90,
+    "a": "financial call transcripts",
+    "b": "Nifty-50 index",
+    "sentence": "We also utilize a novel ground-truth Q&A dataset extracted from publicly available financial call transcripts of the companies included in the Nifty-50 index"
+  },
+  {
+    "id": 91,
+    "a": "Mauve",
+    "b": "str-em",
+    "sentence": "We use FactScore (Min et al., 2023) to evaluate biographies, and we use official metrics of correctness (str-em), fluency based on MAUVE (Pillutla et al., 2021), and citation precision and recall (Gao et al., 2023) for ASQA."
+  },
+  {
+    "id": 92,
+    "a": "Advanced RAG",
+    "b": "fine-grained segmentation",
+    "sentence": "Advanced RAG refines its indexing techniques through the use of a sliding window approach, fine-grained segmentation, and the incorporation of metadata."
+  },
+  {
+    "id": 93,
+    "a": "SELF-RAG",
+    "b": "citation precision",
+    "sentence": "Our SELF-RAG bridges this performance gap, even outperforming ChatGPT in citation precision"
+  },
+  {
+    "id": 94,
+    "a": "entity extraction",
+    "b": "LLM chain",
+    "sentence": "The second tier of our LLM chain is dedicated to entity extraction and relationship identification"
+  },
+  {
+    "id": 95,
+    "a": "Advanced RAG",
+    "b": "sliding window approach",
+    "sentence": "Advanced RAG refines its indexing techniques through the use of a sliding window approach, fine-grained segmentation, and the incorporation of metadata."
+  },
+  {
+    "id": 96,
+    "a": "Coutts",
+    "b": "Royal Bank of Scotland Group",
+    "sentence": "Coutts, the Wealth Management division of Royal Bank of Scotland Group"
+  },
+  {
+    "id": 97,
+    "a": "Natural Language Processing",
+    "b": "syntactic parsing",
+    "sentence": "Word and phrase embeddings, when used as the underlying input representation, have been shown to boost the performance in NLP tasks such as syntactic parsing, sentiment analysis, next token predictions as well and analogy detection."
+  },
+  {
+    "id": 98,
+    "a": "HybridRAG",
+    "b": "Retrieval-Augmented Generation",
+    "sentence": "HybridRAG does a good job overall, as whenever VectorRAG fails to fetch correct context in extractive questions it falls back to GraphRAG to generate the answer."
+  },
+  {
+    "id": 99,
+    "a": "SELF-RAG",
+    "b": "PopQA",
+    "sentence": "Human annotators find SELF-RAG answers are often plausible and supported by relevant passages with higher S&P scores on short-form PopQA"
+  },
+  {
+    "id": 100,
+    "a": "SELF-RAG",
+    "b": "FactScore",
+    "sentence": "For FactScore, we set the maximum new token length to 500 for baselines and 200 for SELF-RAG at each segment level"
+  }
+]
