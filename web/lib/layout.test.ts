@@ -201,9 +201,14 @@ describe("regions", () => {
 describe("readLayout", () => {
   const v1 = () => JSON.parse(readFileSync(resolve(process.cwd(), "../packages/schema/fixtures/layout-v1.json"), "utf-8"));
 
-  it("reads the committed version 1 layout as the current prebuilt layout (the server test reads the same file)", () => {
+  it("reads the committed version 1 layout as one main region per panel (the server test reads the same file)", () => {
     expect(v1().version).toBe(1);
-    expect(readLayout(v1())).toEqual(FALLBACK_LAYOUT);
+    const upgraded = readLayout(v1());
+    // every panel is one main region; the current prebuilt layout also gives the studio its shelf
+    expect(upgraded).toEqual({
+      ...FALLBACK_LAYOUT,
+      panels: FALLBACK_LAYOUT.panels.map((p) => ({ ...p, direction: "rows", regions: [{ id: "main", size: 100 }] })),
+    });
   });
 
   it("passes a current layout through and refuses anything unreadable", () => {

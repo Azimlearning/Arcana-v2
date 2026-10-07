@@ -111,8 +111,16 @@ export const FALLBACK_LAYOUT: LayoutSpec = {
   mode: "basic",
   panels: [
     { id: "sources", width: 20, direction: "rows", regions: [{ id: "main", size: 100 }] },
-    { id: "chat", width: 60, direction: "rows", regions: [{ id: "main", size: 100 }] },
-    { id: "studio", width: 20, direction: "rows", regions: [{ id: "main", size: 100 }] },
+    { id: "chat", width: 60, direction: "columns", regions: [{ id: "main", size: 100 }] },
+    {
+      id: "studio",
+      width: 20,
+      direction: "rows",
+      regions: [
+        { id: "main", size: 60 },
+        { id: "shelf", size: 40 },
+      ],
+    },
   ],
   placements: [{ blockId: WORKSPACE_SOURCES_ID, panel: "sources", region: "main", order: 0 }],
 };

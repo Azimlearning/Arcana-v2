@@ -16,7 +16,15 @@ from dataclasses import dataclass, field
 from typing import Any, Literal, cast, get_args
 
 from api.genui.alignment import settle
-from api.genui.generated import ComponentDecision, DecisionReason, LayoutSpec, PanelId, UIBlock
+from api.genui.generated import (
+    ComponentDecision,
+    DecisionReason,
+    LayoutSpec,
+    PanelId,
+    RegionId,
+    SplitDirection,
+    UIBlock,
+)
 from api.genui.text import MIN_LABEL_CHARS, MIN_QUOTE_CHARS, label_in_quote, normalise
 from api.stores.doc_store import Document
 
@@ -37,10 +45,14 @@ class ComposerEvidence:
 
 @dataclass(frozen=True)
 class PlacementHint:
-    """A hint to the layout, not a position (D-27): the panel this component prefers and its priority in it."""
+    """A hint to the layout, not a position (D-27, D-32): the panel this component prefers, its priority in it, the
+    region of that panel it wants (the panel's `main` area unless it asks for another) and, if it wants the panel split,
+    the direction it prefers. The layout reads these as data; it names no component."""
 
     panel: PanelId
     priority: int
+    region: RegionId = "main"
+    direction: SplitDirection | None = None
 
 
 @dataclass(frozen=True)

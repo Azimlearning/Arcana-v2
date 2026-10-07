@@ -196,18 +196,29 @@ Status: **deferred** (task B5 was a stretch and was not built in P2; it needs Az
 
 ## Layout defaults and placement hints
 
-Each component declares a placement hint (`PlacementHint`: preferred panel, priority; lower priority sits first in its
-panel) on its catalog entry; `compose_layout` (`api/genui/layout.py`) reads the hints and contains no component names
+Each component declares a placement hint (`PlacementHint`: preferred panel, priority, optionally a region of that panel
+(`main` unless it asks for `secondary` or `shelf`) and a split direction (`rows` or `columns`); lower priority sits first
+in its region) on its catalog entry; `compose_layout` (`api/genui/layout.py`) reads the hints and contains no component names
 (D-27, asserted by a source-scan test). The widths below are judgement defaults asserted by invariants (integers
-summing to 100, chat at least 25, a panel with no placements has width 0 except chat), not by exact numbers.
+summing to 100, chat at least 25, a panel with no placements has width 0 except chat and the studio, which keeps a narrow
+column for its shelf), not by exact numbers.
 
 | Layout | When | Sources | Chat | Studio |
 |---|---|---|---|---|
 | `prebuilt` (mode `basic`) | the workspace before any question, and the fallback | 20 | 60 | 20 |
 | `adaptive`, mode `research`, with a `SourceList` | a turn whose admitted components include a studio-hinted one | 20 | 45 | 35 |
-| `adaptive`, mode `research`, with a `SourceList`, no studio component | answer plus source list, or plus a grid | 20 | 80 | 0 |
+| `adaptive`, mode `research`, with a `SourceList`, no studio component | answer plus source list, or plus a grid | 20 | 60 | 20 (the shelf only) |
 | `adaptive`, mode `exploration`, with a `SourceList` | intent `relate` and a studio-hinted component admitted | 10 | 30 | 60 |
-| any adaptive layout with an empty panel | nothing placed there (for example no `SourceList`, so answer only is 0 / 100 / 0) | 0 for that panel | its width added to chat | |
+| any adaptive layout with an empty panel | nothing placed there (for example no `SourceList`, so answer only is 0 / 80 / 20) | 0 for sources, 20 for the studio | the rest | |
+
+**Regions inside a panel (D-32).** A panel is divided into the regions that hold something plus the ones it always
+keeps (the studio always keeps `shelf`), sharing the panel in the weights main 3, secondary 2, shelf 2 (so main and
+shelf are 60 and 40, main and secondary are 60 and 40), in whole numbers summing to 100. The direction is that of the
+highest-priority hint in the panel that names one, else the panel's default (chat `columns`, studio and sources `rows`).
+The studio panel is the graph area (`main`) above the shelf; the chat panel splits into `main` and `secondary` only when
+a component asks for `secondary` (none of the five built ones does; the Studio components of P5 will). The prebuilt
+layout always shows the studio's graph area above its shelf; in Basic the graph shows below the answer, so the graph
+area says so. A new region role is a schema change, like a new panel.
 
 The prebuilt layout places only the workspace's own source list (in the sources panel, task C2); every turn block with no
 placement is shown in chat in arrival order. `validate_layout` (`api/genui/validate.py`) asserts the invariants: version 2 (a version 1
@@ -216,8 +227,7 @@ whole-number widths summing to 100, chat present and at least 25, a hidden panel
 one region, region ids are unique within a panel, sizes are whole numbers from 0 to 100 summing to 100, a region of size 0
 holds nothing; each block placed once, in a region its panel has, orders unique within a region, only blocks the turn
 produced (the caller must pass them). A layout that fails is not sent; the client applies the same rules
-(`web/lib/layout.ts`, `readLayout`) and ignores one that does not pass. Until task F2, the Composer emits one `main` region
-per panel. A new
+(`web/lib/layout.ts`, `readLayout`) and ignores one that does not pass. The Composer's rules for regions are below. A new
 *component* needs no edit to `layout.py`; a new *panel* or *mode* is a change to the schema (`PanelId`, `LayoutMode`, `RegionId` and `SplitDirection` are closed unions), `layout.py`, `layout.ts` and the shell together (D-27, amended 2026-10-07).
 
 ## How to add a component

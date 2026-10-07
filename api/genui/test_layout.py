@@ -68,7 +68,11 @@ def test_every_combination_of_components_gives_a_valid_adaptive_layout(intent):
             assert layout.origin == "adaptive" and sum(widths(layout).values()) == 100
             assert widths(layout)["chat"] >= 25
             placed = {p.panel for p in layout.placements}
-            assert all(w == 0 for panel, w in widths(layout).items() if panel not in placed and panel != "chat")
+            hidden = [panel for panel in widths(layout) if panel not in placed and panel not in ("chat", "studio")]
+            assert all(widths(layout)[panel] == 0 for panel in hidden)
+            if "studio" not in placed:  # the studio keeps a narrow column for its shelf, whatever else happens
+                studio = next(p for p in layout.panels if p.id == "studio")
+                assert studio.width == 20 and [r.id for r in studio.regions] == ["shelf"]
             assert {p.blockId for p in layout.placements} <= known  # a layout names only the turn's blocks
 
 
@@ -82,9 +86,9 @@ def test_blocks_go_to_their_hinted_panel_in_priority_order_whatever_the_arrival_
         assert all(h.panel == panel for h in hints) and [h.priority for h in hints] == sorted(h.priority for h in hints)
 
 
-def test_an_empty_panel_is_hidden_and_its_width_goes_to_chat():
+def test_an_empty_panel_is_hidden_and_its_width_goes_to_chat_except_the_studio_which_keeps_its_shelf():
     answer_only = compose_layout(admitted(TERMINAL), "single")
-    assert widths(answer_only) == {"sources": 0, "chat": 100, "studio": 0}
+    assert widths(answer_only) == {"sources": 0, "chat": 80, "studio": 20}
     assert answer_only.placements == [Placement(blockId=f"b-{TERMINAL}", panel="chat", region="main", order=0)]
 
 
@@ -96,6 +100,63 @@ def test_a_studio_component_opens_the_studio_and_a_relating_question_makes_it_th
     exploring = compose_layout(admitted(TERMINAL, sources, studio), "relate")
     assert exploring.mode == "exploration" and widths(exploring) == {"sources": 10, "chat": 30, "studio": 60}
     assert compose_layout(admitted(TERMINAL, sources), "relate").mode == "research"  # nothing in the studio
+
+
+def regions_of(layout: LayoutSpec, panel_id: str) -> list[tuple[str, int]]:
+    panel_spec = next(p for p in layout.panels if p.id == panel_id)
+    return [(r.id, r.size) for r in panel_spec.regions]
+
+
+def test_the_studio_is_its_graph_area_above_its_shelf_and_the_shelf_alone_when_no_graph_is_placed():
+    studio = next(n for n in OPTIONAL if CATALOG[n].placement.panel == "studio")
+    with_graph = compose_layout(admitted(TERMINAL, studio), "compare")
+    assert regions_of(with_graph, "studio") == [("main", 60), ("shelf", 40)]
+    assert next(p for p in with_graph.panels if p.id == "studio").direction == "rows"
+    assert regions_of(compose_layout(admitted(TERMINAL), "single"), "studio") == [("shelf", 100)]
+    assert regions_of(prebuilt_layout(), "studio") == [("main", 60), ("shelf", 40)]
+    assert regions_of(prebuilt_layout(), "chat") == [("main", 100)]
+
+
+def toy(monkeypatch, name: str, **hint):
+    """Register a toy catalog entry, copied from a built one, with the given placement hint."""
+    monkeypatch.setitem(CATALOG, name, replace(CATALOG[OPTIONAL[0]], name=name, placement=PlacementHint(**hint)))
+
+
+def test_a_component_that_asks_for_a_second_region_splits_its_panel_with_no_edit_to_the_layout(monkeypatch):
+    toy(monkeypatch, "ToyQuiz", panel="chat", priority=40, region="secondary")
+    layout = compose_layout(admitted(TERMINAL, "ToyQuiz"), "single")
+    assert regions_of(layout, "chat") == [("main", 60), ("secondary", 40)]
+    assert next(p for p in layout.panels if p.id == "chat").direction == "columns"  # the panel's default
+    assert validate_layout(layout, {f"b-{TERMINAL}", "b-ToyQuiz"}) == layout
+    placed = {p.blockId: (p.region, p.order) for p in layout.placements}
+    assert placed == {f"b-{TERMINAL}": ("main", 0), "b-ToyQuiz": ("secondary", 0)}
+    # not asked for: the panel is not split
+    assert regions_of(compose_layout(admitted(TERMINAL), "single"), "chat") == [("main", 100)]
+
+
+def test_the_direction_of_a_split_comes_from_the_highest_priority_hint_that_names_one(monkeypatch):
+    toy(monkeypatch, "ToyBelow", panel="chat", priority=40, region="secondary", direction="rows")
+    toy(monkeypatch, "ToyBeside", panel="chat", priority=30, region="secondary", direction="columns")
+    toy(monkeypatch, "ToyQuiet", panel="chat", priority=5, region="secondary")  # names none: does not decide
+    only_below = compose_layout(admitted(TERMINAL, "ToyBelow"), "single")
+    assert next(p for p in only_below.panels if p.id == "chat").direction == "rows"
+    both = compose_layout(admitted(TERMINAL, "ToyBelow", "ToyBeside", "ToyQuiet"), "single")
+    assert next(p for p in both.panels if p.id == "chat").direction == "columns"  # priority 30 beats 40
+    quiet = compose_layout(admitted(TERMINAL, "ToyQuiet"), "single")
+    assert next(p for p in quiet.panels if p.id == "chat").direction == "columns"  # the default
+
+
+def test_blocks_are_ordered_within_their_region_and_regions_share_each_panel_in_whole_numbers(monkeypatch):
+    toy(monkeypatch, "ToyA", panel="chat", priority=50, region="secondary")
+    toy(monkeypatch, "ToyB", panel="chat", priority=45, region="secondary")
+    layout = compose_layout(admitted(TERMINAL, "ToyA", "ToyB"), "single")
+    assert [(p.blockId, p.region, p.order) for p in layout.placements if p.region == "secondary"] == [
+        ("b-ToyB", "secondary", 0),
+        ("b-ToyA", "secondary", 1),
+    ]
+    for panel_spec in layout.panels:
+        assert sum(r.size for r in panel_spec.regions) == 100
+    assert validate_layout(layout, {b for b, _ in admitted(TERMINAL, "ToyA", "ToyB")}) == layout
 
 
 def test_the_prebuilt_layout_is_valid_and_fixed():
@@ -221,6 +282,11 @@ def test_a_region_of_size_zero_holds_nothing_and_orders_are_unique_within_a_regi
     assert fails(both, {"a", "b"}) == ["placements.1.order"]
 
 
+def all_main(layout: LayoutSpec) -> LayoutSpec:
+    """The layout with every panel as a single `main` region: what a version 1 layout is read as."""
+    return layout.model_copy(update={"panels": [panel(p.id, p.width) for p in layout.panels]})
+
+
 def test_a_version_1_layout_is_read_as_one_main_region_in_every_panel():
     v1 = {
         "version": 1,
@@ -230,7 +296,7 @@ def test_a_version_1_layout_is_read_as_one_main_region_in_every_panel():
         "placements": [{"blockId": "workspace-sources", "panel": "sources", "order": 0}],
     }
     layout = validate_layout(v1, {"workspace-sources"})
-    assert layout.version == 2 and layout == prebuilt_layout("workspace-sources")
+    assert layout.version == 2 and layout == all_main(prebuilt_layout("workspace-sources"))
     v1["placements"][0]["panel"] = "sidebar"  # a damaged v1 is still refused
     assert fails(v1, {"workspace-sources"})
     assert fails({"version": 1, "panels": "x", "placements": []})  # and one that cannot be read at all
@@ -417,4 +483,4 @@ def test_the_committed_version_1_fixture_is_read_as_the_current_prebuilt_layout(
     fixtures = pathlib.Path(__file__).resolve().parents[2] / "packages" / "schema" / "fixtures"
     v1 = json.loads((fixtures / "layout-v1.json").read_text(encoding="utf-8"))
     assert v1["version"] == 1 and "regions" not in v1["panels"][0]
-    assert validate_layout(v1, {"workspace-sources"}) == prebuilt_layout("workspace-sources")
+    assert validate_layout(v1, {"workspace-sources"}) == all_main(prebuilt_layout("workspace-sources"))

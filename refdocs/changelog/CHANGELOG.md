@@ -28,6 +28,13 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-07: P2b task F2 (Composer rules for regions)
+- **Changed:** `api/genui/layout.py` (regions from hints, weights, direction rule, the studio keeps its shelf), `api/genui/catalog.py` (`PlacementHint.region`, `.direction`), `api/genui/test_layout.py` (new region tests, toy components), `packages/schema/fixtures/prebuilt-layout.json` (studio is graph area above shelf), `web/lib/layout.ts` and `web/test/fixtures.ts` (fallback matches the fixture), `web/lib/layout.test.ts`, `refdocs/guides/catalog.md` (regions, the table), the execution doc (F2 Reality).
+- **Decided:** The studio panel is never hidden in Adaptive (it keeps a 20 percent column for its shelf), so saved views stay reachable once they move there (F4). A conflict between hints that name a direction is settled by the highest priority. Both recorded in the execution doc.
+- **Deviations:** the plan said "the direction the hint asks for"; the conflict rule was added. Answer-only layouts are 0 / 80 / 20, not 0 / 100 / 0.
+- **Verified:** `uv run pytest` (792 passed), `uv run ruff check api eval scripts`, `uv run pyright api eval`, `pnpm codegen:check`, `pnpm -r typecheck`, `pnpm -r lint`, `pnpm -r test` (205 passed).
+- **Known issues / next steps:** F3 (the shell draws regions), F4 (the Studio area and the shelf), F5 (browser run, reviews, wrap-up). The panel sizes are defaults to be tuned in the F5 browser run.
+
 ### 2026-10-07: P2b task F1 (layout v2 on the wire)
 - **Changed:** `packages/schema/src/layout.ts` (regions, direction, `Placement.region`; version 2), `api/genui/generated.py` (generated), `api/genui/validate.py` (region rules, required `known_block_ids`, `upgrade_layout`), `api/genui/layout.py` (one `main` region per panel for now), `web/lib/layout.ts` (`isLayoutSpec` v2, `readLayout`), `web/lib/stream.ts`, `web/lib/api.ts`, fixtures `prebuilt-layout.json` (v2) and `layout-v1.json` (new), tests on both sides, `refdocs/guides/catalog.md` (layout invariants), the execution doc (F1 Reality).
 - **Decided:** A region size is 0 to 100 (the plan said 1 to 100) so an unused region can keep no space while the panel still has its regions; a region of size 0 holds nothing. A version 1 layout stays readable on both sides.

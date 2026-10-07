@@ -193,8 +193,16 @@ const FALLBACK: LayoutSpec = {
   mode: "basic",
   panels: [
     { id: "sources", width: 20, direction: "rows" as const, regions: [{ id: "main" as const, size: 100 }] },
-    { id: "chat", width: 60, direction: "rows" as const, regions: [{ id: "main" as const, size: 100 }] },
-    { id: "studio", width: 20, direction: "rows" as const, regions: [{ id: "main" as const, size: 100 }] },
+    { id: "chat", width: 60, direction: "columns" as const, regions: [{ id: "main" as const, size: 100 }] },
+    {
+      id: "studio",
+      width: 20,
+      direction: "rows" as const,
+      regions: [
+        { id: "main" as const, size: 60 },
+        { id: "shelf" as const, size: 40 },
+      ],
+    },
   ],
   placements: [{ blockId: "workspace-sources", panel: "sources", region: "main" as const, order: 0 }],
 };

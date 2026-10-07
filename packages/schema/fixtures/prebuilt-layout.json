@@ -17,7 +17,7 @@
     {
       "id": "chat",
       "width": 60,
-      "direction": "rows",
+      "direction": "columns",
       "regions": [
         {
           "id": "main",
@@ -32,7 +32,11 @@
       "regions": [
         {
           "id": "main",
-          "size": 100
+          "size": 60
+        },
+        {
+          "id": "shelf",
+          "size": 40
         }
       ]
     }
