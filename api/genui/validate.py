@@ -51,7 +51,7 @@ from api.genui.generated import (
 )
 from api.genui.text import MIN_LABEL_CHARS, MIN_QUOTE_CHARS, label_in_quote
 from api.genui.text import normalise as _norm
-from api.retrieval.traversal import TraversalSeed, seed_weight, steps_for_display, traverse
+from api.retrieval.traversal import SeedNode, seed_weight, steps_for_display, traverse
 from api.stores.doc_store import DocStore
 from api.stores.graph_store import GraphStore
 
@@ -535,7 +535,12 @@ def _traversal_view_issues(block: TraversalView, docs: DocStore, graph: GraphSto
         elif stored.label != node.label:
             issues.append(FieldIssue(path=f"data.nodes.{i}.label", message="does not match the stored label"))
         if not MIN_LABEL_CHARS <= len(node.label.strip()) <= caps["label_chars"]:
-            issues.append(FieldIssue(path=f"data.nodes.{i}.label", message="a label is 2 to 120 characters"))
+            issues.append(
+                FieldIssue(
+                    path=f"data.nodes.{i}.label",
+                    message=f"a label is {MIN_LABEL_CHARS} to {caps['label_chars']} characters",
+                )
+            )
 
     citations = {c.id: c for c in data.citations}
     if len(citations) != len(data.citations):
@@ -568,8 +573,11 @@ def _traversal_view_issues(block: TraversalView, docs: DocStore, graph: GraphSto
     if issues:
         return issues  # the re-derivation below reads the same fields: report the plain defects first
 
-    held = [TraversalSeed(s.nodeId, labels[s.nodeId], s.match, seed_weight(s.match)) for s in data.seeds]
-    derived = traverse(held, graph, docs, caps["reached"])
+    held = [SeedNode(s.nodeId, labels[s.nodeId], s.match, seed_weight(s.match)) for s in data.seeds]
+    try:
+        derived = traverse(held, graph, docs, caps["reached"])
+    except Exception:  # a store that cannot be read is a block that cannot be checked: refuse, never crash the turn
+        return [FieldIssue(path="data", message="the traversal could not be re-derived from the stores")]
     if len(derived.seeds) != len(held):
         return [FieldIssue(path="data.seeds", message="a seed is not a node of the graph")]
 
@@ -579,7 +587,8 @@ def _traversal_view_issues(block: TraversalView, docs: DocStore, graph: GraphSto
     if len(shown) != len(expected):
         issues.append(
             FieldIssue(
-                path="data.reached.(count)", message=f"the graph signal returns {len(expected)} passages for these seeds"
+                path="data.reached.(count)",
+                message=f"the graph signal returns {len(expected)} passages for these seeds",
             )
         )
     for i, (got, want) in enumerate(zip(shown, expected, strict=False)):
@@ -594,7 +603,9 @@ def _traversal_view_issues(block: TraversalView, docs: DocStore, graph: GraphSto
     want_steps = [(s.edge.src, s.edge.dst, s.edge.relation, s.edge.chunk_id) for s in wanted_steps]
     if len(got_steps) != len(want_steps):
         issues.append(
-            FieldIssue(path="data.steps.(count)", message=f"the traversal shows {len(want_steps)} steps for these seeds")
+            FieldIssue(
+                path="data.steps.(count)", message=f"the traversal shows {len(want_steps)} steps for these seeds"
+            )
         )
     for i, (got, want) in enumerate(zip(got_steps, want_steps, strict=False)):
         if got != want:

@@ -62,6 +62,8 @@ Azim, 2026-10-07: break documents down, Obsidian-style, into small nodes with re
 
 Embeddings of chunks are the same text as before, so the vector store is reused by reference rather than recomputed (the experiment changes the graph only).
 
+**Cost-audit notes (2026-10-07, `cost-auditor`, read only).** The arithmetic holds: 1,570 chunks at about $0.00366 for extraction is $5.75 ($5.8056 with embeddings, so $5.8 slightly overstates a run that reuses the vectors); 400 chunks is about $1.48; $3.83 is left of the $10 cap. Three things the table above does not say, now stated: (1) **the $12 month figure assumes the full run reuses the four subset papers' graphs**; a full re-ingest of all 16 after the subset would total about $13.5; the plan reuses them. (2) **The measured $0.0037 per chunk is for the free-form extraction prompt** (about 467 tokens in, 638 out, output about 87 percent of the cost). The atomic prompt must return a verbatim sentence for every concept and relation, so output will probably be larger; if it doubles, the subset costs about $2.9 and the full run about $11.5. **A one-paper pilot (35 to 56 chunks, about $0.25 to $0.40) therefore comes first (new task G1.5a), and its measured cost per chunk replaces the estimate before Azim is asked to confirm the subset.** (3) The ledger reserves the worst case per call (about $0.011), so 400 calls would be refused part way if that were all that remained under the cap: expect a partial subset, or raise the cap. The month key is `2026-10`: the cap resets on 2026-11-01, an alternative to raising it, and Azim's call.
+
 ## Risks & unknowns
 
 | Risk | Impact | Mitigation |

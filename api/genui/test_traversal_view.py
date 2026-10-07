@@ -155,3 +155,31 @@ async def test_composing_a_traversal_makes_no_model_call(ingested, tmp_path):
 def test_the_catalog_names_the_component_and_its_fences_are_the_validators_caps():
     assert "TraversalView" in CATALOG
     assert set(TRAVERSAL_VIEW.fences.caps) == {"seeds", "nodes", "steps", "reached", "label_chars"}
+
+
+def test_a_saved_search_path_with_ten_seeds_still_resolves_on_apply():
+    """The question's own entity list stops at 8; a traversal may start from 10 concepts. The apply check reads both."""
+    from api.agents.compose import resolved_labels
+
+    seeds = [{"label": f"Concept {i}"} for i in range(8)]
+    traversal = {"seeds": [{"label": f"Concept {i}"} for i in range(10)]}
+    labels = resolved_labels({"seeds": seeds, "traversal": traversal})
+    assert {f"concept {i}" for i in range(10)} <= labels
+    assert resolved_labels(None) == set() and resolved_labels({"seeds": [{"label": " BM25 "}]}) == {"bm25"}
+
+
+def test_seed_weight_equals_what_the_resolver_assigns():
+    from api.retrieval.entities import APPROX_WEIGHT, EXACT_WEIGHT
+    from api.retrieval.traversal import seed_weight
+
+    assert seed_weight("exact") == EXACT_WEIGHT and seed_weight("approximate") == APPROX_WEIGHT
+
+
+def test_a_store_that_cannot_be_read_during_the_re_derivation_is_a_refusal_not_a_crash(monkeypatch):
+    from api.genui import validate
+
+    def boom(*args, **kwargs):
+        raise RuntimeError("the store is gone")
+
+    monkeypatch.setattr(validate, "traverse", boom)
+    assert paths(valid()) == {"data"}

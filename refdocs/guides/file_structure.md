@@ -28,7 +28,7 @@
 | `llm/` | The LLM seam: `service` (fallback, cap, ledger; prices by the requested model, D-23), `ledger` (spend and the monthly cap; one file `data/ledger.db` in a live mode), `pricing`, `models`, `providers/{anthropic,openrouter,fake}`, `factory`, `json_reply`. |
 | `stores/` | `GraphStore`, `VectorStore`, `DocStore` abstractions (`DocStore` also keeps each turn's trace); `local/` holds the NetworkX, numpy and SQLite implementations; `preflight` checks corpus parity. |
 | `ingestion/` | PDF to chunks, vectors and graph: `parse`, `chunk`, `embed`, `extract` (output limit 2,048 tokens, D-25), `pipeline` (per-document size and budget checks), `fakes`. |
-| `retrieval/` | `dense`, `sparse`, `graph`, `entities` (query entity resolution), `fusion` (RRF), `hybrid` (entry point), `arms` (the five ablation arms), `protocol` (the frozen-settings stamp). |
+| `retrieval/` | `traversal` (a read-only account of what the graph signal followed, with the retriever untouched), `dense`, `sparse`, `graph`, `entities` (query entity resolution), `fusion` (RRF), `hybrid` (entry point), `arms` (the five ablation arms), `protocol` (the frozen-settings stamp). |
 | `agents/` | `framework` (`Roster`, `route_to_agent`: hop and token budgets, loop guard, trace steps, tool schemas), `orchestrator` (intent rules, one light-tier call when unsure), `research` (`retrieve_evidence`, `compare_documents`; model-chosen quotes verified verbatim), `graph_agent` (`find_path`, `neighborhood`; grounded edges only), `fact_checker` (quote check, judge plus lexical fallback; pure core), `roster` (the one module that imports every agent), `compose` (the Composer stub: the only place blocks are made; shows only what the Fact Checker passed), `graph` (the LangGraph turn graph and `run_turn`), `state` (`TurnContext`), `fakes`. Agents never import each other (a test enforces it). |
 | `routes/` | `chat` (SSE; records each turn and its trace), `ingest` (multipart upload), `trace` (`GET /turns/{id}/trace`), `workspace` (`GET /workspace`: the prebuilt layout and the source list, no model call) and `patterns` (save, list, delete, apply as SSE, re-verify). `/health` is in `main.py`. |
 | `tests/fixtures/` | `hybrid_retrieval.pdf` and the script that regenerates it. |
@@ -60,6 +60,8 @@ Tests sit beside the module they cover as `test_*.py`.
 | `stats.py` | Hand-written Wilcoxon signed-rank (exact p, Holm, rank-biserial effect size); writes `<run>-stats.json`. |
 | `verify_gold.py` | Checks every gold passage is verbatim on its page and reachable by a chunk. Needs the PDFs. |
 | `mutation_factcheck.py` | Plants known defects in valid answers and records how many the Fact Checker catches. |
+| `graph_quality.py` | The structure of a graph with no model call (stated and co-mention edges, relation spellings, shared nodes, hubs); the baseline of the pinned graph is in `refdocs/evidence/`. |
+| `traversal_admission.py` | How often a `TraversalView` is admitted and what the graph signal followed on the 20 questions (free, no model or network call). |
 | `report_ingestion.py` | Writes the cost record of a live ingestion from the spend ledger (totals, per paper, per call, CSV). |
 | `results/` | Committed results: the smoke run, the mutation suite, the live ingestion record, and the first benchmark with its statistics. |
 | `tests/` | Metric, frozen-asset, runner, statistics, gold-verifier and report tests. |

@@ -23,7 +23,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Literal
 
-from api.retrieval.entities import APPROX_WEIGHT, resolve_query_entities
+from api.retrieval.entities import APPROX_WEIGHT, EXACT_WEIGHT, resolve_query_entities
 from api.retrieval.graph import DIRECT_WEIGHT, NEIGHBOR_WEIGHT
 from api.retrieval.types import TOP_K, ResolutionReport
 from api.stores.doc_store import DocStore
@@ -34,7 +34,7 @@ _STRENGTH: dict[Via, int] = {"mentions": 2, "edge": 1, "neighbour": 0}
 
 
 @dataclass(frozen=True)
-class TraversalSeed:
+class SeedNode:
     node_id: str
     label: str
     match: Literal["exact", "approximate"]
@@ -42,7 +42,7 @@ class TraversalSeed:
 
 
 @dataclass(frozen=True)
-class TraversalStep:
+class FollowedEdge:
     """One edge followed from a seed (one hop, either direction)."""
 
     seed_id: str
@@ -64,8 +64,8 @@ class ReachedChunk:
 
 @dataclass(frozen=True)
 class GraphTraversal:
-    seeds: tuple[TraversalSeed, ...]
-    steps: tuple[TraversalStep, ...]
+    seeds: tuple[SeedNode, ...]
+    steps: tuple[FollowedEdge, ...]
     reached: tuple[ReachedChunk, ...]
     resolution: ResolutionReport
     steps_total: int
@@ -74,7 +74,7 @@ class GraphTraversal:
 
 def seed_weight(match: Literal["exact", "approximate"]) -> float:
     """The weight the retriever gives an entity of this match kind (entities.py: 1.0 exact, APPROX_WEIGHT otherwise)."""
-    return 1.0 if match == "exact" else APPROX_WEIGHT
+    return EXACT_WEIGHT if match == "exact" else APPROX_WEIGHT
 
 
 def trace_graph_signal(query: str, graph: GraphStore, docs: DocStore, top_k: int = TOP_K) -> GraphTraversal:
@@ -83,12 +83,12 @@ def trace_graph_signal(query: str, graph: GraphStore, docs: DocStore, top_k: int
     nodes = graph.nodes()
     report = resolve_query_entities(query, nodes)
     by_id = {n.id: n for n in nodes}
-    seeds = tuple(TraversalSeed(e.node_id, by_id[e.node_id].label, e.match, e.weight) for e in report.entities)
+    seeds = tuple(SeedNode(e.node_id, by_id[e.node_id].label, e.match, e.weight) for e in report.entities)
     return traverse(seeds, graph, docs, top_k, report)
 
 
 def traverse(
-    seeds: Sequence[TraversalSeed],
+    seeds: Sequence[SeedNode],
     graph: GraphStore,
     docs: DocStore,
     top_k: int = TOP_K,
@@ -106,7 +106,7 @@ def traverse(
     support: dict[str, int] = {}
     via: dict[str, Via] = {}
     reached_by: dict[str, list[str]] = {}
-    steps: list[TraversalStep] = []
+    steps: list[FollowedEdge] = []
 
     def reach(chunk_id: str, how: Via, seed_id: str) -> None:
         if chunk_id not in via or _STRENGTH[how] > _STRENGTH[via[chunk_id]]:
@@ -120,7 +120,7 @@ def traverse(
         sub = graph.expand([node.id], hops=1)
         for edge in sub.edges:
             support[edge.chunk_id] = support.get(edge.chunk_id, 0) + 1
-            steps.append(TraversalStep(node.id, edge))
+            steps.append(FollowedEdge(node.id, edge))
         mentions = set(node.chunk_ids)
         edge_chunks = {e.chunk_id for e in sub.edges}
         direct = mentions | edge_chunks
@@ -147,7 +147,7 @@ def traverse(
 
 def steps_for_display(
     traversal: GraphTraversal, limit: int, max_nodes: int | None = None
-) -> tuple[tuple[TraversalStep, ...], int]:
+) -> tuple[tuple[FollowedEdge, ...], int]:
     """The steps worth showing: those whose chunk is one of the chunks reached (the passages the signal ranked top),
     best-ranked chunk first, at most `limit`, and, if `max_nodes` is given, only while the seeds plus the ends of the
     steps shown stay within it; and how many followed steps are not shown. A hub seed follows hundreds of edges (755 on

@@ -397,6 +397,15 @@ def compose(ctx: TurnContext) -> Composition:
     return replace(composition, layout=layout)
 
 
+def resolved_labels(graph: dict[str, Any] | None) -> set[str]:
+    """The concept labels the Graph agent resolved for a question: its first entities (the comparison's limit of 8) and
+    every seed of the traversal (up to 10), lower case. A saved search path stores the traversal's seeds, so the check that
+    a saved view's concepts still resolve must read both lists."""
+    payload = graph or {}
+    found = [*(payload.get("seeds") or []), *((payload.get("traversal") or {}).get("seeds") or [])]
+    return {s.get("label", "").strip().lower() for s in found if isinstance(s, dict)}
+
+
 async def compose_from_pattern(ctx: TurnContext, pattern: SavedPattern) -> Composition:
     """Apply a saved pattern (D-31, stage 5): re-bind its evidence with the Graph agent's deterministic tools, run its
     template through admission, build, validation and layout, and return the one block. **No Research, no Fact Checker
@@ -422,7 +431,7 @@ async def compose_from_pattern(ctx: TurnContext, pattern: SavedPattern) -> Compo
     if entities:
         result = await route_to_agent(ctx, "graph", " ".join(entities))
         graph = result.payload if result.status in ("ok", "partial") else None
-        resolved = {s.get("label", "").strip().lower() for s in (graph or {}).get("seeds") or []}
+        resolved = resolved_labels(graph)
         if not graph or not {e.strip().lower() for e in entities} <= resolved:
             raise PatternRefused(
                 "precondition_not_met", "The concepts this view is about could not be found in your documents."

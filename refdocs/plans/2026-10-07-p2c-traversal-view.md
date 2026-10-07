@@ -2,7 +2,7 @@
 
 > A follow-on to P2 and P2b, from Azim's message on 2026-10-07 (the first of two parts; the second is `2026-10-07-g1-atomic-graph-experiment.md`). Execution doc: `refdocs/execution/2026-10-07-p2c-traversal-view.md`.
 > A plan says **what and why**. The execution doc says **how and in what order**.
-> Status: **Approved by Azim 2026-10-07** ("proceed with both"). ADR D-33 accepted with it. Building starts at task T1.
+> Status: **Done 2026-10-07** (built and checked; see the check under Definition of done). **Approved by Azim 2026-10-07** ("proceed with both"); ADR D-33 accepted with it.
 
 ## Why this exists
 
@@ -43,7 +43,7 @@ The top-right graph (`GraphView`) draws **what the documents say connects**: edg
 
 **The retriever is untouched.** The traversal is a second, read-only walk over the same graph with the same constants; the parity test is the guarantee that it describes what the retriever does. `GRAPH_SCORING_VERSION` does not change.
 
-**Wire shape (proposal, confirmed by a spike in T1):** `TraversalViewData { seeds: TraversalSeed[]; nodes: GraphNode[]; steps: TraversalStep[]; reached: ReachedPassage[]; citations: Citation[] }` with `TraversalSeed { nodeId, match: "exact" | "approximate" }`, `TraversalStep { source, target, relation, hop }` (hop is 1 today), `ReachedPassage { citationId, via: "mentions" | "edge" | "neighbour", rank }`. Caps in the template's fences: seeds 6, nodes 40, steps 60, reached 10.
+**Wire shape (proposal, confirmed by a spike in T1):** `TraversalViewData { seeds: TraversalSeed[]; nodes: GraphNode[]; steps: TraversalStep[]; reached: ReachedPassage[]; citations: Citation[] }` with `TraversalSeed { nodeId, match: "exact" | "approximate" }`, `TraversalStep { source, target, relation, hop }` (hop is 1 today), `ReachedPassage { citationId, via: "mentions" | "edge" | "neighbour", rank }`. Caps in the template's fences: seeds 10, nodes 40, steps 60, reached 10 (a question that resolves to more than 10 concepts is refused with `too_many_seeds`).
 
 ## Cost estimate
 
@@ -61,10 +61,22 @@ No paid call is added: the traversal reads local stores, the Composer is determi
 
 ## Definition of done
 
-- [ ] `trace_graph_signal` exists; its chunk scores and order equal `GraphRetriever`'s on every question of the frozen set and on synthetic graphs (a test); `GraphRetriever` and the protocol stamp are unchanged (`eval/tests/test_frozen_assets.py` green).
-- [ ] `packages/schema` defines `TraversalView` and its data; `pnpm codegen:check` exits 0; `catalog.md` documents its precondition, supplier, caps, invariants and placement; the completeness test passes.
-- [ ] The validator checks every claim against the stores (a tamper test for each: a node, an edge, a chunk, a hop, a rank, a `via` that the stores do not support); the registration suite refuses a template with a planted hole.
-- [ ] The Composer admits it by its precondition with a closed refusal reason, makes no model call, and the trace panel names it (tests); the admission rate on the 20 study questions is measured and reported.
-- [ ] The web component renders all five states, is keyboard operable and text-only (tests), and appears under the graph in the studio (a browser capture on real papers).
-- [ ] A saved `TraversalView` pattern re-runs the traversal on apply and refuses with a reason when its evidence is gone (a test).
-- [ ] `schema-guardian`, `retrieval-auditor` and `cost-auditor` have reviewed it; the full suite, lint, types, codegen check and build are green; STATUS, CHANGELOG, ADR D-33, the file structure guide and the indexes are current.
+- [x] `trace_graph_signal` exists; its chunk scores and order equal `GraphRetriever`'s on every question of the frozen set and on synthetic graphs (a test); `GraphRetriever` and the protocol stamp are unchanged (`eval/tests/test_frozen_assets.py` green).
+- [x] `packages/schema` defines `TraversalView` and its data; `pnpm codegen:check` exits 0; `catalog.md` documents its precondition, supplier, caps, invariants and placement; the completeness test passes.
+- [x] The validator checks every claim against the stores (a tamper test for each: a node, an edge, a chunk, a hop, a rank, a `via` that the stores do not support); the registration suite refuses a template with a planted hole.
+- [x] The Composer admits it by its precondition with a closed refusal reason, makes no model call, and the trace panel names it (tests); the admission rate on the 20 study questions is measured and reported.
+- [x] The web component renders all five states, is keyboard operable and text-only (tests), and appears under the graph in the studio (a browser capture on real papers).
+- [x] A saved `TraversalView` pattern re-runs the traversal on apply and refuses with a reason when its evidence is gone (a test).
+- [x] `schema-guardian`, `retrieval-auditor` and `cost-auditor` have reviewed it; the full suite, lint, types, codegen check and build are green; STATUS, CHANGELOG, ADR D-33, the file structure guide and the indexes are current.
+
+### Check against the build (2026-10-07, P2c T5)
+
+1. Traversal function with parity: **met** (`api/retrieval/traversal.py`; parity on handmade graphs and all 20 frozen questions on the pinned stores; the retriever and the pins unchanged, confirmed by `retrieval-auditor`). Differences found and left: `top_k <= 0` behaves differently (unused); a seed absent from the graph is skipped where the retriever would raise (the resolver cannot produce one).
+2. Schema, codegen, catalog guide and completeness test: **met.**
+3. The validator checks every claim against the stores: **met by re-derivation** (stronger than the plan's list), with tamper tests and a 33-defect registration suite. Two things it trusts and the guide says so: the seeds and their match kind.
+4. The Composer admits by precondition with closed reasons, no model call, and the trace names it: **met**; admission measured on the 20 questions: **20 of 20**, including the control (a limitation, stated).
+5. The web component, five states, keyboard, text only, under the graph: **met in tests and in a browser with the fake extractor** (captures p2c-01 to 03). **Not shown:** on the real 16-paper graph in a browser (a few thousandths of a cent of live query embeddings; not run).
+6. A saved traversal re-runs on apply and refuses with a reason: **met** (a round-trip test with no model call; refusals through the shared pattern tests), after a review fix for views with 9 or 10 seeds.
+7. Reviews and docs: **met** (all three named agent types ran; their fixes are in; STATUS, CHANGELOG, D-33 amended, file structure, indexes updated). The reporting finding on the headline claim was fixed.
+
+**Not done in P2c, by decision:** a "no strong concept" note for questions the corpus cannot answer; multi-hop traversal; a whole-corpus notes view (planned after G1).

@@ -54,6 +54,12 @@
 
 **Verify:** both reports are in the changelog; no blocking finding remains; Azim has confirmed the amount in writing.
 
+### Task G1.5a: A one-paper pilot (about $0.25 to $0.40, after confirmation)
+
+Ingest one paper (chosen by rule, for example the shortest in the manifest) with the atomic builder into its own directory. Record the real cost per chunk, the extraction failure rate, the drop reasons and the structural metrics for that paper against the same paper's slice of the pinned graph. Replace the plan's per-chunk estimate with the measured one and show Azim the cost of the subset before asking him to confirm it.
+
+**Verify:** the ledger delta equals the confirmed ceiling or less; the pinned hashes are unchanged; the pilot's numbers are written to `eval/results/` with the commit.
+
 ### Task G1.5: The subset run (spends about $1.5 after confirmation)
 
 1. Ingest 4 papers with the atomic builder into a new directory, reusing the pinned vector store entries for the same chunks (a parity check that the chunk ids and texts equal the pinned ones).

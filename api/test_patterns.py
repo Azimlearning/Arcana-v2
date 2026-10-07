@@ -316,6 +316,24 @@ def test_a_saved_source_list_applies_too(ready_client: TestClient):
     assert listing_block.meta.status == "ready" and len(listing_block.data.documents) == 1  # pyright: ignore[reportAttributeAccessIssue]
 
 
+def test_a_saved_search_path_applies_with_no_model_call_and_gives_the_original_blocks_data(ready_client: TestClient):
+    turn = chat(ready_client, QUESTION)
+    original = block_of(events(turn), "TraversalView")
+    pattern = SavedPattern.model_validate(
+        save(ready_client, turn_id_of(chat(ready_client, QUESTION)), "TraversalView", "Search path").json()
+    )
+    assert [(p.key, sorted(p.values)) for p in pattern.params] == [("entities", ["BM25", "Dense Retrieval"])]
+    container = ready_client.app.state.container  # pyright: ignore[reportAttributeAccessIssue]
+    provider = FakeProvider(fail_with="timeout")
+    container.llm = LLMService(provider, None, container.ledger)
+    stream = events(apply(ready_client, pattern.id))
+    assert provider.calls == []  # the traversal is re-run over the stores: no Research, no Fact Checker, no routing
+    applied = block_of(stream, "TraversalView")
+    assert applied.id.startswith("apply-") and applied.meta.status == "ready"
+    assert applied.data.reached == original.data.reached and applied.data.steps == original.data.steps  # pyright: ignore[reportAttributeAccessIssue]
+    assert applied.data.stepsLeftOut == original.data.stepsLeftOut  # pyright: ignore[reportAttributeAccessIssue]
+
+
 def refusal(response, reason: str):
     assert response.status_code == 409 and response.headers["content-type"].startswith("application/json")
     envelope = ErrorEnvelope.model_validate(response.json())  # a plain envelope: nothing streamed, no partial block

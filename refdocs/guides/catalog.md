@@ -169,7 +169,7 @@ Status: **built** (P2 B4).
 
 ## TraversalView
 
-Status: **in progress** (P2c T2). New in v2 (D-33); no v1 counterpart.
+Status: **built** (P2c T2 to T4). New in v2 (D-33); no v1 counterpart.
 
 - **Precondition:** the question resolved to at least one concept in the graph (no more than the seeds cap, so the view is
   the whole search and not part of it), and the one-hop expansion from those concepts followed at least one edge that led
@@ -179,7 +179,7 @@ Status: **in progress** (P2c T2). New in v2 (D-33); no v1 counterpart.
 - **Payload:** `seeds: {nodeId, match}[]` (`exact` or `approximate`), `nodes: {id, label}[]`, `steps: {source, target,
   relation, citationId, hop}[]`, `reached: {citationId, via, rank, seedIds}[]`, `citations`, `stepsLeftOut`.
 - **Caps:** 10 seeds, 40 nodes, 60 steps, 10 passages; label at most 120 characters.
-- **Fences:** caps `seeds=10 nodes=40 steps=60 reached=10 label_chars=120`; grounding `provenance_rederived_from_stores`; a11y `group:Search path | region:Passages reached | region:Details`. Slots: none. Template version 1; reusable without Research: no.
+- **Fences:** caps `seeds=10 nodes=40 steps=60 reached=10 label_chars=120`; grounding `provenance_rederived_from_stores`; a11y `group:Search path | region:Passages reached | region:Details`. Slots: `entities` (entity, 1 to 10, from the traversal's seeds). Template version 1; reusable without Research: yes.
 - **Grounding is provenance, not "the text states the relation".** The view shows what the search followed: a followed edge
   may be a co-mention. Every claim is re-derived from the stores by the validator: it re-runs the traversal from the block's
   seeds (stored nodes, with their stored labels) and requires exactly the block's `reached` (the chunk each citation names,
@@ -195,9 +195,10 @@ Status: **in progress** (P2c T2). New in v2 (D-33); no v1 counterpart.
   click or keyboard; and a text list of every step.
 - **Placement hint:** studio panel, priority 25 (under `GraphView`).
 - **Admissible with flat retrieval:** no.
-- **Refusal reasons:** `no_graph_result`, `nothing_resolved`, `no_edge_followed`, `too_many_seeds`.
+- **Refusal reasons:** `no_graph_result`, `nothing_resolved`, `no_edge_followed`, `too_many_seeds` (more than 10 concepts).
+- **What "reached" means:** the passages the graph signal itself ranks top ten, not the fused top ten the answer is built from; the view says it shows the route of the search, not what the documents state.
 - **Feasibility measured on the live stores (2026-10-07, read-only):** on the 20 frozen questions the question resolves to
-  4 to 10 concepts; the search follows 16 to 755 edges; the top ten are almost all reached by a concept's own mention. The
+  3 to 10 concepts; the search follows 16 to 755 edges; the top ten are almost all reached by a concept's own mention. The
   view therefore shows only the edges that led to those passages and counts the rest. Admission on the 20 questions is
   measured in task T3.
 
