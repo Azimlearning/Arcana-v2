@@ -108,9 +108,9 @@ from eval.run_ablation import (
     sha256_file,
 )
 
-EXPECTED_PER_CHUNK_USD = 0.0067
-"""The cost-auditor's expected cost per chunk for the atomic prompt (about 650 tokens in, 1,200 out at Haiku prices): the start-of-document
-projection before anything has been measured. The free-form extractor's $0.0037 is lower because it returns no sentences."""
+EXPECTED_PER_CHUNK_USD = 0.0040
+"""The start-of-document projection before anything has been measured in a build: the pilot measured $0.00358 per chunk for
+the atomic prompt (35 chunks, 2026-10-07), rounded up. The first estimate, $0.0067, was the cost auditor's guess."""
 ARMS_COMPARED = ("graph", "hybrid", "flat")
 MAX_NDCG_DROP = 0.05
 PAIRED_MIN_FOR_SIGNIFICANCE = 10
