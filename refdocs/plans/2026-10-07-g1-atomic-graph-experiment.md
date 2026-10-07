@@ -1,12 +1,14 @@
-# Plan: G1 Atomic-note graph builder, as a measured experiment
+# Plan: G1 Atomic-note graph (the v2 graph direction), built and measured
 
 > The second part of Azim's message of 2026-10-07 (the first is `2026-10-07-p2c-traversal-view.md`). Execution doc: `refdocs/execution/2026-10-07-g1-atomic-graph-experiment.md`.
 > A plan says **what and why**. The execution doc says **how and in what order**.
-> Status: **Approved by Azim 2026-10-07** as an experiment measured as extra arms, with "actual test results" ("proceed with both"). ADR D-34 accepted with it. **No paid call is made until Azim confirms the spend for the task that makes it** (G1.5 and G1.6 say how much).
+> **Amended 2026-10-07 (Azim):** "the Obsidian style is not actually an experiment, this is the current direction I want to go." The atomic-note graph is the intended direction of v2's graph, not a hypothesis to be accepted or rejected. It is still **measured against the frozen baseline as additive arms with the protocol written first**, because the thesis needs evidence and the report must say what the change did; but a poor result is a reason to improve the design and measure again, not to drop the direction, and the builder becomes the default for new ingestion once the subset run shows no structural regression and Azim confirms. The file name keeps the word "experiment" only so links do not break.
+>
+> Status: **Approved by Azim 2026-10-07** as the direction, measured as extra arms, with "actual test results" ("proceed with both"). ADR D-34 accepted with it. **No paid call is made until Azim confirms the spend for the task that makes it** (G1.5 and G1.6 say how much).
 
 ## Why this exists
 
-Azim, 2026-10-07: break documents down, Obsidian-style, into small nodes with relations at ingestion; "I think this can improve the graph RAG output". It is a hypothesis, and this project exists to test hypotheses (constraint 9), so it is run as an experiment with its protocol written before any arm runs.
+Azim, 2026-10-07: break documents down, Obsidian-style, into small nodes with relations at ingestion; "I think this can improve the graph RAG output". Azim has chosen it as the direction. This project also exists to produce evidence (constraint 9), so the new graph is **measured against the frozen baseline with its protocol written before any arm runs**: the measurement validates and sharpens the design and goes in the report; it is not a gate the direction must pass.
 
 **What the data says about the current graph (measured, 2026-10-06 to 2026-10-07):** 16 papers, 1,570 chunks, 11,173 nodes and 13,972 edges from one free-form extraction call per chunk (relations are free text, nodes are per-chunk labels merged by normalised name). On the 20-question study only 44 percent of edges were drawable (a verbatim quote naming both endpoints), a `ConceptMap` was admitted on 3 of 20 questions (15 refused because a hop had no grounded quote), and some real relations are bare co-mentions. The first graph-versus-flat benchmark (19 questions, one ingestion) was inconclusive about whether the graph helps retrieval. So the graph's *structure* is weak in a way that is measurable, and that is where an atomic-note builder could plausibly help. Whether it helps *retrieval* is unknown.
 
@@ -34,8 +36,8 @@ Azim, 2026-10-07: break documents down, Obsidian-style, into small nodes with re
 
 **Out (stated so they are not built by accident):**
 
-- Replacing the current builder or graph, or editing any pinned store, question, gold annotation or scoring constant. The experiment adds arms; it never rewrites history.
-- A whole-corpus "notes" view (an Obsidian graph pane) and note editing by the user: a possible follow-on if the experiment succeeds.
+- Editing any pinned store, question, gold annotation or scoring constant, or deleting the current graph. The pinned graph stays as the frozen baseline the benchmark rests on (history is not rewritten); the new builder is added beside it, and **becomes the default for new ingestion** once G1.5 shows no structural regression and Azim confirms.
+- The user-facing **notes view** (an Obsidian-style whole-corpus graph and a page per concept note, with backlinks) and note editing by the user. **Planned next, after G1** (not conditional on the results): it is what the atomic notes are for. It needs its own plan and a wire type, so it is not built here.
 - A second LLM pass for canonicalisation, a trained entity linker, or multi-hop retrieval changes (each is its own experiment).
 - RAGAS (installed at the very end of the project, as decided).
 

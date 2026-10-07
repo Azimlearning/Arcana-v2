@@ -1,0 +1,851 @@
+{
+  "run": {
+    "started": "2026-10-07T01:24:21.132539+00:00",
+    "label": "traversal-admission",
+    "code": {
+      "commit": "88d9246181eb7f8fcd6ce243378c32f172a44ff9",
+      "dirty": false,
+      "changed_files": []
+    },
+    "data_dir": "data\\eval-live-live",
+    "hashes": {
+      "graph_sha256": "00454fd3afb00e63ab82f7e1f2c00a1551991707f9d91dc942830ad955c1f830",
+      "chunks_sha256": "20fd0ba62ee5a5657d488c9916c85f856497a276c1c6f4386973bb12147cddfb"
+    },
+    "model_calls": 0,
+    "network_calls": 0,
+    "limits": "Availability and what the graph signal does on 20 questions of one corpus; not a quality score."
+  },
+  "summary": {
+    "questions": 20,
+    "admitted": 20,
+    "rate": 1.0,
+    "refusal_reasons": {},
+    "seeds_per_question": [
+      3,
+      4,
+      4,
+      4,
+      4,
+      4,
+      5,
+      5,
+      5,
+      5,
+      6,
+      6,
+      6,
+      6,
+      6,
+      6,
+      7,
+      7,
+      8,
+      10
+    ],
+    "steps_followed_per_question": [
+      16,
+      16,
+      21,
+      25,
+      38,
+      42,
+      54,
+      55,
+      56,
+      57,
+      74,
+      75,
+      80,
+      104,
+      172,
+      274,
+      291,
+      318,
+      452,
+      755
+    ],
+    "steps_shown_per_question": [
+      5,
+      6,
+      8,
+      8,
+      9,
+      9,
+      13,
+      13,
+      15,
+      16,
+      16,
+      17,
+      17,
+      18,
+      21,
+      23,
+      24,
+      24,
+      45,
+      54
+    ],
+    "reached_via_total": {
+      "mentions": 174,
+      "neighbour": 26
+    },
+    "approximate_seeds": 41,
+    "seeds_total": 111
+  },
+  "results": [
+    {
+      "question_id": "q-cross-01",
+      "category": "cross_document",
+      "admitted": true,
+      "reasons": [],
+      "seeds": [
+        {
+          "label": "hybrid retrieval",
+          "match": "exact"
+        },
+        {
+          "label": "dense vectors",
+          "match": "exact"
+        },
+        {
+          "label": "graph traversal",
+          "match": "exact"
+        },
+        {
+          "label": "Vector searches",
+          "match": "exact"
+        },
+        {
+          "label": "BM25",
+          "match": "exact"
+        },
+        {
+          "label": "evidence",
+          "match": "exact"
+        },
+        {
+          "label": "Source Documents",
+          "match": "approximate"
+        },
+        {
+          "label": "A* search",
+          "match": "approximate"
+        }
+      ],
+      "steps_followed": 80,
+      "steps_shown": 16,
+      "steps_left_out": 64,
+      "reached": 10,
+      "reached_via": {
+        "mentions": 10
+      }
+    },
+    {
+      "question_id": "q-cross-02",
+      "category": "cross_document",
+      "admitted": true,
+      "reasons": [],
+      "seeds": [
+        {
+          "label": "Knowledge graphs",
+          "match": "exact"
+        },
+        {
+          "label": "concepts",
+          "match": "exact"
+        },
+        {
+          "label": "corpus",
+          "match": "exact"
+        },
+        {
+          "label": "Definition step",
+          "match": "approximate"
+        }
+      ],
+      "steps_followed": 274,
+      "steps_shown": 21,
+      "steps_left_out": 253,
+      "reached": 10,
+      "reached_via": {
+        "mentions": 10
+      }
+    },
+    {
+      "question_id": "q-cross-03",
+      "category": "cross_document",
+      "admitted": true,
+      "reasons": [],
+      "seeds": [
+        {
+          "label": "retrieval augmented generation systems",
+          "match": "exact"
+        },
+        {
+          "label": "Hallucinations",
+          "match": "exact"
+        },
+        {
+          "label": "RAG methods",
+          "match": "approximate"
+        },
+        {
+          "label": "multiple sampling",
+          "match": "approximate"
+        }
+      ],
+      "steps_followed": 172,
+      "steps_shown": 23,
+      "steps_left_out": 149,
+      "reached": 10,
+      "reached_via": {
+        "mentions": 10
+      }
+    },
+    {
+      "question_id": "q-cross-04",
+      "category": "cross_document",
+      "admitted": true,
+      "reasons": [],
+      "seeds": [
+        {
+          "label": "evaluation metrics",
+          "match": "exact"
+        },
+        {
+          "label": "Retrieval Quality",
+          "match": "exact"
+        },
+        {
+          "label": "corpus",
+          "match": "exact"
+        },
+        {
+          "label": "benchmark",
+          "match": "exact"
+        },
+        {
+          "label": "F-Measure",
+          "match": "approximate"
+        }
+      ],
+      "steps_followed": 21,
+      "steps_shown": 8,
+      "steps_left_out": 13,
+      "reached": 10,
+      "reached_via": {
+        "mentions": 8,
+        "neighbour": 2
+      }
+    },
+    {
+      "question_id": "q-cross-05",
+      "category": "cross_document",
+      "admitted": true,
+      "reasons": [],
+      "seeds": [
+        {
+          "label": "multi-hop reasoning",
+          "match": "exact"
+        },
+        {
+          "label": "Retrieval",
+          "match": "exact"
+        },
+        {
+          "label": "Findings",
+          "match": "exact"
+        },
+        {
+          "label": "generation techniques",
+          "match": "approximate"
+        },
+        {
+          "label": "Multi-Document Summarization",
+          "match": "approximate"
+        },
+        {
+          "label": "Common Crawl",
+          "match": "approximate"
+        }
+      ],
+      "steps_followed": 55,
+      "steps_shown": 18,
+      "steps_left_out": 37,
+      "reached": 10,
+      "reached_via": {
+        "mentions": 10
+      }
+    },
+    {
+      "question_id": "q-cross-06",
+      "category": "cross_document",
+      "admitted": true,
+      "reasons": [],
+      "seeds": [
+        {
+          "label": "dense vectors",
+          "match": "exact"
+        },
+        {
+          "label": "BM25",
+          "match": "exact"
+        },
+        {
+          "label": "Retrieval",
+          "match": "exact"
+        },
+        {
+          "label": "RAG methods",
+          "match": "approximate"
+        }
+      ],
+      "steps_followed": 74,
+      "steps_shown": 16,
+      "steps_left_out": 58,
+      "reached": 10,
+      "reached_via": {
+        "mentions": 10
+      }
+    },
+    {
+      "question_id": "q-cross-07",
+      "category": "cross_document",
+      "admitted": true,
+      "reasons": [],
+      "seeds": [
+        {
+          "label": "Retrieval",
+          "match": "exact"
+        },
+        {
+          "label": "relevant documents",
+          "match": "approximate"
+        },
+        {
+          "label": "Source Documents",
+          "match": "approximate"
+        },
+        {
+          "label": "vector database",
+          "match": "approximate"
+        }
+      ],
+      "steps_followed": 57,
+      "steps_shown": 24,
+      "steps_left_out": 33,
+      "reached": 10,
+      "reached_via": {
+        "mentions": 10
+      }
+    },
+    {
+      "question_id": "q-cross-08",
+      "category": "cross_document",
+      "admitted": true,
+      "reasons": [],
+      "seeds": [
+        {
+          "label": "citation accuracy",
+          "match": "exact"
+        },
+        {
+          "label": "generated answer",
+          "match": "exact"
+        },
+        {
+          "label": "OpenAI",
+          "match": "approximate"
+        },
+        {
+          "label": "generation techniques",
+          "match": "approximate"
+        },
+        {
+          "label": "RAG methods",
+          "match": "approximate"
+        }
+      ],
+      "steps_followed": 42,
+      "steps_shown": 9,
+      "steps_left_out": 33,
+      "reached": 10,
+      "reached_via": {
+        "mentions": 9,
+        "neighbour": 1
+      }
+    },
+    {
+      "question_id": "q-cross-09",
+      "category": "cross_document",
+      "admitted": true,
+      "reasons": [],
+      "seeds": [
+        {
+          "label": "Knowledge graphs",
+          "match": "exact"
+        },
+        {
+          "label": "relation type",
+          "match": "exact"
+        },
+        {
+          "label": "text",
+          "match": "exact"
+        },
+        {
+          "label": "corpus",
+          "match": "exact"
+        },
+        {
+          "label": "Entity",
+          "match": "exact"
+        },
+        {
+          "label": "global approaches",
+          "match": "approximate"
+        },
+        {
+          "label": "Unstructured corpora",
+          "match": "approximate"
+        }
+      ],
+      "steps_followed": 291,
+      "steps_shown": 45,
+      "steps_left_out": 246,
+      "reached": 10,
+      "reached_via": {
+        "mentions": 10
+      }
+    },
+    {
+      "question_id": "q-cross-10",
+      "category": "cross_document",
+      "admitted": true,
+      "reasons": [],
+      "seeds": [
+        {
+          "label": "retrieval system",
+          "match": "exact"
+        },
+        {
+          "label": "Latency",
+          "match": "exact"
+        },
+        {
+          "label": "Helpfulness-Honesty trade-off",
+          "match": "approximate"
+        },
+        {
+          "label": "generation performance",
+          "match": "approximate"
+        },
+        {
+          "label": "dependency constraint",
+          "match": "approximate"
+        }
+      ],
+      "steps_followed": 16,
+      "steps_shown": 9,
+      "steps_left_out": 7,
+      "reached": 10,
+      "reached_via": {
+        "mentions": 7,
+        "neighbour": 3
+      }
+    },
+    {
+      "question_id": "q-cross-11",
+      "category": "cross_document",
+      "admitted": true,
+      "reasons": [],
+      "seeds": [
+        {
+          "label": "Fixed-size",
+          "match": "exact"
+        },
+        {
+          "label": "chunking",
+          "match": "exact"
+        },
+        {
+          "label": "RAG",
+          "match": "exact"
+        },
+        {
+          "label": "Sentence",
+          "match": "exact"
+        },
+        {
+          "label": "Helpfulness-Honesty trade-off",
+          "match": "approximate"
+        },
+        {
+          "label": "semantic similarity",
+          "match": "approximate"
+        },
+        {
+          "label": "Chunking Strategy",
+          "match": "approximate"
+        }
+      ],
+      "steps_followed": 452,
+      "steps_shown": 5,
+      "steps_left_out": 447,
+      "reached": 10,
+      "reached_via": {
+        "mentions": 3,
+        "neighbour": 7
+      }
+    },
+    {
+      "question_id": "q-cross-12",
+      "category": "cross_document",
+      "admitted": true,
+      "reasons": [],
+      "seeds": [
+        {
+          "label": "Knowledge graphs",
+          "match": "exact"
+        },
+        {
+          "label": "RAG",
+          "match": "exact"
+        },
+        {
+          "label": "Retrieval",
+          "match": "exact"
+        },
+        {
+          "label": "OpenAI",
+          "match": "approximate"
+        },
+        {
+          "label": "Biomedical Research",
+          "match": "approximate"
+        },
+        {
+          "label": "compositionality gap",
+          "match": "approximate"
+        }
+      ],
+      "steps_followed": 755,
+      "steps_shown": 54,
+      "steps_left_out": 701,
+      "reached": 10,
+      "reached_via": {
+        "mentions": 10
+      }
+    },
+    {
+      "question_id": "q-single-01",
+      "category": "single_document",
+      "admitted": true,
+      "reasons": [],
+      "seeds": [
+        {
+          "label": "retrieval system",
+          "match": "exact"
+        },
+        {
+          "label": "calibration",
+          "match": "exact"
+        },
+        {
+          "label": "PageRank score",
+          "match": "approximate"
+        },
+        {
+          "label": "Mean Reciprocal Rank at K",
+          "match": "approximate"
+        },
+        {
+          "label": "Embedding-fusion",
+          "match": "approximate"
+        }
+      ],
+      "steps_followed": 16,
+      "steps_shown": 13,
+      "steps_left_out": 3,
+      "reached": 10,
+      "reached_via": {
+        "mentions": 7,
+        "neighbour": 3
+      }
+    },
+    {
+      "question_id": "q-single-02",
+      "category": "single_document",
+      "admitted": true,
+      "reasons": [],
+      "seeds": [
+        {
+          "label": "Sparse Retrieval",
+          "match": "exact"
+        },
+        {
+          "label": "Dense retrieval",
+          "match": "exact"
+        },
+        {
+          "label": "E\u2032",
+          "match": "exact"
+        },
+        {
+          "label": "G",
+          "match": "exact"
+        },
+        {
+          "label": "BM25",
+          "match": "exact"
+        },
+        {
+          "label": "embeddings",
+          "match": "exact"
+        },
+        {
+          "label": "Query",
+          "match": "exact"
+        },
+        {
+          "label": "A* search",
+          "match": "approximate"
+        },
+        {
+          "label": "ToG",
+          "match": "approximate"
+        },
+        {
+          "label": "embedding-based search",
+          "match": "approximate"
+        }
+      ],
+      "steps_followed": 104,
+      "steps_shown": 17,
+      "steps_left_out": 87,
+      "reached": 10,
+      "reached_via": {
+        "mentions": 10
+      }
+    },
+    {
+      "question_id": "q-single-03",
+      "category": "single_document",
+      "admitted": true,
+      "reasons": [],
+      "seeds": [
+        {
+          "label": "Embedding Model",
+          "match": "exact"
+        },
+        {
+          "label": "semantic search",
+          "match": "exact"
+        },
+        {
+          "label": "retrieval accuracy",
+          "match": "exact"
+        },
+        {
+          "label": "QuALITY",
+          "match": "exact"
+        },
+        {
+          "label": "embeddings",
+          "match": "exact"
+        },
+        {
+          "label": "EXAMINEE role",
+          "match": "approximate"
+        }
+      ],
+      "steps_followed": 38,
+      "steps_shown": 6,
+      "steps_left_out": 32,
+      "reached": 10,
+      "reached_via": {
+        "mentions": 6,
+        "neighbour": 4
+      }
+    },
+    {
+      "question_id": "q-single-04",
+      "category": "single_document",
+      "admitted": true,
+      "reasons": [],
+      "seeds": [
+        {
+          "label": "Domain Specific Terminology",
+          "match": "exact"
+        },
+        {
+          "label": "BM25",
+          "match": "exact"
+        },
+        {
+          "label": "Query",
+          "match": "exact"
+        },
+        {
+          "label": "F1 score",
+          "match": "approximate"
+        },
+        {
+          "label": "Technical Capabilities",
+          "match": "approximate"
+        },
+        {
+          "label": "token limitations",
+          "match": "approximate"
+        }
+      ],
+      "steps_followed": 75,
+      "steps_shown": 15,
+      "steps_left_out": 60,
+      "reached": 10,
+      "reached_via": {
+        "mentions": 10
+      }
+    },
+    {
+      "question_id": "q-contra-01",
+      "category": "contradiction",
+      "admitted": true,
+      "reasons": [],
+      "seeds": [
+        {
+          "label": "chunk size",
+          "match": "exact"
+        },
+        {
+          "label": "retrieval accuracy",
+          "match": "exact"
+        },
+        {
+          "label": "Source Documents",
+          "match": "approximate"
+        }
+      ],
+      "steps_followed": 25,
+      "steps_shown": 17,
+      "steps_left_out": 8,
+      "reached": 10,
+      "reached_via": {
+        "mentions": 10
+      }
+    },
+    {
+      "question_id": "q-contra-02",
+      "category": "contradiction",
+      "admitted": true,
+      "reasons": [],
+      "seeds": [
+        {
+          "label": "Knowledge graphs",
+          "match": "exact"
+        },
+        {
+          "label": "Vector searches",
+          "match": "exact"
+        },
+        {
+          "label": "corpus",
+          "match": "exact"
+        },
+        {
+          "label": "Augmentation",
+          "match": "exact"
+        },
+        {
+          "label": "Retrieval",
+          "match": "exact"
+        },
+        {
+          "label": "case study",
+          "match": "approximate"
+        }
+      ],
+      "steps_followed": 318,
+      "steps_shown": 24,
+      "steps_left_out": 294,
+      "reached": 10,
+      "reached_via": {
+        "mentions": 10
+      }
+    },
+    {
+      "question_id": "q-contra-03",
+      "category": "contradiction",
+      "admitted": true,
+      "reasons": [],
+      "seeds": [
+        {
+          "label": "vector-based retrieval",
+          "match": "exact"
+        },
+        {
+          "label": "Recommendation",
+          "match": "exact"
+        },
+        {
+          "label": "graph",
+          "match": "exact"
+        },
+        {
+          "label": "Retrieval",
+          "match": "exact"
+        }
+      ],
+      "steps_followed": 54,
+      "steps_shown": 13,
+      "steps_left_out": 41,
+      "reached": 10,
+      "reached_via": {
+        "mentions": 9,
+        "neighbour": 1
+      }
+    },
+    {
+      "question_id": "q-contra-04",
+      "category": "contradiction",
+      "admitted": true,
+      "reasons": [],
+      "seeds": [
+        {
+          "label": "Knowledge_Graph_Construction",
+          "match": "exact"
+        },
+        {
+          "label": "Contradictory",
+          "match": "exact"
+        },
+        {
+          "label": "claims",
+          "match": "exact"
+        },
+        {
+          "label": "Scalability",
+          "match": "exact"
+        },
+        {
+          "label": "T5-large",
+          "match": "approximate"
+        },
+        {
+          "label": "static corpora",
+          "match": "approximate"
+        }
+      ],
+      "steps_followed": 56,
+      "steps_shown": 8,
+      "steps_left_out": 48,
+      "reached": 10,
+      "reached_via": {
+        "mentions": 5,
+        "neighbour": 5
+      }
+    }
+  ]
+}

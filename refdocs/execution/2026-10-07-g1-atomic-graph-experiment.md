@@ -1,8 +1,8 @@
-# Execution: G1 Atomic-note graph builder, as a measured experiment
+# Execution: G1 Atomic-note graph (the v2 graph direction), built and measured
 
 > Plan: `refdocs/plans/2026-10-07-g1-atomic-graph-experiment.md`. Tasks run in order. A task is not done until its **Verify** passes, not when the code compiles.
 > If reality diverges from this doc, **edit this doc** (CLAUDE.md rule 4) and note it in the changelog's Deviations line.
-> Status: **Approved by Azim 2026-10-07; ADR D-34 accepted.** G1.1 is next. **G1.5 and G1.6 spend money and each needs Azim's confirmation of the amount first.**
+> Status: **Approved by Azim 2026-10-07 as the direction (amended: not an experiment to be accepted or rejected); ADR D-34 accepted.** G1.1 is done; G1.2 is next. **G1.5 and G1.6 spend money and each needs Azim's confirmation of the amount first.**
 
 ## Before starting
 
@@ -66,7 +66,9 @@
 
 Same as G1.5 over all 16 papers and all 20 questions, after Azim raises `LLM_MONTHLY_CAP_USD` and confirms about $5.8. If it is not done, the record says so and why.
 
-### Task G1.7: Wrap-up
+### Task G1.7: Make it the default, and wrap up
+
+After G1.5, if the subset shows no structural regression against the same four papers' slice of the pinned graph and Azim confirms, make the atomic builder the default for new ingestion (a setting, the pinned stores untouched and still readable); record the notes view as the next plan. Then:
 
 Update STATUS, CHANGELOG, DECISIONS, the index tables and the plan's definition of done item by item, with the results stated as measured and the limits beside them. Run `/session-end`.
 

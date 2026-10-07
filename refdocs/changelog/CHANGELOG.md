@@ -28,6 +28,21 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-07: G1 reframed (the Obsidian-style graph is the direction, not an experiment), docs only
+- **Changed:** the G1 plan and execution doc (retitled, status and scope amended), ADR D-34 (title and an amendment), the PRD D-34 row, the plans index.
+- **Decided:** Azim: "the Obsidian style is not actually an experiment, this is the current direction I want to go." The atomic-note graph is the intended direction. It is still built beside the frozen baseline and measured as additive arms with the protocol fixed first (the report needs evidence); an unfavourable result is a reason to improve the design, not to drop it; the builder becomes the default for new ingestion once the subset shows no structural regression and Azim confirms; the user-facing notes view (Obsidian-style whole-corpus graph, a page per concept note with backlinks) is planned next after G1, not conditional on results.
+- **Deviations:** the original plan treated the idea as a hypothesis ("experiment"); this reverses that framing. The measurement protocol, the frozen assets and the staged spending are unchanged.
+- **Verified:** nothing verified this session for this entry (documents only).
+- **Known issues / next steps:** P2c T5, then G1.2 (the builder on fakes). The plan for the notes view comes after G1.
+
+### 2026-10-07: P2c tasks T2 to T4 (TraversalView: wire type, validator, Composer, web component) and the admission measurement
+- **Changed:** schema (`TraversalView` and its data, three refusal reasons) and `api/genui/generated.py`; `api/genui/validate.py` (a validator that re-derives the traversal from the stores, `validate_block` takes the graph store); `api/genui/catalog.py` (the spec, `Slot.source`, reusable); `api/genui/templates.py` (a 33-defect suite, `fixture_graph`); `api/genui/builders.py`, `api/agents/compose.py`, `api/agents/graph_agent.py`, `api/agents/graph.py`; `api/retrieval/traversal.py` (`traverse(seeds, ...)`, `steps_for_display` with a node cap); `eval/traversal_admission.py` (new, free) and its results; the web component, layout, registry, store, trace panel and saved-view names; `eval/bound.py` (a `TraversalView` detail); tests on both sides; the catalog guide; the execution doc (T2 to T4 Reality).
+- **Decided:** The traversal is validated by **re-derivation**, not by trusting it: a block must equal what `traverse` returns from its own seeds. `TraversalView` is reusable (a saved view re-runs the traversal from the seed labels). Count and node-set mismatches have their own issue paths so cap guards stay meaningful.
+- **Deviations:** the plan's validator rules said "a `via` that the stores do not support"; the build checks the stronger "equals the re-derived value". Nothing else.
+- **Verified:** `uv run pytest` (829 passed), `uv run ruff check api eval scripts`, `uv run pyright api eval`, `pnpm codegen:check`, `pnpm -r typecheck`, `pnpm -r lint`, `pnpm -r test` (245), `pnpm --filter web build` (exit 0), `eval/tests/test_frozen_assets.py` (7).
+- **Measured:** on the 20 frozen questions a `TraversalView` is admitted on **20 of 20** (including the control the corpus cannot answer); 3 to 10 seeds (37 percent of them approximate matches); 16 to 755 edges followed, 5 to 54 shown; **87 percent of the 200 passages the graph signal returns are reached by a seed's own mention, 13 percent through a neighbour, none by an edge alone**. The graph signal is mostly entity linking, so where it adds value is decided by which nodes the question resolves to. Evidence: `refdocs/evidence/20261007T012421Z-traversal-admission.md`.
+- **Known issues / next steps:** T5 (a real browser, the reviews, STATUS and the wrap-up). Known: the view appears even for a question the corpus cannot answer (it shows junk seeds); a "no strong concept" note is a possible follow-up.
+
 ### 2026-10-07: P2c task T1 (the traversal as a pure function, with a parity test)
 - **Changed:** `api/retrieval/traversal.py` and `api/retrieval/test_traversal.py` (new), the P2c execution doc (T1 Reality). Nothing under `api/retrieval/graph.py`, `entities.py` or the protocol files.
 - **Decided:** The view will show only the edges that led to passages the signal returned (best rank first) and count the rest; the real traversals follow up to 755 edges and almost all lead outside the top ten.
