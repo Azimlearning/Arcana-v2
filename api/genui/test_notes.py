@@ -425,3 +425,142 @@ def test_the_notes_route_answers_an_unknown_page_with_an_error_envelope_and_a_lo
     assert missing.status_code == 404 and missing.json()["code"] == "not_found"
     long = client.get("/vault/notes", params={"query": "x" * 500})
     assert long.status_code == 422 and long.json()["code"] == "validation_failed"
+
+
+# ── the caps, the label limit, the precondition and the accessibility labels (schema-guardian, M2.6) ───────────────────
+
+
+def _crowded_world(tmp_path: Path):
+    """One hub page in 45 passages, stated links to 45 pages (45 sentences), 12 claims, 10 definitions, and 190 links among the
+    first 20 other pages (so a graph of 40 pages has more than the 120-edge cap)."""
+    from api.stores.doc_store import Chunk, Document
+    from api.stores.local.sqlite_doc import SqliteDocStore, make_engine
+    from api.vault.types import ClaimNote, ConceptPage, Definition, PageLink, Vault
+
+    docs = SqliteDocStore(make_engine(tmp_path / "crowd.db"))
+    docs.put_document(Document("d", "T", "t.pdf", "ready", 1, None, "2026-10-07"))
+    sentences = [f"Hub relates to Other{i} in this sentence number {i}." for i in range(45)]
+    docs.put_chunks([Chunk(f"c{i}", "d", i, 1, s) for i, s in enumerate(sentences)])
+    pages = {
+        "hub": ConceptPage(
+            "hub",
+            "Hub",
+            (),
+            ("hub",),
+            "concept",
+            ("d",),
+            tuple(f"c{i}" for i in range(45)),
+            tuple(Definition(sentences[i], f"c{i}", "d") for i in range(10)),
+        )
+    }
+    for i in range(45):
+        pages[f"o{i:02d}"] = ConceptPage(
+            f"o{i:02d}", f"Other{i}", (), (f"o{i:02d}",), None, ("d",), (f"c{i}",), ()
+        )
+    links = [
+        PageLink("hub", f"o{i:02d}", "asserted", "uses", (f"c{i}",), sentences[i])
+        for i in range(45)
+    ]
+    links += [
+        PageLink(f"o{i:02d}", f"o{j:02d}", "co_mention", None, (f"c{i}",), sentences[i])
+        for i in range(20)
+        for j in range(i + 1, 20)
+    ]
+    claims = [ClaimNote(f"claim-{i}", f"c{i}", "d", sentences[i], ("hub",)) for i in range(12)]
+    return Vault("vault-1", 45, pages, links, claims), docs
+
+
+def test_every_cap_is_enforced_and_what_is_left_out_is_counted(tmp_path: Path):
+    vault, docs = _crowded_world(tmp_path)
+    page = derive_concept_page(vault, docs, "hub")
+    assert page is not None
+    assert (len(page["definitions"]), len(page["links"]), page["linksLeftOut"]) == (
+        CAPS["definitions"],
+        CAPS["links"],
+        5,
+    )
+    assert len(page["claims"]) == CAPS["claims"] and len(page["mentions"]) == CAPS["mentions"]
+    assert page["mentionsLeftOut"] == 45 - CAPS["mentions"] and page["passages"] == 45
+    assert (
+        validate_block(concept_page("page:hub", "ready", data=page), docs, vault=vault).type
+        == "ConceptPage"
+    )
+
+    focused = derive_notes_graph(vault, docs, "hub", "")
+    assert (
+        focused is not None
+        and len(focused["nodes"]) == CAPS["nodes"]
+        and focused["nodesLeftOut"] == 45 - (CAPS["nodes"] - 1)
+    )
+    overview = derive_notes_graph(vault, docs, None, "")
+    assert (
+        overview is not None
+        and len(overview["nodes"]) == CAPS["nodes"]
+        and overview["nodesLeftOut"] == 46 - CAPS["nodes"]
+    )
+    assert (
+        len(overview["edges"]) == CAPS["edges"]
+    )  # more than 120 links among the 40 pages: the first 120, strongest kind first
+    assert overview["edges"][0]["kind"] == "asserted"
+    assert (
+        validate_block(notes_graph("notes-graph", "ready", data=overview), docs, vault=vault).type
+        == "NotesGraph"
+    )
+
+
+def test_a_very_long_page_name_is_cut_at_the_label_limit_and_the_block_still_validates(
+    tmp_path: Path,
+):
+    vault, docs = _crowded_world(tmp_path)
+    long = " ".join(["Word"] * 80)
+    vault.pages["hub"] = vault.pages["hub"].__class__(
+        "hub",
+        long,
+        (long,),
+        ("hub",),
+        "concept",
+        ("d",),
+        vault.pages["hub"].mention_chunk_ids,
+        vault.pages["hub"].definitions,
+    )
+    page = derive_concept_page(vault, docs, "hub")
+    assert (
+        page is not None
+        and len(page["page"]["label"]) <= CAPS["label_chars"]
+        and not page["page"]["label"].endswith(" ")
+    )
+    assert all(len(a) <= CAPS["label_chars"] for a in page["aliases"])
+    assert (
+        validate_block(concept_page("page:hub", "ready", data=page), docs, vault=vault).type
+        == "ConceptPage"
+    )
+    graph = derive_notes_graph(vault, docs, None, "")
+    assert graph is not None and all(len(n["label"]) <= CAPS["label_chars"] for n in graph["nodes"])
+
+
+def test_a_ready_page_needs_a_passage_that_mentions_it(tmp_path: Path):
+    from api.vault.types import ConceptPage, Vault
+
+    _, docs = _crowded_world(tmp_path)
+    stale = Vault(
+        "vault-1",
+        45,
+        {"ghost": ConceptPage("ghost", "Ghost", (), ("ghost",), None, (), (), ())},
+        [],
+    )
+    data = derive_concept_page(stale, docs, "ghost")  # a vault whose passages are gone
+    assert data is not None and data["passages"] == 0
+    with pytest.raises(ValidationFailed) as refused:
+        validate_block(concept_page("page:ghost", "ready", data=data), docs, vault=stale)
+    assert refused.value.issues[0].path == "data.passages"
+
+
+def test_the_notes_components_expose_the_roles_and_labels_their_fences_require():
+    """A static check against each component's source, as for the turn components (the component tests assert them at run time)."""
+    root = Path(__file__).resolve().parents[2] / "web" / "components" / "genui"
+    for name, spec in NOTES_CATALOG.items():
+        source = (root / f"{name}.tsx").read_text(encoding="utf-8")
+        for requirement in spec.fences.a11y:
+            assert requirement.label in source, (
+                f"{name}: no {requirement.role} labelled {requirement.label!r}"
+            )

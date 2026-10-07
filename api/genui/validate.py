@@ -690,6 +690,8 @@ def _concept_page_issues(block: ConceptPage, docs: DocStore, vault: Vault | None
     if derived is None:
         return [FieldIssue(path="data.page.id", message="the vault has no page with this id")]
     issues: list[FieldIssue] = []
+    if status == "ready" and not derived["passages"]:
+        return [FieldIssue(path="data.passages", message="a ready page needs at least one passage that mentions it")]
     referenced = {
         item["citationId"] for key in ("definitions", "mentions", "links", "claims") for item in data[key]
     }

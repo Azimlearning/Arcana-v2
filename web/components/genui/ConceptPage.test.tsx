@@ -75,9 +75,9 @@ describe("ConceptPage: ready", () => {
     expect(mentions).toHaveTextContent("3 more passages mention it.");
   });
 
-  it("omits the Claims section when there are none and says so for an empty definitions list", () => {
+  it("keeps every section and says so when a list is empty", () => {
     render(<ConceptPage block={conceptPage("ready", { claims: [], definitions: [] })} />);
-    expect(screen.queryByRole("region", { name: "Claims" })).not.toBeInTheDocument();
+    expect(within(screen.getByRole("region", { name: "Claims" })).getByText("No claim naming this concept was stored.")).toBeInTheDocument();
     expect(screen.getByText("No sentence that defines this concept was stored.")).toBeInTheDocument();
   });
 

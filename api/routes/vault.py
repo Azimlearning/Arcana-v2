@@ -38,7 +38,7 @@ async def notes(
 
 
 @router.post("/vault/rebuild")
-async def rebuild(request: Request) -> VaultRebuilt:
+def rebuild(request: Request) -> VaultRebuilt:
     vault = request.app.state.container.rebuild_vault()
     stats = vault.stats
     return VaultRebuilt(

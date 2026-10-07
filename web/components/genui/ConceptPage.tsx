@@ -159,9 +159,10 @@ function Body({ block }: { block: ConceptPageBlock }) {
         )}
       </section>
 
-      {d.claims.length > 0 && (
-        <section aria-label="Claims">
-          <h3 className="text-xs font-medium uppercase tracking-wide text-stone-500">Claims</h3>
+      <section aria-label="Claims">
+        <h3 className="text-xs font-medium uppercase tracking-wide text-stone-500">Claims</h3>
+        {d.claims.length === 0 && <p className="mt-1 text-sm text-stone-500">No claim naming this concept was stored.</p>}
+        {d.claims.length > 0 && (
           <ul className="space-y-2 text-sm">
             {d.claims.map((claim) => (
               <li key={claim.citationId}>
@@ -178,8 +179,8 @@ function Body({ block }: { block: ConceptPageBlock }) {
               </li>
             ))}
           </ul>
-        </section>
-      )}
+        )}
+      </section>
 
       <section aria-label="Mentions">
         <h3 className="text-xs font-medium uppercase tracking-wide text-stone-500">Mentions</h3>

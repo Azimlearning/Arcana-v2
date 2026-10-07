@@ -221,7 +221,8 @@ registry (`api/genui/notes_catalog.py`) instead of an entry in `CATALOG`.
   link's sentence is the evidence stored with the relation, a co-mention's sentence is the first one in which both names occur (it says
   nothing about how they are related), a claim is a sentence a builder marked, and a backlink is one sentence of a passage that
   mentions the page (passages in turn from each document, so a page that occurs in several papers shows several).
-- **Validator invariants:** placeholders carry nothing; a block is refused when no vault is given or the vault has no such page; plain
+- **Always present:** every section is drawn, with a sentence saying so when its list is empty (the Claims region exists even before any builder has produced claims). A name longer than the label cap is cut on a word boundary where it is derived, so the cap is enforced and the block still equals the derived one.
+- **Validator invariants:** placeholders carry nothing; a ready page needs at least one passage that mentions it; a block is refused when no vault is given or the vault has no such page; plain
   citation defects first (stored chunk, matching title and page, a verbatim quote of at least the minimum length, no orphan); then
   exact equality with the derived page, with the first differing places named.
 
@@ -239,7 +240,8 @@ Status: **built** (M2.6). New in v2 (D-35). A notes component (see ConceptPage).
 - **Grounding is derivation.** The graph is a function of its focus, its query and the vault; the validator derives it again and requires
   the block's nodes, edges and `nodesLeftOut` to equal the derived ones. An edge is either asserted (a relation a model stated and the
   builder checked) or co-mentioned; the kind is on every edge so the two are never drawn alike.
-- **Validator invariants:** placeholders carry nothing; a ready graph has at least one page; equality with the derived graph.
+- **Edges beyond the cap:** the 120 edges shown are the first by kind (stated before named-together), then strength; the graph does not count the rest (every page is still listed with its link count, so nothing about a page is hidden). The screen draws only the lines that say something: the stated ones, those of the focus page and all of a chosen page's.
+- **Validator invariants:** placeholders carry nothing but may repeat the query that found no page (it is shown as text); a ready graph has at least one page; equality with the derived graph.
 
 ## InsightCard (stretch)
 

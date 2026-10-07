@@ -72,8 +72,15 @@ class _Cites:
         return self._by_key[key]
 
 
+def _label(label: str) -> str:
+    """A name at most `label_chars` long (cut on a word boundary where there is one), so a page with a very long name cannot
+    widen a block."""
+    cap = CAPS["label_chars"]
+    return label if len(label) <= cap else (label[:cap].rsplit(" ", 1)[0] or label[:cap])
+
+
 def _ref(vault: Vault, page_id: str) -> dict[str, str]:
-    return {"id": page_id, "label": vault.pages[page_id].label}
+    return {"id": page_id, "label": _label(vault.pages[page_id].label)}
 
 
 def _names(page: ConceptPage) -> list[str]:
@@ -208,7 +215,7 @@ def derive_concept_page(vault: Vault, docs: DocStore, page_id: str) -> dict[str,
     return {
         "page": _ref(vault, page_id),
         "kind": page.kind,
-        "aliases": list(page.aliases[: CAPS["aliases"]]),
+        "aliases": [_label(a) for a in page.aliases[: CAPS["aliases"]]],
         "passages": len(page.mention_chunk_ids),
         "documents": len({c.doc_id for c in mention_stored}),
         "definitions": definitions,
@@ -229,7 +236,7 @@ def _node(vault: Vault, docs: DocStore, page_id: str, documents: dict[str, int])
         )
     return {
         "id": page_id,
-        "label": page.label,
+        "label": _label(page.label),
         "kind": page.kind,
         "passages": len(page.mention_chunk_ids),
         "documents": documents[page_id],
