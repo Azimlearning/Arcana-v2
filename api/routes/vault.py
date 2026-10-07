@@ -1,4 +1,4 @@
-"""The notes view's endpoints (M2.6, D-35): GET /vault/notes and POST /vault/rebuild.
+"""The notes view's endpoints (M2.6, D-35): GET /vault/notes, GET /vault/quiz (Q1) and POST /vault/rebuild.
 
 `GET /vault/notes?page=<id>&query=<text>` returns the same shape as `/workspace` (a layout and blocks): a `ConceptPage` for the
 page (when one is asked for) and the `NotesGraph` around it, built by the Composer from the vault, placed by the layout and
@@ -10,7 +10,7 @@ vault yet the graph is an `empty` placeholder. `POST /vault/rebuild` compiles th
 from fastapi import APIRouter, Query, Request
 from pydantic import BaseModel
 
-from api.agents.compose import compose_notes
+from api.agents.compose import compose_notes, compose_quiz
 from api.genui.generated import VaultLintResponse, WorkspaceResponse
 from api.vault.lint import lint as lint_vault
 
@@ -35,6 +35,18 @@ def notes(
 ) -> WorkspaceResponse:
     container = request.app.state.container
     layout, blocks = compose_notes(container.fresh_vault(), container.docs, page or None, query, container.learner_store)
+    return WorkspaceResponse(layout=layout, blocks=blocks)
+
+
+@router.get("/vault/quiz")
+def quiz(
+    request: Request,
+    page: str | None = Query(default=None, max_length=MAX_PAGE_ID_CHARS),
+) -> WorkspaceResponse:
+    """A quiz from the vault's claims (Q1, D-35 A8), about one page when `page` is given, with the notes graph beside it. The block
+    never carries the answer: `POST /quiz/answer` checks a choice. No model call."""
+    container = request.app.state.container
+    layout, blocks = compose_quiz(container.fresh_vault(), container.docs, page or None, container.learner_store)
     return WorkspaceResponse(layout=layout, blocks=blocks)
 
 

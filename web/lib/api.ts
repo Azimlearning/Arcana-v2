@@ -6,6 +6,7 @@ import type {
   LayoutMode,
   LearnerSignal,
   PatternState,
+  QuizAnswerResponse,
   SavedPattern,
   SavePatternRequest,
   TurnTrace,
@@ -151,22 +152,17 @@ export async function fetchWorkspace(
 }
 
 
-/**
- * The notes view (M2.6, D-35): a concept page (when `page` is given) and the graph of pages around it, with the layout the
- * Composer chose. The same body as `/workspace`, read the same way: a body that is not one is an error, never a half-drawn view.
- */
-export async function fetchNotes(
-  params: { page?: string | null; query?: string } = {},
-  options: { baseUrl?: string; fetchImpl?: typeof fetch; signal?: AbortSignal } = {},
+/** GET a vault view (the notes view or a quiz): the same body as `/workspace`, read the same way. A body that is not one is an error. */
+async function fetchVaultView(
+  path: string,
+  search: URLSearchParams,
+  options: { baseUrl?: string; fetchImpl?: typeof fetch; signal?: AbortSignal },
 ): Promise<WorkspaceResult> {
   const { baseUrl = API_BASE, fetchImpl = fetch, signal } = options;
-  const search = new URLSearchParams();
-  if (params.page) search.set("page", params.page);
-  if (params.query?.trim()) search.set("query", params.query.trim());
   const suffix = search.size > 0 ? `?${search.toString()}` : "";
   let response: Response;
   try {
-    response = await fetchImpl(`${baseUrl}/vault/notes${suffix}`, { signal });
+    response = await fetchImpl(`${baseUrl}${path}${suffix}`, { signal });
   } catch {
     return { ok: false, error: clientError("Could not reach the server.") };
   }
@@ -178,6 +174,66 @@ export async function fetchNotes(
     // not JSON
   }
   return { ok: false, error: clientError("The server sent an unreadable response.", false) };
+}
+
+/**
+ * The notes view (M2.6, D-35): a concept page (when `page` is given) and the graph of pages around it, with the layout the
+ * Composer chose. The same body as `/workspace`, read the same way: a body that is not one is an error, never a half-drawn view.
+ */
+export function fetchNotes(
+  params: { page?: string | null; query?: string } = {},
+  options: { baseUrl?: string; fetchImpl?: typeof fetch; signal?: AbortSignal } = {},
+): Promise<WorkspaceResult> {
+  const search = new URLSearchParams();
+  if (params.page) search.set("page", params.page);
+  if (params.query?.trim()) search.set("query", params.query.trim());
+  return fetchVaultView("/vault/notes", search, options);
+}
+
+/** A quiz from the vault's claims (Q1, D-35 A8), about one page when `page` is given, with the notes graph beside it. */
+export function fetchQuiz(
+  params: { page?: string | null } = {},
+  options: { baseUrl?: string; fetchImpl?: typeof fetch; signal?: AbortSignal } = {},
+): Promise<WorkspaceResult> {
+  const search = new URLSearchParams();
+  if (params.page) search.set("page", params.page);
+  return fetchVaultView("/vault/quiz", search, options);
+}
+
+function isQuizAnswer(value: unknown): value is QuizAnswerResponse {
+  if (typeof value !== "object" || value === null) return false;
+  const v = value as Partial<QuizAnswerResponse>;
+  return (
+    typeof v.itemId === "string" &&
+    typeof v.correct === "boolean" &&
+    typeof v.answer?.id === "string" &&
+    typeof v.answer?.label === "string" &&
+    typeof v.citation?.quote === "string" &&
+    typeof v.citation?.docTitle === "string" &&
+    typeof v.mastery?.score === "number" &&
+    typeof v.mastery?.events === "number"
+  );
+}
+
+/** Have the server check a quiz choice (D-35 A8). The server records the result and answers; null when it could not, or sent something unreadable. */
+export async function answerQuiz(
+  itemId: string,
+  chosenId: string,
+  options: { baseUrl?: string; fetchImpl?: typeof fetch } = {},
+): Promise<QuizAnswerResponse | null> {
+  const { baseUrl = API_BASE, fetchImpl = fetch } = options;
+  try {
+    const response = await fetchImpl(`${baseUrl}/quiz/answer`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ itemId, chosenId }),
+    });
+    if (!response.ok) return null;
+    const body: unknown = await response.json();
+    return isQuizAnswer(body) ? body : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Record the learner's own rating of a page of the vault (D-35 A6). True when the server saved it. */

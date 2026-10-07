@@ -56,6 +56,8 @@ export function toErrorBlock(block: UIBlock, error: ErrorEnvelope): UIBlock {
       };
     case "NotesGraph":
       return { ...block, meta, data: { focusId: null, query: "", nodes: [], edges: [], nodesLeftOut: 0 } };
+    case "QuizCard":
+      return { ...block, meta, data: { focusId: null, items: [], skipped: 0 } };
   }
 }
 

@@ -112,7 +112,7 @@ function Mastery({ block }: { block: ConceptPageBlock }) {
         <span>
           {m === null
             ? "You have not rated this concept yet."
-            : `${BAND_WORDS[state][0]!.toUpperCase()}${BAND_WORDS[state].slice(1)} (${Math.round(m.score * 100)} percent, from ${m.events} ${m.events === 1 ? "rating" : "ratings"}).`}
+            : `${BAND_WORDS[state][0]!.toUpperCase()}${BAND_WORDS[state].slice(1)} (${Math.round(m.score * 100)} percent, from ${m.events} ${m.events === 1 ? "rating or answer" : "ratings and answers"}).`}
         </span>
       </div>
       {m !== null && (

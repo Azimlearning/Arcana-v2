@@ -22,7 +22,7 @@ from typing import Any
 from api.genui.text import MIN_QUOTE_CHARS, normalise
 from api.learner.mastery import MasteryScore
 from api.stores.doc_store import Chunk, DocStore
-from api.vault.text import fold, occurs, tokens
+from api.vault.text import fold, occurs
 from api.vault.types import MIN_SCAN_LABEL_CHARS, ClaimNote, ConceptPage, Vault
 from api.vault.view import _clip, _ref
 
@@ -34,6 +34,15 @@ MIN_BLANK_WORDS = 4
 """The blanked sentence has at least this many words (the blank counts as one)."""
 UNRATED = 0.5
 """What a page the learner has not rated counts as when claims are ordered: between "needs work" and "comfortable"."""
+MIN_DISTRACTOR_PASSAGES = 2
+"""A page offered as a wrong answer is mentioned in at least this many passages: a name that occurs once is a one-off (an example
+in a paper), which makes an item trivial."""
+MAX_DISTRACTOR_WORDS = 6
+"""...and its name has at most this many words and no ":" or "?": a longer name is a paper's title (a reference-list entry made a
+page), not a concept."""
+MIN_NAME_CHARS = 2
+"""A name of the blanked page that is blanked, and that must not be left standing, is at least this long: "QA" beside "question
+answering" would give the answer away, though the vault does not search a whole corpus for a name this short."""
 SEPARATOR = "~"
 
 
@@ -59,19 +68,28 @@ class Checked:
 
 def _names(page: ConceptPage) -> list[str]:
     """The names a blank may use, longest first (so "large language models" is blanked rather than "language models")."""
-    names = {n for n in [page.label, *page.aliases] if len(n.strip()) >= MIN_SCAN_LABEL_CHARS}
+    names = {n for n in [page.label, *page.aliases] if len(n.strip()) >= MIN_NAME_CHARS}
     return sorted(names, key=lambda n: (-len(n), n))
 
 
-def _literal(sentence: str, page: ConceptPage) -> re.Match[str] | None:
-    """The first whole-word, case-insensitive, literal occurrence of the longest name of `page` that occurs in `sentence`."""
-    for name in _names(page):
-        found = re.search(
-            rf"(?<![A-Za-z0-9]){re.escape(name)}(?![A-Za-z0-9])", sentence, re.IGNORECASE
-        )
-        if found is not None:
-            return found
-    return None
+def _blank(quote: str, page: ConceptPage) -> str | None:
+    """`quote` with every whole-word, case-insensitive, literal occurrence of every name of `page` replaced by the blank (the
+    longest name first, so "large language models" is blanked as one), or None when no blank can be made fairly: no name occurs
+    literally, the sentence already holds a blank, a name still occurs after blanking (one a PDF broke with a hyphen, say: the
+    answer would show), or fewer than `MIN_BLANK_WORDS` words are left."""
+    names = _names(page)
+    if not names or BLANK in quote:
+        return None
+    pattern = "|".join(re.escape(n) for n in names)
+    text, count = re.subn(
+        rf"(?<![A-Za-z0-9])(?:{pattern})(?![A-Za-z0-9])", BLANK, quote, flags=re.IGNORECASE
+    )
+    if count == 0:
+        return None
+    folded = fold(text)
+    if any(occurs(folded, k) for k in (fold(n) for n in names) if k):
+        return None
+    return text if len(text.split()) >= MIN_BLANK_WORDS else None
 
 
 def _quote(claim: ClaimNote) -> str:
@@ -87,29 +105,38 @@ def _hash(*parts: str) -> str:
     return hashlib.sha256("|".join(parts).encode("utf-8")).hexdigest()
 
 
-def _blanked(quote: str, found: re.Match[str]) -> str | None:
-    text = quote[: found.start()] + BLANK + quote[found.end() :]
-    return text if len(text.split()) >= MIN_BLANK_WORDS else None
+_WORD = re.compile(r"[a-z0-9]+")
+
+
+def _words(name: str) -> set[str]:
+    """The words of a name, a hyphen being a space: "Retrieval-Augmented Generation" and "retrieval augmented generation" are the
+    same words (unlike `fold`, which joins a hyphenated word, as a PDF breaks one)."""
+    return set(_WORD.findall(name.lower()))
+
+
+def _title_like(label: str) -> bool:
+    return len(label.split()) > MAX_DISTRACTOR_WORDS or ":" in label or "?" in label
 
 
 def _distractors(vault: Vault, target: ConceptPage, quote: str, item_id: str) -> list[str]:
-    """Three pages that are fair wrong answers: not the target, of its kind when it has one, with a name that is neither in the
-    sentence nor made of the same words as the target's (so "language models" is never offered for "large language models"),
-    chosen in the order of a hash of the item and the page."""
+    """Three pages that are fair wrong answers: not the target, of its kind when it has one, mentioned in at least two passages, with a
+    name that is not a paper's title, neither in the sentence nor made of the same words as the target's (so "language models" is
+    never offered for "large language models"), chosen in the order of a hash of the item and the page."""
     folded = fold(quote)
-    target_words = [set(tokens(fold(n))) for n in [target.label, *target.aliases]]
+    target_words = [_words(n) for n in [target.label, *target.aliases]]
     pool = [
         p
         for p in vault.pages.values()
         if p.id != target.id
-        and p.mention_chunk_ids
+        and len(p.mention_chunk_ids) >= MIN_DISTRACTOR_PASSAGES
         and len(p.label.strip()) >= MIN_SCAN_LABEL_CHARS
+        and not _title_like(p.label)
         and (target.kind is None or p.kind == target.kind)
     ]
     chosen: list[str] = []
     labels = {fold(target.label)}
     for page in sorted(pool, key=lambda p: _hash(item_id, p.id)):
-        words = set(tokens(fold(page.label)))
+        words = _words(page.label)
         key = fold(page.label)
         if not words or key in labels:
             continue
@@ -137,8 +164,7 @@ def _build(vault: Vault, claim: ClaimNote, target_id: str, chunk: Chunk | None) 
     quote = _quote(claim)
     if len(quote) < MIN_QUOTE_CHARS or quote not in normalise(chunk.text):
         return None
-    found = _literal(quote, target)
-    text = None if found is None else _blanked(quote, found)
+    text = _blank(quote, target)
     if text is None:
         return None
     item_id = f"{claim.id}{SEPARATOR}{target_id}"
@@ -189,11 +215,7 @@ def _eligible(vault: Vault, claim: ClaimNote) -> list[str]:
     if len(quote) < MIN_QUOTE_CHARS:
         return []
     return [
-        p
-        for p in claim.page_ids
-        if p in vault.pages
-        and (found := _literal(quote, vault.pages[p])) is not None
-        and _blanked(quote, found) is not None
+        p for p in claim.page_ids if p in vault.pages and _blank(quote, vault.pages[p]) is not None
     ]
 
 
@@ -208,13 +230,23 @@ def _target_of(
     return min(eligible, key=lambda p: (_score(mastery, p), -vault.idf(p), p))
 
 
-def _data(item: Item, vault: Vault, docs: DocStore) -> dict[str, Any]:
+def _shown_title(vault: Vault, docs: DocStore, item: Item) -> str:
+    """The document's title, or "" when it holds a name of the blanked page (a title that is a file name such as
+    `2312.10997_Retrieval_Augmented_Generation_...` would give the answer away; the source after answering shows it)."""
     document = docs.get_document(item.chunk.doc_id)
+    title = document.title if document else ""
+    words = _words(title)
+    if any(w and w <= words for w in (_words(n) for n in _names(vault.pages[item.target]))):
+        return ""
+    return title
+
+
+def _data(item: Item, vault: Vault, docs: DocStore) -> dict[str, Any]:
     return {
         "id": item.id,
         "text": item.text,
         "options": [_ref(vault, p) for p in item.options],
-        "docTitle": document.title if document else "",
+        "docTitle": _shown_title(vault, docs, item),
         "page": item.chunk.page,
     }
 

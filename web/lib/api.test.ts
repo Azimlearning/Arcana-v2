@@ -1,9 +1,9 @@
 import type { WorkspaceResponse } from "@arcana/schema";
 import { describe, expect, it, vi } from "vitest";
 
-import { envelope, jsonResponse, layout, savedPattern, sourceList } from "@/test/fixtures";
+import { envelope, jsonResponse, layout, quizAnswer, savedPattern, sourceList } from "@/test/fixtures";
 
-import { deletePattern, fetchNotes, fetchWorkspace, recordLearnerEvent, isSavedPattern, listPatterns, reverifyPattern, savePattern } from "./api";
+import { answerQuiz, deletePattern, fetchNotes, fetchQuiz, fetchWorkspace, recordLearnerEvent, isSavedPattern, listPatterns, reverifyPattern, savePattern } from "./api";
 
 const prebuilt = layout([{ blockId: "workspace-sources", panel: "sources", region: "main" as const, order: 0 }], {
   origin: "prebuilt",
@@ -213,5 +213,39 @@ describe("recordLearnerEvent", () => {
       throw new TypeError("offline");
     };
     expect(await recordLearnerEvent("x", "know", { fetchImpl: down as unknown as typeof fetch })).toBe(false);
+  });
+});
+
+
+describe("fetchQuiz and answerQuiz", () => {
+  it("asks GET /vault/quiz with the page only when one was chosen, and reads the same body as the notes view", async () => {
+    const fetchImpl = vi.fn(async () => jsonResponse(GOOD));
+    const options = { fetchImpl: fetchImpl as unknown as typeof fetch, baseUrl: "http://api" };
+    expect(await fetchQuiz({}, options)).toEqual({ ok: true, workspace: GOOD });
+    await fetchQuiz({ page: "a b" }, options);
+    expect(fetchImpl.mock.calls.map((c) => String((c as unknown[])[0]))).toEqual(["http://api/vault/quiz", "http://api/vault/quiz?page=a+b"]);
+    const bad = vi.fn(async () => jsonResponse({ layout: prebuilt }));
+    expect((await fetchQuiz({}, { fetchImpl: bad as unknown as typeof fetch })).ok).toBe(false);
+  });
+
+  it("posts the item and the choice to /quiz/answer and returns the server's reading of it", async () => {
+    const fetchImpl = vi.fn(async () => jsonResponse(quizAnswer()));
+    const got = await answerQuiz("claim-1~dense_retrieval", "bm25", { fetchImpl: fetchImpl as unknown as typeof fetch, baseUrl: "http://api" });
+    expect(got).toEqual(quizAnswer());
+    const [url, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("http://api/quiz/answer");
+    expect(init.method).toBe("POST");
+    expect(JSON.parse(String(init.body))).toEqual({ itemId: "claim-1~dense_retrieval", chosenId: "bm25" });
+  });
+
+  it("is null for a refusal, a body that is not an answer, and a server that cannot be reached", async () => {
+    const refused = vi.fn(async () => jsonResponse(envelope({ code: "not_found" }), 404));
+    expect(await answerQuiz("x", "y", { fetchImpl: refused as unknown as typeof fetch })).toBeNull();
+    const odd = vi.fn(async () => jsonResponse({ correct: true }));
+    expect(await answerQuiz("x", "y", { fetchImpl: odd as unknown as typeof fetch })).toBeNull();
+    const down = async () => {
+      throw new TypeError("offline");
+    };
+    expect(await answerQuiz("x", "y", { fetchImpl: down as unknown as typeof fetch })).toBeNull();
   });
 });

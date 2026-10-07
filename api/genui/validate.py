@@ -47,6 +47,7 @@ from api.genui.generated import (
     GraphView,
     LayoutSpec,
     NotesGraph,
+    QuizCard,
     SourceList,
     TraversalView,
     UIBlock,
@@ -57,6 +58,7 @@ from api.learner.mastery import MasteryScore
 from api.retrieval.traversal import SeedNode, seed_weight, steps_for_display, traverse
 from api.stores.doc_store import DocStore
 from api.stores.graph_store import GraphStore
+from api.vault.quiz import derive_quiz
 from api.vault.types import Vault
 from api.vault.view import derive_concept_page, derive_notes_graph
 
@@ -132,6 +134,8 @@ def _content_issues(
         issues += _concept_page_issues(block, docs, vault, mastery)
     elif isinstance(block, NotesGraph):
         issues += _notes_graph_issues(block, docs, vault, mastery)
+    elif isinstance(block, QuizCard):
+        issues += _quiz_card_issues(block, docs, vault, mastery)
     else:
         issues.append(FieldIssue(path="type", message="no content rules exist for this block type"))
     return issues
@@ -738,6 +742,34 @@ def _notes_graph_issues(
     issues: list[FieldIssue] = []
     if status == "ready" and not data["nodes"]:
         issues.append(FieldIssue(path="data.nodes", message="a ready graph needs at least one page"))
+    _differences(data, derived, "data", issues)
+    return issues
+
+
+def _quiz_card_issues(
+    block: QuizCard, docs: DocStore, vault: Vault | None, mastery: Mapping[str, MasteryScore] | None = None
+) -> list[FieldIssue]:
+    """A quiz is a function of its focus, the vault, the stored passages and the learner's mastery, so it is checked by deriving it
+    again: every sentence, blank, option and its order, and the count of claims passed over must equal the derived ones. The block
+    carries no answer (the schema forbids any extra field), so a block that names one is refused before this runs."""
+    data, status = block.data.model_dump(), block.meta.status
+    if status in {"loading", "error"} or (status == "empty" and vault is None):
+        if data != {"focusId": None, "items": [], "skipped": 0}:
+            return [FieldIssue(path="data", message=f"a '{status}' block must carry nothing")]
+        return []
+    if vault is None:
+        return [FieldIssue(path="data", message="a quiz can only be checked against the vault")]
+    try:
+        derived = derive_quiz(vault, docs, block.data.focusId, mastery)
+    except Exception:  # a store that cannot be read is a block that cannot be checked: refuse, never crash
+        return [FieldIssue(path="data", message="the quiz could not be re-derived from the vault")]
+    if derived is None:
+        return [FieldIssue(path="data.focusId", message="the vault has no page with this id")]
+    issues: list[FieldIssue] = []
+    if status == "ready" and not data["items"]:
+        issues.append(FieldIssue(path="data.items", message="a ready quiz needs at least one question"))
+    if status == "empty" and derived["items"]:
+        issues.append(FieldIssue(path="data.items", message="the vault can make questions here: this block must not be empty"))
     _differences(data, derived, "data", issues)
     return issues
 

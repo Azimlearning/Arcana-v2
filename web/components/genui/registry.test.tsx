@@ -2,7 +2,7 @@ import type { CitedSummary as CitedSummaryBlock, UIBlock } from "@arcana/schema"
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { block, comparisonGrid, conceptMap, conceptPage, graphView, notesGraph, sourceList, traversalView } from "@/test/fixtures";
+import { block, comparisonGrid, conceptMap, conceptPage, graphView, notesGraph, quizCard, sourceList, traversalView } from "@/test/fixtures";
 
 import { CitedSummary } from "./CitedSummary";
 import { ComparisonGrid } from "./ComparisonGrid";
@@ -10,6 +10,7 @@ import { ConceptMap } from "./ConceptMap";
 import { ConceptPage } from "./ConceptPage";
 import { GraphView } from "./GraphView";
 import { NotesGraph } from "./NotesGraph";
+import { QuizCard } from "./QuizCard";
 import { SourceList } from "./SourceList";
 import { TraversalView } from "./TraversalView";
 import { registry, renderBlock, type Registry } from "./registry";
@@ -17,7 +18,7 @@ import { registry, renderBlock, type Registry } from "./registry";
 describe("block registry", () => {
   it("registers a component for every block type in the wire union", () => {
     // Compile-time too: `registry: Registry<UIBlock>` fails to typecheck if a variant is missing.
-    const types: UIBlock["type"][] = ["CitedSummary", "SourceList", "GraphView", "TraversalView", "ComparisonGrid", "ConceptMap", "ConceptPage", "NotesGraph"];
+    const types: UIBlock["type"][] = ["CitedSummary", "SourceList", "GraphView", "TraversalView", "ComparisonGrid", "ConceptMap", "ConceptPage", "NotesGraph", "QuizCard"];
     for (const type of types) expect(registry[type]).toBeTypeOf("function");
     expect(registry.CitedSummary).toBe(CitedSummary);
     expect(registry.SourceList).toBe(SourceList);
@@ -27,6 +28,7 @@ describe("block registry", () => {
     expect(registry.ConceptMap).toBe(ConceptMap);
     expect(registry.ConceptPage).toBe(ConceptPage);
     expect(registry.NotesGraph).toBe(NotesGraph);
+    expect(registry.QuizCard).toBe(QuizCard);
   });
 
   it("renders a known block through its registered component", () => {
@@ -54,6 +56,11 @@ describe("block registry", () => {
     expect(screen.getByRole("article", { name: "Retrieval-Augmented Generation" })).toBeInTheDocument();
     render(<>{renderBlock(notesGraph("ready"))}</>);
     expect(screen.getByRole("group", { name: /Page graph of 3 pages/ })).toBeInTheDocument();
+  });
+
+  it("renders a QuizCard block through the registry", () => {
+    render(<>{renderBlock(quizCard("ready"))}</>);
+    expect(screen.getByRole("region", { name: "Quiz questions" })).toBeInTheDocument();
   });
 
   it("renders a ComparisonGrid block through the registry", () => {

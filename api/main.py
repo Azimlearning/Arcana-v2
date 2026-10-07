@@ -22,7 +22,7 @@ from api.core.errors import HTTP_STATUS, ArcanaError, envelope_from_exception
 from api.core.logging import configure_logging, get_logger
 from api.core.settings import Settings, load_settings
 from api.genui.generated import ErrorCode, ErrorEnvelope, FieldIssue
-from api.routes import chat, ingest, learner, patterns, trace, vault, workspace
+from api.routes import chat, ingest, learner, patterns, quiz, trace, vault, workspace
 
 log = get_logger(__name__)
 
@@ -31,7 +31,7 @@ WEB_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"]
 
 # Declared Content-Length limits, checked before the body is read. A chunked body without a
 # Content-Length is not caught here; the route still bounds what it keeps.
-MAX_BODY_BYTES = {"/chat": 512 * 1024, "/ingest": ingest.MAX_UPLOAD_BYTES + 1024 * 1024, "/patterns": 16 * 1024, "/learner/events": 4 * 1024}
+MAX_BODY_BYTES = {"/chat": 512 * 1024, "/ingest": ingest.MAX_UPLOAD_BYTES + 1024 * 1024, "/patterns": 16 * 1024, "/learner/events": 4 * 1024, "/quiz/answer": 4 * 1024}
 
 
 def _envelope(code: ErrorCode, message: str, issues: list[FieldIssue] | None = None) -> ErrorEnvelope:
@@ -122,6 +122,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(patterns.router)
     app.include_router(vault.router)
     app.include_router(learner.router)
+    app.include_router(quiz.router)
     return app
 
 

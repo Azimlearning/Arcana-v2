@@ -1,4 +1,4 @@
-"""The notes components' catalog (M2.6, D-35): `ConceptPage` and `NotesGraph`.
+"""The notes components' catalog (M2.6, D-35): `ConceptPage`, `NotesGraph` and (Q1, A8) `QuizCard`.
 
 They are not turn components. The Composer never offers them to a question and the trace never lists them: they are shown by the
 notes view, which asks for a page or for the vault's graph (`GET /vault/notes`). So they have their own small registry instead
@@ -13,6 +13,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from api.genui.catalog import A11yRequirement, Fences, PlacementHint
+from api.vault.quiz import MAX_ITEMS, OPTION_COUNT
 from api.vault.view import CAPS
 
 
@@ -69,4 +70,20 @@ NOTES_GRAPH = NotesSpec(
     placement=PlacementHint(panel="studio", priority=20),
 )
 
-NOTES_CATALOG: dict[str, NotesSpec] = {s.name: s for s in (CONCEPT_PAGE, NOTES_GRAPH)}
+QUIZ_CARD = NotesSpec(
+    name="QuizCard",
+    precondition=(
+        "The vault holds claims, and at least one names a page whose name occurs literally in the claim's sentence and has at "
+        "least three fair distractors (pages of its kind in two or more passages, not a paper's title, not in the sentence, not made of the same words). Every sentence is a "
+        "verbatim span of a stored passage; the block never carries the answer."
+    ),
+    supplied_by=("vault",),
+    fences=Fences(
+        caps={"items": MAX_ITEMS, "options": OPTION_COUNT, "label_chars": CAPS["label_chars"]},
+        grounding="vault_rederived",
+        a11y=(A11yRequirement("region", "Quiz questions"), A11yRequirement("group", "Answer choices")),
+    ),
+    placement=PlacementHint(panel="chat", priority=10),
+)
+
+NOTES_CATALOG: dict[str, NotesSpec] = {s.name: s for s in (CONCEPT_PAGE, NOTES_GRAPH, QUIZ_CARD)}

@@ -245,6 +245,21 @@ Status: **built** (M2.6). New in v2 (D-35). A notes component (see ConceptPage).
 - **Edges beyond the cap:** the 120 edges shown are the first by kind (stated before named-together), then strength; the graph does not count the rest (every page is still listed with its link count, so nothing about a page is hidden). The screen draws only the lines that say something: the stated ones, those of the focus page and all of a chosen page's.
 - **Validator invariants:** placeholders carry nothing but may repeat the query that found no page (it is shown as text); a ready graph has at least one page; equality with the derived graph.
 
+## QuizCard
+
+Status: **built** (Q1, D-35 amendment A8, which amends D-29: it was "Studio agent work (P5); no agent produces their evidence yet", and the vault's claims are that evidence). A notes component (see ConceptPage), shown by the notes view (`GET /vault/quiz?page=<id>`), and the quiz tool of the Studio's learning group (D-30): no agent is in front of it yet, and the Studio agent (P5) may add a second supplier of the same block behind the same validator.
+
+- **Precondition:** the vault holds claims, and at least one names a page whose name (or an alias) occurs **literally** in the claim's sentence as a whole word, so a blank can be made, and that has at least three fair distractors: pages of its kind (when it has one) mentioned in at least two passages, whose names are not paper titles (at most six words, no `:` or `?`), are not in the sentence and are not made of the same words as the target's (so "language models" is never offered for "large language models").
+- **Supplied by:** the vault (its claims, pages and the stored passages), the learner's mastery for the order. No model.
+- **Payload:** `focusId`, `items: {id, text, options: {id, label}[4], docTitle, page}[]`, `skipped`. `text` is the claim's quote with every literal occurrence of every name of the target (label and aliases) replaced by `_____`, and no item is made when a name would still show; `docTitle` is empty when the title holds a name of the answer. **No item carries the answer or the unblanked sentence**; `id` is `<claim id>~<page id>`.
+- **Caps:** 5 items, 4 options, label at most 120 characters.
+- **Fences:** caps `items=5 options=4 label_chars=120`; grounding `vault_rederived`; a11y `region:Quiz questions | group:Answer choices`. Template version 1; reusable without Research: no.
+- **Choosing items:** without a focus, claims are taken weakest first by the mastery of the page each would blank (an unrated page counts 0.5), then claim id, **one item per page**; with a focus, the claims that name that page in claim id order (up to 5). `skipped` counts the claims passed over (no blankable name, or looked at before the items were found and not made fairly). The options and their order depend on the item id and the vault only (a hash), so an item always reads the same.
+- **Answering:** `POST /quiz/answer {itemId, chosenId}` derives the item again, records `quiz_correct` or `quiz_wrong` for the **blanked** page (never the page chosen) and answers `{correct, answer, citation (the sentence unblanked), mastery}`. An item the vault cannot derive is a 404, a choice that is not one of the four options a 422; neither records anything. The rating route still accepts only the three self-ratings.
+- **Validator invariants:** `loading` and `error` carry nothing; the data equals the derived quiz exactly (every sentence, blank, option, order and `skipped`); a `ready` block has at least one item; an `empty` block is refused when the vault can make a question (it carries `skipped` so the screen can say how many claims were looked at); a block with an answer field is refused by the schema (no extra fields).
+- **Failures:** a store failure while the server derives a quiz is a generic error envelope (the validator turns the same failure into a refusal); if the documents change after a quiz was shown, answers are refused (404 or 422, nothing recorded) and the screen offers more questions. The reply to an answer is built before the event is recorded.
+- **Limit, stated on the screen:** a cloze tests recognising a name in a sentence, not understanding it; distractors chosen without a model can be too easy.
+
 ## InsightCard (stretch)
 
 Status: **deferred** (task B5 was a stretch and was not built in P2; it needs Azim's agreement to start). Nothing below exists in code.
@@ -267,7 +282,7 @@ Status: **deferred** (task B5 was a stretch and was not built in P2; it needs Az
 | `Timeline` | Extraction records no dates; adding them changes the frozen extraction prompt and forces a second paid ingestion |
 | `GapAnalysis` | Asserts absence; coverage over a concept space is undefined and communities are not a coverage claim |
 | `ComparisonChart`, `DataTable` | No structured or numeric extraction exists; filling them means inventing values |
-| `FlashcardDeck`, `QuizCard`, `BlurtingPrompt`, `FeynmanExplainer`, `CornellNotes`, `SocraticDialog`, `StudyPlanner` | Studio agent work (P5); no agent produces their evidence yet |
+| `FlashcardDeck`, `BlurtingPrompt`, `FeynmanExplainer`, `CornellNotes`, `SocraticDialog`, `StudyPlanner` | Studio agent work (P5); no agent produces their evidence yet |
 | `DraftEditor`, `CitationPreview`, `PlagiarismReport`, `BibliographyExport` | Studio and Fact Checker work (P5) |
 | `ProgressDashboard` | Needs mastery data (P3, optional) |
 | `AudioSummary` | A PRD non-goal |

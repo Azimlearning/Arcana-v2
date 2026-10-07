@@ -97,25 +97,30 @@ def page(pid: str, label: str, kind: str, chunks: tuple[str, ...]) -> ConceptPag
     return ConceptPage(pid, label, (), (pid,), kind, ("d1",), chunks, ())
 
 
-@pytest.fixture
-def small(tmp_path: Path):
-    docs = SqliteDocStore(make_engine(tmp_path / "quiz.db"))
+def fill(docs) -> Vault:
+    """Put the two documents and three passages into `docs` and return the handmade vault over them."""
     for d, title in (("d1", "Paper One"), ("d2", "Paper Two")):
         docs.put_document(Document(d, title, f"{d}.pdf", "ready", 1, None, "2026-10-07"))
     docs.put_chunks([Chunk(c, DOC_OF[c], i, PAGE_OF[c], TEXT[c]) for i, c in enumerate(TEXT)])
     pages = [
         page("dense_retrieval", "dense retrieval", "method", ("c1", "c2")),
         page("bm25", "BM25", "method", ("c1", "c2")),
-        page("rrf", "reciprocal rank fusion", "method", ("c2",)),
-        page("reranking", "reranking", "method", ("c2",)),
-        page("query_expansion", "query expansion", "method", ("c2",)),
-        page("squad", "SQuAD", "dataset", ("c3",)),
-        page("rag", "retrieval-augmented generation", "concept", ("c3",)),
-        page("llm", "large language models", "concept", ("c3",)),
-        page("lm", "language models", "concept", ("c3",)),
+        page("rrf", "reciprocal rank fusion", "method", ("c2", "c3")),
+        page("reranking", "reranking", "method", ("c2", "c3")),
+        page("query_expansion", "query expansion", "method", ("c2", "c3")),
+        page("squad", "SQuAD", "dataset", ("c3", "c1")),
+        page("rag", "retrieval-augmented generation", "concept", ("c3", "c1")),
+        page("llm", "large language models", "concept", ("c3", "c1")),
+        page("lm", "language models", "concept", ("c3", "c1")),
     ]
     claims = [ClaimNote(cid, c, DOC_OF[c], s, ids) for cid, (c, s, ids) in SENTENCES.items()]
-    return Vault("vault-1", 3, {p.id: p for p in pages}, [], claims), docs
+    return Vault("vault-1", 3, {p.id: p for p in pages}, [], claims)
+
+
+@pytest.fixture
+def small(tmp_path: Path):
+    docs = SqliteDocStore(make_engine(tmp_path / "quiz.db"))
+    return fill(docs), docs
 
 
 def h(*parts: str) -> str:
@@ -152,17 +157,17 @@ def test_the_quiz_takes_claims_in_claim_order_when_nothing_is_rated_one_item_per
     vault, docs = small
     data = derive_quiz(vault, docs, None)
     assert data is not None
-    # unrated pages all count 0.5: claim id order. claim-3 (two distractors), claim-5 (no other dataset) are passed over; claim-7
-    # names the same page as claim-1 and is not an item (not a failure); claim-6 has no literal name and claim-8 no fair options
+    # unrated pages all count 0.5: claim id order. Every page has two passages, so claim-3's three pages tie on specificity and the
+    # smaller id (bm25) is its target, which already has an item (claim-2): it is not an item and not a failure. claim-7 names
+    # the same page as claim-1 and likewise. claim-5 (no other dataset) and claim-8 (no three other concepts) are looked at
+    # and passed over; claim-6 has no literal name.
     assert [i["id"] for i in data["items"]] == [
         "claim-1~dense_retrieval",
         "claim-2~bm25",
         "claim-4~reranking",
     ]
     assert data["focusId"] is None
-    assert (
-        data["skipped"] == 1 + 2 + 1
-    )  # claim-6 (no blank); claim-3, claim-5 (looked at); claim-8 (looked at)
+    assert data["skipped"] == 1 + 2  # claim-6 (no blank); claim-5 and claim-8 (looked at)
 
 
 def test_the_weakest_concepts_come_first(small):
@@ -289,3 +294,131 @@ def test_no_claims_gives_an_empty_quiz(small):
     vault, docs = small
     bare = Vault(vault.version, vault.n_chunks, vault.pages, [], [])
     assert derive_quiz(bare, docs, None) == {"focusId": None, "items": [], "skipped": 0}
+
+
+def test_a_one_off_mention_and_a_paper_title_are_never_offered_as_wrong_answers(small):
+    vault, docs = small
+    extra = [
+        page("once", "one-off method", "method", ("c1",)),  # a single passage
+        page(
+            "long", "A method whose name runs to seven words", "method", ("c1", "c2")
+        ),  # reads as a title
+        page("colon", "Retrieval: a survey", "method", ("c1", "c2")),
+        page("ask", "Which method is best?", "method", ("c1", "c2")),
+    ]
+    wider = Vault(
+        vault.version, vault.n_chunks, {**vault.pages, **{p.id: p for p in extra}}, [], vault.claims
+    )
+    for claim in ("claim-1~dense_retrieval", "claim-2~bm25", "claim-4~reranking"):
+        item = derive_item(wider, docs, claim)
+        assert item is not None
+        assert set(item.options) <= set(METHODS), (
+            f"{claim} offered {set(item.options) - set(METHODS)}"
+        )
+    # they can still be the answer: a claim naming such a page blanks it, whatever its name looks like
+    claims = [
+        *vault.claims,
+        ClaimNote(
+            "claim-9",
+            "c1",
+            "d1",
+            SENTENCES["claim-2"][1].replace("BM25", "one-off method"),
+            ("once",),
+        ),
+    ]
+    docs.put_chunks(
+        [Chunk("c1", "d1", 0, 3, TEXT["c1"].replace("BM25 scores", "one-off method scores"))]
+    )
+    again = Vault(vault.version, vault.n_chunks, wider.pages, [], claims)
+    target = derive_item(again, docs, "claim-9~once")
+    assert target is not None and target.target == "once" and "_____ scores terms" in target.text
+
+
+def test_a_hyphen_is_a_space_when_names_are_compared_for_the_same_words(small):
+    vault, _ = small
+    extra = [
+        page(
+            "rag_plain", "Retrieval Augmented Generation", "concept", ("c1", "c2")
+        ),  # the same words as the target's
+        page(
+            "rag_active", "Active retrieval-augmented generation", "concept", ("c1", "c2")
+        ),  # the target's words inside it
+    ]
+    wider = Vault(
+        vault.version, vault.n_chunks, {**vault.pages, **{p.id: p for p in extra}}, [], vault.claims
+    )
+    chosen = quiz._distractors(
+        wider, wider.pages["rag"], "A sentence that names none of them at all here.", "claim-x~rag"
+    )
+    assert sorted(chosen) == [
+        "llm",
+        "lm",
+    ]  # neither spelling of the answer is offered as a wrong answer
+
+
+# ── the answer must not show in the blanked sentence or the title (schema-guardian, Q1.4) ──────────────────────────────
+
+
+def _every_item(vault, docs):
+    for claim in vault.claims:
+        for page_id in claim.page_ids:
+            item = derive_item(vault, docs, f"{claim.id}~{page_id}")
+            if item is not None:
+                yield item
+
+
+def test_no_name_of_the_blanked_page_is_left_in_any_item(small):
+    from api.vault.text import fold, occurs
+
+    vault, docs = small
+    items = list(_every_item(vault, docs))
+    assert items  # the corpus-level check is not vacuous
+    for item in items:
+        page = vault.pages[item.target]
+        names = [fold(n) for n in [page.label, *page.aliases] if n]
+        assert not any(occurs(fold(item.text), n) for n in names), item.text
+
+
+def test_every_occurrence_of_every_name_is_blanked_and_a_title_that_gives_it_away_is_left_out(
+    small,
+):
+    vault, docs = small
+    pages = dict(vault.pages)
+    pages["bm25"] = ConceptPage(
+        "bm25", "BM25", ("Okapi BM25",), ("bm25",), "method", ("d1",), ("c1", "c2"), ()
+    )
+    sentence = (
+        "BM25 ranks by term statistics, and Okapi BM25 is the usual form of bm25 in search engines."
+    )
+    claim = ClaimNote("claim-9", "c1", "d1", sentence, ("bm25",))
+    docs.put_chunks([Chunk("c1", "d1", 0, 3, TEXT["c1"] + " " + sentence)])
+    docs.put_document(
+        Document(
+            "d1", "Dense retrieval and BM25 in practice", "d1.pdf", "ready", 1, None, "2026-10-07"
+        )
+    )
+    world = Vault(vault.version, vault.n_chunks, pages, [], [*vault.claims, claim])
+    item = derive_item(world, docs, "claim-9~bm25")
+    assert item is not None
+    assert (
+        item.text
+        == "_____ ranks by term statistics, and _____ is the usual form of _____ in search engines."
+    )
+    data = derive_quiz(world, docs, "bm25")
+    assert data is not None and data["items"]
+    assert {i["docTitle"] for i in data["items"]} == {""}  # the title holds the words "BM25"
+    other = derive_quiz(world, docs, "dense_retrieval")
+    assert other is not None and {i["docTitle"] for i in other["items"]} == {
+        ""
+    }  # and "dense retrieval"
+    docs.put_document(Document("d1", "Paper One", "d1.pdf", "ready", 1, None, "2026-10-07"))
+    assert {i["docTitle"] for i in derive_quiz(world, docs, "bm25")["items"]} == {"Paper One"}  # type: ignore[index]
+
+
+def test_a_sentence_that_already_holds_a_blank_makes_no_item(small):
+    vault, docs = small
+    quote = "BM25 fills a _____ in the sentence that is already there for another reason."
+    docs.put_chunks([Chunk("c1", "d1", 0, 3, TEXT["c1"] + " " + quote)])
+    claim = ClaimNote("claim-9", "c1", "d1", quote, ("bm25",))
+    world = Vault(vault.version, vault.n_chunks, vault.pages, [], [claim])
+    assert derive_item(world, docs, "claim-9~bm25") is None

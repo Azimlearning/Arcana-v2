@@ -2,10 +2,14 @@
 
 // The notes view: an Obsidian-style way into the vault (D-35). The server composes it: a page for the chosen concept and the graph
 // of pages around it (or the most linked pages across the vault), with the layout that places them (`/vault/notes`). This screen
-// holds only what the user chose (a page, a search) and what the server last sent; every block goes through the registry, so it
-// never inspects a block's content. Choosing a page name anywhere (the graph, a link, a claim) opens that page.
+// holds only what the user chose (a page, a search, a quiz) and what the server last sent; every block goes through the registry, so
+// it never inspects a block's content. Choosing a page name anywhere (the graph, a link, a claim) opens that page.
+//
+// A quiz (Q1, D-35 A8) is the same screen in another mode: `/vault/quiz` composes a QuizCard and the graph beside it. Answering a
+// question asks the server to check it (the quiz carries no answer) and then replaces only the graph block with the graph around the
+// concept just answered (its colour is the new mastery), while the questions stay as they are; "More questions" fetches a new quiz.
 
-import type { ErrorEnvelope, LayoutSpec, PanelId, RegionId, UIBlock } from "@arcana/schema";
+import type { ErrorEnvelope, LayoutSpec, PanelId, QuizAnswerResponse, RegionId, UIBlock } from "@arcana/schema";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -14,7 +18,7 @@ import { NotesNav } from "@/components/genui/notesNav";
 import { Shell } from "@/components/shell/Shell";
 import type { LearnerSignal } from "@arcana/schema";
 
-import { fetchNotes, recordLearnerEvent } from "@/lib/api";
+import { answerQuiz, fetchNotes, fetchQuiz, recordLearnerEvent } from "@/lib/api";
 import { placeBlocksByRegion } from "@/lib/layout";
 
 /** What the server last sent, and the choice (`key`) it answered. An answer to an earlier choice is not shown. */
@@ -30,11 +34,14 @@ export function NotesWorkspace() {
   const [query, setQuery] = useState("");
   const [answer, setAnswer] = useState<Answer | null>(null);
   const [version, setVersion] = useState(0); // bumped after a rating: the same page is fetched again, quietly, with it
-  const key = `${page ?? ""}|${query}`;
+  const [quiz, setQuiz] = useState(false);
+  const [round, setRound] = useState(0); // bumped by "More questions": a new quiz is fetched
+  const key = `${quiz ? "quiz" : "notes"}|${page ?? ""}|${query}|${quiz ? round : 0}`;
 
   useEffect(() => {
     const abort = new AbortController();
-    void fetchNotes({ page, query }, { signal: abort.signal }).then((result) => {
+    const asked = quiz ? fetchQuiz({ page }, { signal: abort.signal }) : fetchNotes({ page, query }, { signal: abort.signal });
+    void asked.then((result) => {
       if (abort.signal.aborted) return; // a newer choice was made: this answer is stale
       setAnswer(
         result.ok
@@ -43,13 +50,33 @@ export function NotesWorkspace() {
       );
     });
     return () => abort.abort();
-  }, [page, query, key, version]);
+  }, [page, query, quiz, key, version]);
 
   const rate = useCallback(async (pageId: string, signal: LearnerSignal) => {
     const saved = await recordLearnerEvent(pageId, signal);
     if (saved) setVersion((v) => v + 1);
     return saved;
   }, []);
+
+  /** Check a quiz choice on the server, then show the graph around the concept just answered (only that block changes), so its colour follows. */
+  const checkChoice = useCallback(
+    async (itemId: string, chosenId: string): Promise<QuizAnswerResponse | null> => {
+      const reply = await answerQuiz(itemId, chosenId);
+      if (reply === null) return null;
+      const fresh = await fetchNotes({ page: reply.answer.id });
+      if (fresh.ok) {
+        const graph = fresh.workspace.blocks.find((b) => b.type === "NotesGraph");
+        if (graph) {
+          setAnswer((a) =>
+            a !== null && a.ok && a.key === key ? { ...a, blocks: a.blocks.map((b) => (b.type === "NotesGraph" ? graph : b)) } : a,
+          );
+        }
+      }
+      return reply;
+    },
+    [key],
+  );
+  const moreQuestions = useCallback(() => setRound((r) => r + 1), []);
 
   const view = useMemo<View>(
     () =>
@@ -61,8 +88,14 @@ export function NotesWorkspace() {
     [answer, key],
   );
 
-  const openPage = useCallback((id: string) => setPage(id), []);
-  const nav = useMemo(() => ({ openPage, rate }), [openPage, rate]);
+  const openPage = useCallback((id: string) => {
+    setQuiz(false);
+    setPage(id);
+  }, []);
+  const nav = useMemo(
+    () => ({ openPage, rate, ...(quiz ? { answer: checkChoice, moreQuestions } : {}) }),
+    [openPage, rate, quiz, checkChoice, moreQuestions],
+  );
 
   const layout = view.state === "ready" ? view.layout : null;
   const byRegion = useMemo(
@@ -136,6 +169,7 @@ export function NotesWorkspace() {
               className="flex gap-2"
               onSubmit={(e) => {
                 e.preventDefault();
+                setQuiz(false);
                 setPage(null);
                 setQuery(draft.trim());
               }}
@@ -151,10 +185,21 @@ export function NotesWorkspace() {
               <button type="submit" className="rounded-lg bg-stone-900 px-3 py-1.5 text-sm text-white">
                 Search
               </button>
-              {(page !== null || query !== "") && (
+              <button
+                type="button"
+                onClick={() => {
+                  setRound((r) => r + 1);
+                  setQuiz(true);
+                }}
+                className="rounded-lg border border-stone-900 px-3 py-1.5 text-sm font-medium text-stone-900 hover:bg-stone-100"
+              >
+                {page !== null ? "Quiz me on this page" : "Quiz me"}
+              </button>
+              {(page !== null || query !== "" || quiz) && (
                 <button
                   type="button"
                   onClick={() => {
+                    setQuiz(false);
                     setPage(null);
                     setQuery("");
                     setDraft("");

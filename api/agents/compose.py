@@ -47,8 +47,10 @@ from api.genui.templates import (
     register_template,
 )
 from api.genui.validate import validate_block, validate_layout
+from api.learner.mastery import MasteryScore
 from api.learner.store import LearnerStore
 from api.stores.doc_store import DocStore, Document
+from api.vault.quiz import derive_quiz
 from api.vault.types import Vault
 from api.vault.view import derive_concept_page, derive_notes_graph
 
@@ -519,12 +521,7 @@ def compose_notes(
     graph_builder, page_builder = BUILDERS["NotesGraph"], BUILDERS["ConceptPage"]
     # One snapshot of the learner's mastery for this request: a score depends on the clock, so the blocks are built and checked from
     # the same reading (D-35 A6).
-    mastery = None
-    if learner is not None and vault is not None:
-        try:
-            mastery = learner.mastery(vault.pages)
-        except Exception as exc:  # a locked or damaged learner file must not take the whole notes view down
-            log.warning("learner_unreadable", error=type(exc).__name__)  # every block then says no mastery, which validates
+    mastery = _mastery_snapshot(vault, learner)  # a damaged learner file gives none: every block then says no mastery
     blocks: list[UIBlock] = []
     admitted: list[tuple[str, str]] = []
     if vault is None or not vault.pages:
@@ -549,6 +546,55 @@ def compose_notes(
     )
     blocks.append(graph)
     admitted.append((graph.id, "NotesGraph"))
+    return validate_layout(compose_notes_layout(admitted), {b.id for b in blocks}), blocks
+
+
+QUIZ_ID = "quiz"
+"""The id of the quiz block. Fixed, so a new quiz replaces the last."""
+
+
+def _mastery_snapshot(vault: Vault | None, learner: LearnerStore | None) -> Mapping[str, MasteryScore] | None:
+    """One reading of the learner's mastery for a request (see `compose_notes`); None when there is none to read."""
+    if learner is None or vault is None:
+        return None
+    try:
+        return learner.mastery(vault.pages)
+    except Exception as exc:  # a locked or damaged learner file must not take the quiz down
+        log.warning("learner_unreadable", error=type(exc).__name__)
+        return None
+
+
+def compose_quiz(
+    vault: Vault | None,
+    docs: DocStore,
+    focus_id: str | None = None,
+    learner: LearnerStore | None = None,
+) -> tuple[LayoutSpec, list[UIBlock]]:
+    """A quiz from the vault's claims (Q1, D-35 A8) and the notes graph beside it: the quiz is in the chat panel's main area, the graph
+    (around `focus_id`, or the overview) in the studio panel, so the colours move as the learner answers. No model call. With no
+    vault the quiz is an `empty` placeholder; a page the vault does not hold is a NotFound. Everything is validated before it is
+    returned, and this does not swallow a failure."""
+    quiz_builder, graph_builder = BUILDERS["QuizCard"], BUILDERS["NotesGraph"]
+    if vault is None or not vault.pages:
+        empty = validate_block(quiz_builder(QUIZ_ID, "empty"), docs, vault=vault)
+        return validate_layout(compose_notes_layout([(empty.id, "QuizCard")]), {empty.id}), [empty]
+    mastery = _mastery_snapshot(vault, learner)
+    data = derive_quiz(vault, docs, focus_id, mastery)
+    if data is None:
+        raise NotFound(f"The vault has no page {focus_id!r}.")
+    quiz = validate_block(
+        quiz_builder(QUIZ_ID, "ready" if data["items"] else "empty", data=data), docs, vault=vault, mastery=mastery
+    )
+    graph_data = derive_notes_graph(vault, docs, focus_id, "", mastery)
+    assert graph_data is not None  # the focus page exists: derive_quiz found it
+    blocks: list[UIBlock] = [quiz]
+    admitted = [(quiz.id, "QuizCard")]
+    if graph_data["nodes"]:
+        graph = validate_block(
+            graph_builder(NOTES_GRAPH_ID, "ready", data=graph_data), docs, vault=vault, mastery=mastery
+        )
+        blocks.append(graph)
+        admitted.append((graph.id, "NotesGraph"))
     return validate_layout(compose_notes_layout(admitted), {b.id for b in blocks}), blocks
 
 

@@ -32,7 +32,7 @@ The vault, its claims and pages (M2.1 to M2.4), the notes registry and the patte
 
 - **Server-checked answers.** The block holds no answer, so a client cannot read it; the answer is derived again from the item's id. The public rating route still refuses quiz signals, so a quiz result cannot be forged from outside the quiz route.
 - **Weakest first.** Items are chosen from claims whose concept the learner knows least (a concept rated "needs work", then one not yet rated, then comfortable ones), at most one item per concept, so a short quiz spreads across concepts.
-- **Distractors without a model.** Other concepts of the same kind (when the kind is known), whose names do not occur in the sentence, ordered by a hash of the item and the concept so the same quiz always looks the same and cannot be gamed by position.
+- **Distractors without a model.** Other concepts of the same kind (when the kind is known), mentioned in at least two passages, whose names are not a paper's title and do not occur in the sentence or share all their words with the answer's, ordered by a hash of the item and the concept so the same quiz always looks the same and cannot be gamed by position (D-35 A8 rule 4, which was tightened the same day after a read-only look at the real claims).
 - **Honest limits.** A cloze tests recognition of a name in a sentence, not understanding; distractors can be too easy (a different kind of thing) or, with the older free-form graph, noisy. The claims exist only for graphs built with `atomic2`; with none, the block says so.
 
 ## Cost estimate
@@ -43,8 +43,8 @@ None. No model call, no embedding, no network.
 
 | Risk | Impact | Mitigation |
 |---|---|---|
-| A distractor is a synonym of the answer (an alias page that was not grouped) | Medium: an unfair item | Distractors exclude names that occur in the sentence and pages grouped with the answer; the lint report's near-duplicate pairs are excluded too |
+| A distractor is a synonym of the answer (an alias page that was not grouped) | Medium: an unfair item | Distractors exclude names that occur in the sentence and pages whose words contain or are contained in the answer's (a hyphen counts as a space); the lint report is not used |
 | The blank cannot be made (the name is hyphen-broken in the passage) | Low | Such a claim is not an item; counted |
 | The same quiz every time | Low | Items depend on mastery, which moves with every answer; a "More questions" request after answering gives a different set |
-| The answer leaks through the block | High | The block carries no answer; a test pins it; the answer route derives it again |
+| The answer leaks through the block | High | The block carries no answer; every name of the answer is blanked everywhere in the sentence and an item with a name left is not made; a title holding a name is left out; a corpus-level test and a count over the real vault (0 of 1,577) pin it; the answer route derives it again |
 | Learner data | Low | Events only, as before; the quiz adds `quiz_*` events for a concept id |

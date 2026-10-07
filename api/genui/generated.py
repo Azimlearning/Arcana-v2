@@ -402,7 +402,7 @@ class QuizItem(BaseModel):
     text: str
     options: list[PageRef]
     docTitle: str
-    page: float | None
+    page: int | None
 
 
 class ReachedPassage(BaseModel):

@@ -325,6 +325,7 @@ export interface QuizItem {
   text: string;
   options: PageRef[];
   docTitle: string;
+  /** @int */
   page: number | null;
 }
 
@@ -333,7 +334,8 @@ export interface QuizItem {
  * concepts the learner knows least first. At most 5 items; `skipped` counts claims looked at and passed over (no way to make
  * a blank, or fewer than three fair distractors). Derived from the vault, the stored passages and the learner's mastery and
  * checked against them: re-deriving the quiz from `focusId` gives exactly these items and `skipped`. A `ready` block has at
- * least one item, and no item names its answer. Placeholders carry nothing. The schema cannot say so; the server validator does.
+ * least one item, and no item names its answer. An `empty` block (nothing could be made into a question) has no items and says in
+ * `skipped` how many claims were looked at; `loading` and `error` carry nothing. The schema cannot say so; the server validator does.
  */
 export interface QuizCardData {
   focusId: string | null;

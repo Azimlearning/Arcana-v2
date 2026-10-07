@@ -12,6 +12,7 @@ import { ConceptMap } from "./ConceptMap";
 import { ConceptPage } from "./ConceptPage";
 import { GraphView } from "./GraphView";
 import { NotesGraph } from "./NotesGraph";
+import { QuizCard } from "./QuizCard";
 import { SourceList } from "./SourceList";
 import { TraversalView } from "./TraversalView";
 
@@ -29,6 +30,7 @@ export const registry: Registry<UIBlock> = {
   ConceptMap,
   ConceptPage,
   NotesGraph,
+  QuizCard,
 };
 
 export function UnknownBlock({ type }: { type: string }) {

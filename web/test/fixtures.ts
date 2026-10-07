@@ -1,4 +1,4 @@
-import type { CitedSummary, ComparisonGrid, ConceptMap, ConceptPage, ErrorEnvelope, GraphView, LayoutSpec, NotesGraph, SavedPattern, SourceList, TraversalView, WorkspaceResponse, StreamEvent, TurnTrace } from "@arcana/schema";
+import type { CitedSummary, ComparisonGrid, ConceptMap, ConceptPage, ErrorEnvelope, GraphView, LayoutSpec, NotesGraph, QuizAnswerResponse, QuizCard, SavedPattern, SourceList, TraversalView, WorkspaceResponse, StreamEvent, TurnTrace } from "@arcana/schema";
 
 export const TITLE = "Hybrid Retrieval over Knowledge Graphs";
 
@@ -432,5 +432,69 @@ export function notesGraph(
       nodesLeftOut: 0,
       ...overrides,
     },
+  };
+}
+
+export function quizCard(
+  status: QuizCard["meta"]["status"],
+  overrides: Partial<QuizCard["data"]> = {},
+  error: ErrorEnvelope | null = null,
+): QuizCard {
+  const content = status === "ready" || status === "partial";
+  return {
+    type: "QuizCard",
+    id: "quiz",
+    meta: { status, error },
+    data: {
+      focusId: null,
+      items: content
+        ? [
+            {
+              id: "claim-1~dense_retrieval",
+              text: "_____ finds passages by comparing embedding vectors of the query and the text.",
+              options: [
+                { id: "bm25", label: "BM25" },
+                { id: "dense_retrieval", label: "dense retrieval" },
+                { id: "reranking", label: "reranking" },
+                { id: "rrf", label: "reciprocal rank fusion" },
+              ],
+              docTitle: TITLE,
+              page: 3,
+            },
+            {
+              id: "claim-2~bm25",
+              text: "_____ scores terms by their frequency in a passage and their rarity across the corpus.",
+              options: [
+                { id: "reranking", label: "reranking" },
+                { id: "bm25", label: "BM25" },
+                { id: "query_expansion", label: "query expansion" },
+                { id: "rrf", label: "reciprocal rank fusion" },
+              ],
+              docTitle: TITLE,
+              page: null,
+            },
+          ]
+        : [],
+      skipped: 0,
+      ...overrides,
+    },
+  };
+}
+
+export function quizAnswer(overrides: Partial<QuizAnswerResponse> = {}): QuizAnswerResponse {
+  return {
+    itemId: "claim-1~dense_retrieval",
+    correct: true,
+    answer: { id: "dense_retrieval", label: "dense retrieval" },
+    citation: {
+      id: "c1",
+      chunkId: "c1",
+      docId: "d1",
+      docTitle: TITLE,
+      page: 3,
+      quote: "Dense retrieval finds passages by comparing embedding vectors of the query and the text.",
+    },
+    mastery: { score: 0.6667, events: 1 },
+    ...overrides,
   };
 }

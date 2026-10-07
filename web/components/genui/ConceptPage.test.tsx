@@ -125,12 +125,12 @@ describe("ConceptPage: the learner's mastery", () => {
   it("says where the learner stands in words and as a meter, never as a mark", () => {
     const { rerender } = render(<ConceptPage block={rated(0.7, 3)} />);
     const section = () => screen.getByRole("region", { name: "Your mastery" });
-    expect(section()).toHaveTextContent("Comfortable (70 percent, from 3 ratings).");
+    expect(section()).toHaveTextContent("Comfortable (70 percent, from 3 ratings and answers).");
     expect(within(section()).getByRole("meter", { name: "Mastery" })).toHaveAttribute("aria-valuetext", "comfortable, 70 percent");
     rerender(<ConceptPage block={rated(0.5, 1)} />);
-    expect(section()).toHaveTextContent("Getting there (50 percent, from 1 rating).");
+    expect(section()).toHaveTextContent("Getting there (50 percent, from 1 rating or answer).");
     rerender(<ConceptPage block={rated(0.3333, 2)} />);
-    expect(section()).toHaveTextContent("Needs work (33 percent, from 2 ratings).");
+    expect(section()).toHaveTextContent("Needs work (33 percent, from 2 ratings and answers).");
     expect(section()).toHaveTextContent("A belief that fades over a few weeks, not a mark.");
   });
 
@@ -165,7 +165,7 @@ describe("ConceptPage: rating buttons and announcements", () => {
     render(<ConceptPage block={conceptPage("ready", { mastery: { score: 0.7, events: 3 } })} />);
     const status = screen.getByRole("status");
     expect(status).toHaveAttribute("aria-live", "polite");
-    expect(status).toHaveTextContent("Comfortable (70 percent, from 3 ratings).");
+    expect(status).toHaveTextContent("Comfortable (70 percent, from 3 ratings and answers).");
   });
 
   it("keeps the focus on a rating button while it is being saved, and ignores a second press meanwhile", async () => {
