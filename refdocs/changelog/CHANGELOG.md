@@ -28,6 +28,13 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-07: P2b approved; Synapse read for the adaptive and prebuilt-versus-generated approach
+- **Changed:** the P2b plan (status Approved, a new section "What Synapse shows"), the execution doc (an animated width change in F3, the lifecycle state in words on the shelf in F4), ADR D-32 (accepted), the PRD §7 row for D-32, both indexes.
+- **Decided:** Azim approved the P2b plan and ADR D-32 ("the layout change is correct for now"; "I approve this plan so far and you can proceed"). From Synapse (`Coding/Hackathon/Genui/Synapse-V3`, read only, nothing ported): animate the width change, show each saved item's state in words, and keep the phone overlay out of scope.
+- **Deviations:** None. CLAUDE.md says Synapse is not on this machine; it is, under `Coding/Hackathon/Genui`. The note in P2's execution doc ("nothing is ported from it") stays true.
+- **Verified:** nothing verified this session (documents only).
+- **Known issues / next steps:** F1 (layout v2 on the wire, schema first).
+
 ### 2026-10-07: P2b proposed (Studio shell and split regions), docs only
 - **Changed:** `refdocs/plans/2026-10-07-p2b-studio-shell-split-regions.md` and `refdocs/execution/2026-10-07-p2b-studio-shell-split-regions.md` (new); ADR D-32 (proposed) and a pointer from working assumptions 4 and 5 in `DECISIONS.md`; both index tables.
 - **Decided:** Nothing is decided. D-32 proposes layout v2 (regions `main`, `secondary`, `shelf` inside a panel, with a direction), a Studio shell with inert generator tiles and an Outputs shelf that holds saved views first, and generators left to P5. It waits for Azim's approval.

@@ -2,7 +2,7 @@
 
 > A follow-on to P2 (`2026-10-06-p2-genui-catalog-dashboard.md`), from Azim's comments on the D1 screenshots on 2026-10-07. Execution doc: `refdocs/execution/2026-10-07-p2b-studio-shell-split-regions.md`.
 > A plan says **what and why**. The execution doc says **how and in what order**.
-> Status: **Proposed, waiting for Azim's approval.** Nothing in it is built. ADR D-32 is proposed with it.
+> Status: **Approved by Azim 2026-10-07** ("the layout change is correct for now", the Studio understood, "I approve this plan so far and you can proceed"). ADR D-32 accepted with it. Building starts at task F1.
 
 ## Why this exists
 
@@ -17,6 +17,16 @@ Two things follow. First, the layout needs **regions inside a panel**, with a di
 - `LayoutSpec` v1, the Composer's width rules, `validate_layout` on both sides, the layout event, the shell (`Shell`, `Panel`), `placeBlocks`, the saved-view flow (patterns), the fixture shared by both sides. All exist and are tested.
 - Saved views are the first kind of "output": a saved pattern is a name, a template and parameters, with no evidence. They already have a store, a list endpoint, apply and re-verify.
 - v1's Studio (`../Arcana/`) is reference only. Read its layout before building the shell here (CLAUDE.md rule 5 applies if anything is ported).
+
+## What Synapse shows (read 2026-10-07, `Synapse-V3`, read only; nothing is ported)
+
+Azim asked for a look at how Synapse handles adaptive UI and the choice between prebuilt and generated components. What is there, and what it means here:
+
+- **Adaptive layout is a column template switched by state** (`frontend/app/page.tsx`: three grid templates for "no lab yet", "lab focused" and "both", with a CSS transition on `grid-template-columns`), and on narrow screens the lab pane becomes an open or closed overlay instead of a column. Arcana's `LayoutSpec` already makes the widths data; P2b adds regions. Two things to take: the **width change is animated**, and **narrow screens swap a column for an overlay**. The animation goes into task F3; the phone overlay stays out of scope (recorded as a gap).
+- **Prebuilt first, generated only if nothing prebuilt fits.** `resolve_builtin_lab_for_query` picks a stored, content-hashed lab deterministically; only when none matches does the Planner, Generator and Verifier pipeline run. A prebuilt lab still passes a cheap `verify_trusted_builtin` hash check. This is the same order as D-28 and D-31 here (prebuilt Basic, admitted components, saved patterns, and generation only in P4), so no change to the design.
+- **One delivery gate.** Only `delivery.py` may emit the artifact-done event, a source-scan test forbids constructing it elsewhere, a verified artifact needs a type only the verifier can mint, and an artifact that failed only on science grounds is delivered with `verified=False` and an honest note instead of a reward. This is the model for P4's gate and is already in constraint 3.
+- **A saved library with a verified flag** (`labLibrary.ts`): saved labs carry `verified`, are capped in count and size and evicted from the tail. Arcana's saved patterns already have a state and a cap. **The shelf in this phase shows each item's state in words**, which makes the lifecycle visible instead of only stored (task F4).
+- **A promotion ladder** (`generated, verified, cached, audited, canonical`) is Synapse's plan, which became D-11 and D-31 here. Nothing to add in P2b.
 
 ## Scope
 

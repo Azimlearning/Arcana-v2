@@ -2,7 +2,7 @@
 
 > Plan: `refdocs/plans/2026-10-07-p2b-studio-shell-split-regions.md`. Tasks run in order. A task is not done until its **Verify** passes, not when the code compiles.
 > If reality diverges from this doc, **edit this doc** (CLAUDE.md rule 4) and note it in the changelog's Deviations line.
-> Status: **Proposed, waiting for Azim's approval of the plan and ADR D-32.** Not started.
+> Status: **Approved by Azim 2026-10-07; ADR D-32 accepted.** Task F1 is next.
 
 ## Before starting
 
@@ -45,6 +45,7 @@
 1. `Panel` renders its regions in the panel's direction using flex-grow from the sizes, each region a labelled landmark where it holds content; a region of one block needs no wrapper.
 2. `placeBlocks` groups by panel and region; a placement whose region is missing falls back to the panel's first region.
 3. Keep the fallback layout in step with the fixture.
+4. The change of widths and sizes is animated with a CSS transition on flex-grow (as Synapse does on its grid columns), and the transition is switched off under `prefers-reduced-motion`. Read the current Tailwind v4 docs for the transition utilities first.
 
 **Verify:** component tests for rows and columns, for a region that is empty, and for a v1 layout; keyboard order follows reading order; the long-title and hidden-text containment tests from D1 still pass.
 
@@ -55,6 +56,7 @@
 1. A row of generator tiles (slides, quiz, flashcards, study session) shown disabled, each with the words "Coming with the Studio agent". They are not buttons and have no handler.
 2. The Outputs shelf lists the saved views with the same actions as today (show, check again, delete) and the same refusal words. Remove the control from the header.
 3. An empty shelf says what will appear there.
+4. Each shelf item states its lifecycle state in words (saved, verified, or stale with its reason), so the state the store already keeps is visible. Nothing else about the state machine changes (P4).
 
 **Verify:** tests that the tiles are inert and labelled, that the shelf shows saved views and applies one, that the header no longer carries the control, and that a refusal is still said in words.
 
