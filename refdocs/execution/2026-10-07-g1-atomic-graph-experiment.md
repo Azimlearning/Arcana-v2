@@ -24,6 +24,8 @@
 
 **Verify:** tests on hand-built graphs with known values; the run's numbers are reproduced by a second run; the pinned hashes are unchanged.
 
+**Reality (G1.1 done 2026-10-07):** `eval/graph_quality.py` (a pure `measure()` over nodes, edges and chunk texts, plus a command that refuses a dirty tree, a missing store, unknown documents and a hash that differs from the pinned one) and `eval/tests/test_graph_quality.py` (7 tests, hand-computed on a five-node graph, slices, the empty graph, the command's guards). Run on the pinned graph at a clean commit (`da20ed1`): see `refdocs/evidence/20261007T005311Z-graph-quality-baseline.md`. **Headline:** only 34.6 percent of edges are stated in one sentence of their source chunk (co-mention 65.6 percent); 1,604 distinct relation strings (authorship is spelled four ways, about 20 percent of all edges); only 11.6 percent of nodes occur in two or more papers; the same concept is several hubs (LLM, LLMs, Large Language Models); about 3,370 of 11,173 nodes are people from title pages. **What it changes in G1.2:** a `kind` for people and affiliations is now part of the builder's design (recorded, from the corpus's general character and not from any question), and the closed relation vocabulary must cover authorship so it is one relation, not four. The hash check uses the same pinned values as the P2 study. Verified: `uv run pytest eval/tests` 123 passed; ruff and pyright clean.
+
 ### Task G1.2: The atomic builder on fakes
 
 **Files:** `api/ingestion/atomic.py` (new), `api/stores/graph_store.py` and `api/stores/local/` (optional fields), tests, a fake extractor for the new output shape.

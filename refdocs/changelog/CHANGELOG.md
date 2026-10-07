@@ -28,6 +28,14 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-07: G1.1 the free structural baseline of the current graph
+- **Changed:** `eval/graph_quality.py`, `eval/tests/test_graph_quality.py`, `eval/results/20261007T005311Z-graph-quality-baseline.json`, `refdocs/evidence/20261007T005311Z-graph-quality-baseline.md`, the G1 execution doc (G1.1 Reality).
+- **Decided:** The atomic builder's design takes a `kind` for people and affiliations (title-page metadata is about a fifth of the graph) and one relation for authorship. Recorded as design, from the corpus's general character; nothing was tuned on a question.
+- **Deviations:** none.
+- **Verified:** `uv run pytest eval/tests` (123 passed), `uv run ruff check eval`, `uv run pyright eval`; the baseline ran on the pinned stores (hashes equal the P2 study's) at a clean commit; no model call, no spend.
+- **Measured:** 11,173 nodes, 13,972 edges; 34.6 percent of edges stated in one sentence of their chunk, 65.6 percent co-mentions; 1,604 distinct relation strings; 11.6 percent of nodes in two or more papers; the largest hub GraphRAG with 477 edges. Limits are in the evidence record (a crude sentence splitter; lexical, not semantic).
+- **Known issues / next steps:** P2c T1 (the traversal function and its parity test), then G1.2 (the atomic builder on fakes).
+
 ### 2026-10-07: P2c and G1 planned and approved (Azim's graph upgrade), docs only
 - **Changed:** `refdocs/plans/2026-10-07-p2c-traversal-view.md`, `refdocs/plans/2026-10-07-g1-atomic-graph-experiment.md`, their execution docs, ADRs D-33 and D-34, the PRD rows, both index tables.
 - **Decided:** Azim approved both parts of his graph idea ("proceed with both") and the experiment being measured as extra arms. Part 1 (D-33) is a `TraversalView` showing what the search followed per prompt, with the retriever untouched. Part 2 (D-34) is an atomic-note graph builder as an additive variant with the protocol fixed before any live run, a free structural baseline first, a 4-paper subset (about $1.5), and the full 16 papers (about $5.8) only after Azim raises the monthly cap.

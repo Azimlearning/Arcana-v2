@@ -1,0 +1,203 @@
+{
+  "run": {
+    "started": "2026-10-07T00:53:11.780765+00:00",
+    "label": "graph-quality-baseline",
+    "code": {
+      "commit": "da20ed16ad09ad2c2eb89d87c3921d14c92aa64b",
+      "dirty": false,
+      "changed_files": []
+    },
+    "data_dir": "data\\eval-live-live",
+    "hashes": {
+      "graph_sha256": "00454fd3afb00e63ab82f7e1f2c00a1551991707f9d91dc942830ad955c1f830",
+      "chunks_sha256": "20fd0ba62ee5a5657d488c9916c85f856497a276c1c6f4386973bb12147cddfb"
+    },
+    "protocol": "Structure only, no model call. Definitions: an edge is 'stated in the chunk' when its source chunk's text contains both endpoint labels as whole words; 'stated in one sentence' when one sentence of that chunk contains both; a 'generic relation' is one of a fixed list of co-occurrence words; a 'co-mention' is a generic relation or an edge no single sentence of its chunk states; 'drawable' is stated in one sentence of at least the minimum quote length with labels and relation within the GraphView caps. Shares are over the whole graph (or the slice), not over the neighbourhoods of any question.",
+    "documents": {
+      "01d82c67ac18ffc3": "2404.03868_Extract_Define_Canonicalize_An_LLM_based_Framework_for_Knowledge_Graph",
+      "14671c78fc7de99d": "2405.14831_HippoRAG_Neurobiologically_Inspired_Long_Term_Memory_for_Large_Languag",
+      "23e3249e9a1e7541": "2005.11401_Retrieval_Augmented_Generation_for_Knowledge_Intensive_NLP_Tasks",
+      "396a0fadeb4cd40f": "2312.10997_Retrieval_Augmented_Generation_for_Large_Language_Models_A_Survey",
+      "3a2ca388b4a2fb17": "2304.09542_Is_ChatGPT_Good_at_Search_Investigating_Large_Language_Models_as_Re_Ra",
+      "6c24762a3f277fd1": "2309.15217_Ragas_Automated_Evaluation_of_Retrieval_Augmented_Generation",
+      "730f1a9f38d16689": "2404.16130_From_Local_to_Global_A_Graph_RAG_Approach_to_Query_Focused_Summarizati",
+      "737b0b8fe0aa8459": "2501.00309_Retrieval_Augmented_Generation_with_Graphs_GraphRAG",
+      "743155d9b0541c99": "2401.15391_MultiHop_RAG_Benchmarking_Retrieval_Augmented_Generation_for_Multi_Hop",
+      "8bbe93a93b05967d": "2410.13070_Is_Semantic_Chunking_Worth_the_Computational_Cost",
+      "975aa1fd3c1b6031": "2401.15884_Corrective_Retrieval_Augmented_Generation",
+      "ac529ab762fd1672": "HybridRAG: Integrating Knowledge Graphs and Vector Retrieval Augmented Generation for Efficient Information Extraction",
+      "bd72eebf611df136": "2410.05779_LightRAG_Simple_and_Fast_Retrieval_Augmented_Generation",
+      "d2068edc08df316d": "Siren's Song in the AI Ocean: A Survey on Hallucination in Large Language Models",
+      "d9eaa1398abac0df": "2310.11511_Self_RAG_Learning_to_Retrieve_Generate_and_Critique_through_Self_Refle",
+      "dc0ae3c5584ed146": "2212.10496_Precise_Zero_Shot_Dense_Retrieval_without_Relevance_Labels"
+    }
+  },
+  "metrics": {
+    "documents": null,
+    "nodes": 11173,
+    "edges": 13972,
+    "edges_stated_in_chunk": {
+      "count": 9821,
+      "share": 0.7029
+    },
+    "edges_stated_in_one_sentence": {
+      "count": 4830,
+      "share": 0.3457
+    },
+    "edges_generic_relation": {
+      "count": 84,
+      "share": 0.006
+    },
+    "edges_co_mention": {
+      "count": 9163,
+      "share": 0.6558
+    },
+    "edges_drawable": {
+      "count": 4804,
+      "share": 0.3438
+    },
+    "edges_with_missing_chunk": 0,
+    "nodes_singleton": {
+      "count": 7873,
+      "share": 0.7046
+    },
+    "nodes_in_two_or_more_documents": {
+      "count": 1294,
+      "share": 0.1158
+    },
+    "nodes_with_no_edge": {
+      "count": 2278,
+      "share": 0.2039
+    },
+    "labels_very_short": 52,
+    "labels_all_digits": 13,
+    "labels_sentence_like": 320,
+    "degree": {
+      "n": 11173,
+      "min": 0,
+      "median": 1,
+      "mean": 2.501,
+      "p90": 5,
+      "p99": 23,
+      "max": 477
+    },
+    "largest_hubs": [
+      {
+        "label": "GraphRAG",
+        "degree": 477
+      },
+      {
+        "label": "RAG",
+        "degree": 420
+      },
+      {
+        "label": "Large Language Models",
+        "degree": 299
+      },
+      {
+        "label": "Knowledge graphs",
+        "degree": 268
+      },
+      {
+        "label": "Self-RAG",
+        "degree": 240
+      },
+      {
+        "label": "LLMs",
+        "degree": 198
+      },
+      {
+        "label": "LLM",
+        "degree": 177
+      },
+      {
+        "label": "Retrieval Augmented Generation",
+        "degree": 176
+      },
+      {
+        "label": "HippoRAG",
+        "degree": 170
+      },
+      {
+        "label": "LightRAG",
+        "degree": 167
+      }
+    ],
+    "distinct_relations": 1604,
+    "relation_share_of_top_20": 0.4928,
+    "most_common_relations": [
+      {
+        "relation": "authored",
+        "count": 1111
+      },
+      {
+        "relation": "uses",
+        "count": 1099
+      },
+      {
+        "relation": "author",
+        "count": 1072
+      },
+      {
+        "relation": "evaluated on",
+        "count": 569
+      },
+      {
+        "relation": "authored by",
+        "count": 426
+      },
+      {
+        "relation": "evaluates",
+        "count": 283
+      },
+      {
+        "relation": "contains",
+        "count": 276
+      },
+      {
+        "relation": "applied to",
+        "count": 276
+      },
+      {
+        "relation": "includes",
+        "count": 232
+      },
+      {
+        "relation": "applies to",
+        "count": 230
+      },
+      {
+        "relation": "performs",
+        "count": 169
+      },
+      {
+        "relation": "enables",
+        "count": 163
+      },
+      {
+        "relation": "implements",
+        "count": 151
+      },
+      {
+        "relation": "author of",
+        "count": 146
+      },
+      {
+        "relation": "addresses",
+        "count": 132
+      }
+    ],
+    "node_types": {
+      "person": 2735,
+      "method": 1544,
+      "concept": 673,
+      "task": 449,
+      "researcher": 427,
+      "dataset": 371,
+      "model": 267,
+      "author": 210,
+      "metric": 205,
+      "technique": 183
+    }
+  }
+}
