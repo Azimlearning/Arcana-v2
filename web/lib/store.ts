@@ -34,6 +34,27 @@ export function toErrorBlock(block: UIBlock, error: ErrorEnvelope): UIBlock {
       return { ...block, meta, data: { dimensions: [], rows: [], citations: [] } };
     case "ConceptMap":
       return { ...block, meta, data: { steps: [], citations: [] } };
+    case "ConceptPage":
+      return {
+        ...block,
+        meta,
+        data: {
+          page: { id: "", label: "" },
+          kind: null,
+          aliases: [],
+          passages: 0,
+          documents: 0,
+          definitions: [],
+          links: [],
+          linksLeftOut: 0,
+          claims: [],
+          mentions: [],
+          mentionsLeftOut: 0,
+          citations: [],
+        },
+      };
+    case "NotesGraph":
+      return { ...block, meta, data: { focusId: null, query: "", nodes: [], edges: [], nodesLeftOut: 0 } };
   }
 }
 

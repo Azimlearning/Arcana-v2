@@ -101,6 +101,22 @@ def compile_vault(graph: GraphStore, docs: DocStore, claims: Iterable[ClaimDraft
     return Vault(VAULT_VERSION, len(chunks), pages, links + co_links, claim_notes, stats)
 
 
+def carried_claims(previous: Vault | None) -> list[ClaimDraft]:
+    """The claims of an earlier vault as drafts again (their pages' node ids stand for the concepts they name), so a rebuild
+    that adds or removes a document keeps the claims of the others; the compiler drops those of passages no longer stored."""
+    if previous is None:
+        return []
+    return [
+        ClaimDraft(
+            c.chunk_id,
+            c.doc_id,
+            c.sentence,
+            tuple(n for pid in c.page_ids if pid in previous.pages for n in previous.pages[pid].node_ids),
+        )
+        for c in previous.claims
+    ]
+
+
 # ── pages ─────────────────────────────────────────────────────────────────────
 
 

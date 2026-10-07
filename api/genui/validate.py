@@ -42,9 +42,11 @@ from api.genui.generated import (
     CitedSummary,
     ComparisonGrid,
     ConceptMap,
+    ConceptPage,
     FieldIssue,
     GraphView,
     LayoutSpec,
+    NotesGraph,
     SourceList,
     TraversalView,
     UIBlock,
@@ -54,6 +56,8 @@ from api.genui.text import normalise as _norm
 from api.retrieval.traversal import SeedNode, seed_weight, steps_for_display, traverse
 from api.stores.doc_store import DocStore
 from api.stores.graph_store import GraphStore
+from api.vault.types import Vault
+from api.vault.view import derive_concept_page, derive_notes_graph
 
 _UI_BLOCK = TypeAdapter(UIBlock)
 PLACEHOLDER_STATUSES = {"empty", "loading", "error"}
@@ -77,23 +81,28 @@ def _schema_issues(exc: ValidationError, tag: str | None) -> list[FieldIssue]:
     ]
 
 
-def validate_block(raw: Mapping[str, Any], docs: DocStore, graph: GraphStore | None = None) -> UIBlock:
+def validate_block(
+    raw: Mapping[str, Any], docs: DocStore, graph: GraphStore | None = None, vault: Vault | None = None
+) -> UIBlock:
     """Return the validated block, or raise ValidationFailed naming every violated field. `graph` is the graph store
-    the claims of a graph-derived block (a `TraversalView`) are re-derived from; a block of that kind is refused when it
-    is not given, because its claims could not be checked."""
+    the claims of a graph-derived block (a `TraversalView`) are re-derived from, and `vault` the vault those of a
+    notes block (a `ConceptPage` or a `NotesGraph`) are re-derived from; a block of such a kind is refused when its
+    source is not given, because its claims could not be checked."""
     tag = raw.get("type") if isinstance(raw.get("type"), str) else None
     try:
         block = _UI_BLOCK.validate_python(dict(raw))
     except ValidationError as exc:
         raise ValidationFailed("The block does not match the wire schema.", _schema_issues(exc, tag)) from exc
 
-    issues = _content_issues(block, docs, graph)
+    issues = _content_issues(block, docs, graph, vault)
     if issues:
         raise ValidationFailed("The block failed content validation.", issues)
     return block
 
 
-def _content_issues(block: UIBlock, docs: DocStore, graph: GraphStore | None) -> list[FieldIssue]:
+def _content_issues(
+    block: UIBlock, docs: DocStore, graph: GraphStore | None, vault: Vault | None = None
+) -> list[FieldIssue]:
     """Rules common to every block, then the rules of its own type. A type with no rules here is refused:
     a component is not shown until its invariants are written down (constraint 7)."""
     issues = _common_issues(block)
@@ -109,6 +118,10 @@ def _content_issues(block: UIBlock, docs: DocStore, graph: GraphStore | None) ->
         issues += _concept_map_issues(block, docs)
     elif isinstance(block, TraversalView):
         issues += _traversal_view_issues(block, docs, graph)
+    elif isinstance(block, ConceptPage):
+        issues += _concept_page_issues(block, docs, vault)
+    elif isinstance(block, NotesGraph):
+        issues += _notes_graph_issues(block, docs, vault)
     else:
         issues.append(FieldIssue(path="type", message="no content rules exist for this block type"))
     return issues
@@ -618,6 +631,97 @@ def _traversal_view_issues(block: TraversalView, docs: DocStore, graph: GraphSto
         issues.append(
             FieldIssue(path="data.nodes.(set)", message="the nodes must be the seeds and the ends of the steps shown")
         )
+    return issues
+
+
+_MAX_DIFF_ISSUES = 8
+
+
+def _differences(got: Any, want: Any, path: str, out: list[FieldIssue]) -> None:
+    """The first places where a block's data differs from what the vault derives, as field issues (at most a few: the
+    rest are the same defect repeated)."""
+    if len(out) >= _MAX_DIFF_ISSUES:
+        return
+    if isinstance(want, dict) and isinstance(got, dict):
+        for key in want:
+            _differences(got.get(key), want[key], f"{path}.{key}", out)
+    elif isinstance(want, list) and isinstance(got, list):
+        if len(got) != len(want):
+            out.append(FieldIssue(path=f"{path}.(count)", message=f"the vault derives {len(want)} here, not {len(got)}"))
+        for i, (g, w) in enumerate(zip(got, want, strict=False)):
+            _differences(g, w, f"{path}.{i}", out)
+    elif got != want or type(got) is not type(want):
+        out.append(FieldIssue(path=path, message="does not match what the vault derives"))
+
+
+def _placeholder_empty(data: dict[str, Any], blank: dict[str, Any]) -> bool:
+    return all(data.get(k) == v for k, v in blank.items())
+
+
+_BLANK_PAGE: dict[str, Any] = {
+    "kind": None,
+    "aliases": [],
+    "passages": 0,
+    "documents": 0,
+    "definitions": [],
+    "links": [],
+    "linksLeftOut": 0,
+    "claims": [],
+    "mentions": [],
+    "mentionsLeftOut": 0,
+    "citations": [],
+}
+
+
+def _concept_page_issues(block: ConceptPage, docs: DocStore, vault: Vault | None) -> list[FieldIssue]:
+    """A page is a function of its id and the vault, so it is checked by deriving it again: the block's data must equal the
+    derived data exactly (every name, count, link, claim, backlink and citation)."""
+    data, status = block.data.model_dump(), block.meta.status
+    if status in PLACEHOLDER_STATUSES:
+        if data["page"] != {"id": "", "label": ""} or not _placeholder_empty(data, _BLANK_PAGE):
+            return [FieldIssue(path="data", message=f"a '{status}' block must carry nothing")]
+        return []
+    if vault is None:
+        return [FieldIssue(path="data", message="a page can only be checked against the vault")]
+    try:
+        derived = derive_concept_page(vault, docs, block.data.page.id)
+    except Exception:  # a store that cannot be read is a block that cannot be checked: refuse, never crash
+        return [FieldIssue(path="data", message="the page could not be re-derived from the vault")]
+    if derived is None:
+        return [FieldIssue(path="data.page.id", message="the vault has no page with this id")]
+    issues: list[FieldIssue] = []
+    referenced = {
+        item["citationId"] for key in ("definitions", "mentions", "links", "claims") for item in data[key]
+    }
+    issues += _citation_issues(block.data.citations, referenced, docs)
+    if issues:
+        return issues  # plain citation defects first: the comparison below reads the same fields
+    _differences(data, derived, "data", issues)
+    return issues
+
+
+_BLANK_GRAPH: dict[str, Any] = {"nodes": [], "edges": [], "nodesLeftOut": 0}
+
+
+def _notes_graph_issues(block: NotesGraph, docs: DocStore, vault: Vault | None) -> list[FieldIssue]:
+    """A notes graph is a function of its focus, its query and the vault, so it is checked by deriving it again."""
+    data, status = block.data.model_dump(), block.meta.status
+    if status in PLACEHOLDER_STATUSES:
+        if not _placeholder_empty(data, _BLANK_GRAPH) or data["focusId"] is not None:
+            return [FieldIssue(path="data", message=f"a '{status}' block must carry nothing")]
+        return []
+    if vault is None:
+        return [FieldIssue(path="data", message="a notes graph can only be checked against the vault")]
+    try:
+        derived = derive_notes_graph(vault, docs, block.data.focusId, block.data.query)
+    except Exception:
+        return [FieldIssue(path="data", message="the graph could not be re-derived from the vault")]
+    if derived is None:
+        return [FieldIssue(path="data.focusId", message="the vault has no page with this id")]
+    issues: list[FieldIssue] = []
+    if status == "ready" and not data["nodes"]:
+        issues.append(FieldIssue(path="data.nodes", message="a ready graph needs at least one page"))
+    _differences(data, derived, "data", issues)
     return issues
 
 

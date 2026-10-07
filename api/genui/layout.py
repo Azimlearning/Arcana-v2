@@ -31,6 +31,7 @@ from api.genui.generated import (
     RegionSpec,
     SplitDirection,
 )
+from api.genui.notes_catalog import NOTES_CATALOG
 from api.genui.validate import LAYOUT_VERSION
 
 CHAT: PanelId = "chat"
@@ -108,11 +109,26 @@ def prebuilt_layout(sources_block_id: str | None = None) -> LayoutSpec:
     )
 
 
+def compose_notes_layout(admitted: Sequence[tuple[str, str]]) -> LayoutSpec:
+    """The notes view's layout: the adaptive rules, except that a panel keeps only the regions something is placed in. The studio
+    panel's shelf (its generated outputs) has no place in the notes view, and left in it would take 40 percent of the panel's
+    height empty (seen in the real browser, M2.6)."""
+    layout = compose_layout(admitted, "relate")
+    used: dict[PanelId, set[RegionId]] = {}
+    for placement in layout.placements:
+        used.setdefault(placement.panel, set()).add(placement.region)
+    panels = [
+        _panel(p.id, p.width, tuple(used.get(p.id, {MAIN})), p.direction if len(used.get(p.id, {MAIN})) > 1 else None)
+        for p in layout.panels
+    ]
+    return layout.model_copy(update={"panels": panels})
+
+
 def compose_layout(admitted: Sequence[tuple[str, str]], intent: str) -> LayoutSpec:
     """The adaptive layout for a turn. `admitted` is (block id, component name) in arrival order."""
     hinted: list[tuple[str, PanelId, RegionId, SplitDirection | None, int, int]] = []
     for arrival, (block_id, component) in enumerate(admitted):
-        spec = CATALOG.get(component)
+        spec = CATALOG.get(component) or NOTES_CATALOG.get(component)
         if spec is None:
             hinted.append((block_id, CHAT, MAIN, None, UNKNOWN_PRIORITY, arrival))
         else:

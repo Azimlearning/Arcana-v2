@@ -2,12 +2,14 @@ import type { CitedSummary as CitedSummaryBlock, UIBlock } from "@arcana/schema"
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { block, comparisonGrid, conceptMap, graphView, sourceList, traversalView } from "@/test/fixtures";
+import { block, comparisonGrid, conceptMap, conceptPage, graphView, notesGraph, sourceList, traversalView } from "@/test/fixtures";
 
 import { CitedSummary } from "./CitedSummary";
 import { ComparisonGrid } from "./ComparisonGrid";
 import { ConceptMap } from "./ConceptMap";
+import { ConceptPage } from "./ConceptPage";
 import { GraphView } from "./GraphView";
+import { NotesGraph } from "./NotesGraph";
 import { SourceList } from "./SourceList";
 import { TraversalView } from "./TraversalView";
 import { registry, renderBlock, type Registry } from "./registry";
@@ -15,7 +17,7 @@ import { registry, renderBlock, type Registry } from "./registry";
 describe("block registry", () => {
   it("registers a component for every block type in the wire union", () => {
     // Compile-time too: `registry: Registry<UIBlock>` fails to typecheck if a variant is missing.
-    const types: UIBlock["type"][] = ["CitedSummary", "SourceList", "GraphView", "TraversalView", "ComparisonGrid", "ConceptMap"];
+    const types: UIBlock["type"][] = ["CitedSummary", "SourceList", "GraphView", "TraversalView", "ComparisonGrid", "ConceptMap", "ConceptPage", "NotesGraph"];
     for (const type of types) expect(registry[type]).toBeTypeOf("function");
     expect(registry.CitedSummary).toBe(CitedSummary);
     expect(registry.SourceList).toBe(SourceList);
@@ -23,6 +25,8 @@ describe("block registry", () => {
     expect(registry.TraversalView).toBe(TraversalView);
     expect(registry.ComparisonGrid).toBe(ComparisonGrid);
     expect(registry.ConceptMap).toBe(ConceptMap);
+    expect(registry.ConceptPage).toBe(ConceptPage);
+    expect(registry.NotesGraph).toBe(NotesGraph);
   });
 
   it("renders a known block through its registered component", () => {
@@ -43,6 +47,13 @@ describe("block registry", () => {
   it("renders a TraversalView block through the registry", () => {
     render(<>{renderBlock(traversalView("ready"))}</>);
     expect(screen.getByRole("group", { name: /Search path of 3 concepts and 2 steps/ })).toBeInTheDocument();
+  });
+
+  it("renders a ConceptPage and a NotesGraph block through the registry", () => {
+    render(<>{renderBlock(conceptPage("ready"))}</>);
+    expect(screen.getByRole("article", { name: "Retrieval-Augmented Generation" })).toBeInTheDocument();
+    render(<>{renderBlock(notesGraph("ready"))}</>);
+    expect(screen.getByRole("group", { name: /Page graph of 3 pages/ })).toBeInTheDocument();
   });
 
   it("renders a ComparisonGrid block through the registry", () => {

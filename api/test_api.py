@@ -330,7 +330,7 @@ def test_after_an_ingest_the_source_list_names_the_document_with_its_stored_titl
     ingested = client.post("/ingest", files={"file": ("hybrid_retrieval.pdf", pdf_bytes, "application/pdf")}).json()
     (block,) = workspace(client).blocks
     assert block.meta.status == "ready"
-    (item,) = block.data.documents  # pyright: ignore[reportAttributeAccessIssue]
+    (item,) = block.data.documents  # pyright: ignore[reportAttributeAccessIssue, reportGeneralTypeIssues]
     assert (item.docId, item.title, item.chunkCount) == (ingested["docId"], ingested["title"], ingested["chunkCount"])
 
 

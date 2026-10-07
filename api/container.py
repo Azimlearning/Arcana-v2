@@ -24,6 +24,10 @@ from api.stores.local.networkx_graph import NetworkXGraphStore
 from api.stores.local.numpy_vector import NumpyVectorStore
 from api.stores.local.sqlite_doc import SqliteDocStore, make_engine
 from api.stores.vector_store import VectorStore
+from api.vault.compile import carried_claims, compile_vault
+from api.vault.local import JsonVaultStore
+from api.vault.store import VaultStore
+from api.vault.types import Vault
 
 
 @dataclass
@@ -37,6 +41,7 @@ class Container:
     llm: LLMService
     embedder: Embedder
     uploads_dir: Path
+    vault_store: VaultStore
 
     @property
     def ingest_deps(self) -> IngestDeps:
@@ -47,6 +52,18 @@ class Container:
             embedder=self.embedder,
             llm=self.llm,
         )
+
+    def vault(self) -> Vault | None:
+        """The compiled vault of the stored documents, or None if none has been built (D-35)."""
+        return self.vault_store.vault()
+
+    def rebuild_vault(self) -> Vault:
+        """Compile the vault from the stored graph and passages and keep it. Deterministic, no model call. A previous build's
+        claims are kept only if the build supplied them elsewhere: the a claim of a deleted passage is dropped by the compiler."""
+        built = compile_vault(self.graph, self.docs, carried_claims(self.vault_store.vault()))
+        self.vault_store.put_vault(built)
+        self.vault_store.save()
+        return built
 
     async def retrieve(self, query: str) -> RetrievalResult:
         """The evidence path: all three signals, fused (the `hybrid` arm)."""
@@ -80,4 +97,5 @@ def build_container(settings: Settings) -> Container:
         llm=build_llm_service(settings, ledger, fake_responder=fake_llm_responder),
         embedder=build_embedder(settings, ledger),
         uploads_dir=data / "uploads",
+        vault_store=JsonVaultStore(data / "vault.json"),
     )

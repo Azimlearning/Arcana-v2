@@ -106,6 +106,30 @@ class ConceptMapData(BaseModel):
     citations: list[Citation]
 
 
+class ConceptPage(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    type: Literal['ConceptPage']
+    id: str
+    meta: BlockMeta
+    data: ConceptPageData
+
+
+class ConceptPageData(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    page: PageRef
+    kind: str | None
+    aliases: list[str]
+    passages: int
+    documents: int
+    definitions: list[PageSentence]
+    links: list[PageLinkItem]
+    linksLeftOut: int
+    claims: list[PageClaimItem]
+    mentions: list[PageSentence]
+    mentionsLeftOut: int
+    citations: list[Citation]
+
+
 class DoneEvent(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
     type: Literal['done']
@@ -195,6 +219,69 @@ class LayoutSpec(BaseModel):
     mode: LayoutMode
     panels: list[PanelSpec]
     placements: list[Placement]
+
+
+class NotesEdge(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    source: str
+    target: str
+    kind: PageLinkKind
+    relation: str | None
+    passages: int
+
+
+class NotesGraph(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    type: Literal['NotesGraph']
+    id: str
+    meta: BlockMeta
+    data: NotesGraphData
+
+
+class NotesGraphData(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    focusId: str | None
+    query: str
+    nodes: list[NotesNode]
+    edges: list[NotesEdge]
+    nodesLeftOut: int
+
+
+class NotesNode(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    id: str
+    label: str
+    kind: str | None
+    passages: int
+    documents: int
+    degree: int
+
+
+class PageClaimItem(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    citationId: str
+    pages: list[PageRef]
+
+
+class PageLinkItem(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    other: PageRef
+    kind: PageLinkKind
+    relation: str | None
+    direction: PageLinkDirection | None
+    citationId: str
+    passages: int
+
+
+class PageRef(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    id: str
+    label: str
+
+
+class PageSentence(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    citationId: str
 
 
 class PanelSpec(BaseModel):
@@ -363,6 +450,10 @@ LayoutMode = Literal['basic', 'research', 'exploration']
 
 LayoutOrigin = Literal['prebuilt', 'adaptive']
 
+PageLinkDirection = Literal['out', 'in']
+
+PageLinkKind = Literal['asserted', 'co_mention']
+
 PanelId = Literal['sources', 'chat', 'studio']
 
 PatternRefusalReason = Literal['precondition_not_met', 'template_changed', 'document_missing']
@@ -383,7 +474,7 @@ StreamEvent = Annotated[BlockEvent | LayoutEvent | StreamErrorEvent | DoneEvent,
 
 TurnOutcome = Literal['answered', 'empty', 'error']
 
-UIBlock = Annotated[CitedSummary | SourceList | GraphView | ComparisonGrid | ConceptMap | TraversalView, Field(discriminator='type')]
+UIBlock = Annotated[CitedSummary | SourceList | GraphView | ComparisonGrid | ConceptMap | TraversalView | ConceptPage | NotesGraph, Field(discriminator='type')]
 
 AgentStep.model_rebuild()
 BlockEvent.model_rebuild()
@@ -398,6 +489,8 @@ ComparisonGridData.model_rebuild()
 ComponentDecision.model_rebuild()
 ConceptMap.model_rebuild()
 ConceptMapData.model_rebuild()
+ConceptPage.model_rebuild()
+ConceptPageData.model_rebuild()
 DoneEvent.model_rebuild()
 ErrorEnvelope.model_rebuild()
 FieldIssue.model_rebuild()
@@ -411,6 +504,14 @@ GridRow.model_rebuild()
 IngestResponse.model_rebuild()
 LayoutEvent.model_rebuild()
 LayoutSpec.model_rebuild()
+NotesEdge.model_rebuild()
+NotesGraph.model_rebuild()
+NotesGraphData.model_rebuild()
+NotesNode.model_rebuild()
+PageClaimItem.model_rebuild()
+PageLinkItem.model_rebuild()
+PageRef.model_rebuild()
+PageSentence.model_rebuild()
 PanelSpec.model_rebuild()
 PathStep.model_rebuild()
 PatternList.model_rebuild()

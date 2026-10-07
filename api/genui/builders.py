@@ -3,6 +3,7 @@ validate_block: nothing built here reaches the wire without passing the validato
 
 from __future__ import annotations
 
+import copy
 from collections.abc import Callable
 from typing import Any
 
@@ -83,6 +84,55 @@ def traversal_view(
     }
 
 
+_EMPTY_PAGE = {
+    "page": {"id": "", "label": ""},
+    "kind": None,
+    "aliases": [],
+    "passages": 0,
+    "documents": 0,
+    "definitions": [],
+    "links": [],
+    "linksLeftOut": 0,
+    "claims": [],
+    "mentions": [],
+    "mentionsLeftOut": 0,
+    "citations": [],
+}
+
+
+def concept_page(
+    block_id: str,
+    status: str,
+    *,
+    data: dict[str, Any] | None = None,
+    error: ErrorEnvelope | None = None,
+) -> dict[str, Any]:
+    return {
+        "type": "ConceptPage",
+        "id": block_id,
+        "meta": {"status": status, "error": error.model_dump() if error is not None else None},
+        "data": data if data is not None else copy.deepcopy(_EMPTY_PAGE),
+    }
+
+
+def notes_graph(
+    block_id: str,
+    status: str,
+    *,
+    data: dict[str, Any] | None = None,
+    error: ErrorEnvelope | None = None,
+    query: str = "",
+) -> dict[str, Any]:
+    return {
+        "type": "NotesGraph",
+        "id": block_id,
+        "meta": {"status": status, "error": error.model_dump() if error is not None else None},
+        "data": data
+        if data is not None
+        else {"focusId": None, "query": query, "nodes": [], "edges": [], "nodesLeftOut": 0},
+    }
+
+
 def comparison_grid(
     block_id: str,
     status: str,
@@ -126,5 +176,7 @@ BUILDERS: dict[str, Callable[..., dict[str, Any]]] = {
     "TraversalView": traversal_view,
     "ComparisonGrid": comparison_grid,
     "ConceptMap": concept_map,
+    "ConceptPage": concept_page,
+    "NotesGraph": notes_graph,
 }
 """One builder per catalog component, keyed by block type. A test keeps this in step with the catalog and the schema."""

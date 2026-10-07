@@ -202,6 +202,45 @@ Status: **built** (P2c T2 to T4). New in v2 (D-33); no v1 counterpart.
   view therefore shows only the edges that led to those passages and counts the rest. Admission on the 20 questions is
   measured in task T3.
 
+## ConceptPage
+
+Status: **built** (M2.6). New in v2 (D-35); no v1 counterpart. A **notes component**, not a turn component: the Composer never offers it
+to a question and the trace never lists it. It is shown by the notes view (`GET /vault/notes?page=<id>`), and it has its own small
+registry (`api/genui/notes_catalog.py`) instead of an entry in `CATALOG`.
+
+- **Precondition:** the vault holds a page with this id, and at least one stored passage mentions it.
+- **Supplied by:** the vault (`api/vault/`, compiled deterministically from the graph and the stored passages).
+- **Payload:** `page: {id, label}`, `kind`, `aliases`, `passages`, `documents`, `definitions: {citationId}[]`, `links: {other,
+  kind, relation, direction, citationId, passages}[]`, `linksLeftOut`, `claims: {citationId, pages}[]`, `mentions: {citationId}[]`,
+  `mentionsLeftOut`, `citations`.
+- **Caps:** 8 definitions, 40 links, 10 claims, 10 mentions, 20 aliases; label at most 120 characters.
+- **Fences:** caps `definitions=8 links=40 claims=10 mentions=10 aliases=20 label_chars=120`; grounding `vault_rederived`; a11y `region:Definitions | region:Links | region:Claims | region:Mentions`. Template version 1; reusable without Research: no (it is not a turn component).
+- **Grounding is derivation, not trust.** A page is a function of its id and the vault, so the validator derives it again and requires
+  the block's data to equal the derived data exactly (names, counts, definitions, links in their order, claims, backlinks and every
+  citation). Every sentence shown is a verbatim span of a stored passage and is cited: a definition is the builder's note, an asserted
+  link's sentence is the evidence stored with the relation, a co-mention's sentence is the first one in which both names occur (it says
+  nothing about how they are related), a claim is a sentence a builder marked, and a backlink is one sentence of a passage that
+  mentions the page (passages in turn from each document, so a page that occurs in several papers shows several).
+- **Validator invariants:** placeholders carry nothing; a block is refused when no vault is given or the vault has no such page; plain
+  citation defects first (stored chunk, matching title and page, a verbatim quote of at least the minimum length, no orphan); then
+  exact equality with the derived page, with the first differing places named.
+
+## NotesGraph
+
+Status: **built** (M2.6). New in v2 (D-35). A notes component (see ConceptPage).
+
+- **Precondition:** the vault holds at least one page that matches the query (or the focus page). A focused graph shows that page and the
+  pages linked to it, strongest first; the overview shows the most linked pages, narrowed by a case-insensitive match on a page's names.
+- **Supplied by:** the vault.
+- **Payload:** `focusId`, `query`, `nodes: {id, label, kind, passages, documents, degree}[]`, `edges: {source, target, kind, relation,
+  passages}[]`, `nodesLeftOut`.
+- **Caps:** 40 nodes, 120 edges; label at most 120 characters.
+- **Fences:** caps `nodes=40 edges=120 label_chars=120`; grounding `vault_rederived`; a11y `group:Page graph | region:Pages`. Template version 1; reusable without Research: no.
+- **Grounding is derivation.** The graph is a function of its focus, its query and the vault; the validator derives it again and requires
+  the block's nodes, edges and `nodesLeftOut` to equal the derived ones. An edge is either asserted (a relation a model stated and the
+  builder checked) or co-mentioned; the kind is on every edge so the two are never drawn alike.
+- **Validator invariants:** placeholders carry nothing; a ready graph has at least one page; equality with the derived graph.
+
 ## InsightCard (stretch)
 
 Status: **deferred** (task B5 was a stretch and was not built in P2; it needs Azim's agreement to start). Nothing below exists in code.

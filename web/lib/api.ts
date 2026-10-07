@@ -150,6 +150,35 @@ export async function fetchWorkspace(
 }
 
 
+/**
+ * The notes view (M2.6, D-35): a concept page (when `page` is given) and the graph of pages around it, with the layout the
+ * Composer chose. The same body as `/workspace`, read the same way: a body that is not one is an error, never a half-drawn view.
+ */
+export async function fetchNotes(
+  params: { page?: string | null; query?: string } = {},
+  options: { baseUrl?: string; fetchImpl?: typeof fetch; signal?: AbortSignal } = {},
+): Promise<WorkspaceResult> {
+  const { baseUrl = API_BASE, fetchImpl = fetch, signal } = options;
+  const search = new URLSearchParams();
+  if (params.page) search.set("page", params.page);
+  if (params.query?.trim()) search.set("query", params.query.trim());
+  const suffix = search.size > 0 ? `?${search.toString()}` : "";
+  let response: Response;
+  try {
+    response = await fetchImpl(`${baseUrl}/vault/notes${suffix}`, { signal });
+  } catch {
+    return { ok: false, error: clientError("Could not reach the server.") };
+  }
+  if (!response.ok) return { ok: false, error: await envelopeFromResponse(response) };
+  try {
+    const workspace = readWorkspace(await response.json());
+    if (workspace) return { ok: true, workspace };
+  } catch {
+    // not JSON
+  }
+  return { ok: false, error: clientError("The server sent an unreadable response.", false) };
+}
+
 // ── saved views (patterns) ───────────────────────────────────────────────────
 
 export type PatternsResult = { ok: true; patterns: SavedPattern[] } | { ok: false; error: ErrorEnvelope };

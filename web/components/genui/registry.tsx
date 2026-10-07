@@ -9,7 +9,9 @@ import { ErrorState } from "./BlockStates";
 import { CitedSummary } from "./CitedSummary";
 import { ComparisonGrid } from "./ComparisonGrid";
 import { ConceptMap } from "./ConceptMap";
+import { ConceptPage } from "./ConceptPage";
 import { GraphView } from "./GraphView";
+import { NotesGraph } from "./NotesGraph";
 import { SourceList } from "./SourceList";
 import { TraversalView } from "./TraversalView";
 
@@ -25,6 +27,8 @@ export const registry: Registry<UIBlock> = {
   TraversalView,
   ComparisonGrid,
   ConceptMap,
+  ConceptPage,
+  NotesGraph,
 };
 
 export function UnknownBlock({ type }: { type: string }) {

@@ -19,7 +19,7 @@ from langgraph.runtime import Runtime
 
 from api.agents.framework import AgentResult, route_to_agent
 from api.agents.state import TurnContext, TurnState
-from api.core.errors import PatternRefused, ValidationFailed
+from api.core.errors import NotFound, PatternRefused, ValidationFailed
 from api.core.logging import get_logger
 from api.genui.builders import BUILDERS, cited_summary
 from api.genui.catalog import (
@@ -37,7 +37,7 @@ from api.genui.catalog import (
 )
 from api.genui.evidence import best_excerpt, excerpt_containing
 from api.genui.generated import ErrorEnvelope, LayoutSpec, SavedPattern, UIBlock
-from api.genui.layout import compose_layout, prebuilt_layout
+from api.genui.layout import compose_layout, compose_notes_layout, prebuilt_layout
 from api.genui.patterns import params_of, validate_params
 from api.genui.templates import (
     SUITES,
@@ -48,6 +48,8 @@ from api.genui.templates import (
 )
 from api.genui.validate import validate_block, validate_layout
 from api.stores.doc_store import DocStore, Document
+from api.vault.types import Vault
+from api.vault.view import derive_concept_page, derive_notes_graph
 
 log = get_logger(__name__)
 _KEBAB = re.compile(r"(?<!^)(?=[A-Z])")
@@ -496,6 +498,44 @@ def compose_workspace(docs: DocStore) -> tuple[LayoutSpec, list[UIBlock]]:
     raw = builder(WORKSPACE_SOURCES_ID, "ready", documents=items) if items else builder(WORKSPACE_SOURCES_ID, "empty")
     block = validate_block(raw, docs)
     return validate_layout(prebuilt_layout(WORKSPACE_SOURCES_ID), {block.id}), [block]
+
+
+NOTES_GRAPH_ID = "notes-graph"
+"""The id of the notes view's graph block. Fixed, so a later one replaces it."""
+
+
+def compose_notes(
+    vault: Vault | None, docs: DocStore, page_id: str | None = None, query: str = ""
+) -> tuple[LayoutSpec, list[UIBlock]]:
+    """The notes view (M2.6, D-35): a `ConceptPage` for `page_id` (when given) and the `NotesGraph` around it, placed by the
+    layout. With no `page_id` it is the overview graph narrowed by `query`. No model call. A page the vault does not hold is a
+    NotFound the caller answers with an error envelope; a missing vault gives `empty` placeholders, never a half-built view.
+    Everything is validated before it is returned, and this does not swallow a failure."""
+    graph_builder, page_builder = BUILDERS["NotesGraph"], BUILDERS["ConceptPage"]
+    blocks: list[UIBlock] = []
+    admitted: list[tuple[str, str]] = []
+    if vault is None or not vault.pages:
+        empty = validate_block(graph_builder(NOTES_GRAPH_ID, "empty", query=query.strip()), docs, vault=vault)
+        return validate_layout(compose_notes_layout([(empty.id, "NotesGraph")]), {empty.id}), [empty]
+    if page_id is not None:
+        data = derive_concept_page(vault, docs, page_id)
+        if data is None:
+            raise NotFound(f"The vault has no page {page_id!r}.")
+        page = validate_block(page_builder(f"page:{page_id}", "ready", data=data), docs, vault=vault)
+        blocks.append(page)
+        admitted.append((page.id, "ConceptPage"))
+    graph_data = derive_notes_graph(vault, docs, page_id, query)
+    if graph_data is None:
+        raise NotFound(f"The vault has no page {page_id!r}.")
+    status = "ready" if graph_data["nodes"] else "empty"
+    graph = validate_block(
+        graph_builder(NOTES_GRAPH_ID, status, data=graph_data if graph_data["nodes"] else None, query=graph_data["query"]),
+        docs,
+        vault=vault,
+    )
+    blocks.append(graph)
+    admitted.append((graph.id, "NotesGraph"))
+    return validate_layout(compose_notes_layout(admitted), {b.id for b in blocks}), blocks
 
 
 def compose_block(ctx: TurnContext) -> UIBlock:

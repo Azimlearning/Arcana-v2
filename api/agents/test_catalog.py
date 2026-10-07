@@ -11,6 +11,7 @@ from api.fakes import fake_llm_responder
 from api.genui import generated, validate
 from api.genui.builders import BUILDERS
 from api.genui.catalog import CATALOG, CITED_SUMMARY, GRAPH_VIEW, SOURCE_LIST, ComposerEvidence
+from api.genui.notes_catalog import NOTES_CATALOG
 from api.llm.providers.fake import FakeProvider
 from api.stores.doc_store import Document
 
@@ -153,7 +154,8 @@ def test_the_cited_summary_check_is_a_pure_function_of_the_evidence():
 
 def test_schema_catalog_builders_and_guide_list_the_same_components():
     tags = _union_tags()
-    assert tags == set(CATALOG) == set(BUILDERS)
+    assert tags == set(CATALOG) | set(NOTES_CATALOG) == set(BUILDERS)
+    assert not set(CATALOG) & set(NOTES_CATALOG)
     assert all(CATALOG[name].name == name for name in CATALOG)
     assert _doc_sections() == tags | PLANNED, "catalog.md and the built set disagree: update PLANNED or the guide"
     assert not tags & PLANNED

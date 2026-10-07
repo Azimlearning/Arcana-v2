@@ -203,3 +203,107 @@ export interface TraversalViewData {
   /** @int */
   stepsLeftOut: number;
 }
+
+// ── The notes view (M2, D-35): a page per concept and a graph of pages, derived from the vault ─────────────────────
+
+/** A concept page, by id and display label. `id` is the page's key in the vault; `label` is its stored display name. */
+export interface PageRef {
+  id: string;
+  label: string;
+}
+
+/** A verbatim sentence of a stored passage, cited by `citationId` (a citation of the same block). */
+export interface PageSentence {
+  citationId: string;
+}
+
+/**
+ * How `ConceptPage` is linked to another page. `asserted`: a model stated the relation (`relation`, with `direction`
+ * `out` if this page is its source and `in` if it is its target) and the cited sentence is the evidence the builder stored.
+ * `co_mention`: the two names occur in the cited sentence, which says nothing about how they are related (`relation` and
+ * `direction` are null). `passages` is how many passages carry the link.
+ */
+export type PageLinkKind = "asserted" | "co_mention";
+export type PageLinkDirection = "out" | "in";
+
+export interface PageLinkItem {
+  other: PageRef;
+  kind: PageLinkKind;
+  relation: string | null;
+  direction: PageLinkDirection | null;
+  citationId: string;
+  /** @int */
+  passages: number;
+}
+
+/** A sentence that states a finding or a definition worth remembering, with the pages it names. */
+export interface PageClaimItem {
+  citationId: string;
+  pages: PageRef[];
+}
+
+/**
+ * One concept across every document: its names, how widely it occurs, the sentences that define it, how it is linked to
+ * other pages (asserted links first, then co-mentions, strongest first), the claims that name it, and passages that
+ * mention it (the backlinks). Derived from the vault and checked against it: in a `ready` block, re-deriving the page from
+ * `page.id` over the vault and the stored passages gives exactly this data; every citation is a stored passage with a
+ * verbatim quote; at most 8 definitions, 40 links, 10 claims and 10 mentions are shown and the rest are counted. Placeholders
+ * carry nothing. The schema cannot say so; the server validator does.
+ */
+export interface ConceptPageData {
+  page: PageRef;
+  kind: string | null;
+  aliases: string[];
+  /** @int */
+  passages: number;
+  /** @int */
+  documents: number;
+  definitions: PageSentence[];
+  links: PageLinkItem[];
+  /** @int */
+  linksLeftOut: number;
+  claims: PageClaimItem[];
+  mentions: PageSentence[];
+  /** @int */
+  mentionsLeftOut: number;
+  citations: Citation[];
+}
+
+/** A page as the notes graph draws it: how many passages and documents mention it and how many pages it is linked to. */
+export interface NotesNode {
+  id: string;
+  label: string;
+  kind: string | null;
+  /** @int */
+  passages: number;
+  /** @int */
+  documents: number;
+  /** @int */
+  degree: number;
+}
+
+/** A link between two pages, drawn as a line: asserted (`relation` as stored) or co-mentioned; `passages` is its strength. */
+export interface NotesEdge {
+  source: string;
+  target: string;
+  kind: PageLinkKind;
+  relation: string | null;
+  /** @int */
+  passages: number;
+}
+
+/**
+ * Pages and the links among them. With a `focusId` it is that page and the pages linked to it (strongest first), with the
+ * links among them; without one it is the pages most linked across the vault, narrowed by `query` (a case-insensitive
+ * match on a page's names; empty for none). Derived from the vault and checked against it: re-deriving the graph from
+ * `focusId` and `query` gives exactly these nodes and edges and `nodesLeftOut`; at most 40 nodes and 120 edges. A `ready`
+ * block has at least one node. Placeholders carry nothing. The schema cannot say so; the server validator does.
+ */
+export interface NotesGraphData {
+  focusId: string | null;
+  query: string;
+  nodes: NotesNode[];
+  edges: NotesEdge[];
+  /** @int */
+  nodesLeftOut: number;
+}

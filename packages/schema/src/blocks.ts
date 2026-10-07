@@ -12,7 +12,9 @@ import type {
   CitedSummaryData,
   ComparisonGridData,
   ConceptMapData,
+  ConceptPageData,
   GraphViewData,
+  NotesGraphData,
   SourceListData,
   TraversalViewData,
 } from "./payloads";
@@ -87,4 +89,30 @@ export interface TraversalView {
 }
 
 // Codegen emits a discriminated union (Field(discriminator='type')) once there are 2+ variants.
-export type UIBlock = CitedSummary | SourceList | GraphView | ComparisonGrid | ConceptMap | TraversalView;
+/** One concept's page (M2, D-35): names, definitions, links, claims and backlinks, derived from the vault. */
+export interface ConceptPage {
+  type: "ConceptPage";
+  /** Non-empty. Stable across updates: a later block with the same id replaces this one. */
+  id: string;
+  meta: BlockMeta;
+  data: ConceptPageData;
+}
+
+/** Pages and the links among them (M2, D-35): the vault's graph, local to a page or across the whole vault. */
+export interface NotesGraph {
+  type: "NotesGraph";
+  /** Non-empty. Stable across updates: a later block with the same id replaces this one. */
+  id: string;
+  meta: BlockMeta;
+  data: NotesGraphData;
+}
+
+export type UIBlock =
+  | CitedSummary
+  | SourceList
+  | GraphView
+  | ComparisonGrid
+  | ConceptMap
+  | TraversalView
+  | ConceptPage
+  | NotesGraph;

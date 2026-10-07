@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { envelope, jsonResponse, layout, savedPattern, sourceList } from "@/test/fixtures";
 
-import { deletePattern, fetchWorkspace, isSavedPattern, listPatterns, reverifyPattern, savePattern } from "./api";
+import { deletePattern, fetchNotes, fetchWorkspace, isSavedPattern, listPatterns, reverifyPattern, savePattern } from "./api";
 
 const prebuilt = layout([{ blockId: "workspace-sources", panel: "sources", region: "main" as const, order: 0 }], {
   origin: "prebuilt",
@@ -155,5 +155,42 @@ describe("saved views", () => {
   it("recognises a pattern's shape", () => {
     expect(isSavedPattern(savedPattern())).toBe(true);
     expect(isSavedPattern({ ...savedPattern(), lastUsedAt: 3 })).toBe(false);
+  });
+});
+
+
+describe("fetchNotes", () => {
+  const ask = (params: Parameters<typeof fetchNotes>[0], response: Response) => {
+    const fetchImpl = vi.fn(async () => response);
+    return fetchNotes(params, { fetchImpl: fetchImpl as unknown as typeof fetch, baseUrl: "http://api" }).then((result) => ({
+      result,
+      url: String((fetchImpl.mock.calls[0] as unknown[])[0]),
+    }));
+  };
+
+  it("asks GET /vault/notes with only the choices that were made, trimmed and encoded", async () => {
+    expect((await ask({}, jsonResponse(GOOD))).url).toBe("http://api/vault/notes");
+    expect((await ask({ page: "self_rag" }, jsonResponse(GOOD))).url).toBe("http://api/vault/notes?page=self_rag");
+    expect((await ask({ query: "  graph rag " }, jsonResponse(GOOD))).url).toBe("http://api/vault/notes?query=graph+rag");
+    expect((await ask({ page: "a b", query: "" }, jsonResponse(GOOD))).url).toBe("http://api/vault/notes?page=a+b");
+  });
+
+  it("returns the layout and blocks of a well-formed response", async () => {
+    expect((await ask({}, jsonResponse(GOOD))).result).toEqual({ ok: true, workspace: GOOD });
+  });
+
+  it("is an error state for a body that is not a view, never a half-drawn one", async () => {
+    for (const body of [null, "x", {}, { layout: prebuilt }, { layout: prebuilt, blocks: [{ type: "NotesGraph" }] }]) {
+      const { result } = await ask({}, jsonResponse(body));
+      expect(result.ok).toBe(false);
+    }
+  });
+
+  it("carries the server's error envelope, and says so when the server cannot be reached", async () => {
+    const refused = await ask({ page: "x" }, jsonResponse(envelope({ code: "not_found", message: "No such page.", retryable: false }), 404));
+    expect(refused.result.ok).toBe(false);
+    if (!refused.result.ok) expect(refused.result.error.message).toBe("No such page.");
+    const down = await fetchNotes({}, { fetchImpl: (async () => { throw new TypeError("offline"); }) as unknown as typeof fetch });
+    expect(down.ok).toBe(false);
   });
 });

@@ -1,4 +1,4 @@
-import type { CitedSummary, ComparisonGrid, ConceptMap, ErrorEnvelope, GraphView, LayoutSpec, SavedPattern, SourceList, TraversalView, WorkspaceResponse, StreamEvent, TurnTrace } from "@arcana/schema";
+import type { CitedSummary, ComparisonGrid, ConceptMap, ConceptPage, ErrorEnvelope, GraphView, LayoutSpec, NotesGraph, SavedPattern, SourceList, TraversalView, WorkspaceResponse, StreamEvent, TurnTrace } from "@arcana/schema";
 
 export const TITLE = "Hybrid Retrieval over Knowledge Graphs";
 
@@ -325,5 +325,110 @@ export function trace(overrides: Partial<TurnTrace> = {}): TurnTrace {
       { component: "ConceptMap", offered: false, reasons: ["single_hop"] },
     ],
     ...overrides,
+  };
+}
+
+
+export function conceptPage(
+  status: ConceptPage["meta"]["status"],
+  overrides: Partial<ConceptPage["data"]> = {},
+  error: ErrorEnvelope | null = null,
+): ConceptPage {
+  const content = status === "ready" || status === "partial";
+  return {
+    type: "ConceptPage",
+    id: "page:rag",
+    meta: { status, error },
+    data: content
+      ? {
+          page: { id: "rag", label: "Retrieval-Augmented Generation" },
+          kind: "concept",
+          aliases: ["RAG"],
+          passages: 2,
+          documents: 2,
+          definitions: [{ citationId: "c1" }],
+          links: [
+            {
+              other: { id: "self_rag", label: "Self-RAG" },
+              kind: "asserted",
+              relation: "extended_by",
+              direction: "in",
+              citationId: "c2",
+              passages: 1,
+            },
+            {
+              other: { id: "large_language_model", label: "large language models" },
+              kind: "co_mention",
+              relation: null,
+              direction: null,
+              citationId: "c3",
+              passages: 1,
+            },
+          ],
+          linksLeftOut: 1,
+          claims: [
+            {
+              citationId: "c2",
+              pages: [
+                { id: "rag", label: "Retrieval-Augmented Generation" },
+                { id: "self_rag", label: "Self-RAG" },
+              ],
+            },
+          ],
+          mentions: [{ citationId: "c1" }, { citationId: "c3" }],
+          mentionsLeftOut: 3,
+          citations: [
+            { id: "c1", chunkId: "d_c_1", docId: "d", docTitle: TITLE, page: 1, quote: "Retrieval-Augmented Generation (RAG) combines retrieval with generation." },
+            { id: "c2", chunkId: "d_c_2", docId: "d", docTitle: TITLE, page: null, quote: "Self-RAG extends RAG with reflection tokens." },
+            { id: "c3", chunkId: "e_c_1", docId: "e", docTitle: "Second Paper", page: 4, quote: "RAG helps large language models answer from documents." },
+          ],
+          ...overrides,
+        }
+      : {
+          page: { id: "", label: "" },
+          kind: null,
+          aliases: [],
+          passages: 0,
+          documents: 0,
+          definitions: [],
+          links: [],
+          linksLeftOut: 0,
+          claims: [],
+          mentions: [],
+          mentionsLeftOut: 0,
+          citations: [],
+        },
+  };
+}
+
+export function notesGraph(
+  status: NotesGraph["meta"]["status"],
+  overrides: Partial<NotesGraph["data"]> = {},
+  error: ErrorEnvelope | null = null,
+): NotesGraph {
+  const content = status === "ready" || status === "partial";
+  return {
+    type: "NotesGraph",
+    id: "notes-graph",
+    meta: { status, error },
+    data: {
+      focusId: null,
+      query: "",
+      nodes: content
+        ? [
+            { id: "rag", label: "Retrieval-Augmented Generation", kind: "concept", passages: 2, documents: 2, degree: 2 },
+            { id: "self_rag", label: "Self-RAG", kind: "method", passages: 1, documents: 1, degree: 2 },
+            { id: "llm", label: "large language models", kind: null, passages: 1, documents: 1, degree: 1 },
+          ]
+        : [],
+      edges: content
+        ? [
+            { source: "self_rag", target: "rag", kind: "asserted", relation: "extends", passages: 1 },
+            { source: "llm", target: "rag", kind: "co_mention", relation: null, passages: 1 },
+          ]
+        : [],
+      nodesLeftOut: 0,
+      ...overrides,
+    },
   };
 }

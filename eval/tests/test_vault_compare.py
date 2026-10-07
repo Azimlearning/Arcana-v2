@@ -66,27 +66,38 @@ def compare_args(argv, tmp: Path, baseline: Path, variant: Path, *extra: str) ->
 # ── the build tool ────────────────────────────────────────────────────────────
 
 
+def _content(directory: Path) -> dict:
+    """What a data directory holds, by content: the graph and vector bytes, the passages, and every other plain file. The SQLite
+    file itself is read through the store (its bytes can change when a leftover write-ahead log is folded in, with no content change)."""
+    from api.container import build_container
+    from eval.graph_variant import settings_for
+    from eval.run_ablation import chunks_sha256
+
+    plain = {
+        p.name: p.read_bytes()
+        for p in directory.iterdir()
+        if p.is_file() and not p.name.startswith("arcana.db")
+    }
+    return {
+        "files": plain,
+        "chunks": chunks_sha256(build_container(settings_for(directory)).docs.all_chunks()),
+    }
+
+
 def test_a_vault_is_built_into_a_copy_and_the_source_is_never_written(two_papers):
     _, tmp, data = two_papers
     slice_stores(data, tmp / "slice", [FIRST])
     asyncio.run(rebuild_graph(tmp / "slice", tmp / "atomic", "atomic", 1.0, allow_paid=False))
-    before = {
-        p.name: p.read_bytes()
-        for p in (tmp / "atomic").iterdir()
-        if p.is_file() and not p.name.startswith("arcana.db-")
-    }
+    before = _content(tmp / "atomic")
     record = vault_tool.build(tmp / "atomic", tmp / "copy")
-    after = {
-        p.name: p.read_bytes()
-        for p in (tmp / "atomic").iterdir()
-        if p.is_file() and not p.name.startswith("arcana.db-")
-    }
-    assert before == after and not (tmp / "atomic" / "vault.json").exists()
-    assert (tmp / "copy" / "vault.json").exists() and (
-        tmp / "copy" / "graph.json"
-    ).read_bytes() == (tmp / "atomic" / "graph.json").read_bytes()
+    assert _content(tmp / "atomic") == before and not (tmp / "atomic" / "vault.json").exists()
+    assert (tmp / "copy" / "vault.json").exists()
+    assert (tmp / "copy" / "graph.json").read_bytes() == (
+        tmp / "atomic" / "graph.json"
+    ).read_bytes()
     assert record["hashes"]["graph_sha256"] == record["hashes"]["source_graph_sha256"]
     assert record["stats"]["pages"] > 0 and record["code"]["commit"] is not None
+    assert record["hashes"]["chunks_sha256"] == before["chunks"]  # the copy holds the same passages
 
 
 def test_a_vault_is_refused_into_a_busy_directory_or_from_a_directory_without_a_graph(two_papers):
