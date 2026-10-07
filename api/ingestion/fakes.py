@@ -58,3 +58,35 @@ def fake_atomic_responder(request: LLMRequest) -> str:
         if shared:
             relations.append({"src": a, "dst": b, "type": "uses", "evidence": shared})
     return json.dumps({"concepts": concepts, "relations": relations})
+
+
+_NUMBERED = re.compile(r"^\[(\d+)\]\s+(.*)$")
+
+
+def fake_atomic2_responder(request: LLMRequest) -> str:
+    """The `atomic2` extractor's stand-in: the distinct capitalised terms of the numbered sentences as concepts; a relation
+    between consecutive terms that share a sentence, hinted with that sentence's number; the first two sentences that hold a
+    term as claims. The model of nothing: it lets the pipeline run without a key."""
+    prompt = request.prompt
+    start, end = prompt.find(PASSAGE_OPEN), prompt.rfind(PASSAGE_CLOSE)
+    body = prompt[start + len(PASSAGE_OPEN) : end] if start != -1 and end > start else prompt
+    numbered: list[tuple[int, str]] = []
+    for line in body.splitlines():
+        match = _NUMBERED.match(line.strip())
+        if match:
+            numbered.append((int(match.group(1)), match.group(2)))
+
+    terms: list[str] = []
+    for _, sentence in numbered:
+        for match in _TERM_RE.findall(sentence):
+            if match not in terms:
+                terms.append(match)
+    terms = terms[:_MAX_TERMS]
+    concepts = [{"label": t, "kind": "concept"} for t in terms]
+    relations = []
+    for a, b in pairwise(terms):
+        shared = next((n for n, s in numbered if a in s and b in s), None)
+        if shared is not None:
+            relations.append({"src": a, "dst": b, "type": "uses", "s": shared})
+    claims = [n for n, s in numbered if any(t in s for t in terms)][:2]
+    return json.dumps({"concepts": concepts, "relations": relations, "claims": claims})

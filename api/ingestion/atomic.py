@@ -366,7 +366,7 @@ def with_aliases(result: ExtractionResult, chunk: Chunk) -> ExtractionResult:
     drops = dict(result.drops)
     if added:
         drops["alias_links_added"] = drops.get("alias_links_added", 0) + added
-    return ExtractionResult(list(nodes.values()), list(edges.values()), drops)
+    return ExtractionResult(list(nodes.values()), list(edges.values()), drops, result.claims)
 
 
 @dataclass

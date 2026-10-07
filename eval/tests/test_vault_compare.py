@@ -536,3 +536,29 @@ def test_the_audit_leaves_out_links_without_a_sentence_and_keeps_the_key_apart(t
         (tmp_path / "out").glob("*-key.json")
     )
     assert key["n_per_kind"] == 10
+
+
+def test_an_atomic2_rebuild_keeps_the_claims_beside_the_graph_and_the_vault_tool_compiles_them(
+    two_papers,
+):
+    _, tmp, data = two_papers
+    slice_stores(data, tmp / "slice", [FIRST])
+    info = asyncio.run(
+        rebuild_graph(tmp / "slice", tmp / "atomic2", "atomic2", 1.0, allow_paid=False)
+    )
+    assert (
+        info["builder"] == "atomic2"
+        and info["prompt_version"] == "g2-1"
+        and info["complete"] is True
+    )
+    claims = json.loads((tmp / "atomic2" / "claims.json").read_text(encoding="utf-8"))
+    assert info["claims"] == len(claims) > 0 and set(claims[0]) == {
+        "chunk_id",
+        "doc_id",
+        "sentence",
+        "concept_ids",
+    }
+    record = vault_tool.build(tmp / "atomic2", tmp / "atomic2-vault")
+    assert record["stats"]["claims"] > 0 and (tmp / "atomic2-vault" / "claims.json").exists()
+    vault = JsonVaultStore(tmp / "atomic2-vault" / "vault.json").vault()
+    assert vault is not None and vault.claims and all(c.page_ids for c in vault.claims)

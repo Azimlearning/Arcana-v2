@@ -16,7 +16,7 @@ from datetime import UTC, datetime
 
 from api.core.errors import ArcanaError, IngestFailed
 from api.core.logging import get_logger
-from api.ingestion import atomic
+from api.ingestion import atomic, atomic2
 from api.ingestion.chunk import chunk
 from api.ingestion.embed import EMBEDDING_MODEL, Embedder
 from api.ingestion.extract import ExtractionResult, estimate_extraction_cost_usd, extract_chunk
@@ -27,6 +27,7 @@ from api.llm.service import LLMService
 from api.stores.doc_store import Chunk, DocStore, Document
 from api.stores.graph_store import GraphStore
 from api.stores.vector_store import VectorStore
+from api.vault.types import ClaimDraft
 
 log = get_logger(__name__)
 
@@ -44,7 +45,10 @@ class IngestDeps:
     embedder: Embedder
     llm: LLMService
     builder: str = "freeform"
-    """Which graph builder runs: `freeform` (the current extractor, the frozen baseline) or `atomic` (G1, D-34)."""
+    """Which graph builder runs: `freeform` (the current extractor, the frozen baseline), `atomic` (G1, D-34) or `atomic2`
+    (M2, D-35: the sentence-numbered builder)."""
+    claim_sink: list[ClaimDraft] | None = None
+    """If set, the claim-worthy sentences the `atomic2` builder finds are appended here (they belong to the vault, not the graph)."""
 
 
 def _now() -> str:
@@ -85,7 +89,10 @@ async def ingest_pdf(raw: bytes, filename: str, deps: IngestDeps) -> IngestResul
     remaining = deps.llm.remaining_usd()
     if remaining is not None:
         # Refuse up front rather than pay for part of a document and roll it back when the cap runs out.
-        estimate = atomic.estimate_atomic_cost_usd if deps.builder == "atomic" else estimate_extraction_cost_usd
+        estimate = {
+            "atomic": atomic.estimate_atomic_cost_usd,
+            "atomic2": atomic2.estimate_atomic2_cost_usd,
+        }.get(deps.builder, estimate_extraction_cost_usd)
         worst_case = estimate(chunks) + embedding_cost_usd(
             EMBEDDING_MODEL, estimate_embedding_tokens([c.text for c in chunks])
         )
@@ -137,14 +144,20 @@ async def build_graph(chunks: list[Chunk], deps: IngestDeps) -> tuple[int, int, 
     by the graph-variant tool, which rebuilds a graph over chunks that are already stored."""
     results = await _extract_all(chunks, deps.llm, deps.builder)
     report: dict | None = None
-    if deps.builder == "atomic":
+    if deps.builder in ("atomic", "atomic2"):
         results = [atomic.with_aliases(r, c) if r is not None else None for r, c in zip(results, chunks, strict=True)]
-        built = atomic.BuildReport()
+        built = (
+            atomic.BuildReport()
+            if deps.builder == "atomic"
+            else atomic.BuildReport(builder=atomic2.BUILDER, prompt_version=atomic2.PROMPT_VERSION)
+        )
         for r in results:
             if r is not None:
                 built.drops.update(r.drops)
                 built.concepts += len(r.nodes)
                 built.relations += len(r.edges)
+                if deps.claim_sink is not None:
+                    deps.claim_sink.extend(r.claims)
         report = built.as_dict()
     node_total, edge_total, malformed = _write_graph(results, deps.graph)
     return node_total, edge_total, malformed, report
@@ -162,6 +175,8 @@ async def _extract_all(
             try:
                 if builder == "atomic":
                     return await atomic.extract_chunk_atomic(c, llm)
+                if builder == "atomic2":
+                    return await atomic2.extract_chunk_atomic2(c, llm)
                 return await extract_chunk(c, llm)
             except IngestFailed:
                 log.warning("extraction_malformed", chunk_id=c.id)

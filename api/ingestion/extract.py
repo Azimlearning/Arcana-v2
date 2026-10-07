@@ -27,6 +27,7 @@ from api.llm.service import LLMService
 from api.llm.types import LLMRequest
 from api.stores.doc_store import Chunk
 from api.stores.graph_store import Edge, Node
+from api.vault.types import ClaimDraft
 
 EXTRACTION_SYSTEM = (
     "You extract a knowledge graph from a passage of a document. Reply with ONE JSON object and "
@@ -59,7 +60,9 @@ class ExtractionResult:
     nodes: list[Node]
     edges: list[Edge]
     drops: dict[str, int] = field(default_factory=dict)
-    """Why proposed concepts or relations were dropped, by reason (the atomic builder only)."""
+    """Why proposed concepts or relations were dropped, by reason (the atomic builders only)."""
+    claims: list[ClaimDraft] = field(default_factory=list)
+    """Claim-worthy sentences (the `atomic2` builder only); they go to the vault, never into the graph."""
 
 
 def build_prompt(text: str) -> str:

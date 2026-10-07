@@ -22,12 +22,13 @@ from api.stores.local.networkx_graph import NetworkXGraphStore
 from api.stores.local.sqlite_doc import SqliteDocStore, make_engine
 from api.vault.compile import compile_vault
 from api.vault.local import JsonVaultStore
-from eval.graph_variant import STORE_FILES, copy_database
+from api.vault.types import ClaimDraft
+from eval.graph_variant import CLAIMS_FILE, STORE_FILES, copy_database
 from eval.run_ablation import chunks_sha256, git_state, sha256_file
 
 VAULT_FILE = "vault.json"
 BUILD_FILE = "vault_build.json"
-COPIED = (*STORE_FILES, "variant.json")
+COPIED = (*STORE_FILES, "variant.json", CLAIMS_FILE)
 
 
 def build(source: Path, target: Path) -> dict[str, Any]:
@@ -44,7 +45,15 @@ def build(source: Path, target: Path) -> dict[str, Any]:
 
     docs = SqliteDocStore(make_engine(target / "arcana.db"))
     graph = NetworkXGraphStore(target / "graph.json")
-    vault = compile_vault(graph, docs)
+    claims = (
+        [
+            ClaimDraft(c["chunk_id"], c["doc_id"], c["sentence"], tuple(c["concept_ids"]))
+            for c in json.loads((target / CLAIMS_FILE).read_text(encoding="utf-8"))
+        ]
+        if (target / CLAIMS_FILE).exists()
+        else []
+    )
+    vault = compile_vault(graph, docs, claims)
     store = JsonVaultStore(target / VAULT_FILE)
     store.put_vault(vault)
     store.save()

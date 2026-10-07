@@ -69,6 +69,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import dataclasses
 import json
 import re
 import shutil
@@ -84,7 +85,7 @@ from api.container import Container, build_container
 from api.core.errors import ArcanaError, SpendCapExceeded
 from api.core.logging import configure_logging
 from api.core.settings import Settings, load_settings
-from api.ingestion import atomic
+from api.ingestion import atomic, atomic2
 from api.ingestion.embed import CachingEmbedder
 from api.ingestion.pipeline import IngestDeps, build_graph
 from api.llm.models import ANTHROPIC_MODELS
@@ -96,6 +97,7 @@ from api.retrieval.graph import GraphRetriever
 from api.retrieval.sparse import SparseRetriever
 from api.stores.local.networkx_graph import NetworkXGraphStore
 from api.stores.preflight import check_corpus_parity
+from api.vault.types import ClaimDraft
 from eval import metrics
 from eval.graph_quality import measure
 from eval.run_ablation import (
@@ -117,6 +119,7 @@ ARMS_COMPARED = ("graph", "hybrid", "flat")
 MAX_NDCG_DROP = 0.05
 PAIRED_MIN_FOR_SIGNIFICANCE = 10
 VARIANT_FILE = "variant.json"
+CLAIMS_FILE = "claims.json"
 STORE_FILES = ("arcana.db", "vectors.npz", "graph.json", INGESTION_REPORT)
 
 
@@ -235,6 +238,7 @@ async def rebuild_graph(
     shutil.copyfile(slice_dir / "vectors.npz", target / "vectors.npz")
 
     container = build_container(settings)
+    claims: list[ClaimDraft] = []
     deps = IngestDeps(
         docs=container.docs,
         vectors=container.vectors,
@@ -242,6 +246,7 @@ async def rebuild_graph(
         embedder=container.embedder,
         llm=CeilingGuard(container.llm, container.ledger.month_total(), max_usd),  # type: ignore[arg-type]
         builder=builder,
+        claim_sink=claims,
     )
     deps.graph.save()  # an empty graph file exists even if the ceiling stops the build before the first document
     saved = load_ingestion_report(slice_dir)
@@ -293,9 +298,14 @@ async def rebuild_graph(
         )
     spent = round(container.ledger.month_total() - spent_before, 6)
     (target / INGESTION_REPORT).write_text(json.dumps(documents, indent=2), encoding="utf-8")
+    if builder == "atomic2":  # claim notes belong to the vault: kept beside the graph for `vault_tool.py build`
+        (target / CLAIMS_FILE).write_text(
+            json.dumps([dataclasses.asdict(c) for c in claims], indent=2), encoding="utf-8"
+        )
     info = {
         "builder": builder,
-        "prompt_version": atomic.PROMPT_VERSION if builder == "atomic" else None,
+        "prompt_version": {"atomic": atomic.PROMPT_VERSION, "atomic2": atomic2.PROMPT_VERSION}.get(builder),
+        "claims": len(claims),
         "max_usd": max_usd,
         "spent_usd": spent,
         "documents": len(documents),
@@ -672,7 +682,7 @@ def main(argv: list[str] | None = None) -> int:
     r = sub.add_parser("rebuild", help="build a new graph over a slice's stored chunks")
     r.add_argument("--slice", required=True)
     r.add_argument("--to", required=True)
-    r.add_argument("--builder", default="atomic", choices=["atomic", "freeform"])
+    r.add_argument("--builder", default="atomic", choices=["atomic", "atomic2", "freeform"])
     r.add_argument("--max-usd", type=float, required=True, help="a ceiling for this build, confirmed beforehand")
     r.add_argument("--allow-paid", action="store_true")
     r.add_argument("--allow-dirty", action="store_true", help="for tests only: a result should name committed code")
