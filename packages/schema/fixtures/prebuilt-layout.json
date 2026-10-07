@@ -1,25 +1,47 @@
 {
-  "version": 1,
+  "version": 2,
   "origin": "prebuilt",
   "mode": "basic",
   "panels": [
     {
       "id": "sources",
-      "width": 20
+      "width": 20,
+      "direction": "rows",
+      "regions": [
+        {
+          "id": "main",
+          "size": 100
+        }
+      ]
     },
     {
       "id": "chat",
-      "width": 60
+      "width": 60,
+      "direction": "rows",
+      "regions": [
+        {
+          "id": "main",
+          "size": 100
+        }
+      ]
     },
     {
       "id": "studio",
-      "width": 20
+      "width": 20,
+      "direction": "rows",
+      "regions": [
+        {
+          "id": "main",
+          "size": 100
+        }
+      ]
     }
   ],
   "placements": [
     {
       "blockId": "workspace-sources",
       "panel": "sources",
+      "region": "main",
       "order": 0
     }
   ]

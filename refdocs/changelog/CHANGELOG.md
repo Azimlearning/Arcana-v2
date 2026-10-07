@@ -28,6 +28,13 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-07: P2b task F1 (layout v2 on the wire)
+- **Changed:** `packages/schema/src/layout.ts` (regions, direction, `Placement.region`; version 2), `api/genui/generated.py` (generated), `api/genui/validate.py` (region rules, required `known_block_ids`, `upgrade_layout`), `api/genui/layout.py` (one `main` region per panel for now), `web/lib/layout.ts` (`isLayoutSpec` v2, `readLayout`), `web/lib/stream.ts`, `web/lib/api.ts`, fixtures `prebuilt-layout.json` (v2) and `layout-v1.json` (new), tests on both sides, `refdocs/guides/catalog.md` (layout invariants), the execution doc (F1 Reality).
+- **Decided:** A region size is 0 to 100 (the plan said 1 to 100) so an unused region can keep no space while the panel still has its regions; a region of size 0 holds nothing. A version 1 layout stays readable on both sides.
+- **Deviations:** the plan's spike was skipped as codegen already handles these shapes (stated in the Reality note); `catalog.md` layout invariants were updated in F1, not F2, because F1 made them false.
+- **Verified:** `uv run pytest` (788 passed), `uv run ruff check api eval scripts`, `uv run pyright api eval`, `pnpm codegen:check`, `pnpm -r typecheck`, `pnpm -r lint`, `pnpm -r test` (205 passed). `schema-guardian` reviewed it read-only: no blocking finding; three small items fixed.
+- **Known issues / next steps:** F2 (the Studio shelf and splits in the Composer, the catalog hint's region, sizes table). The client ignores unknown extra keys where the server refuses them (harmless; pre-existing).
+
 ### 2026-10-07: P2b approved; Synapse read for the adaptive and prebuilt-versus-generated approach
 - **Changed:** the P2b plan (status Approved, a new section "What Synapse shows"), the execution doc (an animated width change in F3, the lifecycle state in words on the shelf in F4), ADR D-32 (accepted), the PRD §7 row for D-32, both indexes.
 - **Decided:** Azim approved the P2b plan and ADR D-32 ("the layout change is correct for now"; "I approve this plan so far and you can proceed"). From Synapse (`Coding/Hackathon/Genui/Synapse-V3`, read only, nothing ported): animate the width change, show each saved item's state in words, and keep the phone overlay out of scope.

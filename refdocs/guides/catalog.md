@@ -210,11 +210,15 @@ summing to 100, chat at least 25, a panel with no placements has width 0 except 
 | any adaptive layout with an empty panel | nothing placed there (for example no `SourceList`, so answer only is 0 / 100 / 0) | 0 for that panel | its width added to chat | |
 
 The prebuilt layout places only the workspace's own source list (in the sources panel, task C2); every turn block with no
-placement is shown in chat in arrival order. `validate_layout` (`api/genui/validate.py`) asserts the invariants: version 1,
-the prebuilt origin goes with the basic mode, whole-number widths summing to 100, chat present and at least 25, a hidden
-panel holds nothing, each block placed once, unique orders within a panel, only blocks the turn produced. A layout that
-fails is not sent; the client applies the same rules (`web/lib/layout.ts`) and ignores one that does not pass. A new
-*component* needs no edit to `layout.py`; a new *panel* or *mode* is a change to the schema (`PanelId`, `LayoutMode` are closed unions), `layout.py`, `layout.ts` and the shell together (D-27, amended 2026-10-07).
+placement is shown in chat in arrival order. `validate_layout` (`api/genui/validate.py`) asserts the invariants: version 2 (a version 1
+layout, which has no regions, is read as one `main` region in every panel), the prebuilt origin goes with the basic mode,
+whole-number widths summing to 100, chat present and at least 25, a hidden panel holds nothing; every panel has at least
+one region, region ids are unique within a panel, sizes are whole numbers from 0 to 100 summing to 100, a region of size 0
+holds nothing; each block placed once, in a region its panel has, orders unique within a region, only blocks the turn
+produced (the caller must pass them). A layout that fails is not sent; the client applies the same rules
+(`web/lib/layout.ts`, `readLayout`) and ignores one that does not pass. Until task F2, the Composer emits one `main` region
+per panel. A new
+*component* needs no edit to `layout.py`; a new *panel* or *mode* is a change to the schema (`PanelId`, `LayoutMode`, `RegionId` and `SplitDirection` are closed unions), `layout.py`, `layout.ts` and the shell together (D-27, amended 2026-10-07).
 
 ## How to add a component
 

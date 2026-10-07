@@ -5,13 +5,13 @@ import { envelope, jsonResponse, layout, savedPattern, sourceList } from "@/test
 
 import { deletePattern, fetchWorkspace, isSavedPattern, listPatterns, reverifyPattern, savePattern } from "./api";
 
-const prebuilt = layout([{ blockId: "workspace-sources", panel: "sources", order: 0 }], {
+const prebuilt = layout([{ blockId: "workspace-sources", panel: "sources", region: "main" as const, order: 0 }], {
   origin: "prebuilt",
   mode: "basic",
   panels: [
-    { id: "sources", width: 20 },
-    { id: "chat", width: 60 },
-    { id: "studio", width: 20 },
+    { id: "sources", width: 20, direction: "rows" as const, regions: [{ id: "main" as const, size: 100 }] },
+    { id: "chat", width: 60, direction: "rows" as const, regions: [{ id: "main" as const, size: 100 }] },
+    { id: "studio", width: 20, direction: "rows" as const, regions: [{ id: "main" as const, size: 100 }] },
   ],
 });
 const GOOD: WorkspaceResponse = { layout: prebuilt, blocks: [{ ...sourceList("ready"), id: "workspace-sources" }] };
@@ -38,7 +38,7 @@ describe("fetchWorkspace", () => {
       {},
       { layout: prebuilt },
       { blocks: GOOD.blocks },
-      { layout: { ...prebuilt, version: 2 }, blocks: GOOD.blocks }, // a layout this client cannot read
+      { layout: { ...prebuilt, version: 3 }, blocks: GOOD.blocks }, // a layout this client cannot read
       { layout: prebuilt, blocks: [{ type: "SourceList" }] }, // a block with no id, meta or data
       { layout: prebuilt, blocks: [null] },
     ];

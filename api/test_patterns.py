@@ -506,14 +506,18 @@ def test_a_pattern_whose_params_no_longer_fit_its_template_is_listed_stale_and_r
 
 def test_a_layout_that_cannot_be_built_is_a_refusal_too(ready_client: TestClient, monkeypatch: pytest.MonkeyPatch):
     from api.agents import compose as compose_module
-    from api.genui.generated import LayoutSpec, PanelSpec
+    from api.genui.generated import LayoutSpec, PanelSpec, RegionSpec
 
     pattern = SavedPattern.model_validate(save(ready_client, saved_turn(ready_client)).json())
     broken = LayoutSpec(
-        version=1,
+        version=2,
         origin="adaptive",
         mode="research",
-        panels=[PanelSpec(id="sources", width=10), PanelSpec(id="chat", width=10), PanelSpec(id="studio", width=10)],
+        panels=[
+            PanelSpec(id="sources", width=10, direction="rows", regions=[RegionSpec(id="main", size=100)]),
+            PanelSpec(id="chat", width=10, direction="rows", regions=[RegionSpec(id="main", size=100)]),
+            PanelSpec(id="studio", width=10, direction="rows", regions=[RegionSpec(id="main", size=100)]),
+        ],
         placements=[],
     )
     monkeypatch.setattr(compose_module, "compose_layout", lambda blocks, intent: broken)

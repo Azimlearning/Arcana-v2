@@ -12,7 +12,7 @@ import type {
   WorkspaceResponse,
 } from "@arcana/schema";
 
-import { isLayoutSpec } from "./layout";
+import { readLayout } from "./layout";
 import { API_BASE, clientError, envelopeFromResponse } from "./stream";
 
 export type UploadResult =
@@ -115,10 +115,13 @@ function isBlockShape(value: unknown): value is UIBlock {
   );
 }
 
-function isWorkspace(value: unknown): value is WorkspaceResponse {
-  if (typeof value !== "object" || value === null) return false;
+/** The workspace body with its layout read (a version 1 layout upgraded), or null when it is not one. */
+function readWorkspace(value: unknown): WorkspaceResponse | null {
+  if (typeof value !== "object" || value === null) return null;
   const w = value as { layout?: unknown; blocks?: unknown };
-  return isLayoutSpec(w.layout) && Array.isArray(w.blocks) && w.blocks.every(isBlockShape);
+  const layout = readLayout(w.layout);
+  if (!layout || !Array.isArray(w.blocks) || !w.blocks.every(isBlockShape)) return null;
+  return { ...(value as WorkspaceResponse), layout };
 }
 
 /**
@@ -138,7 +141,8 @@ export async function fetchWorkspace(
   if (!response.ok) return { ok: false, error: await envelopeFromResponse(response) };
   try {
     const body: unknown = await response.json();
-    if (isWorkspace(body)) return { ok: true, workspace: body };
+    const workspace = readWorkspace(body);
+    if (workspace) return { ok: true, workspace };
   } catch {
     // not JSON
   }

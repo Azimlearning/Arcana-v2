@@ -12,7 +12,7 @@ const shell = (spec: LayoutSpec) => render(<Shell layout={spec} header={<span>Ar
 
 describe("Shell", () => {
   it("gives each panel its layout width as a flex-grow value, in the layout's order", () => {
-    shell(layout([], { panels: [{ id: "chat", width: 55 }, { id: "sources", width: 15 }, { id: "studio", width: 30 }] }));
+    shell(layout([], { panels: [{ id: "chat", width: 55, direction: "rows" as const, regions: [{ id: "main" as const, size: 100 }] }, { id: "sources", width: 15, direction: "rows" as const, regions: [{ id: "main" as const, size: 100 }] }, { id: "studio", width: 30, direction: "rows" as const, regions: [{ id: "main" as const, size: 100 }] }] }));
     const order = Array.from(document.querySelectorAll("[data-panel]")).map((p) => p.getAttribute("data-panel"));
     expect(order).toEqual(["chat", "sources", "studio"]);
     expect(document.querySelector('[data-panel="chat"]')).toHaveStyle({ flexGrow: "55" });
@@ -21,7 +21,7 @@ describe("Shell", () => {
   });
 
   it("collapses a panel of width 0: aria-hidden and inert, so nothing in it can be reached", () => {
-    shell(layout([], { panels: [{ id: "sources", width: 0 }, { id: "chat", width: 100 }, { id: "studio", width: 0 }] }));
+    shell(layout([], { panels: [{ id: "sources", width: 0, direction: "rows" as const, regions: [{ id: "main" as const, size: 100 }] }, { id: "chat", width: 100, direction: "rows" as const, regions: [{ id: "main" as const, size: 100 }] }, { id: "studio", width: 0, direction: "rows" as const, regions: [{ id: "main" as const, size: 100 }] }] }));
     for (const id of ["sources", "studio"]) {
       const panel = document.querySelector(`[data-panel="${id}"]`)!;
       expect(panel).toHaveAttribute("aria-hidden", "true");

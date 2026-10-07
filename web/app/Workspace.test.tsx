@@ -46,16 +46,16 @@ const answerWith = (adaptive: ReturnType<typeof layout> | null) =>
   ]);
 
 const places = () => [
-  { blockId: "turn-1", panel: "chat" as const, order: 0 },
-  { blockId: "turn-1-comparison-grid", panel: "chat" as const, order: 1 },
-  { blockId: "turn-1-sources", panel: "sources" as const, order: 0 },
-  { blockId: "turn-1-graph-view", panel: "studio" as const, order: 0 },
+  { blockId: "turn-1", panel: "chat" as const, region: "main" as const, order: 0 },
+  { blockId: "turn-1-comparison-grid", panel: "chat" as const, region: "main" as const, order: 1 },
+  { blockId: "turn-1-sources", panel: "sources" as const, region: "main" as const, order: 0 },
+  { blockId: "turn-1-graph-view", panel: "studio" as const, region: "main" as const, order: 0 },
 ];
 
 const researchPanels = (sources: number, chat: number, studio: number) => [
-  { id: "sources" as const, width: sources },
-  { id: "chat" as const, width: chat },
-  { id: "studio" as const, width: studio },
+  { id: "sources" as const, width: sources, direction: "rows" as const, regions: [{ id: "main" as const, size: 100 }] },
+  { id: "chat" as const, width: chat, direction: "rows" as const, regions: [{ id: "main" as const, size: 100 }] },
+  { id: "studio" as const, width: studio, direction: "rows" as const, regions: [{ id: "main" as const, size: 100 }] },
 ];
 
 const okStream = () =>
@@ -216,7 +216,7 @@ describe("Workspace", () => {
 
   it("applies the layout's widths as flex-grow values, and a hidden panel is aria-hidden and inert", async () => {
     routes["/workspace"] = () => jsonResponse(workspace());
-    const allInChat = places().map((p, i) => ({ ...p, panel: "chat" as const, order: i }));
+    const allInChat = places().map((p, i) => ({ ...p, panel: "chat" as const, region: "main" as const, order: i }));
     routes["/chat"] = () => answerWith(layout(allInChat, { panels: researchPanels(0, 100, 0) }));
     render(<Workspace />);
     ask();
@@ -263,7 +263,7 @@ describe("Workspace", () => {
 
   it("ignores a layout it cannot read, an unknown version included, and stays on Basic", async () => {
     routes["/workspace"] = () => jsonResponse(workspace());
-    for (const bad of [layout(places(), { version: 2 }), layout(places(), { panels: researchPanels(20, 45, 30) })]) {
+    for (const bad of [layout(places(), { version: 3 }), layout(places(), { panels: researchPanels(20, 45, 30) })]) {
       cleanup();
       useWorkspace.setState(useWorkspace.getInitialState(), true);
       routes["/chat"] = () => answerWith(bad);
@@ -279,8 +279,8 @@ describe("Workspace", () => {
     routes["/workspace"] = () => jsonResponse(workspace());
     const partial = layout(
       [
-        { blockId: "turn-1", panel: "chat", order: 0 },
-        { blockId: "nobody", panel: "studio", order: 0 },
+        { blockId: "turn-1", panel: "chat", region: "main" as const, order: 0 },
+        { blockId: "nobody", panel: "studio", region: "main" as const, order: 0 },
       ],
       { panels: researchPanels(20, 45, 35) },
     );
@@ -404,11 +404,11 @@ describe("Workspace", () => {
         frame({ type: "block", block: { ...graphView("ready"), id: "apply-9-graph-view" } }),
         frame({
           type: "layout",
-          layout: layout([{ blockId: "apply-9-graph-view", panel: "studio", order: 0 }], {
+          layout: layout([{ blockId: "apply-9-graph-view", panel: "studio", region: "main" as const, order: 0 }], {
             panels: [
-              { id: "sources", width: 0 },
-              { id: "chat", width: 40 },
-              { id: "studio", width: 60 },
+              { id: "sources", width: 0, direction: "rows" as const, regions: [{ id: "main" as const, size: 100 }] },
+              { id: "chat", width: 40, direction: "rows" as const, regions: [{ id: "main" as const, size: 100 }] },
+              { id: "studio", width: 60, direction: "rows" as const, regions: [{ id: "main" as const, size: 100 }] },
             ],
             mode: "exploration",
           }),

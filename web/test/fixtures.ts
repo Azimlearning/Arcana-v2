@@ -167,13 +167,13 @@ export function conceptMap(
 /** An adaptive layout placing the given blocks, as the server's `compose_layout` would for a turn. */
 export function layout(placements: LayoutSpec["placements"], overrides: Partial<LayoutSpec> = {}): LayoutSpec {
   return {
-    version: 1,
+    version: 2,
     origin: "adaptive",
     mode: "research",
     panels: [
-      { id: "sources", width: 20 },
-      { id: "chat", width: 45 },
-      { id: "studio", width: 35 },
+      { id: "sources", width: 20, direction: "rows" as const, regions: [{ id: "main" as const, size: 100 }] },
+      { id: "chat", width: 45, direction: "rows" as const, regions: [{ id: "main" as const, size: 100 }] },
+      { id: "studio", width: 35, direction: "rows" as const, regions: [{ id: "main" as const, size: 100 }] },
     ],
     placements,
     ...overrides,
@@ -188,15 +188,15 @@ export function workspace(documents: SourceList["data"]["documents"] = [{ docId:
 }
 
 const FALLBACK: LayoutSpec = {
-  version: 1,
+  version: 2,
   origin: "prebuilt",
   mode: "basic",
   panels: [
-    { id: "sources", width: 20 },
-    { id: "chat", width: 60 },
-    { id: "studio", width: 20 },
+    { id: "sources", width: 20, direction: "rows" as const, regions: [{ id: "main" as const, size: 100 }] },
+    { id: "chat", width: 60, direction: "rows" as const, regions: [{ id: "main" as const, size: 100 }] },
+    { id: "studio", width: 20, direction: "rows" as const, regions: [{ id: "main" as const, size: 100 }] },
   ],
-  placements: [{ blockId: "workspace-sources", panel: "sources", order: 0 }],
+  placements: [{ blockId: "workspace-sources", panel: "sources", region: "main" as const, order: 0 }],
 };
 
 export function savedPattern(overrides: Partial<SavedPattern> = {}): SavedPattern {

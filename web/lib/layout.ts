@@ -2,10 +2,10 @@
 // checks the shape of whatever it receives, because it must never apply something it cannot read. A layout that
 // fails the check is ignored and the client keeps the one it has, so a newer server cannot break an older client.
 
-import type { LayoutMode, LayoutOrigin, LayoutSpec, PanelId, UIBlock } from "@arcana/schema";
+import type { LayoutMode, LayoutOrigin, LayoutSpec, PanelId, RegionId, SplitDirection, UIBlock } from "@arcana/schema";
 
-/** The only layout version this client understands. */
-export const SUPPORTED_LAYOUT_VERSION = 1;
+/** The layout version this client draws. A version 1 layout (no regions) is read as this one (`readLayout`). */
+export const SUPPORTED_LAYOUT_VERSION = 2;
 
 /** The chat panel is never narrower than this (the server enforces the same). */
 export const MIN_CHAT_WIDTH = 25;
@@ -14,9 +14,33 @@ export const MIN_CHAT_WIDTH = 25;
 const PANELS: Record<PanelId, true> = { sources: true, chat: true, studio: true };
 const MODES: Record<LayoutMode, true> = { basic: true, research: true, exploration: true };
 const ORIGINS: Record<LayoutOrigin, true> = { prebuilt: true, adaptive: true };
+const REGIONS: Record<RegionId, true> = { main: true, secondary: true, shelf: true };
+const DIRECTIONS: Record<SplitDirection, true> = { rows: true, columns: true };
 const isKey = (set: Record<string, true>, value: unknown) => typeof value === "string" && Object.hasOwn(set, value);
 const isPanel = (value: unknown): value is PanelId => isKey(PANELS, value);
 const isWhole = (value: unknown): value is number => typeof value === "number" && Number.isInteger(value);
+
+/**
+ * What a layout of this client's version (or version 1) must look like to be drawn. Version 1 has no regions; it is read
+ * as one `main` region in every panel, which is what the server does too (a shared fixture is read by both tests).
+ * Returns the layout, upgraded, or null when it cannot be read.
+ */
+export function readLayout(value: unknown): LayoutSpec | null {
+  if (typeof value !== "object" || value === null) return null;
+  const layout = value as Record<string, unknown>;
+  if (layout.version === 1 && Array.isArray(layout.panels) && Array.isArray(layout.placements)) {
+    const upgraded = {
+      ...layout,
+      version: SUPPORTED_LAYOUT_VERSION,
+      panels: layout.panels.map((p) =>
+        typeof p === "object" && p !== null ? { ...p, direction: "rows", regions: [{ id: "main", size: 100 }] } : p,
+      ),
+      placements: layout.placements.map((p) => (typeof p === "object" && p !== null ? { ...p, region: "main" } : p)),
+    };
+    return isLayoutSpec(upgraded) ? upgraded : null;
+  }
+  return isLayoutSpec(value) ? value : null;
+}
 
 export function isLayoutSpec(value: unknown): value is LayoutSpec {
   if (typeof value !== "object" || value === null) return false;
@@ -27,12 +51,27 @@ export function isLayoutSpec(value: unknown): value is LayoutSpec {
   if (!Array.isArray(layout.panels) || !Array.isArray(layout.placements)) return false;
 
   const widths = new Map<string, number>();
+  const regions = new Map<string, Map<string, number>>();
   let total = 0;
   for (const panel of layout.panels as unknown[]) {
     if (typeof panel !== "object" || panel === null) return false;
-    const { id, width } = panel as Record<string, unknown>;
+    const { id, width, direction, regions: parts } = panel as Record<string, unknown>;
     if (!isPanel(id) || widths.has(id) || !isWhole(width) || width < 0 || width > 100) return false;
+    if (!isKey(DIRECTIONS, direction) || !Array.isArray(parts) || parts.length === 0) return false;
+    const sizes = new Map<string, number>();
+    let share = 0;
+    for (const part of parts as unknown[]) {
+      if (typeof part !== "object" || part === null) return false;
+      const { id: regionId, size } = part as Record<string, unknown>;
+      if (!isKey(REGIONS, regionId) || sizes.has(regionId as string) || !isWhole(size) || size < 0 || size > 100) {
+        return false;
+      }
+      sizes.set(regionId as string, size);
+      share += size;
+    }
+    if (share !== 100) return false;
     widths.set(id, width);
+    regions.set(id, sizes);
     total += width;
   }
   if (total !== 100 || (widths.get("chat") ?? 0) < MIN_CHAT_WIDTH) return false;
@@ -41,12 +80,13 @@ export function isLayoutSpec(value: unknown): value is LayoutSpec {
   const positions = new Set<string>();
   for (const placement of layout.placements as unknown[]) {
     if (typeof placement !== "object" || placement === null) return false;
-    const { blockId, panel, order } = placement as Record<string, unknown>;
+    const { blockId, panel, region, order } = placement as Record<string, unknown>;
     if (typeof blockId !== "string" || !blockId || placed.has(blockId)) return false;
-    if (!isPanel(panel) || !isWhole(order) || order < 0) return false;
+    if (!isPanel(panel) || !isKey(REGIONS, region) || !isWhole(order) || order < 0) return false;
     if ((widths.get(panel) ?? 0) === 0) return false; // a hidden panel (or one not in the layout) holds nothing
-    if (positions.has(`${panel}:${order}`)) return false;
-    positions.add(`${panel}:${order}`);
+    if ((regions.get(panel)?.get(region as string) ?? 0) === 0) return false; // a missing or empty region holds nothing
+    if (positions.has(`${panel}:${region}:${order}`)) return false;
+    positions.add(`${panel}:${region}:${order}`);
     placed.add(blockId);
   }
   return true;
@@ -66,15 +106,15 @@ export const WORKSPACE_SOURCES_ID = "workspace-sources";
  * (`packages/schema/fixtures/prebuilt-layout.json`), so the two cannot drift apart.
  */
 export const FALLBACK_LAYOUT: LayoutSpec = {
-  version: 1,
+  version: 2,
   origin: "prebuilt",
   mode: "basic",
   panels: [
-    { id: "sources", width: 20 },
-    { id: "chat", width: 60 },
-    { id: "studio", width: 20 },
+    { id: "sources", width: 20, direction: "rows", regions: [{ id: "main", size: 100 }] },
+    { id: "chat", width: 60, direction: "rows", regions: [{ id: "main", size: 100 }] },
+    { id: "studio", width: 20, direction: "rows", regions: [{ id: "main", size: 100 }] },
   ],
-  placements: [{ blockId: WORKSPACE_SOURCES_ID, panel: "sources", order: 0 }],
+  placements: [{ blockId: WORKSPACE_SOURCES_ID, panel: "sources", region: "main", order: 0 }],
 };
 
 export type PlacedBlocks = Record<PanelId, UIBlock[]>;

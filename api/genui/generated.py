@@ -201,6 +201,8 @@ class PanelSpec(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
     id: PanelId
     width: int
+    direction: SplitDirection
+    regions: list[RegionSpec]
 
 
 class PathStep(BaseModel):
@@ -227,7 +229,14 @@ class Placement(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
     blockId: str
     panel: PanelId
+    region: RegionId
     order: int
+
+
+class RegionSpec(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    id: RegionId
+    size: int
 
 
 class SavePatternRequest(BaseModel):
@@ -319,6 +328,10 @@ PatternRefusalReason = Literal['precondition_not_met', 'template_changed', 'docu
 
 PatternState = Literal['generated', 'verified', 'saved']
 
+RegionId = Literal['main', 'secondary', 'shelf']
+
+SplitDirection = Literal['rows', 'columns']
+
 StepStatus = Literal['ok', 'partial', 'failed', 'refused']
 
 StreamEvent = Annotated[BlockEvent | LayoutEvent | StreamErrorEvent | DoneEvent, Field(discriminator='type')]
@@ -358,6 +371,7 @@ PathStep.model_rebuild()
 PatternList.model_rebuild()
 PatternParam.model_rebuild()
 Placement.model_rebuild()
+RegionSpec.model_rebuild()
 SavePatternRequest.model_rebuild()
 SavedPattern.model_rebuild()
 SourceItem.model_rebuild()

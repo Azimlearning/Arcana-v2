@@ -10,7 +10,7 @@
 
 import type { BlockEvent, ChatRequest, ErrorEnvelope, LayoutSpec, StreamEvent, UIBlock } from "@arcana/schema";
 
-import { isLayoutSpec } from "./layout";
+import { readLayout } from "./layout";
 
 export const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000").replace(
   /\/$/,
@@ -70,7 +70,10 @@ export function parseFrame(raw: string): StreamEvent | null {
   const event = parsed as { type?: unknown; block?: unknown; error?: unknown; layout?: unknown };
   if (event.type === "done") return { type: "done" };
   // A layout this client cannot read is not an error: it is ignored and the client keeps the layout it has.
-  if (event.type === "layout") return isLayoutSpec(event.layout) ? { type: "layout", layout: event.layout } : null;
+  if (event.type === "layout") {
+    const layout = readLayout(event.layout);
+    return layout ? { type: "layout", layout } : null;
+  }
   if (event.type === "error" && isEnvelope(event.error)) return { type: "error", error: event.error };
   if (
     event.type === "block" &&

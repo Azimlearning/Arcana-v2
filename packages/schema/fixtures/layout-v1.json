@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "origin": "prebuilt",
+  "mode": "basic",
+  "panels": [
+    {
+      "id": "sources",
+      "width": 20
+    },
+    {
+      "id": "chat",
+      "width": 60
+    },
+    {
+      "id": "studio",
+      "width": 20
+    }
+  ],
+  "placements": [
+    {
+      "blockId": "workspace-sources",
+      "panel": "sources",
+      "order": 0
+    }
+  ]
+}

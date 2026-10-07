@@ -1,20 +1,23 @@
 import type { LayoutSpec, UIBlock } from "@arcana/schema";
 import { describe, expect, it } from "vitest";
 
-import { isLayoutSpec, panelOf } from "./layout";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+import { isLayoutSpec, panelOf, readLayout, FALLBACK_LAYOUT } from "./layout";
 
 const GOOD: LayoutSpec = {
-  version: 1,
+  version: 2,
   origin: "adaptive",
   mode: "research",
   panels: [
-    { id: "sources", width: 20 },
-    { id: "chat", width: 45 },
-    { id: "studio", width: 35 },
+    { id: "sources", width: 20, direction: "rows" as const, regions: [{ id: "main" as const, size: 100 }] },
+    { id: "chat", width: 45, direction: "rows" as const, regions: [{ id: "main" as const, size: 100 }] },
+    { id: "studio", width: 35, direction: "rows" as const, regions: [{ id: "main" as const, size: 100 }] },
   ],
   placements: [
-    { blockId: "a", panel: "chat", order: 0 },
-    { blockId: "b", panel: "studio", order: 0 },
+    { blockId: "a", panel: "chat", region: "main" as const, order: 0 },
+    { blockId: "b", panel: "studio", region: "main" as const, order: 0 },
   ],
 };
 
@@ -31,7 +34,7 @@ describe("isLayoutSpec", () => {
 
   it("rejects what it cannot read: an unknown version, a bad shape, or widths that do not add up", () => {
     const bad: Array<(l: Record<string, unknown>) => void> = [
-      (l) => (l.version = 2),
+      (l) => (l.version = 3),
       (l) => (l.origin = "learned"),
       (l) => (l.mode = "dashboard"),
       (l) => (l.panels = "wide"),
@@ -44,6 +47,17 @@ describe("isLayoutSpec", () => {
       (l) => ((l.placements as Array<{ blockId: string }>)[1]!.blockId = "a"), // a block placed twice
       (l) => ((l.placements as Array<{ order: number }>)[0]!.order = -1),
       (l) => (l.placements = [null]),
+      (l) => ((l.panels as Array<{ regions: unknown }>)[1]!.regions = []), // a panel has at least one region
+      (l) => ((l.panels as Array<{ direction: string }>)[1]!.direction = "diagonal"),
+      (l) => ((l.panels as Array<{ regions: Array<{ size: number }> }>)[1]!.regions[0]!.size = 60), // sizes must sum to 100
+      (l) => ((l.panels as Array<{ regions: Array<{ id: string }> }>)[1]!.regions[0]!.id = "side"),
+      (l) =>
+        ((l.panels as Array<{ regions: Array<{ id: string; size: number }> }>)[1]!.regions = [
+          { id: "main", size: 50 },
+          { id: "main", size: 50 },
+        ]), // a repeated region id
+      (l) => ((l.placements as Array<{ region: string }>)[0]!.region = "shelf"), // the panel has no such region
+      (l) => delete (l.placements as Array<{ region?: string }>)[0]!.region,
     ];
     for (const change of bad) expect(isLayoutSpec(damaged(change))).toBe(false);
     expect(isLayoutSpec(null)).toBe(false);
@@ -117,9 +131,9 @@ describe("placeBlocks", () => {
     const { placeBlocks } = await import("./layout");
     const placed = placeBlocks(
       adaptive([
-        { blockId: "b", panel: "chat", order: 1 },
-        { blockId: "a", panel: "chat", order: 0 },
-        { blockId: "g", panel: "studio", order: 0 },
+        { blockId: "b", panel: "chat", region: "main" as const, order: 1 },
+        { blockId: "a", panel: "chat", region: "main" as const, order: 0 },
+        { blockId: "g", panel: "studio", region: "main" as const, order: 0 },
       ]),
       [item("a"), item("b"), item("g", "GraphView")],
     );
@@ -130,14 +144,14 @@ describe("placeBlocks", () => {
 
   it("ignores a placement for a block it does not have", async () => {
     const { placeBlocks } = await import("./layout");
-    const placed = placeBlocks(adaptive([{ blockId: "ghost", panel: "studio", order: 0 }]), [item("a")]);
+    const placed = placeBlocks(adaptive([{ blockId: "ghost", panel: "studio", region: "main" as const, order: 0 }]), [item("a")]);
     expect(placed.studio).toEqual([]);
     expect(placed.chat.map((x) => x.id)).toEqual(["a"]); // and the real block is unplaced, so it goes to chat
   });
 
   it("shows an unplaced turn block in chat after the placed ones, in arrival order", async () => {
     const { placeBlocks } = await import("./layout");
-    const placed = placeBlocks(adaptive([{ blockId: "c", panel: "chat", order: 0 }]), [item("x"), item("c"), item("y")]);
+    const placed = placeBlocks(adaptive([{ blockId: "c", panel: "chat", region: "main" as const, order: 0 }]), [item("x"), item("c"), item("y")]);
     expect(placed.chat.map((b) => b.id)).toEqual(["c", "x", "y"]);
   });
 
@@ -154,5 +168,50 @@ describe("placeBlocks", () => {
     const { placeBlocks, FALLBACK_LAYOUT } = await import("./layout");
     const placed = placeBlocks(FALLBACK_LAYOUT, [item("a"), item("l", "SourceList"), item("g", "GraphView")]);
     expect(placed.chat.map((b) => b.id)).toEqual(["a", "g"]);
+  });
+});
+
+describe("regions", () => {
+  const split = (sizes: Array<[string, number]>, placed = "secondary") => {
+    type Raw = { panels: Array<{ regions: unknown; direction: string }>; placements: Array<Record<string, unknown>> };
+    const copy = JSON.parse(JSON.stringify(GOOD)) as Raw;
+    copy.panels[1]!.regions = sizes.map(([id, size]) => ({ id, size }));
+    copy.panels[1]!.direction = "columns";
+    copy.placements[0]!.region = placed;
+    return copy;
+  };
+
+  it("accepts a panel split into regions and a placement in one of them", () => {
+    expect(isLayoutSpec(split([["main", 60], ["secondary", 40]]))).toBe(true);
+  });
+
+  it("refuses a placement in a region of size 0, which holds nothing", () => {
+    expect(isLayoutSpec(split([["main", 100], ["secondary", 0]]))).toBe(false);
+  });
+
+  it("allows the same order in two regions of a panel but not twice in one", () => {
+    const both = split([["main", 50], ["secondary", 50]]);
+    both.placements.push({ blockId: "c", panel: "chat", region: "main", order: 0 });
+    expect(isLayoutSpec(both)).toBe(true);
+    both.placements[2]!.region = "secondary";
+    expect(isLayoutSpec(both)).toBe(false);
+  });
+});
+
+describe("readLayout", () => {
+  const v1 = () => JSON.parse(readFileSync(resolve(process.cwd(), "../packages/schema/fixtures/layout-v1.json"), "utf-8"));
+
+  it("reads the committed version 1 layout as the current prebuilt layout (the server test reads the same file)", () => {
+    expect(v1().version).toBe(1);
+    expect(readLayout(v1())).toEqual(FALLBACK_LAYOUT);
+  });
+
+  it("passes a current layout through and refuses anything unreadable", () => {
+    expect(readLayout(GOOD)).toEqual(GOOD);
+    const damagedV1 = v1();
+    damagedV1.placements[0].panel = "sidebar";
+    for (const bad of [damagedV1, { version: 1, panels: "x", placements: [] }, { ...GOOD, version: 3 }, null, "layout"]) {
+      expect(readLayout(bad)).toBeNull();
+    }
   });
 });

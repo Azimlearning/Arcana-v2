@@ -161,16 +161,35 @@ def _caps(component: str) -> dict[str, int]:
     return CATALOG[component].fences.caps
 
 
-LAYOUT_VERSION = 1
+LAYOUT_VERSION = 2
 MIN_CHAT_WIDTH = 25
 _LAYOUT = TypeAdapter(LayoutSpec)
 
 
-def validate_layout(raw: LayoutSpec | Mapping[str, Any], known_block_ids: Collection[str] | None = None) -> LayoutSpec:
+def upgrade_layout(raw: Mapping[str, Any]) -> dict[str, Any]:
+    """Read a version 1 layout (no regions) as a version 2 one: every panel is one `main` region and every placement is
+    in it. Anything else is returned as a plain copy, to be checked as it stands."""
+    data = dict(raw)
+    version = data.get("version")
+    if type(version) is not int or version != 1:  # `True == 1` in Python: a boolean is not a version
+        return data
+    panels, placements = data.get("panels"), data.get("placements")
+    if not isinstance(panels, list) or not isinstance(placements, list):
+        return data  # not a shape that can be read: the schema check will say so
+    data["version"] = LAYOUT_VERSION
+    data["panels"] = [
+        {**p, "direction": "rows", "regions": [{"id": "main", "size": 100}]} if isinstance(p, Mapping) else p
+        for p in panels
+    ]
+    data["placements"] = [{**p, "region": "main"} if isinstance(p, Mapping) else p for p in placements]
+    return data
+
+
+def validate_layout(raw: LayoutSpec | Mapping[str, Any], known_block_ids: Collection[str]) -> LayoutSpec:
     """Return the validated layout, or raise ValidationFailed naming every violated field. Fail closed: a layout
-    that fails is not sent, and the client keeps the layout it has. `known_block_ids`, when given, are the blocks the
-    turn produced: a placement for any other block is a violation."""
-    data = raw.model_dump() if isinstance(raw, LayoutSpec) else dict(raw)
+    that fails is not sent, and the client keeps the layout it has. `known_block_ids` are the blocks the turn
+    produced: a placement for any other block is a violation. A version 1 mapping is read as version 2."""
+    data = upgrade_layout(raw.model_dump() if isinstance(raw, LayoutSpec) else raw)
     try:
         layout = _LAYOUT.validate_python(data)
     except ValidationError as exc:
@@ -183,12 +202,26 @@ def validate_layout(raw: LayoutSpec | Mapping[str, Any], known_block_ids: Collec
         issues.append(FieldIssue(path="mode", message="the prebuilt origin and the basic mode go together"))
 
     widths: dict[str, int] = {}
+    regions: dict[str, dict[str, int]] = {}
     for i, panel in enumerate(layout.panels):
         if panel.id in widths:
             issues.append(FieldIssue(path=f"panels.{i}.id", message="panel ids must be unique"))
         widths[panel.id] = panel.width
         if not 0 <= panel.width <= 100:
             issues.append(FieldIssue(path=f"panels.{i}.width", message="a width is a whole number from 0 to 100"))
+        sizes: dict[str, int] = {}
+        for j, region in enumerate(panel.regions):
+            where = f"panels.{i}.regions.{j}"
+            if region.id in sizes:
+                issues.append(FieldIssue(path=f"{where}.id", message="region ids must be unique within a panel"))
+            sizes[region.id] = region.size
+            if not 0 <= region.size <= 100:
+                issues.append(FieldIssue(path=f"{where}.size", message="a size is a whole number from 0 to 100"))
+        if not panel.regions:
+            issues.append(FieldIssue(path=f"panels.{i}.regions", message="a panel has at least one region"))
+        elif sum(r.size for r in panel.regions) != 100:
+            issues.append(FieldIssue(path=f"panels.{i}.regions", message="region sizes must sum to 100"))
+        regions.setdefault(panel.id, sizes)
     if sum(p.width for p in layout.panels) != 100:
         issues.append(FieldIssue(path="panels", message="widths must sum to 100"))
     if "chat" not in widths:
@@ -197,23 +230,28 @@ def validate_layout(raw: LayoutSpec | Mapping[str, Any], known_block_ids: Collec
         issues.append(FieldIssue(path="panels", message=f"the chat panel must be at least {MIN_CHAT_WIDTH} wide"))
 
     seen_blocks: set[str] = set()
-    orders: set[tuple[str, int]] = set()
+    orders: set[tuple[str, str, int]] = set()
     for i, placement in enumerate(layout.placements):
         where = f"placements.{i}"
         if placement.blockId in seen_blocks:
             issues.append(FieldIssue(path=f"{where}.blockId", message="a block is placed once"))
         seen_blocks.add(placement.blockId)
-        if known_block_ids is not None and placement.blockId not in known_block_ids:
+        if placement.blockId not in known_block_ids:
             issues.append(FieldIssue(path=f"{where}.blockId", message="this turn produced no such block"))
         if placement.panel not in widths:
             issues.append(FieldIssue(path=f"{where}.panel", message="the panel is not in this layout"))
         elif widths[placement.panel] == 0:
             issues.append(FieldIssue(path=f"{where}.panel", message="a hidden panel (width 0) holds no blocks"))
+        elif placement.region not in regions[placement.panel]:
+            issues.append(FieldIssue(path=f"{where}.region", message="the panel has no such region"))
+        elif regions[placement.panel][placement.region] == 0:
+            issues.append(FieldIssue(path=f"{where}.region", message="a region of size 0 holds no blocks"))
         if placement.order < 0:
             issues.append(FieldIssue(path=f"{where}.order", message="must not be negative"))
-        if (placement.panel, placement.order) in orders:
-            issues.append(FieldIssue(path=f"{where}.order", message="orders are unique within a panel"))
-        orders.add((placement.panel, placement.order))
+        position = (placement.panel, placement.region, placement.order)
+        if position in orders:
+            issues.append(FieldIssue(path=f"{where}.order", message="orders are unique within a region"))
+        orders.add(position)
     if issues:
         raise ValidationFailed("The layout failed validation.", issues)
     return layout

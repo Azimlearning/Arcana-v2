@@ -85,7 +85,7 @@ describe("workspace store", () => {
   });
 
   it("takes an adaptive layout and switches to it unless Basic is pinned", () => {
-    const adaptive = layout([{ blockId: "turn-1", panel: "chat", order: 0 }]);
+    const adaptive = layout([{ blockId: "turn-1", panel: "chat", region: "main" as const, order: 0 }]);
     s().setLayout(adaptive);
     expect(s().layoutChoice).toBe("adaptive");
     expect(activeLayout(s())).toEqual(adaptive);
@@ -103,7 +103,7 @@ describe("workspace store", () => {
   });
 
   it("ignores anything that is not a readable adaptive layout", () => {
-    s().setLayout(layout([], { version: 2 }));
+    s().setLayout(layout([], { version: 3 }));
     s().setLayout(FALLBACK_LAYOUT); // a prebuilt layout is not an adaptive one
     expect(s().layouts.adaptive).toBeNull();
     expect(s().layoutChoice).toBe("basic");
@@ -116,7 +116,7 @@ describe("workspace store", () => {
 
   it("a new question clears the adaptive layout and returns to Basic, keeping the workspace and a pinned choice", () => {
     s().setWorkspace(workspace());
-    s().setLayout(layout([{ blockId: "turn-1", panel: "chat", order: 0 }]));
+    s().setLayout(layout([{ blockId: "turn-1", panel: "chat", region: "main" as const, order: 0 }]));
     s().startTurn();
     expect(s().layouts.adaptive).toBeNull();
     expect(s().layoutChoice).toBe("basic");

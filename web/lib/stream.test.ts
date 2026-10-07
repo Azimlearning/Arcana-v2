@@ -37,15 +37,27 @@ describe("streamChat", () => {
   });
 
   it("delivers a readable layout after the blocks and before done", async () => {
-    const placed = layout([{ blockId: "turn-1", panel: "chat", order: 0 }]);
+    const placed = layout([{ blockId: "turn-1", panel: "chat", region: "main" as const, order: 0 }]);
     const { calls } = await run(sseResponse([FULL.replace(frame({ type: "done" }), frame({ type: "layout", layout: placed }) + frame({ type: "done" }))]));
     expect(calls.layouts).toEqual([placed]);
     expect(calls.done).toBe(1);
     expect(calls.errors).toEqual([]);
   });
 
+  it("reads a version 1 layout (no regions) as one main region in every panel", async () => {
+    const v1 = {
+      version: 1,
+      origin: "adaptive",
+      mode: "research",
+      panels: [{ id: "sources", width: 20 }, { id: "chat", width: 45 }, { id: "studio", width: 35 }],
+      placements: [{ blockId: "turn-1", panel: "chat", order: 0 }],
+    };
+    const { calls } = await run(sseResponse([FULL.replace(frame({ type: "done" }), frame({ type: "layout", layout: v1 as never }) + frame({ type: "done" }))]));
+    expect(calls.layouts).toEqual([layout([{ blockId: "turn-1", panel: "chat", region: "main" as const, order: 0 }])]);
+  });
+
   it("ignores a layout it cannot read, without an error and without losing the rest of the turn", async () => {
-    const unknownVersion = layout([], { version: 2 });
+    const unknownVersion = layout([], { version: 3 });
     const { calls } = await run(sseResponse([FULL.replace(frame({ type: "done" }), frame({ type: "layout", layout: unknownVersion }) + frame({ type: "done" }))]));
     expect(calls.layouts).toEqual([]);
     expect(calls.blocks).toHaveLength(2);
@@ -164,7 +176,7 @@ describe("parseFrame", () => {
 
 describe("streamApply", () => {
   it("posts to the pattern's apply endpoint (encoded), with no body, and delivers blocks, layout and done", async () => {
-    const placed = layout([{ blockId: "turn-1", panel: "chat", order: 0 }]);
+    const placed = layout([{ blockId: "turn-1", panel: "chat", region: "main" as const, order: 0 }]);
     const body = frame({ type: "block", block: block("ready") }) + frame({ type: "layout", layout: placed }) + frame({ type: "done" });
     const { calls, handlers } = collect();
     const fetchImpl = vi.fn(async () => sseResponse([body]));
