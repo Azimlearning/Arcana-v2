@@ -23,6 +23,10 @@ class Node:
     chunk_ids: tuple[str, ...] = ()
     """Every chunk that mentions it, including chunks where it appears with no relation. Graph
     retrieval needs these: edges alone only reach chunks that contain a relation."""
+    kind: str | None = None
+    """What the note is about (concept, method, person, ...). Only the atomic builder (G1) sets it."""
+    note: str | None = None
+    """One verbatim sentence of a chunk that names the concept: the first one seen. Only the atomic builder sets it."""
 
 
 @dataclass(frozen=True)
@@ -33,6 +37,9 @@ class Edge:
     chunk_id: str
     """The stored chunk this edge was extracted from. Never empty."""
     doc_id: str
+    evidence: str | None = None
+    """One verbatim sentence of the source chunk that states the relation and names both ends. Only the atomic builder
+    sets it; the free-form extractor leaves it empty."""
 
 
 @dataclass(frozen=True)

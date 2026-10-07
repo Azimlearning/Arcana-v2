@@ -16,6 +16,7 @@ from datetime import UTC, datetime
 
 from api.core.errors import ArcanaError, IngestFailed
 from api.core.logging import get_logger
+from api.ingestion import atomic
 from api.ingestion.chunk import chunk
 from api.ingestion.embed import EMBEDDING_MODEL, Embedder
 from api.ingestion.extract import ExtractionResult, estimate_extraction_cost_usd, extract_chunk
@@ -42,6 +43,8 @@ class IngestDeps:
     graph: GraphStore
     embedder: Embedder
     llm: LLMService
+    builder: str = "freeform"
+    """Which graph builder runs: `freeform` (the current extractor, the frozen baseline) or `atomic` (G1, D-34)."""
 
 
 def _now() -> str:
@@ -84,7 +87,8 @@ async def ingest_pdf(raw: bytes, filename: str, deps: IngestDeps) -> IngestResul
     remaining = deps.llm.remaining_usd()
     if remaining is not None:
         # Refuse up front rather than pay for part of a document and roll it back when the cap runs out.
-        worst_case = estimate_extraction_cost_usd(chunks) + embedding_cost_usd(
+        estimate = atomic.estimate_atomic_cost_usd if deps.builder == "atomic" else estimate_extraction_cost_usd
+        worst_case = estimate(chunks) + embedding_cost_usd(
             EMBEDDING_MODEL, estimate_embedding_tokens([c.text for c in chunks])
         )
         if worst_case > remaining:
@@ -102,8 +106,7 @@ async def ingest_pdf(raw: bytes, filename: str, deps: IngestDeps) -> IngestResul
         vectors = await deps.embedder.embed([c.text for c in chunks])
         deps.vectors.upsert([c.id for c in chunks], vectors)
 
-        results = await _extract_all(chunks, deps.llm)
-        node_total, edge_total, extraction_failures = _write_graph(results, deps.graph)
+        node_total, edge_total, extraction_failures, report = await build_graph(chunks, deps)
 
         deps.graph.save()
         deps.vectors.save()
@@ -128,11 +131,33 @@ async def ingest_pdf(raw: bytes, filename: str, deps: IngestDeps) -> IngestResul
         extraction_failures=extraction_failures,
     )
     return IngestResult(
-        doc_id, title, "ready", len(chunks), node_total, edge_total, extraction_failures, None
+        doc_id, title, "ready", len(chunks), node_total, edge_total, extraction_failures, None, report
     )
 
 
-async def _extract_all(chunks: list[Chunk], llm: LLMService) -> list[ExtractionResult | None]:
+async def build_graph(chunks: list[Chunk], deps: IngestDeps) -> tuple[int, int, int, dict | None]:
+    """Extract a graph from `chunks` with the configured builder and merge it into `deps.graph` (not saved). Returns
+    (nodes, edges, malformed chunks, build report); the report is None for the free-form builder. Used by `ingest_pdf` and
+    by the graph-variant tool, which rebuilds a graph over chunks that are already stored."""
+    results = await _extract_all(chunks, deps.llm, deps.builder)
+    report: dict | None = None
+    if deps.builder == "atomic":
+        known = {n.id: n.label for n in deps.graph.nodes()}
+        results, merges = atomic.finalise(results, chunks, known)
+        built = atomic.BuildReport(merges=merges)
+        for r in results:
+            if r is not None:
+                built.drops.update(r.drops)
+                built.concepts += len(r.nodes)
+                built.relations += len(r.edges)
+        report = built.as_dict()
+    node_total, edge_total, malformed = _write_graph(results, deps.graph)
+    return node_total, edge_total, malformed, report
+
+
+async def _extract_all(
+    chunks: list[Chunk], llm: LLMService, builder: str = "freeform"
+) -> list[ExtractionResult | None]:
     """One extraction per chunk, a few at a time. A malformed reply gives None for that chunk; any
     other failure (provider down, spend cap) cancels the rest and propagates."""
     gate = asyncio.Semaphore(EXTRACTION_CONCURRENCY)
@@ -140,6 +165,8 @@ async def _extract_all(chunks: list[Chunk], llm: LLMService) -> list[ExtractionR
     async def one(c: Chunk) -> ExtractionResult | None:
         async with gate:
             try:
+                if builder == "atomic":
+                    return await atomic.extract_chunk_atomic(c, llm)
                 return await extract_chunk(c, llm)
             except IngestFailed:
                 log.warning("extraction_malformed", chunk_id=c.id)

@@ -36,13 +36,19 @@ class NetworkXGraphStore(GraphStore):
             existing["chunk_ids"] = sorted(set(existing.get("chunk_ids", [])) | set(node.chunk_ids))
             if existing.get("type") is None and node.type is not None:
                 existing["type"] = node.type
+            # The first note and kind seen are kept; nothing is written for a store that never has them.
+            for name in ("kind", "note"):
+                if existing.get(name) is None and getattr(node, name) is not None:
+                    existing[name] = getattr(node, name)
         else:
+            extra = {name: getattr(node, name) for name in ("kind", "note") if getattr(node, name) is not None}
             self._g.add_node(
                 node.id,
                 label=node.label,
                 type=node.type,
                 doc_ids=sorted(set(node.doc_ids)),
                 chunk_ids=sorted(set(node.chunk_ids)),
+                **extra,
             )
 
     def upsert_edge(self, edge: Edge) -> None:
@@ -51,6 +57,7 @@ class NetworkXGraphStore(GraphStore):
         for endpoint in (edge.src, edge.dst):
             if endpoint not in self._g:
                 raise KeyError(f"edge endpoint {endpoint!r} is not a node; upsert nodes first")
+        extra = {"evidence": edge.evidence} if edge.evidence is not None else {}
         self._g.add_edge(
             edge.src,
             edge.dst,
@@ -58,6 +65,7 @@ class NetworkXGraphStore(GraphStore):
             relation=edge.relation,
             chunk_id=edge.chunk_id,
             doc_id=edge.doc_id,
+            **extra,
         )
 
     def _node(self, node_id: str) -> Node:
@@ -68,6 +76,8 @@ class NetworkXGraphStore(GraphStore):
             type=d.get("type"),
             doc_ids=tuple(d.get("doc_ids", [])),
             chunk_ids=tuple(d.get("chunk_ids", [])),
+            kind=d.get("kind"),
+            note=d.get("note"),
         )
 
     def get_node(self, node_id: str) -> Node | None:
@@ -78,7 +88,14 @@ class NetworkXGraphStore(GraphStore):
 
     def edges(self) -> list[Edge]:
         return [
-            Edge(src=u, dst=v, relation=d["relation"], chunk_id=d["chunk_id"], doc_id=d["doc_id"])
+            Edge(
+                src=u,
+                dst=v,
+                relation=d["relation"],
+                chunk_id=d["chunk_id"],
+                doc_id=d["doc_id"],
+                evidence=d.get("evidence"),
+            )
             for u, v, d in self._g.edges(data=True)
         ]
 
@@ -95,7 +112,12 @@ class NetworkXGraphStore(GraphStore):
                 )
                 for u, v, key, d in incident:
                     edges[(u, v, key)] = Edge(
-                        src=u, dst=v, relation=d["relation"], chunk_id=d["chunk_id"], doc_id=d["doc_id"]
+                        src=u,
+                        dst=v,
+                        relation=d["relation"],
+                        chunk_id=d["chunk_id"],
+                        doc_id=d["doc_id"],
+                        evidence=d.get("evidence"),
                     )
                     for other in (u, v):
                         if other not in reached:
@@ -126,9 +148,7 @@ class NetworkXGraphStore(GraphStore):
         for n in list(self._g.nodes):
             ids = [d for d in self._g.nodes[n].get("doc_ids", []) if d != doc_id]
             self._g.nodes[n]["doc_ids"] = ids
-            self._g.nodes[n]["chunk_ids"] = [
-                c for c in self._g.nodes[n].get("chunk_ids", []) if c not in gone
-            ]
+            self._g.nodes[n]["chunk_ids"] = [c for c in self._g.nodes[n].get("chunk_ids", []) if c not in gone]
             if not ids:
                 self._g.remove_node(n)
 

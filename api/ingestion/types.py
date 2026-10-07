@@ -33,6 +33,8 @@ class IngestResult:
     """Chunks whose model output could not be parsed. They keep their text and vector, only
     their graph contribution is missing."""
     error: str | None
+    build_report: dict | None = None
+    """What the graph build dropped and merged (the atomic builder only), for the evidence record."""
 
 
 def doc_id_for(raw: bytes) -> str:

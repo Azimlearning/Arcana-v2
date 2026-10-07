@@ -17,7 +17,7 @@ Failure handling is deliberate:
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from api.core.errors import IngestFailed
 from api.llm.json_reply import parse_json_object
@@ -58,6 +58,8 @@ _PLURAL_EXCEPTIONS = frozenset(
 class ExtractionResult:
     nodes: list[Node]
     edges: list[Edge]
+    drops: dict[str, int] = field(default_factory=dict)
+    """Why proposed concepts or relations were dropped, by reason (the atomic builder only)."""
 
 
 def build_prompt(text: str) -> str:

@@ -32,7 +32,29 @@ def fake_extraction_responder(request: LLMRequest) -> str:
             break
 
     entities = [{"label": t, "type": "concept"} for t in terms]
-    relationships = [
-        {"src": a, "dst": b, "type": "related to"} for a, b in pairwise(terms)
-    ]
+    relationships = [{"src": a, "dst": b, "type": "related to"} for a, b in pairwise(terms)]
     return json.dumps({"entities": entities, "relationships": relationships})
+
+
+def fake_atomic_responder(request: LLMRequest) -> str:
+    """The atomic extractor's stand-in: the distinct capitalised terms as concepts, each with the first sentence that holds
+    it as its note, and a relation between consecutive terms that share a sentence, with that sentence as its evidence."""
+    prompt = request.prompt
+    start, end = prompt.find(PASSAGE_OPEN), prompt.rfind(PASSAGE_CLOSE)
+    passage = prompt[start + len(PASSAGE_OPEN) : end] if start != -1 and end > start else prompt
+    sentences = [s for s in re.split(r"(?<=[.!?])\s+", " ".join(passage.split())) if s]
+
+    terms: list[str] = []
+    for match in _TERM_RE.findall(passage):
+        if match not in terms:
+            terms.append(match)
+        if len(terms) == _MAX_TERMS:
+            break
+    first = {t: next((s for s in sentences if t in s), None) for t in terms}
+    concepts = [{"label": t, "kind": "concept", "note": first[t]} for t in terms if first[t]]
+    relations = []
+    for a, b in pairwise(terms):
+        shared = next((s for s in sentences if a in s and b in s), None)
+        if shared:
+            relations.append({"src": a, "dst": b, "type": "uses", "evidence": shared})
+    return json.dumps({"concepts": concepts, "relations": relations})
