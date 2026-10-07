@@ -28,6 +28,14 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-07: P2c task T1 (the traversal as a pure function, with a parity test)
+- **Changed:** `api/retrieval/traversal.py` and `api/retrieval/test_traversal.py` (new), the P2c execution doc (T1 Reality). Nothing under `api/retrieval/graph.py`, `entities.py` or the protocol files.
+- **Decided:** The view will show only the edges that led to passages the signal returned (best rank first) and count the rest; the real traversals follow up to 755 edges and almost all lead outside the top ten.
+- **Deviations:** `steps_for_display` was first written to fill up to the limit with other edges; changed to show useful edges only (stated in the execution doc).
+- **Verified:** `uv run pytest api/retrieval` (71 passed, including the parity test on the pinned live stores for all 20 frozen questions), `eval/tests/test_frozen_assets.py` (7), ruff, pyright.
+- **Measured (real stores, 20 questions):** 4 to 10 seeds, 16 to 755 edges followed, top-ten chunks almost all reached by a seed's own mention; generic words (corpus, text, concepts, Findings) resolve as seeds on several questions.
+- **Known issues / next steps:** T2 (wire type, template, validator, schema first).
+
 ### 2026-10-07: G1.1 the free structural baseline of the current graph
 - **Changed:** `eval/graph_quality.py`, `eval/tests/test_graph_quality.py`, `eval/results/20261007T005311Z-graph-quality-baseline.json`, `refdocs/evidence/20261007T005311Z-graph-quality-baseline.md`, the G1 execution doc (G1.1 Reality).
 - **Decided:** The atomic builder's design takes a `kind` for people and affiliations (title-page metadata is about a fifth of the graph) and one relation for authorship. Recorded as design, from the corpus's general character; nothing was tuned on a question.
