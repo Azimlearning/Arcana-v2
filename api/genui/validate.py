@@ -51,9 +51,15 @@ from api.genui.generated import (
     SourceList,
     TraversalView,
     UIBlock,
+    VerifiedLab,
 )
 from api.genui.text import MIN_LABEL_CHARS, MIN_QUOTE_CHARS, label_in_quote
 from api.genui.text import normalise as _norm
+from api.labs.checker import check_source
+from api.labs.contract import CONTRACTS
+from api.labs.evidence import BLANK_LAB_DATA, derive_lab_data, find_source
+from api.labs.store import LabStore
+from api.labs.verifier import TEMPLATE_VERSION, contract_sha256
 from api.learner.mastery import MasteryScore
 from api.retrieval.traversal import SeedNode, seed_weight, steps_for_display, traverse
 from api.stores.doc_store import DocStore
@@ -90,6 +96,7 @@ def validate_block(
     graph: GraphStore | None = None,
     vault: Vault | None = None,
     mastery: Mapping[str, MasteryScore] | None = None,
+    labs: LabStore | None = None,
 ) -> UIBlock:
     """Return the validated block, or raise ValidationFailed naming every violated field. `graph` is the graph store
     the claims of a graph-derived block (a `TraversalView`) are re-derived from, and `vault` the vault those of a
@@ -102,7 +109,7 @@ def validate_block(
     except ValidationError as exc:
         raise ValidationFailed("The block does not match the wire schema.", _schema_issues(exc, tag)) from exc
 
-    issues = _content_issues(block, docs, graph, vault, mastery)
+    issues = _content_issues(block, docs, graph, vault, mastery, labs)
     if issues:
         raise ValidationFailed("The block failed content validation.", issues)
     return block
@@ -114,6 +121,7 @@ def _content_issues(
     graph: GraphStore | None,
     vault: Vault | None = None,
     mastery: Mapping[str, MasteryScore] | None = None,
+    labs: LabStore | None = None,
 ) -> list[FieldIssue]:
     """Rules common to every block, then the rules of its own type. A type with no rules here is refused:
     a component is not shown until its invariants are written down (constraint 7)."""
@@ -136,6 +144,8 @@ def _content_issues(
         issues += _notes_graph_issues(block, docs, vault, mastery)
     elif isinstance(block, QuizCard):
         issues += _quiz_card_issues(block, docs, vault, mastery)
+    elif isinstance(block, VerifiedLab):
+        issues += _verified_lab_issues(block, docs, labs)
     else:
         issues.append(FieldIssue(path="type", message="no content rules exist for this block type"))
     return issues
@@ -742,6 +752,46 @@ def _notes_graph_issues(
     issues: list[FieldIssue] = []
     if status == "ready" and not data["nodes"]:
         issues.append(FieldIssue(path="data.nodes", message="a ready graph needs at least one page"))
+    _differences(data, derived, "data", issues)
+    return issues
+
+
+def _verified_lab_issues(block: VerifiedLab, docs: DocStore, labs: LabStore | None) -> list[FieldIssue]:
+    """THE DELIVERY GATE (D-36, hard constraint 3). A lab is delivered only if the stored, verified record of `labId` exists and the block
+    equals what that record, its contract and the stored passage derive: the source byte for byte, its hash, the template version (the
+    one the host holds), the parameters, the counts and the citation. A forged block, a changed byte, a stale template version, an
+    unknown or unverified lab, a store that cannot be read, and a `partial` block are refused (fail closed). Placeholders carry nothing."""
+    data, status = block.data.model_dump(), block.meta.status
+    if status != "ready":
+        if status == "partial":
+            return [FieldIssue(path="meta.status", message="a lab is delivered whole: partial is not allowed")]
+        return [] if data == BLANK_LAB_DATA else [FieldIssue(path="data", message=f"a '{status}' block must carry nothing")]
+    if labs is None:
+        return [FieldIssue(path="data", message="a lab can only be checked against the verified lab store")]
+    try:
+        record = labs.get(block.data.labId)
+        if record is None:
+            return [FieldIssue(path="data.labId", message="no verified lab has this id")]
+        make = CONTRACTS.get(record.contract_id)
+        if make is None:
+            return [FieldIssue(path="data.contractId", message="the lab's contract is unknown")]
+        contract = make()
+        if record.contract_sha256 != contract_sha256(contract):
+            return [FieldIssue(path="data.contractId", message="the lab was verified for another version of its contract")]
+        again = check_source(record.source, [p.name for p in contract.parameters])
+        if not again.ok:  # the stored source is checked again on delivery, not trusted because it was stored
+            return [FieldIssue(path="data.source", message="the stored source no longer passes the checker")]
+        citation = find_source(docs, contract)
+        if citation is None:
+            return [FieldIssue(path="data.citations", message="no stored passage states this lab's formula")]
+        derived = derive_lab_data(record, contract, citation)
+    except Exception:  # an unreadable store is a lab that cannot be checked: refuse, never crash
+        return [FieldIssue(path="data", message="the lab could not be re-derived from the verified record")]
+    issues: list[FieldIssue] = []
+    if record.template_version != TEMPLATE_VERSION:
+        issues.append(FieldIssue(path="data.templateVersion", message="the lab was verified for another template version"))
+    if len(record.source) > 4000:
+        issues.append(FieldIssue(path="data.source", message="the source is longer than the fence allows"))
     _differences(data, derived, "data", issues)
     return issues
 

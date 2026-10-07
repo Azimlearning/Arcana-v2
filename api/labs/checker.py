@@ -17,6 +17,8 @@ from pathlib import Path
 TOOL_DIR = Path(__file__).resolve().parents[2] / "packages" / "labs-check"
 ALLOWLIST_PATH = TOOL_DIR / "allowlist.json"
 CHECK_TIMEOUT_SECONDS = 10
+MAX_SOURCE_CHARS = 4000
+"""The same cap as `allowlist.json`'s `max_source_chars` (a test pins them together)."""
 
 
 class LabToolError(RuntimeError):
@@ -50,13 +52,38 @@ def node_path() -> str:
 
 def check_source(source: str, param_names: list[str]) -> CheckResult:
     """The checker's verdict on `source`, which may use `p.<name>` for the names in `param_names` only."""
+    if (
+        len(source) > MAX_SOURCE_CHARS
+    ):  # before anything is spawned: an untrusted generator cannot make this tool read without limit
+        return CheckResult(
+            False,
+            (
+                Problem(
+                    "source_too_large",
+                    f"the source is longer than {MAX_SOURCE_CHARS} characters",
+                    0,
+                    0,
+                ),
+            ),
+        )
+    try:
+        payload = source.encode("utf-8")
+    except UnicodeEncodeError:  # a lone surrogate: not text a function can be made of
+        return CheckResult(
+            False,
+            (
+                Problem(
+                    "source_not_text", "the source holds a character that is not valid text", 0, 0
+                ),
+            ),
+        )
     script = TOOL_DIR / "check.mjs"
     if not script.exists():
         raise LabToolError("the lab checker is missing")
     try:
         done = subprocess.run(
             [node_path(), str(script), "--params", ",".join(param_names)],
-            input=source.encode("utf-8"),
+            input=payload,
             capture_output=True,
             timeout=CHECK_TIMEOUT_SECONDS,
             check=False,

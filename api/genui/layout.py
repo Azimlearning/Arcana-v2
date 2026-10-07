@@ -31,6 +31,7 @@ from api.genui.generated import (
     RegionSpec,
     SplitDirection,
 )
+from api.genui.lab_catalog import LAB_CATALOG
 from api.genui.notes_catalog import NOTES_CATALOG
 from api.genui.validate import LAYOUT_VERSION
 
@@ -128,7 +129,7 @@ def compose_layout(admitted: Sequence[tuple[str, str]], intent: str) -> LayoutSp
     """The adaptive layout for a turn. `admitted` is (block id, component name) in arrival order."""
     hinted: list[tuple[str, PanelId, RegionId, SplitDirection | None, int, int]] = []
     for arrival, (block_id, component) in enumerate(admitted):
-        spec = CATALOG.get(component) or NOTES_CATALOG.get(component)
+        spec = CATALOG.get(component) or NOTES_CATALOG.get(component) or LAB_CATALOG.get(component)
         if spec is None:
             hinted.append((block_id, CHAT, MAIN, None, UNKNOWN_PRIORITY, arrival))
         else:

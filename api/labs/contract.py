@@ -23,8 +23,11 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 MAX_PARAMETERS = 4
-MIN_SWEEP_POINTS = 8
-MAX_SWEEP_POINTS = 200
+MIN_GRID = 4
+MAX_GRID = 100
+MAX_GRID_VECTORS = 10_000
+"""The slider grid: each parameter takes `grid + 1` evenly spaced values and nothing between, and the verifier tests EVERY combination, so no
+value the interface can ask the function for goes unchecked. The number of combinations is bounded."""
 _NAME = re.compile(r"^[a-z][a-z0-9_]{0,15}$")
 
 PropertyKind = Literal["finite", "non_negative", "bounded", "monotone", "matches_reference"]
@@ -102,8 +105,9 @@ class LabContract(_Frozen):
     title: str
     parameters: tuple[LabParameter, ...]
     sweep: str
-    """The parameter the plot sweeps across its range."""
-    sweep_points: int
+    """The parameter the plot sweeps across its range (at its grid values)."""
+    grid: int
+    """Steps per parameter: a slider has `grid + 1` positions. Defaults and reference cases lie on the grid."""
     output_label: str
     source_phrase: str
     """A phrase that must occur (whitespace-normalised, hyphen-blind) in a stored passage: the evidence that states the formula."""
@@ -129,8 +133,15 @@ class LabContract(_Frozen):
             raise ValueError("parameter names must be unique")
         if self.sweep not in names:
             raise ValueError("the swept parameter must be one of the parameters")
-        if not MIN_SWEEP_POINTS <= self.sweep_points <= MAX_SWEEP_POINTS:
-            raise ValueError(f"a sweep has {MIN_SWEEP_POINTS} to {MAX_SWEEP_POINTS} points")
+        if not MIN_GRID <= self.grid <= MAX_GRID:
+            raise ValueError(f"the grid has {MIN_GRID} to {MAX_GRID} steps")
+        if (self.grid + 1) ** len(names) > MAX_GRID_VECTORS:
+            raise ValueError(
+                f"the grid has more than {MAX_GRID_VECTORS} combinations: every one is verified"
+            )
+        for p in self.parameters:
+            if not _on_grid(p, p.default, self.grid):
+                raise ValueError(f"the default of {p.name} must lie on the grid")
         if not self.source_phrase.strip() or len(self.source_phrase) < 20:
             raise ValueError(
                 "a lab cites evidence: the source phrase must be at least 20 characters"
@@ -146,6 +157,8 @@ class LabContract(_Frozen):
             for name, value in case.params.items():
                 if not by_name[name].min <= value <= by_name[name].max:
                     raise ValueError(f"a reference case's {name} lies outside its range")
+                if not _on_grid(by_name[name], value, self.grid):
+                    raise ValueError(f"a reference case's {name} must lie on the grid")
         for prop in self.properties:
             if prop.kind == "monotone" and prop.param not in names:
                 raise ValueError("a monotone property names a declared parameter")
@@ -154,14 +167,31 @@ class LabContract(_Frozen):
     def parameter(self, name: str) -> LabParameter:
         return next(p for p in self.parameters if p.name == name)
 
+    @property
+    def sweep_points(self) -> int:
+        return self.grid + 1
+
+    def grid_values(self, name: str) -> list[float]:
+        """The values a slider can take: `grid + 1` evenly spaced values across the range, ends included, computed as `min + (max - min) * k / grid`
+        (the web host computes the same expression in the same order, so both sides get the same doubles)."""
+        p = self.parameter(name)
+        return [grid_value(p, k, self.grid) for k in range(self.grid + 1)]
+
     def sweep_values(self) -> list[float]:
-        """The sweep's x values: `sweep_points` evenly spaced values across the swept parameter's range, ends included."""
-        p = self.parameter(self.sweep)
-        n = self.sweep_points
-        return [p.min + (p.max - p.min) * i / (n - 1) for i in range(n)]
+        """The sweep's x values: the swept parameter's grid values."""
+        return self.grid_values(self.sweep)
 
     def defaults(self) -> dict[str, float]:
         return {p.name: p.default for p in self.parameters}
+
+
+def grid_value(p: LabParameter, k: int, grid: int) -> float:
+    return p.min + (p.max - p.min) * k / grid
+
+
+def _on_grid(p: LabParameter, value: float, grid: int) -> bool:
+    k = round((value - p.min) / (p.max - p.min) * grid)
+    return 0 <= k <= grid and abs(grid_value(p, k, grid) - value) <= 1e-12 * max(1.0, abs(value))
 
 
 # ── reference functions: written by hand from the cited formula, the verifier's ground truth ───────────────────────────
@@ -198,7 +228,7 @@ def ranknet_contract() -> LabContract:
             ),
         ),
         sweep="sj",
-        sweep_points=65,
+        grid=64,
         output_label="loss",
         source_phrase="RankNet is a pairwise loss that measures the correctness of relative passage orders",
         reference="ranknet_loss",

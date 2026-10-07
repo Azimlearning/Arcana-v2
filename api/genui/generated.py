@@ -207,6 +207,29 @@ class IngestResponse(BaseModel):
     error: str | None
 
 
+class LabChecked(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    referenceCases: int
+    properties: int
+    fuzzCases: int
+    gridPoints: int
+
+
+class LabParameter(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    name: str
+    label: str
+    min: float
+    max: float
+    default: float
+    unit: str | None
+
+
+class LabRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    contractId: str
+
+
 class LayoutEvent(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
     type: Literal['layout']
@@ -527,6 +550,30 @@ class VaultLintResponse(BaseModel):
     hubs: list[LintPageRef]
 
 
+class VerifiedLab(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    type: Literal['VerifiedLab']
+    id: str
+    meta: BlockMeta
+    data: VerifiedLabData
+
+
+class VerifiedLabData(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    labId: str
+    contractId: str
+    title: str
+    parameters: list[LabParameter]
+    sweep: str
+    gridSteps: int
+    outputLabel: str
+    source: str
+    sourceSha256: str
+    templateVersion: int
+    citations: list[Citation]
+    checked: LabChecked
+
+
 class WorkspaceResponse(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
     layout: LayoutSpec
@@ -575,7 +622,7 @@ StreamEvent = Annotated[BlockEvent | LayoutEvent | StreamErrorEvent | DoneEvent,
 
 TurnOutcome = Literal['answered', 'empty', 'error']
 
-UIBlock = Annotated[CitedSummary | SourceList | GraphView | ComparisonGrid | ConceptMap | TraversalView | ConceptPage | NotesGraph | QuizCard, Field(discriminator='type')]
+UIBlock = Annotated[CitedSummary | SourceList | GraphView | ComparisonGrid | ConceptMap | TraversalView | ConceptPage | NotesGraph | QuizCard | VerifiedLab, Field(discriminator='type')]
 
 AgentStep.model_rebuild()
 BlockEvent.model_rebuild()
@@ -603,6 +650,9 @@ GridCell.model_rebuild()
 GridDimension.model_rebuild()
 GridRow.model_rebuild()
 IngestResponse.model_rebuild()
+LabChecked.model_rebuild()
+LabParameter.model_rebuild()
+LabRequest.model_rebuild()
 LayoutEvent.model_rebuild()
 LayoutSpec.model_rebuild()
 LearnerEventRequest.model_rebuild()
@@ -645,4 +695,6 @@ TraversalView.model_rebuild()
 TraversalViewData.model_rebuild()
 TurnTrace.model_rebuild()
 VaultLintResponse.model_rebuild()
+VerifiedLab.model_rebuild()
+VerifiedLabData.model_rebuild()
 WorkspaceResponse.model_rebuild()

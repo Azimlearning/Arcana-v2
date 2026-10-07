@@ -80,8 +80,9 @@ def test_the_set_covers_every_kind_of_defect_it_claims_and_has_no_duplicate_name
         "termination",
         "resources",
         "shape",
+        "markup",
     }
-    assert len(STATIC_DEFECTS) >= 60
+    assert len(STATIC_DEFECTS) >= 80
 
 
 def test_the_allowlist_is_one_file_with_the_numbers_the_guide_states():

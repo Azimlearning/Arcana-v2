@@ -11,6 +11,8 @@ from api.fakes import fake_llm_responder
 from api.genui.templates import ensure_builtin_registered
 from api.ingestion.embed import Embedder, build_embedder
 from api.ingestion.pipeline import IngestDeps
+from api.labs.generator import FakeLabGenerator, LabGenerator
+from api.labs.store import LabStore, SqliteLabStore
 from api.learner.store import LearnerStore, SqliteLearnerStore
 from api.llm.factory import build_llm_service
 from api.llm.ledger import SpendLedger
@@ -45,6 +47,9 @@ class Container:
     uploads_dir: Path
     vault_store: VaultStore
     learner_store: LearnerStore
+    lab_store: LabStore
+    lab_generator: LabGenerator | None
+    """The lab generator (D-36). The fake, in fake mode; None in a live mode until the live generator exists (V9): a lab is then refused, never faked."""
     _vault_lock: threading.RLock = field(default_factory=threading.RLock, repr=False)
     """One vault compile at a time: two requests that both find it stale reuse the first one's build (the check is made again inside)."""
 
@@ -125,4 +130,6 @@ def build_container(settings: Settings) -> Container:
         uploads_dir=data / "uploads",
         vault_store=JsonVaultStore(data / "vault.json"),
         learner_store=SqliteLearnerStore(data / "learner.db"),
+        lab_store=SqliteLabStore(data / "labs.db"),
+        lab_generator=FakeLabGenerator() if settings.arcana_llm_mode == "fake" else None,
     )

@@ -58,6 +58,26 @@ export function toErrorBlock(block: UIBlock, error: ErrorEnvelope): UIBlock {
       return { ...block, meta, data: { focusId: null, query: "", nodes: [], edges: [], nodesLeftOut: 0 } };
     case "QuizCard":
       return { ...block, meta, data: { focusId: null, items: [], skipped: 0 } };
+    case "VerifiedLab":
+      // An error block carries no code, whatever the lab held before.
+      return {
+        ...block,
+        meta,
+        data: {
+          labId: "",
+          contractId: "",
+          title: "",
+          parameters: [],
+          sweep: "",
+          gridSteps: 0,
+          outputLabel: "",
+          source: "",
+          sourceSha256: "",
+          templateVersion: 0,
+          citations: [],
+          checked: { referenceCases: 0, properties: 0, fuzzCases: 0, gridPoints: 0 },
+        },
+      };
   }
 }
 

@@ -1,4 +1,4 @@
-import type { CitedSummary, ComparisonGrid, ConceptMap, ConceptPage, ErrorEnvelope, GraphView, LayoutSpec, NotesGraph, QuizAnswerResponse, QuizCard, SavedPattern, SourceList, TraversalView, WorkspaceResponse, StreamEvent, TurnTrace } from "@arcana/schema";
+import type { CitedSummary, ComparisonGrid, ConceptMap, ConceptPage, ErrorEnvelope, GraphView, LayoutSpec, NotesGraph, QuizAnswerResponse, QuizCard, VerifiedLab, SavedPattern, SourceList, TraversalView, WorkspaceResponse, StreamEvent, TurnTrace } from "@arcana/schema";
 
 export const TITLE = "Hybrid Retrieval over Knowledge Graphs";
 
@@ -496,5 +496,54 @@ export function quizAnswer(overrides: Partial<QuizAnswerResponse> = {}): QuizAns
     },
     mastery: { score: 0.6667, events: 1 },
     ...overrides,
+  };
+}
+
+
+export const LAB_SOURCE =
+  "function lab(p) {\n  const d = p.sj - p.si;\n  if (d > 0) {\n    return d + Math.log1p(Math.exp(-d));\n  }\n  return Math.log1p(Math.exp(d));\n}";
+export const LAB_SHA256 = "8ffe9aa0bdcc9b90f4795f3b27ff397533afac5abf1348fbe748ec8769424be7";
+
+export function verifiedLab(
+  status: VerifiedLab["meta"]["status"],
+  overrides: Partial<VerifiedLab["data"]> = {},
+  error: ErrorEnvelope | null = null,
+): VerifiedLab {
+  const content = status === "ready";
+  return {
+    type: "VerifiedLab",
+    id: "lab",
+    meta: { status, error },
+    data: {
+      labId: content ? "ranknet_pairwise_loss-8ffe9aa0bdcc" : "",
+      contractId: content ? "ranknet_pairwise_loss" : "",
+      title: content ? "RankNet pairwise loss for one pair of passages" : "",
+      parameters: content
+        ? [
+            { name: "si", label: "score of the passage ranked first", min: -4, max: 4, default: 0, unit: null },
+            { name: "sj", label: "score of the passage ranked second", min: -4, max: 4, default: 1, unit: null },
+          ]
+        : [],
+      sweep: content ? "sj" : "",
+      gridSteps: content ? 64 : 0,
+      outputLabel: content ? "loss" : "",
+      source: content ? LAB_SOURCE : "",
+      sourceSha256: content ? LAB_SHA256 : "",
+      templateVersion: content ? 2 : 0,
+      citations: content
+        ? [
+            {
+              id: "c1",
+              chunkId: "c1",
+              docId: "d1",
+              docTitle: "A Ranking Paper",
+              page: 16,
+              quote: "RankNet is a pairwise loss that measures the correctness of relative passage orders",
+            },
+          ]
+        : [],
+      checked: content ? { referenceCases: 4, properties: 5, fuzzCases: 200, gridPoints: 4225 } : { referenceCases: 0, properties: 0, fuzzCases: 0, gridPoints: 0 },
+      ...overrides,
+    },
   };
 }

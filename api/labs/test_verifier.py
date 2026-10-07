@@ -40,7 +40,8 @@ def test_a_correct_function_passes_and_is_minted_with_its_hash_and_counts():
     assert artifact.lab_id == f"ranknet_pairwise_loss-{artifact.source_sha256[:12]}"
     assert len(artifact.source_sha256) == 64
     assert (artifact.checked.reference_cases, artifact.checked.properties) == (4, 5)
-    assert artifact.checked.fuzz_cases == 9 + 200  # the 3 x 3 corners and the seeded fuzz
+    assert artifact.checked.fuzz_cases == 200  # the seeded fuzz, on top of the grid
+    assert artifact.checked.grid_points == 65 * 65  # every combination of slider positions was run
     assert (
         verify(CONTRACT, STABLE).source_sha256 != artifact.source_sha256
     )  # another function, another artifact
@@ -89,14 +90,37 @@ def test_a_function_that_fails_the_static_check_never_reaches_the_runner():
     assert all(stage_of(d.source) == "check" for d in STATIC_DEFECTS if d.name in wanted)
 
 
-def test_a_slow_function_is_stopped_by_the_time_limit(monkeypatch):
-    monkeypatch.setattr("api.labs.verifier.PER_CALL_TIMEOUT_MS", 50)
+def test_a_slow_call_is_refused_because_the_sliders_call_it_once_per_sweep_point_on_every_move(
+    monkeypatch,
+):
+    monkeypatch.setattr("api.labs.verifier.MAX_CALL_MS", 0.0)  # any measurable call is too slow
+    assert stage_of(GOOD) == "run"
+
+
+def test_a_loop_the_budget_allows_in_total_is_fast_and_one_it_does_not_never_reaches_the_runner():
     heavy = lab(
         "let s = 0;\n"
         "for (let i = 0; i < 10000; i++) { for (let j = 0; j < 10; j++) { s += Math.sin(i * j) * Math.cos(i + j); } }\n"
         "return s;"
     )
-    assert stage_of(heavy) in {"run", "reference_cases"}
+    assert stage_of(heavy) == "check"  # 10,000 x 10 iterations is over the total cap of 20,000
+
+
+def test_a_branch_the_interface_cannot_reach_is_a_stated_limit_not_a_defect():
+    """The verifier runs every grid combination plus a seeded fuzz. A branch at a value that is on neither (here si == -3.96, off the grid of
+    0.125) is not seen: the lab is verified, and the interface cannot ask for that value (the sliders snap to the grid and the swept axis uses
+    the grid values). This is the design: what the user can reach is exactly what was verified."""
+    hidden = lab(
+        "if (p.si === -3.96) { return 1000; }\n"
+        "const d = p.sj - p.si;\n"
+        "if (d > 0) { return d + Math.log1p(Math.exp(-d)); }\n"
+        "return Math.log1p(Math.exp(d));"
+    )
+    assert verify(CONTRACT, hidden).checked.grid_points == 65 * 65
+    assert -3.96 not in CONTRACT.grid_values("si")
+    assert -3.875 in CONTRACT.grid_values(
+        "si"
+    )  # a branch ON the grid is refused (see the mutation suite)
 
 
 def test_the_mint_cannot_be_used_outside_the_verifier():
@@ -133,7 +157,7 @@ def test_no_module_but_the_verifier_builds_a_verified_artifact_or_touches_the_mi
         text = path.read_text(encoding="utf-8")
         if re.search(r"VerifiedArtifact\s*\(|\b_MINT\b", text):
             offenders.append(str(path.relative_to(root)))
-    assert offenders == [], f"these build a VerifiedArtifact or use the mint token: {offenders}"
+    assert offenders == [], f"these build a VerifiedArtifact or use the mint function: {offenders}"
 
 
 def test_the_store_takes_only_a_minted_artifact_and_serves_only_verified_labs(tmp_path: Path):
@@ -157,3 +181,38 @@ def test_the_store_takes_only_a_minted_artifact_and_serves_only_verified_labs(tm
         store.get(f"rejected-{r['source_sha256'][:16]}") is None for r in store.rejected()
     )  # never served
     assert SqliteLabStore(tmp_path / "labs.db").get(artifact.lab_id) == stored  # survives reopening
+
+
+def test_the_mint_is_hardened_beyond_a_convention():
+    import api.labs.verifier as module
+
+    assert not hasattr(module, "_MINT")  # the token lives in a closure, not on the module
+    with pytest.raises(TypeError):
+
+        class Forged(VerifiedArtifact):  # type: ignore[misc,valid-type]
+            pass
+
+    artifact = verify(CONTRACT, GOOD)
+    assert type(artifact) is VerifiedArtifact
+
+
+def test_the_store_ties_the_id_to_the_source_and_never_replaces_a_lab(tmp_path: Path):
+    import sqlite3
+    from contextlib import closing
+
+    store = SqliteLabStore(tmp_path / "labs.db")
+    artifact = verify(CONTRACT, GOOD)
+    store.put_verified(artifact)
+    again = store.put_verified(
+        verify(CONTRACT, GOOD)
+    )  # the same source is the same lab: stored once
+    assert again.source == GOOD
+    with closing(sqlite3.connect(tmp_path / "labs.db")) as db:
+        assert db.execute("SELECT COUNT(*) FROM labs WHERE state = 'verified'").fetchone()[0] == 1
+    # an edited row is not a lab: the source no longer matches its hash, or the id no longer matches the hash
+    with closing(sqlite3.connect(tmp_path / "labs.db")) as db, db:
+        db.execute(
+            "UPDATE labs SET source = 'function lab(p) { return 1; }' WHERE lab_id = ?",
+            (artifact.lab_id,),
+        )
+    assert store.get(artifact.lab_id) is None

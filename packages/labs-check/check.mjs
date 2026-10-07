@@ -45,11 +45,23 @@ export function check(source, paramNames) {
     fail("source_too_large", null, `the source is longer than ${ALLOWLIST.max_source_chars} characters`);
     return problems;
   }
+  // No comments, no HTML-like comment markers and no `</script`: the host places the source inside an inline <script>, so a comment is the
+  // one place text could close that element and start another. The source is a function and nothing else.
+  if (/<!--|-->|<\/script/i.test(source)) {
+    fail("markup_not_allowed", null, "the source holds a markup sequence (<!--, --> or </script)");
+    return problems;
+  }
   let ast;
+  const comments = [];
   try {
-    ast = acorn.parse(source, { ecmaVersion: 2022, sourceType: "script", locations: true });
+    ast = acorn.parse(source, { ecmaVersion: 2022, sourceType: "script", locations: true, onComment: comments });
   } catch (error) {
     fail("syntax", { loc: { start: { line: error.loc?.line ?? 0, column: error.loc?.column ?? 0 } } }, String(error.message));
+    return problems;
+  }
+
+  if (comments.length > 0) {
+    fail("comment_not_allowed", { loc: { start: { line: comments[0].loc?.start.line ?? 0, column: comments[0].loc?.start.column ?? 0 } } }, "comments are not allowed");
     return problems;
   }
 
@@ -157,6 +169,7 @@ export function check(source, paramNames) {
 
   let loopDepth = 0;
   let loopProduct = 1;
+  let totalIterations = 0; // the sum over every loop of the times its body runs, enclosing loops counted
 
   function assignTarget(left, node) {
     if (left.type !== "Identifier") return fail("assignment_not_allowed", node, "only a local name can be assigned to");
@@ -229,7 +242,8 @@ export function check(source, paramNames) {
     if (!init || init.type !== "VariableDeclaration" || init.kind !== "let" || init.declarations.length !== 1 || !init.declarations[0].init || !numberLiteral(init.declarations[0].init) || init.declarations[0].id.type !== "Identifier") {
       return fail("loop_shape", node, "a loop starts with `let i = <number>`");
     }
-    const name = init.declarations[0].id.name;
+    const id = init.declarations[0].id;
+    const name = id.name;
     const start = init.declarations[0].init.value;
     if (!test || test.type !== "BinaryExpression" || (test.operator !== "<" && test.operator !== "<=") || test.left.type !== "Identifier" || test.left.name !== name || !numberLiteral(test.right)) {
       return fail("loop_shape", node, "a loop tests `i < <number>` or `i <= <number>`");
@@ -237,14 +251,26 @@ export function check(source, paramNames) {
     let step = null;
     if (update?.type === "UpdateExpression" && update.operator === "++" && update.argument.type === "Identifier" && update.argument.name === name) step = 1;
     else if (update?.type === "AssignmentExpression" && update.operator === "+=" && update.left.type === "Identifier" && update.left.name === name && numberLiteral(update.right) && update.right.value > 0) step = update.right.value;
-    if (step === null) return fail("loop_shape", node, "a loop steps with `i++` or `i += <positive number>`");
-    const bound = test.operator === "<" ? test.right.value : test.right.value + step;
-    const iterations = Math.max(0, Math.ceil((bound - start) / step));
-    if (!Number.isFinite(iterations) || iterations > ALLOWLIST.max_loop_bound) return fail("loop_bound", node, `a loop runs at most ${ALLOWLIST.max_loop_bound} times`);
+    if (step === null) return fail("loop_shape", node, "a loop steps with `i++` or `i += <positive integer>`");
+    // Exact counting: with integers of bounded size every value of the counter is exactly representable, so the iteration count is exactly
+    // ceil((bound - start) / step). A float start, bound or step (or a magnitude where adding the step rounds away) would make the real count differ.
+    const limit = ALLOWLIST.max_loop_literal;
+    const bound = test.right.value;
+    if (![start, bound, step].every((v) => Number.isInteger(v) && Math.abs(v) <= limit)) {
+      return fail("loop_bound", node, `a loop's start, bound and step are integers no larger than ${limit} in size`);
+    }
+    // The name rules apply to a counter like any other local (it may not shadow Math, p or a denied name).
+    if (!LOCAL_NAME.test(name) || DENIED_NAMES.has(name)) return fail("name_not_allowed", id, `the name ${name} is not allowed`);
+    if (find(name)) return fail("redeclared", id, `${name} is already declared`);
+    const end = test.operator === "<" ? bound : bound + 1;
+    const iterations = Math.max(0, Math.ceil((end - start) / step));
+    if (iterations > ALLOWLIST.max_loop_bound) return fail("loop_bound", node, `a loop runs at most ${ALLOWLIST.max_loop_bound} times`);
     loopDepth += 1;
     loopProduct *= Math.max(iterations, 1);
+    totalIterations += loopProduct;
     if (loopDepth > ALLOWLIST.max_loop_depth) fail("loop_bound", node, `loops nest at most ${ALLOWLIST.max_loop_depth} deep`);
     if (loopProduct > ALLOWLIST.max_loop_product) fail("loop_bound", node, `nested loops run at most ${ALLOWLIST.max_loop_product} times in all`);
+    if (totalIterations > ALLOWLIST.max_total_iterations) fail("loop_bound", node, `all the loops together run at most ${ALLOWLIST.max_total_iterations} times`);
     countNode(init);
     scopes.push(new Map([[name, { kind: "loop" }]]));
     if (node.body.type !== "BlockStatement") fail("loop_shape", node.body, "a loop body is a block");

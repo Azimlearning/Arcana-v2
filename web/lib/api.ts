@@ -275,6 +275,33 @@ export async function fetchLint(options: { baseUrl?: string; fetchImpl?: typeof 
   return { ok: false, error: clientError("The server sent an unreadable response.", false) };
 }
 
+/** Ask the server to make a lab from one of its contracts (P4, D-36). The server generates, checks and verifies it; the body is the same as `/workspace`. */
+export async function makeLab(
+    contractId: string,
+    options: { baseUrl?: string; fetchImpl?: typeof fetch; signal?: AbortSignal } = {},
+): Promise<WorkspaceResult> {
+  const { baseUrl = API_BASE, fetchImpl = fetch, signal } = options;
+  let response: Response;
+  try {
+    response = await fetchImpl(`${baseUrl}/labs`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contractId }),
+      signal,
+    });
+  } catch {
+    return { ok: false, error: clientError("Could not reach the server.") };
+  }
+  if (!response.ok) return { ok: false, error: await envelopeFromResponse(response) };
+  try {
+    const workspace = readWorkspace(await response.json());
+    if (workspace) return { ok: true, workspace };
+  } catch {
+    // not JSON
+  }
+  return { ok: false, error: clientError("The server sent an unreadable response.", false) };
+}
+
 /** Record the learner's own rating of a page of the vault (D-35 A6). True when the server saved it. */
 export async function recordLearnerEvent(
   pageId: string,

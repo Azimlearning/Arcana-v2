@@ -187,6 +187,91 @@ STATIC_DEFECTS: tuple[Planted, ...] = (
         "function lab(p) { return 1; }" + " " * 5000,
         "source_too_large",
     ),
+    # floats and totals in the loop budget (found by the red-team review)
+    Planted(
+        "loop_float_precision",
+        "termination",
+        lab(
+            "let x = 0; for (let i = 10000000000000000; i < 10000000000000010; i++) { x = x + 1; } return x;"
+        ),
+        "loop_bound",
+    ),
+    Planted(
+        "loop_float_step",
+        "termination",
+        lab("let x = 0; for (let i = 0; i < 10; i += 0.5) { x = x + 1; } return x;"),
+        "loop_bound",
+    ),
+    Planted(
+        "loop_float_bound",
+        "termination",
+        lab("let x = 0; for (let i = 0; i < 10.5; i++) { x = x + 1; } return x;"),
+        "loop_bound",
+    ),
+    Planted(
+        "loop_tiny_step",
+        "termination",
+        lab("let x = 0; for (let i = 0; i < 10; i += 1e-10) { x = x + 1; } return x;"),
+        "loop_bound",
+    ),
+    Planted(
+        "loops_in_sequence_total",
+        "termination",
+        lab(
+            "let x = 0;\n"
+            "for (let i = 0; i < 9000; i++) { x = x + 1; }\n"
+            "for (let i = 0; i < 9000; i++) { x = x + 1; }\n"
+            "for (let i = 0; i < 9000; i++) { x = x + 1; }\n"
+            "return x;"
+        ),
+        "loop_bound",
+    ),
+    Planted(
+        "loop_counter_shadows_math",
+        "escape",
+        lab("let x = 0; for (let Math = 0; Math < 3; Math++) { x = Math.PI; } return x;"),
+        "name_not_allowed",
+    ),
+    Planted(
+        "loop_counter_shadows_p",
+        "escape",
+        lab("let x = 0; for (let p = 0; p < 3; p++) { x = p.si; } return x;"),
+        "name_not_allowed",
+    ),
+    Planted(
+        "loop_counter_denied_name",
+        "escape",
+        lab(
+            "let x = 0; for (let constructor = 0; constructor < 3; constructor++) { x = 1; } return x;"
+        ),
+        "name_not_allowed",
+    ),
+    Planted(
+        "loop_counter_redeclared",
+        "escape",
+        lab(
+            "let x = 0; for (let i = 0; i < 3; i++) { for (let i = 0; i < 3; i++) { x = 1; } } return x;"
+        ),
+        "redeclared",
+    ),
+    Planted("lone_surrogate", "values", lab("return 1;") + chr(0xD800), "source_not_text"),
+    # markup and comments (the host places the source inside an inline script element)
+    Planted(
+        "line_comment", "markup", lab("// harmless?" + chr(10) + "return 1;"), "comment_not_allowed"
+    ),
+    Planted("block_comment", "markup", lab("/* harmless? */ return 1;"), "comment_not_allowed"),
+    Planted(
+        "script_close_in_comment",
+        "markup",
+        lab("// </script><script>alert(1)</script>" + chr(10) + "return 1;"),
+        "markup_not_allowed",
+    ),
+    Planted(
+        "html_comment_open", "markup", lab("<!-- x" + chr(10) + "return 1;"), "markup_not_allowed"
+    ),
+    Planted(
+        "html_comment_close", "markup", lab("return 1;" + chr(10) + "--> x"), "markup_not_allowed"
+    ),
     # shape
     Planted("two_functions", "shape", GOOD + "\n" + GOOD, "shape"),
     Planted("wrong_name", "shape", "function other(p) { return 1; }", "shape"),

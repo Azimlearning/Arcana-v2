@@ -36,7 +36,7 @@ from api.genui.catalog import (
     graph_edges,
 )
 from api.genui.evidence import best_excerpt, excerpt_containing
-from api.genui.generated import ErrorEnvelope, LayoutSpec, SavedPattern, UIBlock
+from api.genui.generated import ErrorEnvelope, FieldIssue, LayoutSpec, SavedPattern, UIBlock
 from api.genui.layout import compose_layout, compose_notes_layout, prebuilt_layout
 from api.genui.patterns import params_of, validate_params
 from api.genui.templates import (
@@ -47,6 +47,11 @@ from api.genui.templates import (
     register_template,
 )
 from api.genui.validate import validate_block, validate_layout
+from api.labs.contract import CONTRACTS
+from api.labs.evidence import find_source
+from api.labs.generator import LabGenerator
+from api.labs.store import LabStore
+from api.labs.verifier import LabToolError, VerificationFailed, verify
 from api.learner.mastery import MasteryScore
 from api.learner.store import LearnerStore
 from api.stores.doc_store import DocStore, Document
@@ -596,6 +601,58 @@ def compose_quiz(
         blocks.append(graph)
         admitted.append((graph.id, "NotesGraph"))
     return validate_layout(compose_notes_layout(admitted), {b.id for b in blocks}), blocks
+
+
+LAB_ID = "lab"
+"""The id of the lab block. Fixed, so a new lab replaces the last."""
+
+
+def _lab_error(code: str, message: str, stage: str, retryable: bool = False) -> ErrorEnvelope:
+    return ErrorEnvelope(
+        code=code,  # type: ignore[arg-type]
+        message=message,
+        issues=[FieldIssue(path=stage, message=message)],
+        retryable=retryable,
+    )
+
+
+def compose_lab(
+    docs: DocStore,
+    labs: LabStore,
+    generator: LabGenerator | None,
+    contract_id: str,
+) -> tuple[LayoutSpec, list[UIBlock]]:
+    """A lab for one of the server's contracts (P4, D-36), through every gate: the evidence (a stored passage states the formula), the generator
+    (untrusted), the checker, the verifier, the mint, the store, and the block validator that re-derives the block from the stored record. A
+    failure at any stage is an `empty` or `error` block that says which and why, never a half-built lab; nothing unverified is returned.
+    No model call while the generator is the fake. An unknown contract is a NotFound."""
+    make = CONTRACTS.get(contract_id)
+    if make is None:
+        raise NotFound(f"The server has no lab {contract_id[:80]!r}.")
+    contract = make()
+    builder = BUILDERS["VerifiedLab"]
+
+    def shown(block_raw: dict[str, Any]) -> tuple[LayoutSpec, list[UIBlock]]:
+        block = validate_block(block_raw, docs, labs=labs)
+        return validate_layout(compose_layout([(block.id, "VerifiedLab")], "relate"), {block.id}), [block]
+
+    citation = find_source(docs, contract)
+    if citation is None:
+        return shown(builder(LAB_ID, "empty"))  # the documents do not state this formula: no lab
+    if generator is None:
+        return shown(
+            builder(LAB_ID, "error", error=_lab_error("provider_unavailable", "Live lab generation is not available yet.", "generator"))
+        )
+    source = generator.generate(contract)
+    try:
+        artifact = verify(contract, source)
+    except VerificationFailed as failed:
+        labs.put_rejected(contract.id, source, failed.stage, failed.reason)
+        return shown(builder(LAB_ID, "error", error=_lab_error("validation_failed", failed.reason, failed.stage)))
+    except LabToolError as unavailable:
+        return shown(builder(LAB_ID, "error", error=_lab_error("internal", str(unavailable), "verifier")))
+    labs.put_verified(artifact)
+    return shown(builder(LAB_ID, "ready", artifact=artifact, contract=contract, citation=citation))
 
 
 def compose_block(ctx: TurnContext) -> UIBlock:

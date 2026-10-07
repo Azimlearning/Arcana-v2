@@ -1,7 +1,7 @@
 # Plan: P4 VerifiedLab, the first slice (a generated function that only a verifier can let through)
 
 > Execution doc: `refdocs/execution/2026-10-08-p4-verifiedlab.md`. ADR: D-36 (with `ASSUMED:` rows for Azim to confirm). Scope source: PRD §6 P4 and D-10, D-31, D-30, hard constraint 3.
-> Status: **Draft (2026-10-08).** Approved to start by Azim ("Okay sure proceed", 2026-10-08) on the recommendation to plan P4 first. **Planning is free; building is free on fakes; a live generation run is paid and needs Azim's confirmation of the amount.**
+> Status: **First slice built and reviewed (2026-10-08); V9, the live generator, is not started.** Approved to start by Azim ("Okay sure proceed", 2026-10-08) on the recommendation to plan P4 first. **Planning is free; building is free on fakes; a live generation run is paid and needs Azim's confirmation of the amount.**
 
 ## Why this exists
 

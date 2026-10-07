@@ -8,6 +8,9 @@ from collections.abc import Callable
 from typing import Any
 
 from api.genui.generated import ErrorEnvelope
+from api.labs.contract import LabContract
+from api.labs.evidence import BLANK_LAB_DATA, derive_lab_data
+from api.labs.verifier import VerifiedArtifact
 
 
 def cited_summary(
@@ -150,6 +153,25 @@ def quiz_card(
     }
 
 
+def verified_lab(
+    block_id: str,
+    status: str,
+    *,
+    artifact: VerifiedArtifact | None = None,
+    contract: LabContract | None = None,
+    citation: dict[str, Any] | None = None,
+    error: ErrorEnvelope | None = None,
+) -> dict[str, Any]:
+    """A `VerifiedLab` block. A ready one is built ONLY from a `VerifiedArtifact` (the type the verifier alone mints, D-36); any other type
+    is refused here, and the validator re-derives the block from the stored record besides."""
+    meta = {"status": status, "error": error.model_dump() if error is not None else None}
+    if status == "ready":
+        if not isinstance(artifact, VerifiedArtifact) or contract is None or citation is None:
+            raise TypeError("a ready VerifiedLab is built from a VerifiedArtifact, its contract and its citation")
+        return {"type": "VerifiedLab", "id": block_id, "meta": meta, "data": derive_lab_data(artifact, contract, citation)}
+    return {"type": "VerifiedLab", "id": block_id, "meta": meta, "data": copy.deepcopy(BLANK_LAB_DATA)}
+
+
 def comparison_grid(
     block_id: str,
     status: str,
@@ -196,5 +218,6 @@ BUILDERS: dict[str, Callable[..., dict[str, Any]]] = {
     "ConceptPage": concept_page,
     "NotesGraph": notes_graph,
     "QuizCard": quiz_card,
+    "VerifiedLab": verified_lab,
 }
 """One builder per catalog component, keyed by block type. A test keeps this in step with the catalog and the schema."""

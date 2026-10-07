@@ -31,7 +31,7 @@ def contract(**over):
         "title": "A demo",
         "parameters": (parameter(),),
         "sweep": "x",
-        "sweep_points": 16,
+        "grid": 16,
         "output_label": "value",
         "source_phrase": "a phrase that is long enough to cite",
         "reference": "ranknet_loss",
@@ -83,7 +83,7 @@ def test_the_reference_does_not_overflow_and_has_the_stated_shape():
 def test_the_sweep_has_the_declared_points_across_the_range_ends_included():
     c = ranknet_contract()
     xs = c.sweep_values()
-    assert len(xs) == 65 and xs[0] == -4.0 and xs[-1] == 4.0 and xs[32] == 0.0
+    assert len(xs) == 65 and xs[0] == -4.0 and xs[-1] == 4.0 and xs[32] == 0.0 and xs[1] == -3.875
 
 
 @pytest.mark.parametrize(
@@ -107,8 +107,10 @@ def test_the_sweep_has_the_declared_points_across_the_range_ends_included():
         ),
         lambda: contract(parameters=(parameter(), parameter())),
         lambda: contract(sweep="y"),
-        lambda: contract(sweep_points=3),
-        lambda: contract(sweep_points=5000),
+        lambda: contract(grid=3),
+        lambda: contract(grid=5000),
+        lambda: contract(parameters=(parameter(default=0.51),)),
+        lambda: contract(cases=(ReferenceCase(params={"x": 0.51}, expected=0.0, tolerance=1e-9),)),
         lambda: contract(source_phrase="too short"),
         lambda: contract(reference="nothing"),
         lambda: contract(cases=()),

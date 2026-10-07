@@ -344,6 +344,59 @@ export interface QuizCardData {
   skipped: number;
 }
 
+// ── VerifiedLab (P4, D-36): a generated function that only the verifier can let through ─────────────────────────────
+
+/** One parameter of a lab: a finite range with a default, drawn as a slider. */
+export interface LabParameter {
+  name: string;
+  label: string;
+  min: number;
+  max: number;
+  default: number;
+  unit: string | null;
+}
+
+/** What the verifier ran, as counts: it is not a proof for every input. */
+export interface LabChecked {
+  /** @int */
+  referenceCases: number;
+  /** @int */
+  properties: number;
+  /** @int */
+  fuzzCases: number;
+  /** Every combination of slider positions the interface can ask the function for: all of them were run. */
+  /** @int */
+  gridPoints: number;
+}
+
+/**
+ * A lab: one pure function `lab(p)` from the declared parameters to a number, generated and then verified (D-36). `source` is the
+ * verified function text and is INERT DATA until the web host places it, with its own fixed template, in an iframe whose sandbox is
+ * exactly `allow-scripts`; `sourceSha256` is its hash and `templateVersion` the version of the host's template it was verified for.
+ * The host checks both before it renders. The sliders snap to the grid and the plot is the function's value as `sweep` runs across its grid
+ * values, drawn by the template; the verifier ran every combination of grid values, so every input the interface can ask for was verified.
+ * `citations` holds one citation: the stored passage that states the formula. Derived from the verified record and checked against it:
+ * the server validator re-derives the block from `labId` and requires equality, so a changed byte, a stale template version or an
+ * unverified lab is refused. Placeholders carry nothing. The schema cannot say so; the server validator does.
+ */
+export interface VerifiedLabData {
+  labId: string;
+  contractId: string;
+  title: string;
+  parameters: LabParameter[];
+  sweep: string;
+  /** Steps per parameter: a slider has `gridSteps + 1` positions and nothing between, `min + (max - min) * k / gridSteps`. */
+  /** @int */
+  gridSteps: number;
+  outputLabel: string;
+  source: string;
+  sourceSha256: string;
+  /** @int */
+  templateVersion: number;
+  citations: Citation[];
+  checked: LabChecked;
+}
+
 // ── The learner layer (M2.7, D-35 A6) ────────────────────────────────────────────────────────────────────────────────
 
 /**

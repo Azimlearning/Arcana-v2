@@ -1,15 +1,20 @@
 """The lab verifier and the mint (P4 V3, D-36): the only code that can create a `VerifiedArtifact`.
 
-`verify(contract, source)` runs, in order: the checker (the AST allowlist), then the isolated runner on a fixed battery of parameter
-vectors (the contract's reference cases, a sweep of every parameter with the others at three settings, the corners of the parameter box,
-and a seeded fuzz), then the contract's properties and its Python reference function. Only if every stage passes does it construct a
-`VerifiedArtifact`. Any failure is a `VerificationFailed` naming the stage and the reason; the source is never trusted and never
-evaluated in this process (the runner is a Node child process).
+`verify(contract, source)` runs, in order: the checker (the AST allowlist), then the isolated runner on **every value the interface can ask for**
+and a seeded fuzz, then the contract's properties and its Python reference function. Only if every stage passes does it construct a
+`VerifiedArtifact`. Any failure is a `VerificationFailed` naming the stage and the reason; the source is never trusted and never evaluated in
+this process (the runner is a Node child process).
 
-`VerifiedArtifact` is the type the delivery path accepts (hard constraint 3). It can only be built by presenting the module-private mint
-token, which no other module imports; a test scans the repository for any other construction. That is a convention made checkable, not
-a language guarantee: Python cannot stop code in the same process from forging an object, and this process never runs generated code.
-The second line is downstream: the validator re-derives a block from the stored record and the store refuses a hash that does not match.
+**Why every grid point.** A sample can never be complete: a function that matches the reference on a few hundred inputs can still hide a branch
+at one other input (a red-team review made exactly that: a source verified in 0.3 s that froze the iframe at one slider position). So the
+contract fixes a grid (each parameter takes `grid + 1` evenly spaced values, the sliders snap to it, the swept axis uses it) and the verifier
+runs **all combinations** of it, bounded by `MAX_GRID_VECTORS`. The values the interface can request are then exactly the values that were
+verified. The seeded fuzz is kept as extra evidence about the continuous range, not as the guarantee.
+
+`VerifiedArtifact` is the type the delivery path accepts (hard constraint 3). It is created through a function that holds the mint token in a
+closure (not a module attribute), cannot be subclassed, changed or copied. That is hardening, not a language guarantee: Python cannot stop
+code in the same process from forging an object, and this process never runs generated code. The lines downstream do not rely on it: the store
+ties the id to the hash, and the delivery gate re-hashes and re-checks the stored source (see `api/genui/validate.py`).
 """
 
 from __future__ import annotations
@@ -20,22 +25,23 @@ import math
 import random
 import subprocess
 from dataclasses import dataclass
-from itertools import pairwise, product
-from typing import Any
+from itertools import product
+from typing import TYPE_CHECKING, Any
 
 from api.labs.checker import TOOL_DIR, LabToolError, check_source, node_path
 from api.labs.contract import REFERENCES, LabContract, LabParameter
 
-TEMPLATE_VERSION = 1
+TEMPLATE_VERSION = 2
 """The version of the fixed template the web host holds (`web/lib/labFrame.ts`, V6). A block built for another version is refused."""
 FUZZ_SEED = 20261008
 FUZZ_CASES = 200
 RUN_TIMEOUT_SECONDS = 30
 PER_CALL_TIMEOUT_MS = 500
+MAX_CALL_MS = 50.0
+"""The slowest single call allowed: the host calls the function once per sweep point on every slider move, so a slow one freezes the page."""
+CHUNK_VECTORS = 4000
 MAX_RUNNER_MEMORY_MB = 64
 EPS = 1e-12
-
-_MINT = object()
 
 
 class VerificationFailed(Exception):
@@ -56,54 +62,86 @@ class Checked:
     reference_cases: int
     properties: int
     fuzz_cases: int
+    grid_points: int
 
 
-class VerifiedArtifact:
-    """What the verifier mints: a lab function that passed every stage, with the hash and the counts of what was checked."""
+_FIELDS = (
+    "lab_id",
+    "contract_id",
+    "contract_sha256",
+    "title",
+    "parameters",
+    "source",
+    "source_sha256",
+    "template_version",
+    "checked",
+)
 
-    __slots__ = (
-        "_frozen",
-        "checked",
-        "contract_id",
-        "lab_id",
-        "parameters",
-        "source",
-        "source_sha256",
-        "template_version",
-        "title",
-    )
 
-    lab_id: str
-    contract_id: str
-    title: str
-    parameters: tuple[LabParameter, ...]
-    source: str
-    source_sha256: str
-    template_version: int
-    checked: Checked
+def _make_artifact_class() -> tuple[type, Any]:
+    token = object()  # held here, in a closure: no module attribute carries it
 
-    def __init__(self, *, _mint: object = None, **fields: Any):
-        if _mint is not _MINT:
-            raise MintRefused("a VerifiedArtifact can only be created by the verifier")
-        for name, value in fields.items():
-            object.__setattr__(self, name, value)
-        for name in self.__slots__:
-            if name != "_frozen" and not hasattr(self, name):
-                raise MintRefused(f"a VerifiedArtifact needs {name}")
-        object.__setattr__(self, "_frozen", True)
+    class VerifiedArtifact:
+        """What the verifier mints: a lab function that passed every stage, with its hash and the counts of what was checked."""
 
-    def __setattr__(self, name: str, value: Any) -> None:
-        raise AttributeError("a VerifiedArtifact cannot be changed")
+        __slots__ = (*_FIELDS, "_frozen")
 
-    def __delattr__(self, name: str) -> None:
-        raise AttributeError("a VerifiedArtifact cannot be changed")
+        def __init_subclass__(cls, **kwargs: Any) -> None:
+            raise TypeError("a VerifiedArtifact cannot be subclassed")
 
-    def __repr__(self) -> str:
-        return f"VerifiedArtifact({self.lab_id})"
+        def __init__(self, *, _mint: object = None, **fields: Any):
+            if _mint is not token:
+                raise MintRefused("a VerifiedArtifact can only be created by the verifier")
+            if set(fields) != set(_FIELDS):
+                raise MintRefused("a VerifiedArtifact needs exactly its fields")
+            for name, value in fields.items():
+                object.__setattr__(self, name, value)
+            object.__setattr__(self, "_frozen", True)
+
+        def __setattr__(self, name: str, value: Any) -> None:
+            raise AttributeError("a VerifiedArtifact cannot be changed")
+
+        def __delattr__(self, name: str) -> None:
+            raise AttributeError("a VerifiedArtifact cannot be changed")
+
+        def __repr__(self) -> str:
+            return f"VerifiedArtifact({self.lab_id})"  # type: ignore[attr-defined]
+
+    def issue(**fields: Any) -> Any:
+        return VerifiedArtifact(_mint=token, **fields)
+
+    return VerifiedArtifact, issue
+
+
+_artifact_class, _issue = _make_artifact_class()
+if TYPE_CHECKING:  # the static view of the class the factory makes
+
+    class VerifiedArtifact:
+        lab_id: str
+        contract_id: str
+        contract_sha256: str
+        title: str
+        parameters: tuple[LabParameter, ...]
+        source: str
+        source_sha256: str
+        template_version: int
+        checked: Checked
+
+        def __init__(self, **fields: Any) -> None: ...
+
+else:
+    VerifiedArtifact = _artifact_class
+"""The class (public: it is the type the delivery path accepts) and the one function that creates one (`_issue`, private to this module; a test
+scans the repository for any other use of it)."""
 
 
 def source_sha256(source: str) -> str:
     return hashlib.sha256(source.encode("utf-8")).hexdigest()
+
+
+def contract_sha256(contract: LabContract) -> str:
+    """A fingerprint of everything a contract promises. A lab verified for one contract is not delivered under a changed one."""
+    return hashlib.sha256(contract.model_dump_json().encode("utf-8")).hexdigest()
 
 
 def lab_id_for(contract_id: str, sha: str) -> str:
@@ -117,45 +155,34 @@ def lab_id_for(contract_id: str, sha: str) -> str:
 class _Battery:
     vectors: list[dict[str, float]]
     cases: slice
-    sweeps: dict[str, list[tuple[float, slice]]]
-    """For each parameter, the sweeps of it: the setting of the others (as a label) and where its vectors lie."""
+    grid: slice
+    strides: dict[str, int]
+    """For each parameter, how far apart in the grid block two vectors are that differ only in that parameter by one step."""
     extra: slice
-    """The corners and the fuzz."""
-
-
-def _linspace(p: LabParameter, n: int) -> list[float]:
-    return [p.min + (p.max - p.min) * i / (n - 1) for i in range(n)]
 
 
 def _battery(contract: LabContract) -> _Battery:
+    names = [p.name for p in contract.parameters]
+    levels = [contract.grid_values(n) for n in names]
     vectors: list[dict[str, float]] = [dict(case.params) for case in contract.cases]
     cases = slice(0, len(vectors))
-    sweeps: dict[str, list[tuple[float, slice]]] = {}
-    for swept in contract.parameters:
-        sweeps[swept.name] = []
-        for setting in (0, 1, 2):  # the others at their defaults, at their minima, at their maxima
-            start = len(vectors)
-            for x in _linspace(swept, contract.sweep_points):
-                vector = {
-                    q.name: (q.default, q.min, q.max)[setting] if q.name != swept.name else x
-                    for q in contract.parameters
-                }
-                vectors.append(vector)
-            sweeps[swept.name].append((float(setting), slice(start, len(vectors))))
     start = len(vectors)
-    levels = [(q.min, (q.min + q.max) / 2, q.max) for q in contract.parameters]
-    for combo in product(*levels):
-        vectors.append({q.name: v for q, v in zip(contract.parameters, combo, strict=True)})
+    for combo in product(*levels):  # the last parameter varies fastest
+        vectors.append(dict(zip(names, combo, strict=True)))
+    grid = slice(start, len(vectors))
+    size = contract.grid + 1
+    strides = {n: size ** (len(names) - 1 - i) for i, n in enumerate(names)}
+    extra_start = len(vectors)
     rng = random.Random(FUZZ_SEED)
     for _ in range(FUZZ_CASES):
-        vectors.append({q.name: rng.uniform(q.min, q.max) for q in contract.parameters})
-    return _Battery(vectors, cases, sweeps, slice(start, len(vectors)))
+        vectors.append({p.name: rng.uniform(p.min, p.max) for p in contract.parameters})
+    return _Battery(vectors, cases, grid, strides, slice(extra_start, len(vectors)))
 
 
 # ── running ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 
-def _run(source: str, vectors: list[dict[str, float]]) -> list[float | str]:
+def _run_chunk(source: str, vectors: list[dict[str, float]]) -> tuple[list[float | str], float]:
     script = TOOL_DIR / "run.mjs"
     if not script.exists():
         raise LabToolError("the lab runner is missing")
@@ -183,14 +210,27 @@ def _run(source: str, vectors: list[dict[str, float]]) -> list[float | str]:
     values = body["values"]
     if len(values) != len(vectors):
         raise LabToolError("the lab runner returned the wrong number of values")
-    return values
+    return values, float(body.get("slowestCallMs", 0.0))
+
+
+def _run(source: str, vectors: list[dict[str, float]]) -> list[float | str]:
+    out: list[float | str] = []
+    for i in range(0, len(vectors), CHUNK_VECTORS):
+        values, slowest = _run_chunk(source, vectors[i : i + CHUNK_VECTORS])
+        if slowest > MAX_CALL_MS:
+            raise VerificationFailed(
+                "run",
+                f"a call took {slowest:.0f} ms (the limit is {MAX_CALL_MS:.0f} ms): too slow for sliders",
+            )
+        out.extend(values)
+    return out
 
 
 # ── verification ───────────────────────────────────────────────────────────────────────────────────────────────────────
 
 
 def verify(contract: LabContract, source: str) -> VerifiedArtifact:
-    """Check, run and test `source` against `contract`; return the minted artifact or raise `VerificationFailed`."""
+    """Check, run and test `source` against `contract`; return the minted `VerifiedArtifact` or raise `VerificationFailed`."""
     names = [p.name for p in contract.parameters]
     checked = check_source(source, names)
     if not checked.ok:
@@ -212,6 +252,7 @@ def verify(contract: LabContract, source: str) -> VerifiedArtifact:
             )
 
     reference = REFERENCES[contract.reference]
+    grid_values = values[battery.grid]
     for spec in contract.properties:
         if spec.kind == "finite":
             continue  # a non-finite value never gets this far
@@ -229,9 +270,11 @@ def verify(contract: LabContract, source: str) -> VerifiedArtifact:
         elif spec.kind == "monotone":
             assert spec.param is not None
             sign = 1 if spec.direction == "increasing" else -1
-            for _setting, where in battery.sweeps[spec.param]:
-                series = values[where]
-                if any(sign * (b - a) < -EPS for a, b in pairwise(series)):
+            stride = battery.strides[spec.param]
+            for i in range(len(grid_values) - stride):
+                if (i // stride) % (contract.grid + 1) == contract.grid:
+                    continue  # the last step of this parameter: its neighbour is another line
+                if sign * (grid_values[i + stride] - grid_values[i]) < -EPS:
                     raise VerificationFailed("monotone", f"not {spec.direction} in {spec.param}")
         elif spec.kind == "matches_reference":
             for vector, got in zip(battery.vectors, values, strict=True):
@@ -249,10 +292,10 @@ def verify(contract: LabContract, source: str) -> VerifiedArtifact:
                     )
 
     sha = source_sha256(source)
-    return VerifiedArtifact(
-        _mint=_MINT,
+    return _issue(
         lab_id=lab_id_for(contract.id, sha),
         contract_id=contract.id,
+        contract_sha256=contract_sha256(contract),
         title=contract.title,
         parameters=contract.parameters,
         source=source,
@@ -262,5 +305,6 @@ def verify(contract: LabContract, source: str) -> VerifiedArtifact:
             reference_cases=len(contract.cases),
             properties=len(contract.properties),
             fuzz_cases=battery.extra.stop - battery.extra.start,
+            grid_points=battery.grid.stop - battery.grid.start,
         ),
     )

@@ -111,6 +111,13 @@ export interface QuizAnswerResponse {
   mastery: Mastery;
 }
 
+// ── Labs (P4, D-36): POST /labs ───────────────────────────────────────────────────────────────────────────────────────
+
+/** Ask the server to make a lab from one of its contracts. The server generates, checks, verifies and answers with a workspace body. */
+export interface LabRequest {
+  contractId: string;
+}
+
 // ── Vault lint (M2.8, D-35): GET /vault/lint ──────────────────────────────────────────────────────────────────────────
 
 /** A page named in the lint report. */

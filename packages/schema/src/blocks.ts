@@ -1,4 +1,5 @@
-// UIBlock: the typed payload an agent emits and a component renders. The wire carries data only.
+// UIBlock: the typed payload an agent emits and a component renders. The wire carries data only, with ONE declared exception: `VerifiedLab.source`,
+// a function's text that only the verifier can mint (D-10, D-36), inert until the web host places it in a sandboxed iframe.
 //
 // Adding a variant is a fixed sequence (preflight 5):
 //   1. Add its *Data interface to payloads.ts and a variant interface here.
@@ -16,6 +17,7 @@ import type {
   GraphViewData,
   NotesGraphData,
   QuizCardData,
+  VerifiedLabData,
   SourceListData,
   TraversalViewData,
 } from "./payloads";
@@ -117,6 +119,15 @@ export interface QuizCard {
   data: QuizCardData;
 }
 
+/** A generated, verified lab (P4, D-36): the only block that carries code, and only code the verifier minted. */
+export interface VerifiedLab {
+  type: "VerifiedLab";
+  /** Non-empty. Stable across updates: a later block with the same id replaces this one. */
+  id: string;
+  meta: BlockMeta;
+  data: VerifiedLabData;
+}
+
 export type UIBlock =
   | CitedSummary
   | SourceList
@@ -126,4 +137,5 @@ export type UIBlock =
   | TraversalView
   | ConceptPage
   | NotesGraph
-  | QuizCard;
+  | QuizCard
+  | VerifiedLab;
