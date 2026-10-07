@@ -15,6 +15,7 @@ import type {
   ConceptPageData,
   GraphViewData,
   NotesGraphData,
+  QuizCardData,
   SourceListData,
   TraversalViewData,
 } from "./payloads";
@@ -107,6 +108,15 @@ export interface NotesGraph {
   data: NotesGraphData;
 }
 
+/** A quiz made from the vault's claims (Q1, D-35 A8): fill in the blanked concept name; the server checks the answer. */
+export interface QuizCard {
+  type: "QuizCard";
+  /** Non-empty. Stable across updates: a later block with the same id replaces this one. */
+  id: string;
+  meta: BlockMeta;
+  data: QuizCardData;
+}
+
 export type UIBlock =
   | CitedSummary
   | SourceList
@@ -115,4 +125,5 @@ export type UIBlock =
   | ConceptMap
   | TraversalView
   | ConceptPage
-  | NotesGraph;
+  | NotesGraph
+  | QuizCard;

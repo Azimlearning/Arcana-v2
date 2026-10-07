@@ -312,6 +312,36 @@ export interface NotesGraphData {
   nodesLeftOut: number;
 }
 
+// ── The quiz (Q1, D-35 A8): a sentence from the documents with one concept name blanked ───────────────────────────────
+
+/**
+ * One question: `text` is a sentence of a stored passage with one concept name replaced by `_____`, `options` are four pages
+ * (the blanked one and three others, in a fixed shuffled order), `docTitle` and `page` say where the sentence is from. The item
+ * does not say which option is right and does not carry the sentence unblanked: the server answers (POST /quiz/answer).
+ * `id` is `<claim id>~<page id of the blanked concept>` and is what the answer route reads.
+ */
+export interface QuizItem {
+  id: string;
+  text: string;
+  options: PageRef[];
+  docTitle: string;
+  page: number | null;
+}
+
+/**
+ * A quiz over the vault's claims: with a `focusId`, claims that name that page; without one, claims across the vault, the
+ * concepts the learner knows least first. At most 5 items; `skipped` counts claims looked at and passed over (no way to make
+ * a blank, or fewer than three fair distractors). Derived from the vault, the stored passages and the learner's mastery and
+ * checked against them: re-deriving the quiz from `focusId` gives exactly these items and `skipped`. A `ready` block has at
+ * least one item, and no item names its answer. Placeholders carry nothing. The schema cannot say so; the server validator does.
+ */
+export interface QuizCardData {
+  focusId: string | null;
+  items: QuizItem[];
+  /** @int */
+  skipped: number;
+}
+
 // ── The learner layer (M2.7, D-35 A6) ────────────────────────────────────────────────────────────────────────────────
 
 /**

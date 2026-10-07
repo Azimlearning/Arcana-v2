@@ -3,7 +3,7 @@
 import type { UIBlock } from "./blocks";
 import type { ErrorEnvelope } from "./errors";
 import type { LayoutSpec } from "./layout";
-import type { Mastery } from "./payloads";
+import type { Citation, Mastery, PageRef } from "./payloads";
 
 export type ChatRole = "user" | "assistant";
 
@@ -86,6 +86,28 @@ export interface LearnerEventRequest {
 export interface LearnerEventResponse {
   pageId: string;
   /** The page's mastery after this event. */
+  mastery: Mastery;
+}
+
+// ── The quiz (Q1, D-35 A8): POST /quiz/answer ─────────────────────────────────────────────────────────────────────────
+
+export interface QuizAnswerRequest {
+  /** An item id from a `QuizCard`. The server derives the item again and refuses one it cannot. */
+  itemId: string;
+  /** The page the learner chose, one of the item's four options. */
+  chosenId: string;
+}
+
+/**
+ * The result of one answer. `answer` is the blanked concept and `citation` the sentence it came from, unblanked (id `c1`,
+ * verbatim in a stored passage). `mastery` is the blanked concept's mastery after this answer, recorded as `quiz_correct` or
+ * `quiz_wrong` for it (never for the page that was chosen).
+ */
+export interface QuizAnswerResponse {
+  itemId: string;
+  correct: boolean;
+  answer: PageRef;
+  citation: Citation;
   mastery: Mastery;
 }
 

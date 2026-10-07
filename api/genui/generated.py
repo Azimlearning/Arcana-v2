@@ -366,6 +366,45 @@ class Placement(BaseModel):
     order: int
 
 
+class QuizAnswerRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    itemId: str
+    chosenId: str
+
+
+class QuizAnswerResponse(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    itemId: str
+    correct: bool
+    answer: PageRef
+    citation: Citation
+    mastery: Mastery
+
+
+class QuizCard(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    type: Literal['QuizCard']
+    id: str
+    meta: BlockMeta
+    data: QuizCardData
+
+
+class QuizCardData(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    focusId: str | None
+    items: list[QuizItem]
+    skipped: int
+
+
+class QuizItem(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    id: str
+    text: str
+    options: list[PageRef]
+    docTitle: str
+    page: float | None
+
+
 class ReachedPassage(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
     citationId: str
@@ -536,7 +575,7 @@ StreamEvent = Annotated[BlockEvent | LayoutEvent | StreamErrorEvent | DoneEvent,
 
 TurnOutcome = Literal['answered', 'empty', 'error']
 
-UIBlock = Annotated[CitedSummary | SourceList | GraphView | ComparisonGrid | ConceptMap | TraversalView | ConceptPage | NotesGraph, Field(discriminator='type')]
+UIBlock = Annotated[CitedSummary | SourceList | GraphView | ComparisonGrid | ConceptMap | TraversalView | ConceptPage | NotesGraph | QuizCard, Field(discriminator='type')]
 
 AgentStep.model_rebuild()
 BlockEvent.model_rebuild()
@@ -586,6 +625,11 @@ PathStep.model_rebuild()
 PatternList.model_rebuild()
 PatternParam.model_rebuild()
 Placement.model_rebuild()
+QuizAnswerRequest.model_rebuild()
+QuizAnswerResponse.model_rebuild()
+QuizCard.model_rebuild()
+QuizCardData.model_rebuild()
+QuizItem.model_rebuild()
 ReachedPassage.model_rebuild()
 RegionSpec.model_rebuild()
 SavePatternRequest.model_rebuild()
