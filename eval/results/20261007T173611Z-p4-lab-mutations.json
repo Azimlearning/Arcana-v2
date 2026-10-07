@@ -1,0 +1,1062 @@
+{
+  "commit": "160d686220c705be19db40a1c817e73a381f0e64",
+  "summary": {
+    "overall": {
+      "planted": 120,
+      "detected": 120,
+      "rate": 1.0
+    },
+    "by_family": {
+      "execution": {
+        "planted": 14,
+        "detected": 14,
+        "rate": 1.0
+      },
+      "row_tampering": {
+        "planted": 6,
+        "detected": 6,
+        "rate": 1.0
+      },
+      "static": {
+        "planted": 84,
+        "detected": 84,
+        "rate": 1.0
+      },
+      "tampering": {
+        "planted": 16,
+        "detected": 16,
+        "rate": 1.0
+      }
+    },
+    "by_class": {
+      "execution/numeric": {
+        "planted": 13,
+        "detected": 13,
+        "rate": 1.0
+      },
+      "execution/resources": {
+        "planted": 1,
+        "detected": 1,
+        "rate": 1.0
+      },
+      "row_tampering/labs.db": {
+        "planted": 6,
+        "detected": 6,
+        "rate": 1.0
+      },
+      "static/escape": {
+        "planted": 24,
+        "detected": 24,
+        "rate": 1.0
+      },
+      "static/markup": {
+        "planted": 5,
+        "detected": 5,
+        "rate": 1.0
+      },
+      "static/network": {
+        "planted": 5,
+        "detected": 5,
+        "rate": 1.0
+      },
+      "static/operators": {
+        "planted": 8,
+        "detected": 8,
+        "rate": 1.0
+      },
+      "static/resources": {
+        "planted": 1,
+        "detected": 1,
+        "rate": 1.0
+      },
+      "static/shape": {
+        "planted": 11,
+        "detected": 11,
+        "rate": 1.0
+      },
+      "static/statements": {
+        "planted": 6,
+        "detected": 6,
+        "rate": 1.0
+      },
+      "static/termination": {
+        "planted": 13,
+        "detected": 13,
+        "rate": 1.0
+      },
+      "static/values": {
+        "planted": 11,
+        "detected": 11,
+        "rate": 1.0
+      },
+      "tampering/forgery": {
+        "planted": 16,
+        "detected": 16,
+        "rate": 1.0
+      }
+    },
+    "missed": []
+  },
+  "outcomes": [
+    {
+      "family": "static",
+      "kind": "network",
+      "name": "fetch",
+      "expected": "call_not_allowed",
+      "refused_by": "call_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "network",
+      "name": "xhr",
+      "expected": "node_type_not_allowed",
+      "refused_by": "node_type_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "network",
+      "name": "websocket",
+      "expected": "node_type_not_allowed",
+      "refused_by": "node_type_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "network",
+      "name": "dynamic_import",
+      "expected": "node_type_not_allowed",
+      "refused_by": "node_type_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "network",
+      "name": "require",
+      "expected": "call_not_allowed",
+      "refused_by": "call_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "escape",
+      "name": "constructor_chain",
+      "expected": "call_not_allowed",
+      "refused_by": "call_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "escape",
+      "name": "global_this",
+      "expected": "member_not_allowed",
+      "refused_by": "member_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "escape",
+      "name": "this",
+      "expected": "member_not_allowed",
+      "refused_by": "member_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "escape",
+      "name": "proto",
+      "expected": "member_not_allowed",
+      "refused_by": "member_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "escape",
+      "name": "function_ctor",
+      "expected": "call_not_allowed",
+      "refused_by": "call_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "escape",
+      "name": "eval",
+      "expected": "call_not_allowed",
+      "refused_by": "call_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "escape",
+      "name": "process",
+      "expected": "call_not_allowed",
+      "refused_by": "call_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "escape",
+      "name": "window",
+      "expected": "member_not_allowed",
+      "refused_by": "member_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "escape",
+      "name": "arguments",
+      "expected": "member_not_allowed",
+      "refused_by": "member_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "escape",
+      "name": "math_constructor",
+      "expected": "member_not_allowed",
+      "refused_by": "member_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "escape",
+      "name": "math_computed",
+      "expected": "call_not_allowed",
+      "refused_by": "call_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "escape",
+      "name": "math_unlisted",
+      "expected": "call_not_allowed",
+      "refused_by": "call_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "escape",
+      "name": "computed_member",
+      "expected": "member_not_allowed",
+      "refused_by": "member_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "escape",
+      "name": "optional_chain",
+      "expected": "node_type_not_allowed",
+      "refused_by": "node_type_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "escape",
+      "name": "denied_name_constructor",
+      "expected": "name_not_allowed",
+      "refused_by": "name_not_allowed,identifier_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "escape",
+      "name": "denied_name_escaped",
+      "expected": "name_not_allowed",
+      "refused_by": "name_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "escape",
+      "name": "param_alone",
+      "expected": "identifier_not_allowed",
+      "refused_by": "identifier_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "escape",
+      "name": "assign_param",
+      "expected": "assignment_not_allowed",
+      "refused_by": "assignment_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "escape",
+      "name": "undeclared_param",
+      "expected": "member_not_allowed",
+      "refused_by": "member_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "escape",
+      "name": "undeclared_name",
+      "expected": "identifier_not_allowed",
+      "refused_by": "identifier_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "values",
+      "name": "string",
+      "expected": "literal_not_allowed",
+      "refused_by": "literal_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "values",
+      "name": "template",
+      "expected": "node_type_not_allowed",
+      "refused_by": "node_type_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "values",
+      "name": "regex",
+      "expected": "literal_not_allowed",
+      "refused_by": "literal_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "values",
+      "name": "bigint",
+      "expected": "literal_not_allowed",
+      "refused_by": "literal_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "values",
+      "name": "array",
+      "expected": "node_type_not_allowed",
+      "refused_by": "node_type_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "values",
+      "name": "object",
+      "expected": "node_type_not_allowed",
+      "refused_by": "node_type_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "values",
+      "name": "arrow",
+      "expected": "node_type_not_allowed",
+      "refused_by": "node_type_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "values",
+      "name": "inner_function",
+      "expected": "node_type_not_allowed",
+      "refused_by": "node_type_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "values",
+      "name": "nan_name",
+      "expected": "identifier_not_allowed",
+      "refused_by": "identifier_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "values",
+      "name": "undefined_name",
+      "expected": "identifier_not_allowed",
+      "refused_by": "identifier_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "operators",
+      "name": "typeof",
+      "expected": "operator_not_allowed",
+      "refused_by": "operator_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "operators",
+      "name": "delete",
+      "expected": "operator_not_allowed",
+      "refused_by": "operator_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "operators",
+      "name": "void",
+      "expected": "operator_not_allowed",
+      "refused_by": "operator_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "operators",
+      "name": "in",
+      "expected": "operator_not_allowed",
+      "refused_by": "operator_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "operators",
+      "name": "instanceof",
+      "expected": "operator_not_allowed",
+      "refused_by": "operator_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "operators",
+      "name": "bitwise_or",
+      "expected": "operator_not_allowed",
+      "refused_by": "operator_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "operators",
+      "name": "exp_assign",
+      "expected": "operator_not_allowed",
+      "refused_by": "operator_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "operators",
+      "name": "comma",
+      "expected": "node_type_not_allowed",
+      "refused_by": "node_type_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "statements",
+      "name": "try",
+      "expected": "node_type_not_allowed",
+      "refused_by": "node_type_not_allowed,no_return",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "statements",
+      "name": "throw",
+      "expected": "node_type_not_allowed",
+      "refused_by": "node_type_not_allowed,no_return",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "statements",
+      "name": "break",
+      "expected": "node_type_not_allowed",
+      "refused_by": "node_type_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "statements",
+      "name": "empty_statement_call",
+      "expected": "statement_not_allowed",
+      "refused_by": "statement_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "statements",
+      "name": "const_reassigned",
+      "expected": "assignment_not_allowed",
+      "refused_by": "assignment_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "statements",
+      "name": "declaration_without_value",
+      "expected": "declaration_not_allowed",
+      "refused_by": "declaration_not_allowed,assignment_not_allowed,identifier_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "termination",
+      "name": "while_true",
+      "expected": "node_type_not_allowed",
+      "refused_by": "node_type_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "termination",
+      "name": "do_while",
+      "expected": "node_type_not_allowed",
+      "refused_by": "node_type_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "termination",
+      "name": "for_forever",
+      "expected": "loop_shape",
+      "refused_by": "loop_shape",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "termination",
+      "name": "for_unbounded_param",
+      "expected": "loop_shape",
+      "refused_by": "loop_shape",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "termination",
+      "name": "for_huge",
+      "expected": "loop_bound",
+      "refused_by": "loop_bound",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "termination",
+      "name": "for_nested_product",
+      "expected": "loop_bound",
+      "refused_by": "loop_bound,loop_bound",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "termination",
+      "name": "for_nested_depth",
+      "expected": "loop_bound",
+      "refused_by": "loop_bound",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "termination",
+      "name": "loop_counter_assigned",
+      "expected": "assignment_not_allowed",
+      "refused_by": "assignment_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "resources",
+      "name": "source_too_large",
+      "expected": "source_too_large",
+      "refused_by": "source_too_large",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "termination",
+      "name": "loop_float_precision",
+      "expected": "loop_bound",
+      "refused_by": "loop_bound",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "termination",
+      "name": "loop_float_step",
+      "expected": "loop_bound",
+      "refused_by": "loop_bound",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "termination",
+      "name": "loop_float_bound",
+      "expected": "loop_bound",
+      "refused_by": "loop_bound",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "termination",
+      "name": "loop_tiny_step",
+      "expected": "loop_bound",
+      "refused_by": "loop_bound",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "termination",
+      "name": "loops_in_sequence_total",
+      "expected": "loop_bound",
+      "refused_by": "loop_bound",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "escape",
+      "name": "loop_counter_shadows_math",
+      "expected": "name_not_allowed",
+      "refused_by": "name_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "escape",
+      "name": "loop_counter_shadows_p",
+      "expected": "name_not_allowed",
+      "refused_by": "name_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "escape",
+      "name": "loop_counter_denied_name",
+      "expected": "name_not_allowed",
+      "refused_by": "name_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "escape",
+      "name": "loop_counter_redeclared",
+      "expected": "redeclared",
+      "refused_by": "redeclared",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "values",
+      "name": "lone_surrogate",
+      "expected": "source_not_text",
+      "refused_by": "source_not_text",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "markup",
+      "name": "line_comment",
+      "expected": "comment_not_allowed",
+      "refused_by": "comment_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "markup",
+      "name": "block_comment",
+      "expected": "comment_not_allowed",
+      "refused_by": "comment_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "markup",
+      "name": "script_close_in_comment",
+      "expected": "markup_not_allowed",
+      "refused_by": "markup_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "markup",
+      "name": "html_comment_open",
+      "expected": "markup_not_allowed",
+      "refused_by": "markup_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "markup",
+      "name": "html_comment_close",
+      "expected": "markup_not_allowed",
+      "refused_by": "markup_not_allowed",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "shape",
+      "name": "two_functions",
+      "expected": "shape",
+      "refused_by": "shape",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "shape",
+      "name": "wrong_name",
+      "expected": "shape",
+      "refused_by": "shape",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "shape",
+      "name": "wrong_param",
+      "expected": "shape",
+      "refused_by": "shape",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "shape",
+      "name": "destructured_param",
+      "expected": "shape",
+      "refused_by": "shape",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "shape",
+      "name": "async_function",
+      "expected": "shape",
+      "refused_by": "shape",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "shape",
+      "name": "generator_function",
+      "expected": "shape",
+      "refused_by": "shape",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "shape",
+      "name": "top_level_statement",
+      "expected": "shape",
+      "refused_by": "shape",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "shape",
+      "name": "no_return",
+      "expected": "no_return",
+      "refused_by": "no_return",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "shape",
+      "name": "syntax_error",
+      "expected": "syntax",
+      "refused_by": "syntax",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "shape",
+      "name": "redeclared",
+      "expected": "syntax",
+      "refused_by": "syntax",
+      "detected": true
+    },
+    {
+      "family": "static",
+      "kind": "shape",
+      "name": "empty",
+      "expected": "source_empty",
+      "refused_by": "source_empty",
+      "detected": true
+    },
+    {
+      "family": "execution",
+      "kind": "numeric",
+      "name": "wrong_formula",
+      "expected": "reference_cases",
+      "refused_by": "reference_cases",
+      "detected": true
+    },
+    {
+      "family": "execution",
+      "kind": "numeric",
+      "name": "off_by_constant",
+      "expected": "reference_cases",
+      "refused_by": "reference_cases",
+      "detected": true
+    },
+    {
+      "family": "execution",
+      "kind": "numeric",
+      "name": "scores_swapped",
+      "expected": "reference_cases",
+      "refused_by": "reference_cases",
+      "detected": true
+    },
+    {
+      "family": "execution",
+      "kind": "numeric",
+      "name": "wrong_base",
+      "expected": "reference_cases",
+      "refused_by": "reference_cases",
+      "detected": true
+    },
+    {
+      "family": "execution",
+      "kind": "numeric",
+      "name": "constant",
+      "expected": "reference_cases",
+      "refused_by": "reference_cases",
+      "detected": true
+    },
+    {
+      "family": "execution",
+      "kind": "numeric",
+      "name": "nan",
+      "expected": "finite",
+      "refused_by": "finite",
+      "detected": true
+    },
+    {
+      "family": "execution",
+      "kind": "numeric",
+      "name": "infinity",
+      "expected": "finite",
+      "refused_by": "finite",
+      "detected": true
+    },
+    {
+      "family": "execution",
+      "kind": "numeric",
+      "name": "overflow",
+      "expected": "finite",
+      "refused_by": "finite",
+      "detected": true
+    },
+    {
+      "family": "execution",
+      "kind": "numeric",
+      "name": "right_on_cases_wrong_elsewhere",
+      "expected": "monotone",
+      "refused_by": "monotone",
+      "detected": true
+    },
+    {
+      "family": "execution",
+      "kind": "numeric",
+      "name": "naive_overflow",
+      "expected": "finite",
+      "refused_by": "finite",
+      "detected": true
+    },
+    {
+      "family": "execution",
+      "kind": "resources",
+      "name": "slow_in_the_budget",
+      "expected": "check",
+      "refused_by": "check",
+      "detected": true
+    },
+    {
+      "family": "execution",
+      "kind": "numeric",
+      "name": "hidden_branch_wrong_value_on_the_grid",
+      "expected": "monotone",
+      "refused_by": "monotone",
+      "detected": true
+    },
+    {
+      "family": "execution",
+      "kind": "numeric",
+      "name": "hidden_branch_nan_on_the_grid",
+      "expected": "finite",
+      "refused_by": "finite",
+      "detected": true
+    },
+    {
+      "family": "execution",
+      "kind": "numeric",
+      "name": "hidden_branch_small_error_on_the_grid",
+      "expected": "matches_reference",
+      "refused_by": "matches_reference",
+      "detected": true
+    },
+    {
+      "family": "tampering",
+      "kind": "forgery",
+      "name": "source_appended",
+      "expected": "delivery gate",
+      "refused_by": "delivery gate",
+      "detected": true
+    },
+    {
+      "family": "tampering",
+      "kind": "forgery",
+      "name": "source_swapped",
+      "expected": "delivery gate",
+      "refused_by": "delivery gate",
+      "detected": true
+    },
+    {
+      "family": "tampering",
+      "kind": "forgery",
+      "name": "hash_zeroed",
+      "expected": "delivery gate",
+      "refused_by": "delivery gate",
+      "detected": true
+    },
+    {
+      "family": "tampering",
+      "kind": "forgery",
+      "name": "template_version",
+      "expected": "delivery gate",
+      "refused_by": "delivery gate",
+      "detected": true
+    },
+    {
+      "family": "tampering",
+      "kind": "forgery",
+      "name": "lab_id",
+      "expected": "delivery gate",
+      "refused_by": "delivery gate",
+      "detected": true
+    },
+    {
+      "family": "tampering",
+      "kind": "forgery",
+      "name": "contract_id",
+      "expected": "delivery gate",
+      "refused_by": "delivery gate",
+      "detected": true
+    },
+    {
+      "family": "tampering",
+      "kind": "forgery",
+      "name": "title",
+      "expected": "delivery gate",
+      "refused_by": "delivery gate",
+      "detected": true
+    },
+    {
+      "family": "tampering",
+      "kind": "forgery",
+      "name": "parameter_range",
+      "expected": "delivery gate",
+      "refused_by": "delivery gate",
+      "detected": true
+    },
+    {
+      "family": "tampering",
+      "kind": "forgery",
+      "name": "parameter_added",
+      "expected": "delivery gate",
+      "refused_by": "delivery gate",
+      "detected": true
+    },
+    {
+      "family": "tampering",
+      "kind": "forgery",
+      "name": "sweep",
+      "expected": "delivery gate",
+      "refused_by": "delivery gate",
+      "detected": true
+    },
+    {
+      "family": "tampering",
+      "kind": "forgery",
+      "name": "sweep_points",
+      "expected": "delivery gate",
+      "refused_by": "delivery gate",
+      "detected": true
+    },
+    {
+      "family": "tampering",
+      "kind": "forgery",
+      "name": "checked_counts",
+      "expected": "delivery gate",
+      "refused_by": "delivery gate",
+      "detected": true
+    },
+    {
+      "family": "tampering",
+      "kind": "forgery",
+      "name": "citation_quote",
+      "expected": "delivery gate",
+      "refused_by": "delivery gate",
+      "detected": true
+    },
+    {
+      "family": "tampering",
+      "kind": "forgery",
+      "name": "citation_page",
+      "expected": "delivery gate",
+      "refused_by": "delivery gate",
+      "detected": true
+    },
+    {
+      "family": "tampering",
+      "kind": "forgery",
+      "name": "citations_dropped",
+      "expected": "delivery gate",
+      "refused_by": "delivery gate",
+      "detected": true
+    },
+    {
+      "family": "tampering",
+      "kind": "forgery",
+      "name": "output_label",
+      "expected": "delivery gate",
+      "refused_by": "delivery gate",
+      "detected": true
+    },
+    {
+      "family": "row_tampering",
+      "kind": "labs.db",
+      "name": "row_source_and_hash_edited",
+      "expected": "delivery gate",
+      "refused_by": "delivery gate",
+      "detected": true
+    },
+    {
+      "family": "row_tampering",
+      "kind": "labs.db",
+      "name": "row_source_only_edited",
+      "expected": "delivery gate",
+      "refused_by": "delivery gate",
+      "detected": true
+    },
+    {
+      "family": "row_tampering",
+      "kind": "labs.db",
+      "name": "row_contract_fingerprint_edited",
+      "expected": "delivery gate",
+      "refused_by": "delivery gate",
+      "detected": true
+    },
+    {
+      "family": "row_tampering",
+      "kind": "labs.db",
+      "name": "row_template_version_edited",
+      "expected": "delivery gate",
+      "refused_by": "delivery gate",
+      "detected": true
+    },
+    {
+      "family": "row_tampering",
+      "kind": "labs.db",
+      "name": "row_id_no_longer_matches_hash",
+      "expected": "delivery gate",
+      "refused_by": "delivery gate",
+      "detected": true
+    },
+    {
+      "family": "row_tampering",
+      "kind": "labs.db",
+      "name": "row_replaced_by_consistent_but_failing_source",
+      "expected": "delivery gate",
+      "refused_by": "delivery gate",
+      "detected": true
+    }
+  ]
+}
