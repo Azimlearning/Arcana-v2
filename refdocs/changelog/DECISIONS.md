@@ -735,7 +735,7 @@ strings validated against the template's slots).
 
 **Open / assumed (see Working assumptions):** the domain (retrieval-scoring formulas from the corpus, replacing Q-06's physics example), the restricted-JavaScript choice, the new dependency `acorn`, and a live generation run (paid, Azim confirms the amount first).
 
-## D-37: P3 (trained tools) is reduced to one measured engine, proposed, pending Azim's go (2026-10-14)
+## D-37: P3 (trained tools) is reduced to one measured engine; built and measured, not shown to help (2026-10-14)
 
 **Decision (proposed).** Do **not** build the distilled router or a trained Mastery engine. Build **one** engine behind the `Engine` interface, a **Re-Rank engine using a pretrained cross-encoder** (not trained by us), evaluated as a new arm on the same 19 questions at candidate depths 10, 30 and 50 against the RRF order and the vault arm, with the paired test already in `eval/stats.py`, the protocol written before the run, and the result reported whichever way it falls. If review scheduling is wanted later, adopt FSRS with its default parameters as a deterministic engine.
 
@@ -743,7 +743,7 @@ strings validated against the template's slots).
 
 **Rejected / trade-offs.** Dropping P3 entirely: cheapest, but an assessment risk if Objective 03 stands. Training our own models: no data worth the name; a model trained on LLM-judged labels measures the judge (v1's R-11). A heavy dependency (torch) for a small expected gain: ONNX first, and stop if the footprint is large.
 
-**Open.** Whether Objective 03 is still required (Azim); the runtime dependency; the cost of the deeper candidate lists (about $0.001, to be confirmed before the run).
+**Result (2026-10-14, Azim: "implement").** Built: `api/engines` (the `Engine` interface, the fallback rule, a cross-encoder re-rank engine on `fastembed`/ONNX as the optional `engines` extra). Measured with a protocol committed before the run (`eval/rerank_compare.py`, `refdocs/evidence/20261014-p3-rerank.md`): on the 19 questions, `rerank_n50` against its depth control `hybrid_n50` gives -0.007 nDCG@10 (7 better, 7 worse, 5 tied, p = 0.90), so by the rule fixed in advance the engine is **not shown to help**; at 30 candidates +0.021 (p = 0.60). It costs about 5 s per query on CPU. The engine stays built, additive and **off by default**. **A finding that matters more:** the candidate depth alone (30 per signal instead of 10) raises the hybrid arm's Recall@10 from 0.212 to 0.305 with no model (exploratory, p = 0.21); that is a candidate protocol amendment for the final benchmark, declared before it, not applied. Spend $0.000062. **Open.** Whether Objective 03 is satisfied by this negative result (Azim).
 
 ## Working assumptions (`ASSUMED:`)
 

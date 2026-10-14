@@ -1,7 +1,7 @@
 # Execution: P3-lite, one re-rank engine, measured
 
 > Plan: `refdocs/plans/2026-10-14-p3-trained-tools-deliberation.md`. ADR: D-37 (proposed).
-> Status: **Not started. Waiting for Azim's go.** Nothing here spends money except the optional deeper-candidate re-run (about $0.001), which needs his confirmation of the amount first.
+> Status: **Done (2026-10-14).** R1 to R4 built and run; spend $0.000062 of a $0.01 ceiling; verdict: not shown to help.
 
 ## Before starting
 
@@ -24,3 +24,10 @@
 ### Task R4: the run and the report
 
 Run on the 19 questions; paired test against `hybrid` and the vault arm; evidence record; D-37 confirmed or reversed. **Verify:** the result file records the commit, the hashes and the cost.
+
+## Reality
+
+- **R1 and R2.** `api/engines/base.py` (`Engine`, `RerankEngine`, `apply_rerank`: a re-ranker may only re-order; unavailable, failing, wrong-length or non-finite scores leave the heuristic's order, ties keep it, the reason is recorded), `api/engines/rerank.py` (the `fastembed` `TextCrossEncoder`, `Xenova/ms-marco-MiniLM-L-6-v2`, Apache-2.0; the current docs were read first). `fastembed` is the optional `engines` extra (ONNX runtime, no torch). 12 tests, the real model in one of them.
+- **R3 (deviation).** The arms were not added to `run_ablation.py` (its protocol is frozen): a separate tool, `eval/rerank_compare.py`, reuses its helpers, refuses unless the stores' hashes and the recomputed frozen `hybrid` top ten equal the baseline's, and adds a **depth control** (`hybrid_nN`) so the engine is credited only for what it adds over a deeper candidate list.
+- **R4.** One run, clean tree, 19 question embeddings, $0.000062. The result and what it does and does not say are in `refdocs/evidence/20261014-p3-rerank.md`.
+- **Not done:** a domain-adapted or larger cross-encoder; chunk truncation to the best sentences; the engine over the vault arm. A depth-30 hybrid is recorded as a candidate protocol amendment for the final benchmark.

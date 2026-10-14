@@ -1,7 +1,7 @@
 # Plan: P3 trained tools, deliberated (should v2 have trained models at all?)
 
 > Execution doc: `refdocs/execution/2026-10-14-p3-lite-rerank.md` (a skeleton, not started). ADR: D-37 (proposed).
-> Status: **Draft (2026-10-14), awaiting Azim's go.** Azim asked (2026-10-14) whether a trained model has any relevance in v2, since he does not know that it helped in v1. This is the deliberation, with the evidence that exists. **Free to decide; the proposed experiment is free in money.**
+> Status: **Done (2026-10-14): approved by Azim ("implement") and carried out; the engine was not shown to help (`refdocs/evidence/20261014-p3-rerank.md`).** Azim asked (2026-10-14) whether a trained model has any relevance in v2, since he does not know that it helped in v1. This is the deliberation, with the evidence that exists. **Free to decide; the proposed experiment is free in money.**
 
 ## The question
 

@@ -14,6 +14,7 @@
 | [20261007T060911Z-m2-look2.md](20261007T060911Z-m2-look2.md) | `eval/results/20261007T060911Z-m2-look2.json`, `20261007T060948Z-m2-audit-sample.*` | The vault is a stronger graph signal over the same nodes (0.141 to 0.227) but does not improve the hybrid | 3 papers; gate clause 3 uninformative by construction |
 | [20261007T131202Z-m2-look3-scale.md](20261007T131202Z-m2-look3-scale.md) | `eval/results/20261007T131202Z-m2-look3-scale.json` | The graph signal helps the hybrid more as the corpus grows (-0.022 to +0.039) | Free-form graph; descriptive |
 | [20261007T140853Z-m2-look4.md](20261007T140853Z-m2-look4.md) | `eval/results/20261007T140853Z-m2-look4.json`, `20261007T140924Z-m2-audit-sample.*` | The `atomic2` graph and the vault over it (0.2107 to 0.2871; hybrid 0.3496) | 3 papers; still below the no-graph control there |
+| [20261014-p3-rerank.md](20261014-p3-rerank.md) | `eval/results/20261014T135007Z-p3-rerank.json` | A pretrained cross-encoder re-ranker is not shown to help the hybrid arm (rerank_n50 against hybrid_n50: -0.007 nDCG@10, p = 0.90); candidate depth alone raises Recall@10 0.212 to 0.305 (exploratory) | 19 questions; one generic pretrained model; about 5 s per query on CPU |
 | [20261008-p4-v1-formula-probe.md](20261008-p4-v1-formula-probe.md) | `eval/results/20261008-p4-v1-formula-probe.json` | Which formulas the passages state (RRF and BM25: none) | Regex over mangled PDF text: a lower bound |
 | [20261008-p4-lab-mutation-suite.md](20261008-p4-lab-mutation-suite.md) | `eval/results/20261007T173611Z-p4-lab-mutations.json` | 120 planted defects, all refused by the stage named; the browser's sandbox and CSP probes | A planted set the project wrote; the independent reviews are the stronger evidence |
 | Mutation fact-check suite (P2) | `eval/results/mutation-factcheck.json` | The verbatim-quote check refuses planted defects | Planted set |
@@ -28,7 +29,8 @@
 | `one_more_word` lint reason is noisy on real data | `refdocs/execution/2026-10-07-m2-lint-screen.md` | Open |
 | Quiz wrong answers are chosen without a model: some are too easy | D-35 A8 limits | Open |
 | VerifiedLab: a branch off the grid and off the fuzz is not seen (the interface cannot ask for it); the live generator is not built; the lifecycle states beyond `verified` are P4b | D-36 amendment | Open |
-| P3: whether one trained engine is required (Objective 03) | `refdocs/plans/2026-10-14-p3-trained-tools-deliberation.md` | Azim |
+| P3: whether a negative result for one trained engine satisfies Objective 03 | `refdocs/evidence/20261014-p3-rerank.md` | Azim |
+| A depth-30 hybrid arm as a declared protocol amendment before the final benchmark | `refdocs/evidence/20261014-p3-rerank.md` | P5 F4 |
 
 ## Screenshots
 

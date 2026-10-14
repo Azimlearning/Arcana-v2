@@ -28,6 +28,15 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-14: P3-lite built and measured: a cross-encoder re-ranker is not shown to help
+- **Changed:** `api/engines/` (the `Engine` interface, `apply_rerank` with the heuristic fallback, a `fastembed` cross-encoder engine), `fastembed` as the optional `engines` extra (`pyproject.toml`, `uv.lock`), `eval/rerank_compare.py` (the experiment, its protocol written in the file before the run), the evidence record `refdocs/evidence/20261014-p3-rerank.md` and the result `eval/results/20261014T135007Z-p3-rerank.json`; D-37 from proposed to measured; STATUS, plan, execution doc and indexes.
+- **Decided:** (Azim, "implement") P3-lite. The engine stays built, additive and off by default because it was not shown to help.
+- **Deviations:** the arms live in a separate tool rather than `run_ablation.py` (that protocol is frozen), with a depth control so the engine is credited only for what it adds over a deeper candidate list.
+- **Verified:** 12 engine tests including the real model; one live run on a clean tree reproduced the frozen hybrid top ten for all 19 questions and the stores' hashes; spend $0.000062 of a $0.01 ceiling (19 question embeddings).
+- **Measured:** `rerank_n50` against `hybrid_n50`: -0.007 nDCG@10, 7 better, 7 worse, 5 tied, p = 0.90, so by the rule fixed in advance "not shown to help"; +0.021 at 30 candidates (p = 0.60); about 5 s per query on CPU. **Candidate depth alone** (30 per signal, no model) raised the hybrid arm's Recall@10 from 0.212 to 0.305 (exploratory, p = 0.21).
+- **Noted, not changed:** the depth finding is a candidate protocol amendment for the final benchmark (declared before it, not applied here); a domain-adapted cross-encoder or chunk truncation was not tried.
+- **Known issues / next steps:** whether this negative result satisfies Objective 03 is Azim's to say; the full-corpus `atomic2` build still needs the cap raised in `.env` (the app reports cap $10, spent $8.46, $1.54 left) and his confirmation of the ceiling.
+
 ### 2026-10-14: Azim's decisions after P4 (push, labs, P3 deliberated, P5 started)
 - **Changed:** pushed 85 local commits to GitHub (after a check that no secret is tracked or in history: the one hit was the secret scanner's own regex); three more labs (F1@k from hits, k and relevant documents; InfoNCE; the chunker's cosine distance) from a free corpus probe, `GET /labs` (which labs the stored passages support; unsupported ones are listed with the reason) and a labs screen that offers a lab only where a passage states the formula; `eval`-free probes; plan and execution docs for P3-lite and P5, an evidence index (`refdocs/evidence/README.md`), D-37 and the D-36 amendment; a verifier slow-call rule based on the mean instead of a wall-clock maximum.
 - **Decided:** (Azim) the restricted-JavaScript subset and `acorn` are confirmed; P5 next; more labs are wanted (they show usability); budget may be raised where needed (the `.env` edit is his, and each paid run still gets a confirmation of the amount); no work on the MCAIT paper. (Proposed, pending his go) D-37: P3 reduced to one measured engine.
