@@ -22,6 +22,15 @@ NAME = "anthropic"
 EFFORT_MODELS = frozenset({"claude-opus-5-5", "claude-sonnet-5-5"})
 
 
+def _status_reason(exc: anthropic.APIStatusError) -> str:
+    """`status_<code>`, with one classified hint where the provider's own message says the account has no credit: that failure is a 400, it
+    looks like a bad request, and a build that stops on it needs a person to top up, not a retry. Only the class is kept, never the body."""
+    reason = f"status_{exc.status_code}"
+    if "credit balance" in str(getattr(exc, "message", "")).lower():
+        reason += "_credit_balance_low"
+    return reason
+
+
 class AnthropicProvider:
     name = NAME
 
@@ -63,7 +72,7 @@ class AnthropicProvider:
         except anthropic.APIConnectionError as exc:
             raise ProviderFailure(NAME, "connection") from exc
         except anthropic.APIStatusError as exc:
-            raise ProviderFailure(NAME, f"status_{exc.status_code}") from exc
+            raise ProviderFailure(NAME, _status_reason(exc)) from exc
 
         if message.stop_reason == "refusal":
             raise ProviderFailure(NAME, "refusal")

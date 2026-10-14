@@ -463,3 +463,38 @@ def test_an_interrupted_rebuild_leaves_a_record_that_says_it_is_not_complete(two
         asyncio.run(rebuild_graph(tmp / "slice", tmp / "killed", "atomic", 1.0, allow_paid=False))
     record = json.loads((tmp / "killed" / "variant.json").read_text(encoding="utf-8"))
     assert record["complete"] is False and "did not finish" in record["interrupted"]
+
+
+def test_a_rebuild_that_stopped_on_a_provider_failure_is_resumed_without_repaying_the_finished_paper(two_papers, monkeypatch):
+    """The full-corpus run died on one chunk that failed on both provider routes: 14 papers were built and paid for. `--resume` keeps them,
+    builds only the rest, and sums the spend; an unfinished record of another builder, or a record with no spend, is refused."""
+    from api.core.errors import ProviderUnavailable
+
+    _, tmp, data = two_papers
+    slice_stores(data, tmp / "slice", [FIRST, SECOND])
+    real = graph_variant.build_graph
+    calls = {"n": 0}
+
+    async def fail_on_the_second_paper(chunks, deps):
+        calls["n"] += 1
+        if calls["n"] == 2:
+            raise ProviderUnavailable("both routes failed")
+        return await real(chunks, deps)
+
+    monkeypatch.setattr(graph_variant, "build_graph", fail_on_the_second_paper)
+    first = asyncio.run(rebuild_graph(tmp / "slice", tmp / "built", "atomic", 5.0, allow_paid=False))
+    assert first["complete"] is False
+    report = json.loads((tmp / "built" / "ingestion_report.json").read_text(encoding="utf-8"))
+    assert [d["status"] for d in report] == ["ready", "not_built_error"]
+    with pytest.raises(RunInvalid):  # not allowed without --resume
+        asyncio.run(rebuild_graph(tmp / "slice", tmp / "built", "atomic", 5.0, allow_paid=False))
+    with pytest.raises(RunInvalid):  # another builder's unfinished build is not continued
+        asyncio.run(rebuild_graph(tmp / "slice", tmp / "built", "atomic2", 5.0, allow_paid=False, resume=True))
+
+    monkeypatch.setattr(graph_variant, "build_graph", real)
+    finished = asyncio.run(rebuild_graph(tmp / "slice", tmp / "built", "atomic", 5.0, allow_paid=False, resume=True))
+    assert finished["complete"] is True and finished["resumed"] is True and finished["papers_kept_from_earlier_run"] == 1
+    done = json.loads((tmp / "built" / "ingestion_report.json").read_text(encoding="utf-8"))
+    assert [d["status"] for d in done] == ["ready", "ready"]
+    assert done[0] == report[0]  # the finished paper is exactly as the first run left it
+    assert finished["spent_usd"] == round(first["spent_usd"] + finished["this_run_spent_usd"], 6)

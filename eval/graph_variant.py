@@ -229,12 +229,43 @@ def slice_stores(source: Path, target: Path, papers: list[str]) -> dict[str, Any
 # ── rebuild ───────────────────────────────────────────────────────────────────
 
 
+def _load_resumable(target: Path, builder: str, slice_dir: Path) -> tuple[dict[str, dict[str, Any]], list[ClaimDraft], float]:
+    """What an incomplete rebuild left that a `--resume` may keep: the papers it finished (with their cost), their claims and the money it
+    spent. Refused unless the record is that of an unfinished build of the same builder over the same vectors, so a graph is never continued
+    on an assumption."""
+    try:
+        record = json.loads((target / VARIANT_FILE).read_text(encoding="utf-8"))
+        report = json.loads((target / INGESTION_REPORT).read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise RunInvalid(f"{target} has no readable record of an unfinished rebuild to resume: {exc}") from exc
+    if record.get("complete") or record.get("builder") != builder:
+        raise RunInvalid(f"{target} is not an unfinished {builder} rebuild: nothing to resume")
+    if "spent_usd" not in record:
+        raise RunInvalid(f"{target}'s record does not say what the earlier run spent (it was killed): it cannot be resumed, build anew")
+    if sha256_file(target / "vectors.npz") != sha256_file(slice_dir / "vectors.npz"):
+        raise RunInvalid(f"{target} does not hold the slice's vectors: it is not a rebuild of this slice")
+    done = {d["arxiv_id"]: d for d in report if d.get("status") == "ready"}
+    claims: list[ClaimDraft] = []
+    if builder == "atomic2":
+        raw = json.loads((target / CLAIMS_FILE).read_text(encoding="utf-8"))
+        claims = [ClaimDraft(c["chunk_id"], c["doc_id"], c["sentence"], tuple(c["concept_ids"])) for c in raw]
+    return done, claims, float(record["spent_usd"])
+
+
 async def rebuild_graph(
-    slice_dir: Path, target: Path, builder: str, max_usd: float, allow_paid: bool
+    slice_dir: Path, target: Path, builder: str, max_usd: float, allow_paid: bool, resume: bool = False
 ) -> dict[str, Any]:
-    """Build a new graph for `slice_dir`'s documents with `builder`, into `target` (documents and vectors copied unchanged)."""
+    """Build a new graph for `slice_dir`'s documents with `builder`, into `target` (documents and vectors copied unchanged).
+
+    With `resume`, an unfinished build of the same builder in `target` is continued: the papers it finished are kept (their graph, claims and
+    cost), only the rest are built, and the record sums the money spent over both runs. The ceiling `max_usd` applies to this run."""
+    prior: dict[str, dict[str, Any]] = {}
+    prior_claims: list[ClaimDraft] = []
+    prior_spent = 0.0
     if target.exists() and any(target.iterdir()):
-        raise RunInvalid(f"{target} is not empty: a variant is built into a new directory")
+        if not resume:
+            raise RunInvalid(f"{target} is not empty: a variant is built into a new directory")
+        prior, prior_claims, prior_spent = _load_resumable(target, builder, slice_dir)
     settings = settings_for(target)
     if is_live(settings) and not allow_paid:
         raise RunInvalid("live (paid) mode is configured; pass --allow-paid to rebuild with a real model")
@@ -245,14 +276,24 @@ async def rebuild_graph(
     # the record exists from the start, says it is not complete, and is overwritten only when the build ends (a full-corpus cost audit found
     # that a hard stop left no record and the partial graph could reach a compare silently).
     (target / VARIANT_FILE).write_text(
-        json.dumps({"builder": builder, "complete": False, "interrupted": "the rebuild started and did not finish", "max_usd": max_usd}, indent=2),
+        json.dumps(
+            {
+                "builder": builder,
+                "complete": False,
+                "interrupted": "the rebuild started and did not finish",
+                "max_usd": max_usd,
+                **({"spent_usd": prior_spent, "resumed": True} if resume and prior else {}),
+            },
+            indent=2,
+        ),
         encoding="utf-8",
     )
-    copy_database(slice_dir / "arcana.db", target / "arcana.db")
-    shutil.copyfile(slice_dir / "vectors.npz", target / "vectors.npz")
+    if not (resume and prior):
+        copy_database(slice_dir / "arcana.db", target / "arcana.db")
+        shutil.copyfile(slice_dir / "vectors.npz", target / "vectors.npz")
 
     container = build_container(settings)
-    claims: list[ClaimDraft] = []
+    claims: list[ClaimDraft] = list(prior_claims)
     deps = IngestDeps(
         docs=container.docs,
         vectors=container.vectors,
@@ -266,8 +307,11 @@ async def rebuild_graph(
     saved = load_ingestion_report(slice_dir)
     documents: list[dict[str, Any]] = []
     spent_before = container.ledger.month_total()
-    per_chunk = 0.0
+    per_chunk = max((d.get("cost_usd", 0.0) / d["chunks"] for d in prior.values() if d.get("chunks")), default=0.0)
     for arxiv_id, entry in saved.items():
+        if arxiv_id in prior:  # finished by an earlier run: kept as it was, not built or paid for again
+            documents.append(prior[arxiv_id])
+            continue
         chunks = container.docs.chunks_for_document(entry["doc_id"])
         projected = (container.ledger.month_total() - spent_before) + len(chunks) * max(
             per_chunk, EXPECTED_BY_BUILDER.get(builder, EXPECTED_PER_CHUNK_USD)
@@ -335,7 +379,10 @@ async def rebuild_graph(
         "prompt_version": {"atomic": atomic.PROMPT_VERSION, "atomic2": atomic2.PROMPT_VERSION}.get(builder),
         "claims": len(claims),
         "max_usd": max_usd,
-        "spent_usd": spent,
+        "spent_usd": round(prior_spent + spent, 6),
+        "this_run_spent_usd": spent,
+        "resumed": bool(resume and prior),
+        "papers_kept_from_earlier_run": len(prior),
         "documents": len(documents),
         "complete": all(d["status"] == "ready" for d in documents)
         and len(documents) == len(saved)
@@ -716,6 +763,7 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--builder", default="atomic", choices=["atomic", "atomic2", "freeform"])
     r.add_argument("--max-usd", type=float, required=True, help="a ceiling for this build, confirmed beforehand")
     r.add_argument("--allow-paid", action="store_true")
+    r.add_argument("--resume", action="store_true", help="continue an unfinished rebuild of the same builder in --to: finished papers are kept, not repaid")
     r.add_argument("--allow-dirty", action="store_true", help="for tests only: a result should name committed code")
     ch = sub.add_parser("choose", help="apply the slice rule and print the papers")
     ch.add_argument("--from", dest="source", required=True)
@@ -772,7 +820,7 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         if args.command == "rebuild":
             info = asyncio.run(
-                rebuild_graph(Path(args.slice), Path(args.to), args.builder, args.max_usd, args.allow_paid)
+                rebuild_graph(Path(args.slice), Path(args.to), args.builder, args.max_usd, args.allow_paid, args.resume)
             )
             print(json.dumps(info, indent=2))
             return 0
