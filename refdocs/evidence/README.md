@@ -22,7 +22,7 @@
 | [20261008-p4-lab-mutation-suite.md](20261008-p4-lab-mutation-suite.md) | `eval/results/20261007T173611Z-p4-lab-mutations.json` | 120 planted defects, all refused by the stage named; the browser's sandbox and CSP probes | A planted set the project wrote; the independent reviews are the stronger evidence |
 | Mutation fact-check suite (P2) | `eval/results/mutation-factcheck.json` | The verbatim-quote check refuses planted defects | Planted set |
 
-## Open limits and assumptions (the ledger the limits chapter is built from)
+## Open limits and assumptions (the ledger the limits chapter is built from; the chapter is [limits.md](limits.md))
 
 | Item | Where | Owner |
 |---|---|---|

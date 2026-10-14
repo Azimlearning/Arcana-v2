@@ -36,6 +36,6 @@ Install RAGAS as a library; run the secondary metrics on the bounded subset; rep
 
 See `2026-10-14-p3-lite-rerank.md`.
 
-### Task F7: the limits chapter (free, last)
+### Task F7: the limits chapter (**drafted 2026-10-15**: `refdocs/evidence/limits.md`; living, re-read after RAGAS and the audit)
 
 One document: every open limit and assumption from the ledger, grouped by what it threatens. **Verify:** every item cites its source line.

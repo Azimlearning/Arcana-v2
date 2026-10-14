@@ -28,6 +28,13 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-15: Limits chapter drafted (P5 F7)
+- **Changed:** `refdocs/evidence/limits.md` (new), the ledger heading in `refdocs/evidence/README.md`, the F7 task in the P5 execution doc.
+- **Decided:** none.
+- **Deviations:** none.
+- **Verified:** nothing run; documentation only. Every row cites a file in the repo.
+- **Known issues / next steps:** re-read after the audit samples are read and after RAGAS.
+
 ### 2026-10-15: Question-set extension approved, registered and run; D-38 reversed (D-39 accepted, D-40)
 - **Changed:** `eval/frozen.py` (extension pins, `is_registered_pair`, `check_frozen` accepts the registered extension), `eval/vault_compare.py` (path guard), `eval/rerank_compare.py` (`--questions-file`, `--gold-dir`, freeze check), `eval/pooled_extension.py` (new), `eval/tests/test_frozen_assets.py` (three tests), `.gitattributes` (extension files stored byte-exact), `eval/gold_ext/*` (approved, pinned), `api/retrieval/types.py` (`CANDIDATE_DEPTH = TOP_K`), `api/retrieval/test_hybrid.py` (the test fake's types fixed); four result files; evidence record; D-39 accepted, D-40; STATUS, PRD, ledger.
 - **Decided:** D-40. By the rule written before the run, D-38 (depth 30) is reversed: Recall@10 -0.007 on the 19 new questions.
