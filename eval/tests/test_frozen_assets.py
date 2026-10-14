@@ -80,3 +80,50 @@ def test_every_gold_file_is_approved_including_the_unanswerable_control():
     ]
     assert unapproved == []  # q-single-01 was approved as a "should find nothing" control (ADR D-26)
     assert len(APPROVED_GOLD_SHA256) == 20
+
+
+# The declared extension (D-39): its own question file and gold, pinned the same way; the frozen files above are untouched.
+QUESTIONS_EXT = EVAL / "questions_ext.yaml"
+GOLD_EXT = EVAL / "gold_ext"
+
+
+def test_the_extension_question_file_is_pinned_and_has_its_declared_shape():
+    from eval.frozen import EXT_QUESTIONS_BODY_SHA256, questions_body_sha256
+
+    assert questions_body_sha256(QUESTIONS_EXT) == EXT_QUESTIONS_BODY_SHA256
+    questions = yaml.safe_load(QUESTIONS_EXT.read_text(encoding="utf-8"))["questions"]
+    frozen_ids = {q["id"] for q in yaml.safe_load(QUESTIONS.read_text(encoding="utf-8"))["questions"]}
+    assert len(questions) == 19 and len({q["id"] for q in questions}) == 19
+    assert not frozen_ids & {q["id"] for q in questions}
+    assert Counter(q["category"] for q in questions) == {"single_document": 8, "cross_document": 11}
+
+
+def test_extension_gold_is_approved_pinned_unchanged_and_cites_manifest_papers():
+    from eval.frozen import APPROVED_EXT_GOLD_SHA256
+
+    papers = {m["arxiv_id"] for m in json.loads(MANIFEST.read_text(encoding="utf-8"))}
+    ids = {q["id"] for q in yaml.safe_load(QUESTIONS_EXT.read_text(encoding="utf-8"))["questions"]}
+    on_disk = {}
+    for path in sorted(GOLD_EXT.glob("q-x-*.yaml")):
+        gold = yaml.safe_load(path.read_text(encoding="utf-8"))
+        assert gold["approved_by"] == "Azim" and gold["question_id"] == path.stem and path.stem in ids
+        assert gold["reference_contexts"] and all(c["doc_id"] in papers for c in gold["reference_contexts"])
+        on_disk[path.stem] = hashlib.sha256(path.read_bytes()).hexdigest()
+    assert on_disk == APPROVED_EXT_GOLD_SHA256 and set(on_disk) == ids
+
+
+def test_check_frozen_accepts_the_registered_extension_and_refuses_edited_gold(tmp_path):
+    from eval.frozen import check_frozen, is_registered_pair
+
+    ids = sorted(yaml.safe_load(QUESTIONS_EXT.read_text(encoding="utf-8"))["questions"][i]["id"] for i in range(19))
+    assert check_frozen(QUESTIONS_EXT, MANIFEST, GOLD_EXT, ids) == []
+    assert is_registered_pair(QUESTIONS_EXT, GOLD_EXT, EVAL.parent)
+    assert not is_registered_pair(QUESTIONS_EXT, EVAL / "gold", EVAL.parent)
+    copy = tmp_path / "gold"
+    copy.mkdir()
+    for path in GOLD_EXT.glob("q-x-*.yaml"):
+        (copy / path.name).write_bytes(path.read_bytes())
+    target = copy / "q-x-s01.yaml"
+    target.write_bytes(target.read_bytes().replace(b"Faithfulness", b"Faithfulnezz", 1))
+    problems = check_frozen(QUESTIONS_EXT, MANIFEST, copy, ["q-x-s01"])
+    assert any("edited after approval" in p for p in problems)

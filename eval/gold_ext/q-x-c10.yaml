@@ -1,9 +1,9 @@
 question_id: q-x-c10
 status: benchmark
-approved_by: null
+approved_by: Azim
 note: 'Extension question (declared amendment, 2026-10-15). Drafted by the assistant from the papers''
   text only: phrase search of the extracted PDF text, passages copied verbatim (whitespace collapsed).
-  Retrieval output was never consulted. Draft: not approved.'
+  Retrieval output was never consulted. Approved by Azim on 2026-10-15.'
 annotated_on: '2026-10-15'
 reference_contexts:
 - doc_id: 2401.15391v1
@@ -20,3 +20,4 @@ reference_contexts:
     transcripts of the companies included in the Nifty-50 index which is an Indian stock market index
     that represents the weighted average of 50 of the largest Indian companies listed on the National
     Stock Exchange
+approved_on: '2026-10-15'

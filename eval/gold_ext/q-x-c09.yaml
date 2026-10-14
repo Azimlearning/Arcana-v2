@@ -1,9 +1,9 @@
 question_id: q-x-c09
 status: benchmark
-approved_by: null
+approved_by: Azim
 note: 'Extension question (declared amendment, 2026-10-15). Drafted by the assistant from the papers''
   text only: phrase search of the extracted PDF text, passages copied verbatim (whitespace collapsed).
-  Retrieval output was never consulted. Draft: not approved.'
+  Retrieval output was never consulted. Approved by Azim on 2026-10-15.'
 annotated_on: '2026-10-15'
 reference_contexts:
 - doc_id: 2309.01219v3
@@ -19,3 +19,4 @@ reference_contexts:
   page: 3
   text: We focus in particular three quality aspects, which we argue are of central importance. First,
     Faithfulness refers to the idea that the an- swer should be grounded in the given context.
+approved_on: '2026-10-15'

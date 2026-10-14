@@ -55,7 +55,7 @@ from api.retrieval.graph import GraphRetriever
 from api.retrieval.hybrid import hybrid_retrieve
 from api.retrieval.sparse import SparseRetriever
 from api.stores.preflight import check_corpus_parity
-from eval import metrics, stats
+from eval import frozen, metrics, stats
 from eval.run_ablation import (
     RunInvalid,
     chunks_sha256,
@@ -106,10 +106,16 @@ async def run(args: argparse.Namespace) -> tuple[Path, dict[str, Any]]:
     baseline = json.loads(baseline_path.read_text(encoding="utf-8"))  # noqa: ASYNC240  (a one-off tool, not a server path)
     selected = baseline["run"]["questions_selected"]
     questions = [
-        q for q in load_questions(ROOT / "eval" / "questions.yaml") if q["id"] in set(selected)
+        q for q in load_questions(Path(args.questions_file)) if q["id"] in set(selected)
     ]
-    golds = {q["id"]: metrics.load_gold(ROOT / "eval" / "gold", q["id"]) for q in questions}
+    golds = {q["id"]: metrics.load_gold(Path(args.gold_dir), q["id"]) for q in questions}
     require_approved_gold(golds, live)
+    if live:  # the freeze is checked here too, so an unregistered question file or edited gold cannot be run
+        drift = frozen.check_frozen(
+            Path(args.questions_file), ROOT / "eval" / "corpus" / "MANIFEST.json", Path(args.gold_dir), [q["id"] for q in questions]
+        )
+        if drift:
+            raise RunInvalid("the frozen benchmark assets changed: " + "; ".join(drift))
     code = require_clean_code(live, getattr(args, "allow_dirty", False))
 
     container = build_container(settings)
@@ -313,6 +319,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="the P1 benchmark result whose hashes and hybrid top tens this run must reproduce",
     )
     p.add_argument("--data-dir", required=True)
+    p.add_argument("--questions-file", default=str(ROOT / "eval" / "questions.yaml"))
+    p.add_argument("--gold-dir", default=str(ROOT / "eval" / "gold"))
     p.add_argument("--out", default=str(ROOT / "eval" / "results"))
     p.add_argument("--label", default="p3-rerank")
     p.add_argument("--max-usd", type=float, default=0.01)

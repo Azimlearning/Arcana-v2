@@ -1,9 +1,9 @@
 question_id: q-x-c07
 status: benchmark
-approved_by: null
+approved_by: Azim
 note: 'Extension question (declared amendment, 2026-10-15). Drafted by the assistant from the papers''
   text only: phrase search of the extracted PDF text, passages copied verbatim (whitespace collapsed).
-  Retrieval output was never consulted. Draft: not approved.'
+  Retrieval output was never consulted. Approved by Azim on 2026-10-15.'
 annotated_on: '2026-10-15'
 reference_contexts:
 - doc_id: 2310.11511v1
@@ -25,3 +25,4 @@ reference_contexts:
   page: 5
   text: This approach transcends the fixed RAG retrieval process by evaluating the necessity of retrieval
     based on different scenarios.
+approved_on: '2026-10-15'

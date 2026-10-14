@@ -257,11 +257,8 @@ def require_frozen_paths(questions_path: Path, gold_dir: Path, allow_other: bool
     """A result must be computed from the frozen question set and gold, not from copies elsewhere."""
     if allow_other:
         return
-    if (
-        questions_path.resolve() != (ROOT / "eval" / "questions.yaml").resolve()
-        or gold_dir.resolve() != (ROOT / "eval" / "gold").resolve()
-    ):
-        raise RunInvalid("a result must use the frozen question set and gold in eval/")
+    if not frozen.is_registered_pair(questions_path, gold_dir, ROOT):
+        raise RunInvalid("a result must use the frozen question set and gold in eval/, or the registered extension (D-39)")
 
 
 def gold_sha256(gold_dir: Path, question_ids: list[str]) -> str:

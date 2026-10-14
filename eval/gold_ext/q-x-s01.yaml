@@ -1,9 +1,9 @@
 question_id: q-x-s01
 status: benchmark
-approved_by: null
+approved_by: Azim
 note: 'Extension question (declared amendment, 2026-10-15). Drafted by the assistant from the papers''
   text only: phrase search of the extracted PDF text, passages copied verbatim (whitespace collapsed).
-  Retrieval output was never consulted. Draft: not approved.'
+  Retrieval output was never consulted. Approved by Azim on 2026-10-15.'
 annotated_on: '2026-10-15'
 reference_contexts:
 - doc_id: 2309.15217v2
@@ -15,3 +15,4 @@ reference_contexts:
   text: Sec- ond, Answer Relevance refers to the idea that the generated answer should address the actual
     ques- tion that was provided. Finally, Context Relevance refers to the idea that the retrieved context
     should be focused, containing as little irrelevant informa- tion as possible.
+approved_on: '2026-10-15'

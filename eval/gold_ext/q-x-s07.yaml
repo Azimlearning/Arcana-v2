@@ -1,9 +1,9 @@
 question_id: q-x-s07
 status: benchmark
-approved_by: null
+approved_by: Azim
 note: 'Extension question (declared amendment, 2026-10-15). Drafted by the assistant from the papers''
   text only: phrase search of the extracted PDF text, passages copied verbatim (whitespace collapsed).
-  Retrieval output was never consulted. Draft: not approved.'
+  Retrieval output was never consulted. Approved by Azim on 2026-10-15.'
 annotated_on: '2026-10-15'
 reference_contexts:
 - doc_id: 2410.05779v3
@@ -19,3 +19,4 @@ reference_contexts:
   page: 4
   text: Abstract Queries. In contrast, abstract queries are more conceptual, encompassing broader topics,
     summaries, or overarching themes that are not directly tied to specific entities.
+approved_on: '2026-10-15'

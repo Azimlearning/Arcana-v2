@@ -6,3 +6,7 @@ api/genui/generated.py text eol=lf
 eval/questions.yaml -text
 eval/corpus/MANIFEST.json -text
 eval/gold/*.yaml -text
+
+# The declared extension (D-39): same rule, store the exact bytes.
+eval/questions_ext.yaml -text
+eval/gold_ext/*.yaml -text

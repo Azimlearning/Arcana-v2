@@ -1,9 +1,9 @@
 question_id: q-x-s06
 status: benchmark
-approved_by: null
+approved_by: Azim
 note: 'Extension question (declared amendment, 2026-10-15). Drafted by the assistant from the papers''
   text only: phrase search of the extracted PDF text, passages copied verbatim (whitespace collapsed).
-  Retrieval output was never consulted. Draft: not approved.'
+  Retrieval output was never consulted. Approved by Azim on 2026-10-15.'
 annotated_on: '2026-10-15'
 reference_contexts:
 - doc_id: 2310.11511v1
@@ -14,3 +14,4 @@ reference_contexts:
   page: 1
   text: Generating reflection tokens makes the LM controllable during the inference phase, enabling it
     to tailor its behavior to diverse task requirements.
+approved_on: '2026-10-15'

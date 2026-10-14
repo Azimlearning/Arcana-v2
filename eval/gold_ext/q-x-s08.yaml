@@ -1,9 +1,9 @@
 question_id: q-x-s08
 status: benchmark
-approved_by: null
+approved_by: Azim
 note: 'Extension question (declared amendment, 2026-10-15). Drafted by the assistant from the papers''
   text only: phrase search of the extracted PDF text, passages copied verbatim (whitespace collapsed).
-  Retrieval output was never consulted. Draft: not approved.'
+  Retrieval output was never consulted. Approved by Azim on 2026-10-15.'
 annotated_on: '2026-10-15'
 reference_contexts:
 - doc_id: 2404.03868v2
@@ -14,3 +14,4 @@ reference_contexts:
     type and relation type, induced by triplets ob- tained in the extraction phase. 3. Schema Canonicalization:
     use the schema definitions to standardize the triplets such that semantically-equivalent entities/relations
     types have the same noun/relation phrase.'
+approved_on: '2026-10-15'
