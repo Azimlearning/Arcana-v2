@@ -28,6 +28,14 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-15: Link audit sample drawn for the full-corpus `atomic2` vault (free)
+- **Changed:** `eval/results/20261014T185317Z-m2-audit-sample.{md,json}` and the key apart in `eval/results/audit-keys/20261014T185317Z-m2-audit-key.json` (the existing `eval/vault_compare.py audit` over `data/m2/atomic2-full-vault1`, default seed and 50 per kind); the evidence ledger and the P5 F3 task name it.
+- **Decided:** none.
+- **Deviations:** none; the same tool, seed and sample size as the two earlier samples.
+- **Verified:** the tool wrote 100 items; the sample file hides the kind and the key is in the separate directory.
+- **Noted, not changed:** the sample shows visible extraction noise (for example, bibliography entries and the word "context" matched as concepts), which is exactly what the reading will measure; nothing was filtered after drawing.
+- **Known issues / next steps:** three samples (about 300 items) now wait for Azim's reading; the key is applied only after the labels are in. Cost: $0.
+
 ### 2026-10-14: Candidate depth 30 adopted in the product retrieval path (D-38)
 - **Changed:** `api/retrieval/types.py` (`CANDIDATE_DEPTH = 30`), `api/retrieval/hybrid.py` (`depth` parameter: each retriever asked for `depth`, per-signal lists kept at `depth`, fused cut unchanged, a depth below `top_k` refused), `api/container.py` (`Container.retrieve` passes the depth), two tests in `api/retrieval/test_hybrid.py`; D-38, the PRD §7 row, STATUS, the evidence index.
 - **Decided:** D-38. The frozen benchmark arms keep depth equal to `top_k`; a final benchmark reports `hybrid_d30` beside the frozen hybrid. Azim: "if it improves the system then go for it".

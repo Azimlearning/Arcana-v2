@@ -1,0 +1,602 @@
+[
+  {
+    "id": 1,
+    "a": "Table meets llm",
+    "b": "Mingjie Zhou",
+    "sentence": "[378] Yuan Sui, Mengyu Zhou, Mingjie Zhou, Shi Han, and Dongmei Zhang. Table meets llm: Can large language models understand structured table data?"
+  },
+  {
+    "id": 2,
+    "a": "context",
+    "b": "Ragas",
+    "sentence": "To put the results in context, we compare our proposed metrics (shown as Ragas in Table 1) with two baseline methods."
+  },
+  {
+    "id": 3,
+    "a": "primary key",
+    "b": "Row2N/E",
+    "sentence": "[417] propose Row2N/E: if a table has a primary key (PK), each row is treated as a node; however, if there are also two foreign key (FK) columns, each row is instead represented as an edge."
+  },
+  {
+    "id": 4,
+    "a": "generation",
+    "b": "retrieval quality",
+    "sentence": "Evaluating retrieval quality in retrieval-augmented generation."
+  },
+  {
+    "id": 5,
+    "a": "beam size",
+    "b": "decoding",
+    "sentence": "We use a beam size of four, and use the Fast Decoding approach for RAG-Sequence models, as Thorough Decoding did not improve performance."
+  },
+  {
+    "id": 6,
+    "a": "Language Understanding",
+    "b": "MPNet",
+    "sentence": "Mpnet: Masked and permuted pre- training for language understanding."
+  },
+  {
+    "id": 7,
+    "a": "STaRK",
+    "b": "LLM retrieval",
+    "sentence": "Stark: Benchmarking llm retrieval on textual and relational knowledge bases."
+  },
+  {
+    "id": 8,
+    "a": "Self-Reflective Retrieval-Augmented Generation",
+    "b": "Keyword Extraction",
+    "sentence": "For social graphs, the organizer of GraphRAG often uses Keyword Extraction, Profile Summarization, and Hierarchical Graph Aggregation to curate the retrieved content: \u2022 Keyword Extraction: Keyword extra"
+  },
+  {
+    "id": 9,
+    "a": "answer",
+    "b": "prompt",
+    "sentence": "These articles, combined with the original question, form a comprehensive prompt that empowers LLMs to generate a well-informed answer."
+  },
+  {
+    "id": 10,
+    "a": "benchmarks",
+    "b": "Corrective retrieval augmented generation",
+    "sentence": "It can be seen that CRAG still showed competitive performance when the underlying LLMs was changed from SelfRAG-LLaMA2-7b to LLaMA2-hf-7b, while the performance of Self- RAG dropped significantly, even underperforming the standard RAG on several benchmarks."
+  },
+  {
+    "id": 11,
+    "a": "news article knowledge base",
+    "b": "Yixuan Tang",
+    "sentence": "MultiHop-RAG: Benchmarking Retrieval-Augmented Generation for Multi-Hop Queries Yixuan Tang and Yi Yang Hong Kong University of Science and Technology {yixuantang,imyiyang}@ust.hk Abstract Retrieval-augmented generation (RAG) aug- ments"
+  },
+  {
+    "id": 12,
+    "a": "Demonstrate-search-predict",
+    "b": "flow",
+    "sentence": "Adjustments in module arrangement and interaction, such as the Demonstrate-Search-Predict (DSP) [23] framework and the iterative Retrieve-Read-Retrieve-Read flow of ITER- RETGEN [14], showcase the dynamic use of module out- puts to bolster another module\u2019s functionality, illustrating a sophisticated understanding of enhancing module synergy."
+  },
+  {
+    "id": 13,
+    "a": "Extract",
+    "b": "Wikipedia",
+    "sentence": "These two traits would then be used to extract distractors from Wikipedia for each question."
+  },
+  {
+    "id": 14,
+    "a": "attention",
+    "b": "open information extractors",
+    "sentence": "f each attention head of the LLM to identify a set of heads that ex- hibit superior linear probing accuracy for answer- ing factual questions, and 2) shifting model activa- tions along these factuality-related directions dur- ing inference."
+  },
+  {
+    "id": 15,
+    "a": "EDC+R",
+    "b": "Open information extraction",
+    "sentence": ".2.1 Target Alignment The bar charts in Figure 2 summarize the Partial F1 scores obtained by EDC and EDC+R on all three datasets with different LLMs for OIE compared against the respective baselines."
+  },
+  {
+    "id": 16,
+    "a": "LLM-powered agents",
+    "b": "Agent-Agent Interaction",
+    "sentence": "\u2022 Agent-Agent Interaction [51, 523]: With the increasing intelligence of LLMs, recent literature has explored the potential of using LLM-powered agents to simulate social behaviors, such as collaboration, debate, and reflection."
+  },
+  {
+    "id": 17,
+    "a": "joint knowledge pruning and recurrent graph convolution",
+    "b": "news recommendation",
+    "sentence": "Joint knowledge pruning and recurrent graph convolution for news recommendation."
+  },
+  {
+    "id": 18,
+    "a": "Experiment 2",
+    "b": "Experiment 1",
+    "sentence": "4.2 Experiment 2 To validate the comprehensiveness and diversity results from Experiment 1, we implemented claim- based measures of these qualities."
+  },
+  {
+    "id": 19,
+    "a": "abstractive questions",
+    "b": "VectorRAG",
+    "sentence": "And VectorRAG does better in abstractive questions where information is not explicitly mentioned in the raw data."
+  },
+  {
+    "id": 20,
+    "a": "Self-Reflective Retrieval-Augmented Generation",
+    "b": "semantic similarity calculation",
+    "sentence": "To overcome challenges, Retrieval-Augmented Generation (RAG) enhances LLMs by retrieving relevant document chunks from external knowledge base through semantic similarity calcu- lation."
+  },
+  {
+    "id": 21,
+    "a": "LightRAG",
+    "b": "Chao Huang",
+    "sentence": ", Lianghao Xia, Yanhua Yu, Tu Ao, and Chao Huang. Lightrag: Simple and fast retrieval-augmented generation."
+  },
+  {
+    "id": 22,
+    "a": "Wang et al.",
+    "b": "Graph Neural Networks",
+    "sentence": "Besides, Wang et al. [417] fuse both GNNs and tabular based predictors, such as DeepFM [129], FT-Transformer [125], XGBoost [50] and AutoGluon [101]."
+  },
+  {
+    "id": 23,
+    "a": "Information Extraction",
+    "b": "zero-shot",
+    "sentence": "Zero- shot information extraction via chatting with chatgpt."
+  },
+  {
+    "id": 24,
+    "a": "CAIRE-COVID",
+    "b": "query-focused multi-document summarization",
+    "sentence": "Caire-covid: A ques- tion answering and query-focused multi-document summarization system for covid-19 scholarly information management."
+  },
+  {
+    "id": 25,
+    "a": "large vision and language models",
+    "b": "video",
+    "sentence": "Video- chatgpt: Towards detailed video understanding via large vision and language models."
+  },
+  {
+    "id": 26,
+    "a": "graph neural prompting",
+    "b": "Language Models",
+    "sentence": "Graph neural prompting with large language models."
+  },
+  {
+    "id": 27,
+    "a": "Knowledge guided text retrieval and reading for open domain question answering",
+    "b": "retrieval",
+    "sentence": "Knowledge guided text retrieval and reading for open domain question answering."
+  },
+  {
+    "id": 28,
+    "a": "ARES",
+    "b": "Saad-Falcon et al., 2023",
+    "sentence": "In addition, recent ad- vancements have been made in automated RAG evaluation tools, such as ARES (Saad-Falcon et al., 2023) and RAGAS (Es et al., 2023)."
+  },
+  {
+    "id": 29,
+    "a": "GPT-3.5-Turbo",
+    "b": "re-ranking stability",
+    "sentence": "This is probably because the re-rank- ing stability of specialized models is better than ChatGPT."
+  },
+  {
+    "id": 30,
+    "a": "PubHealth",
+    "b": "tasks",
+    "sentence": "Closed-set tasks include two datasets, i.e., a fact verification dataset about public health (PubHealth; Zhang et al."
+  },
+  {
+    "id": 31,
+    "a": "Fixed-size Chunker",
+    "b": "relationships",
+    "sentence": "The Fixed-size Chunker, which ig- nores semantic relationships and document struc- ture, frequently misassigned sentences, leading to errors that propagated through subsequent chunks."
+  },
+  {
+    "id": 32,
+    "a": "Clustering-based Semantic Chunker (DBSCAN)",
+    "b": "document retrieval",
+    "sentence": "hyperparameter values for Clustering-based Semantic Chunker (DBSCAN). Left: Document Retrieval; Right: Evidence Retrieval."
+  },
+  {
+    "id": 33,
+    "a": "graph construction",
+    "b": "prompt",
+    "sentence": "edge Graph Construction:- We begin by constructing a KG from a set of knowledge triplets extracted from corporate documents using the prompt engineering based methodology as described in Section 4.1."
+  },
+  {
+    "id": 34,
+    "a": "multi-hop retrieval/QA",
+    "b": "retrieval",
+    "sentence": "We are excited to see how this can be generalized further to more so- phisticated tasks like multi-hop retrieval/QA and conversational search."
+  },
+  {
+    "id": 35,
+    "a": "Charu C Aggarwal",
+    "b": "edge classification in networks",
+    "sentence": "[4] Charu C Aggarwal, Yao Li, S Yu Philip, and Yuchen Zhao. On edge classification in networks with structure and content."
+  },
+  {
+    "id": 36,
+    "a": "Information Extraction",
+    "b": "REBEL",
+    "sentence": "This illustrates REBEL\u2019s lack of flexibility in open information extraction when compared to using both open and closed-source LLMs."
+  },
+  {
+    "id": 37,
+    "a": "Correct",
+    "b": "embedding model",
+    "sentence": "We then finetune the embedding model to distin- guish between the correct relation associated with a given text and other non-relevant relations using the InfoNCE loss."
+  },
+  {
+    "id": 38,
+    "a": "synthetic data",
+    "b": "Self-Reflective Retrieval-Augmented Generation",
+    "sentence": "Mitigating the privacy issues in retrieval-augmented generation (rag) via pure synthetic data."
+  },
+  {
+    "id": 39,
+    "a": "embedding model",
+    "b": "retrieval performance",
+    "sentence": "E.2 Impact of Embedding Models The choice of embedding model significantly af- fected retrieval performance (See Table 6 for tested models)."
+  },
+  {
+    "id": 40,
+    "a": "graph transformers",
+    "b": "Text generation from knowledge graphs",
+    "sentence": "Text generation from knowledge graphs with graph transformers."
+  },
+  {
+    "id": 41,
+    "a": "attention",
+    "b": "passages",
+    "sentence": "22 B Dataset Comparison To analyze the differences between the three datasets we use, we pay special attention to the quality of the distractor passages, i.e., whether they can be effectively confounded with the supporting passages."
+  },
+  {
+    "id": 42,
+    "a": "Summarization",
+    "b": "zero-shot",
+    "sentence": "Evidence-focused fact summarization for knowledge-augmented zero-shot question answering."
+  },
+  {
+    "id": 43,
+    "a": "Coutts",
+    "b": "Royal Bank of Scotland Group",
+    "sentence": "n, England.[ ISSUP =Fully Supported] Reference [1] Rory Tapner Rory Tapner is a UK businessman who, in September 2010 was appointed CEO of Coutts, the Wealth Management division of Royal Bank of Scotland Group."
+  },
+  {
+    "id": 44,
+    "a": "open domain information extraction",
+    "b": "linguistic structure",
+    "sentence": "Leveraging linguistic structure for open domain information extraction."
+  },
+  {
+    "id": 45,
+    "a": "Ret-ChatGPT",
+    "b": "retrieval-augmented",
+    "sentence": "We also report the result of retrieval-augmented baselines with LMs trained with private data: Ret-ChatGPT and Ret-Llama2-chat, which deploy the same augmentation technique above, as well as perplexity.ai, an InstructGPT-based production"
+  },
+  {
+    "id": 46,
+    "a": "generation",
+    "b": "retriever/fixer",
+    "sentence": "Besides, the efficiency of the retriever/fixer is another important factor to be considered, as the generation speed of existing LLMs is already a significant bur- den (Ning et al., 2023)."
+  },
+  {
+    "id": 47,
+    "a": "Clustering-based Semantic Chunker",
+    "b": "n_clusters",
+    "sentence": "Clustering-based Semantic Chunker (Single- linkage) As n_clusters increases, the average chunk size decreases."
+  },
+  {
+    "id": 48,
+    "a": "Self-Reflective Retrieval-Augmented Generation",
+    "b": "instruction tuning",
+    "sentence": "As you can imagine, when more advanced LLMs are available in the future, they can be coupled with CRAG easily, while additional instruction tuning is still necessary for Self-RAG."
+  },
+  {
+    "id": 49,
+    "a": "News",
+    "b": "semantic content",
+    "sentence": "\u2022 Fake News Detection: Detecting fake news necessitates considering both semantic content (e.g., the content of the news) and structural interactions (e.g., interactions among news)."
+  },
+  {
+    "id": 50,
+    "a": "search engines",
+    "b": "special tokens",
+    "sentence": "It navigates this process using special tokens that facilitate actions such as search engine queries, browsing results, and citing references, thereby expanding GPT-3\u2019s capabilities through the use of external search engines."
+  },
+  {
+    "id": 51,
+    "a": "embedding vector",
+    "b": "graph",
+    "sentence": "In general, these methods initialize each node with a latent embedding vector and conduct unsupervised training to squeeze structural signals derived from graph structure into the embedding."
+  },
+  {
+    "id": 52,
+    "a": "document stitching",
+    "b": "chunker",
+    "sentence": "C Document Stitching and Dataset Choices Most document retrieval datasets consist of short documents (fewer than 20 sentences), which are inadequate for effectively evaluating chunkers."
+  },
+  {
+    "id": 53,
+    "a": "structural vulnerabilities",
+    "b": "graph-structured data",
+    "sentence": "How- ever, all of them have overlooked the structural vulnerabilities inherent in graph-structured data."
+  },
+  {
+    "id": 54,
+    "a": "ITER-RETGEN",
+    "b": "tasks",
+    "sentence": "ITER- RETGEN [14] employs a synergistic approach that lever- ages \u201cretrieval-enhanced generation\u201d alongside \u201cgeneration- enhanced retrieval\u201d for tasks that necessitate the reproduction of specific information."
+  },
+  {
+    "id": 55,
+    "a": "GPT-3.5-Turbo",
+    "b": "OpenAI API",
+    "sentence": "Since the experiments with ChatGPT and GPT-4 are conducted using the OpenAI API, the running time is contingent on the OpenAI service, e.g., API latency."
+  },
+  {
+    "id": 56,
+    "a": "factorization-machine based neural network",
+    "b": "CTR Prediction",
+    "sentence": "Deepfm: a factorization-machine based neural network for ctr prediction."
+  },
+  {
+    "id": 57,
+    "a": "Chimnabai Clock Tower",
+    "b": "Chimnabai I",
+    "sentence": "Chimnabai Clock Tower was built in 1896. The tower was named after Chimnabai I (1864\u20131885), a queen and the first wife of Sayajirao Gaekwad III of Baroda State."
+  },
+  {
+    "id": 58,
+    "a": "Knowledge Graph Construction",
+    "b": "entity typing",
+    "sentence": "s typically addressed KGC using \u201cpipelines\u201d, comprising subtasks like entity discovery (\u017dukov-Gregori\u02c7c et al., 2018; Martins et al., 2019), entity typing (Choi et al., 2018; Onoe and Durrett, 2020), and relation classification (Zeng et"
+  },
+  {
+    "id": 59,
+    "a": "Adam Silver",
+    "b": "NBA",
+    "sentence": "ar basketball league, the NBA, Commissioner Adam Silver has long been regarded as a leader and decision-maker."
+  },
+  {
+    "id": 60,
+    "a": "When will AI exceed human performance?",
+    "b": "Katja Grace",
+    "sentence": "[16] Katja Grace, John Salvatier, Allan Dafoe, Baobao Zhang, and Owain Evans. When will AI exceed human performance?"
+  },
+  {
+    "id": 61,
+    "a": "Inclusive Dependency",
+    "b": "RAG systems",
+    "sentence": "To the best of our knowledge, no prior research has explored inclusive dependencies in RAG systems."
+  },
+  {
+    "id": 62,
+    "a": "Table 1",
+    "b": "target",
+    "sentence": "Table 1: Examples of potential users, tasks, and questions generated by the LLM based on short descriptions of the target datasets."
+  },
+  {
+    "id": 63,
+    "a": "Gpt4graph",
+    "b": "graph-structured data",
+    "sentence": "Gpt4graph: Can large language models understand graph structured data?"
+  },
+  {
+    "id": 64,
+    "a": "Self-Reflective Retrieval-Augmented Generation",
+    "b": "external knowledge base",
+    "sentence": "To overcome challenges, Retrieval-Augmented Generation (RAG) enhances LLMs by retrieving relevant document chunks from external knowledge base through semantic similarity calcu- lation."
+  },
+  {
+    "id": 65,
+    "a": "retrieval encoders",
+    "b": "parahippocampal regions",
+    "sentence": "Finally, to connect both components as is done by the parahippocampal regions, we use off-the-shelf dense encoders fine-tuned for retrieval (retrieval encoders)."
+  },
+  {
+    "id": 66,
+    "a": "BEIR",
+    "b": "re-ranking",
+    "sentence": "As a result, we only utilize GPT-4 for re-ranking the top 30 passages of ChatGPT on BEIR and Mr.TyDi."
+  },
+  {
+    "id": 67,
+    "a": "sports",
+    "b": "entertainment industry",
+    "sentence": "etter because it provides a comprehensive and structured overview of public figures across various sectors of the entertainment industry, including film, television, music, sports, and digital media."
+  },
+  {
+    "id": 68,
+    "a": "Weisfeiler and lehman go cellular: Cw networks",
+    "b": "Yuguang Wang",
+    "sentence": "[26] Cristian Bodnar, Fabrizio Frasca, Nina Otter, Yuguang Wang, Pietro Lio, Guido F Montufar, and Michael Bronstein. Weisfeiler and lehman go cellular: Cw networks."
+  },
+  {
+    "id": 69,
+    "a": "hallucination mitigation techniques",
+    "b": "SM Zaman",
+    "sentence": "[397] SM Tonmoy, SM Zaman, Vinija Jain, Anku Rani, Vipula Rawte, Aman Chadha, and Amitava Das. A comprehensive survey of hallucination mitigation techniques in large language models."
+  },
+  {
+    "id": 70,
+    "a": "dialogue",
+    "b": "task-oriented dialogue generation",
+    "sentence": "Dialokg: Knowledge-structure aware task-oriented dialogue generation."
+  },
+  {
+    "id": 71,
+    "a": "contrastive learning",
+    "b": "graph contrastive learning",
+    "sentence": "Additionally, different training strategies, such as (semi-)supervised learning [279] and graph contrastive learning [192, 264], are employed depending on the specific requirements of the task."
+  },
+  {
+    "id": 72,
+    "a": "Chunks",
+    "b": "embedding model",
+    "sentence": "Chunks are then encoded into vector representations using an embedding model and stored in vector database."
+  },
+  {
+    "id": 73,
+    "a": "open information extractors",
+    "b": "social networks",
+    "sentence": "Large language models for social networks: Applications, challenges, and solutions."
+  },
+  {
+    "id": 74,
+    "a": "Faithfulness",
+    "b": "Precision@k",
+    "sentence": "Overall, these results suggest that GraphRAG offers improve- ments over VectorRAG, particularly in faithfulness and context pre- cision."
+  },
+  {
+    "id": 75,
+    "a": "Graph Neural Networks",
+    "b": "Haoyu Han",
+    "sentence": "61 [140] Haoyu Han, Juanhui Li, Wei Huang, Xianfeng Tang, Hanqing Lu, Chen Luo, Hui Liu, and Jiliang Tang. Node-wise filtering in graph neural networks: A mixture of experts approach."
+  },
+  {
+    "id": 76,
+    "a": "document-level relation extraction",
+    "b": "Ningyu Zhang",
+    "sentence": "[526] Ningyu Zhang, Xiang Chen, Xin Xie, Shumin Deng, Chuanqi Tan, Mosha Chen, Fei Huang, Luo Si, and Huajun Chen. Document-level relation extraction as semantic segmentation."
+  },
+  {
+    "id": 77,
+    "a": "GPT-3.5-Turbo",
+    "b": "gpt-4-0314",
+    "sentence": "(iii) On BEIR, we use only GPT-4 to re-rank the top-30 passages re-ranked by Chat- GPT."
+  },
+  {
+    "id": 78,
+    "a": "Boost then convolve",
+    "b": "Sergei Ivanov",
+    "sentence": "63 [171] Sergei Ivanov and Liudmila Prokhorenkova. Boost then convolve: Gradient boosting meets graph neural networks."
+  },
+  {
+    "id": 79,
+    "a": "named entities",
+    "b": "Open information extraction",
+    "sentence": "We then add the named entities to the OpenIE prompt to extract the final triples, which also contain concepts (noun phrases) beyond named entities."
+  },
+  {
+    "id": 80,
+    "a": "retrieval",
+    "b": "TriviaQA",
+    "sentence": "It is worth noting that RAG\u2019s retriever is initialized using DPR\u2019s retriever, which uses retrieval supervision on Natural Questions and TriviaQA."
+  },
+  {
+    "id": 81,
+    "a": "document graph networks",
+    "b": "multi-hop question answering",
+    "sentence": "Identifying supporting facts for multi-hop question answering with document graph networks."
+  },
+  {
+    "id": 82,
+    "a": "molecule generation",
+    "b": "generative model",
+    "sentence": "\u2022 Molecule generation: Molecule generation refers to the process of creating or designing new molecular structures, often using generative models [433, 167]."
+  },
+  {
+    "id": 83,
+    "a": "bridge-entity",
+    "b": "evidence",
+    "sentence": "including supporting evidence from two news articles, the paraphrased claim, the bridge-topic and bridge-entity, and the corresponding answer."
+  },
+  {
+    "id": 84,
+    "a": "EDC framework",
+    "b": "post-hoc canonicalization",
+    "sentence": "Our EDC framework circumvents this problem by using post-hoc canonicalization (and without requiring fine-tuning of the base LLMs)."
+  },
+  {
+    "id": 85,
+    "a": "Self Canonicalization",
+    "b": "target schema",
+    "sentence": "\u2022 Self Canonicalization: Absent a target schema, the goal is to consolidate semanti- cally similar schema comp"
+  },
+  {
+    "id": 86,
+    "a": "BART-large",
+    "b": "Jeopardy Question Generation",
+    "sentence": "4.5 Additional Results Generation Diversity Section 4.3 shows that RAG models are more factual and speci\ufb01c than BART for Jeopardy question generation."
+  },
+  {
+    "id": 87,
+    "a": "Knowedu",
+    "b": "knowledge graphs",
+    "sentence": "Knowedu: A system to construct knowledge graph for education."
+  },
+  {
+    "id": 88,
+    "a": "math word problems",
+    "b": "multi-step reasoning",
+    "sentence": "\u2022 GSM8K42 [65]: The GSM8K dataset is a collection of 8.5K high-quality, linguistically diverse math word problems designed to assess multi-step reasoning for question answering."
+  },
+  {
+    "id": 89,
+    "a": "Language agent tree search",
+    "b": "Language Models",
+    "sentence": "Language agent tree search unifies reasoning acting and planning in language models, 2023."
+  },
+  {
+    "id": 90,
+    "a": "Self-Reflective Retrieval-Augmented Generation",
+    "b": "generative LMs",
+    "sentence": "Retrieval-Augmented Generation RAG (Lewis et al., 2020; Guu et al., 2020) is regarded as a useful method to address the issues above, which enhances the input questions of generative LMs with retrieved documents."
+  },
+  {
+    "id": 91,
+    "a": "KG embedding",
+    "b": "KG embedding score function",
+    "sentence": "KICGPT retrieves the entities by first scoring all possible entities using a traditional KG embedding score function."
+  },
+  {
+    "id": 92,
+    "a": "retrieval",
+    "b": "small-to-big retrieval",
+    "sentence": "Yang, \u201cAdvanced rag 01: Small-to- big retrieval,\u201d https://towardsdatascience.com/ advanced-rag-01-small-to-big-retrieval-172181b396d4, 2023."
+  },
+  {
+    "id": 93,
+    "a": "GPT-3.5-Turbo",
+    "b": "few-shot prompts",
+    "sentence": "Table 7: The few-shot prompt to GPT-3.5 Turbo for generating knowledge keywords as web search queries."
+  },
+  {
+    "id": 94,
+    "a": "Graph Kernel",
+    "b": "random walks",
+    "sentence": "Similarly, Glava\u0161 and \u0160najder [123] translates images into representative attribute structural graphs that capture spatial relations among regions and perform graph kernel based on random walks to derive hash codes for image retrieval."
+  },
+  {
+    "id": 95,
+    "a": "2WikiMultiHopQA",
+    "b": "passages",
+    "sentence": "Table 6 below shows that the gap between our method and ColBERTv2, using the top-5 passages, increases even more from 3% to 6% on MuSiQue and from 20% to 38% on 2WikiMultiHopQA, suggesting that large improvements come from obtaining all supporting documents rather than achieving partially retrieval on more questions."
+  },
+  {
+    "id": 96,
+    "a": "A knowledge-grounded neural conversation model",
+    "b": "Marjan Ghazvininejad",
+    "sentence": "[15] Marjan Ghazvininejad, Chris Brockett, Ming-Wei Chang, Bill Dolan, Jianfeng Gao, Wen tau Yih, and Michel Galley. A knowledge-grounded neural conversation model."
+  },
+  {
+    "id": 97,
+    "a": "context ranking",
+    "b": "retrieval-augmented",
+    "sentence": "Rankrag: Unifying context ranking with retrieval-augmented generation in llms."
+  },
+  {
+    "id": 98,
+    "a": "Extract, Define, Canonicalize",
+    "b": "Open information extraction",
+    "sentence": ".2.1 Target Alignment The bar charts in Figure 2 summarize the Partial F1 scores obtained by EDC and EDC+R on all three datasets with different LLMs for OIE compared against the respective baselines."
+  },
+  {
+    "id": 99,
+    "a": "Comparison query",
+    "b": "query",
+    "sentence": "Comparison query: For such a query q, the an- swer requires a comparison of evidence within the retrieval set Rq."
+  },
+  {
+    "id": 100,
+    "a": "Queensland",
+    "b": "relation",
+    "sentence": "Relational Extraction What is the relation between \"Surfers Riverwalk\" and \"Queensland\"?"
+  }
+]

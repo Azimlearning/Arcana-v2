@@ -19,7 +19,7 @@ E5 and E6: counts from the real vault and corpus: items made per claim, leak cou
 
 ### Task F3: the link audit (waiting on Azim)
 
-Azim reads `eval/results/20261007T060948Z-m2-audit-sample.md` and `20261007T140924Z-m2-audit-sample.md`; the key is applied by the existing tool; precision of stated and co-mention links with the sample size is recorded. **Verify:** the result file names both samples and keeps the key apart until the labels are in.
+Azim reads `eval/results/20261007T060948Z-m2-audit-sample.md`, `20261007T140924Z-m2-audit-sample.md` and the full-corpus `atomic2` sample drawn 2026-10-15 (`20261014T185317Z-m2-audit-sample.md`, 50 asserted and 50 co-mention, seed 20261007); the key is applied by the existing tool; precision of stated and co-mention links with the sample size is recorded. **Verify:** the result file names both samples and keeps the key apart until the labels are in.
 
 ### Task F4: the full-corpus `atomic2` build and the compare (**done 2026-10-14**: `refdocs/evidence/20261014-m2-look5-full-corpus.md`; $5.12 build; see D-35 Look 5 and the A9 addendum)
 

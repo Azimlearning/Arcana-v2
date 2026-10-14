@@ -26,7 +26,7 @@
 | Item | Where | Owner |
 |---|---|---|
 | The two 100-item link audit samples are unread | `eval/results/20261007T060948Z-m2-audit-sample.md`, `20261007T140924Z-m2-audit-sample.md` | Azim |
-| The full-corpus `atomic2` result is within noise and below the free-form baseline's hybrid; the link audit of this build is not drawn | Look 5 | Azim (reading) |
+| The full-corpus `atomic2` result is within noise and below the free-form baseline's hybrid; **the link audit sample of this build is drawn (2026-10-15, 100 items, seed 20261007) and unread**: `eval/results/20261014T185317Z-m2-audit-sample.md`, key apart in `audit-keys/` | Look 5 | Azim (reading) |
 | RAGAS metrics are null; the library is installed at the end | P5 F5 | Azim's standing instruction |
 | `one_more_word` lint reason is noisy on real data | `refdocs/execution/2026-10-07-m2-lint-screen.md` | Open |
 | Quiz wrong answers are chosen without a model: some are too easy | D-35 A8 limits | Open |
