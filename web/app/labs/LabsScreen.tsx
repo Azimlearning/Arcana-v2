@@ -1,27 +1,37 @@
 "use client";
 
-// The labs screen (P4, D-36): ask the server for a lab and show it. A lab is made on request (the server generates, checks and verifies it,
-// or says at which stage it failed) and shown through the block registry like every other block; this screen never inspects the block, and
-// the code in it can only run inside the registry's sandboxed iframe.
+// The labs screen (P4, D-36): the labs your documents support, and a lab made from one of them. The server lists every lab it can make and
+// says, for each, whether a stored passage states its formula (constraint 7: a lab is offered only where the documents support it); asking
+// for one makes it (the server generates, checks and verifies it, or says at which stage it failed) and it is shown through the block
+// registry like every other block. This screen never inspects a block, and the code in it can only run inside the registry's sandboxed iframe.
 
-import type { ErrorEnvelope, UIBlock } from "@arcana/schema";
+import type { ErrorEnvelope, LabSummary, UIBlock } from "@arcana/schema";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { renderBlock } from "@/components/genui/registry";
-import { makeLab } from "@/lib/api";
+import { fetchLabs, makeLab } from "@/lib/api";
 
-type State = { state: "idle" } | { state: "making" } | { state: "error"; error: ErrorEnvelope } | { state: "ready"; blocks: UIBlock[] };
-
-export const LABS = [{ id: "ranknet_pairwise_loss", label: "RankNet pairwise loss" }] as const;
+type List = { state: "loading" } | { state: "error"; error: ErrorEnvelope } | { state: "ready"; labs: LabSummary[] };
+type Made = { state: "idle" } | { state: "making"; id: string } | { state: "error"; error: ErrorEnvelope } | { state: "ready"; blocks: UIBlock[] };
 
 export function LabsScreen() {
-  const [view, setView] = useState<State>({ state: "idle" });
+  const [list, setList] = useState<List>({ state: "loading" });
+  const [made, setMade] = useState<Made>({ state: "idle" });
+
+  useEffect(() => {
+    const abort = new AbortController();
+    void fetchLabs({ signal: abort.signal }).then((result) => {
+      if (abort.signal.aborted) return;
+      setList(result.ok ? { state: "ready", labs: result.labs } : { state: "error", error: result.error });
+    });
+    return () => abort.abort();
+  }, []);
 
   const make = async (contractId: string) => {
-    setView({ state: "making" });
+    setMade({ state: "making", id: contractId });
     const result = await makeLab(contractId);
-    setView(result.ok ? { state: "ready", blocks: result.workspace.blocks } : { state: "error", error: result.error });
+    setMade(result.ok ? { state: "ready", blocks: result.workspace.blocks } : { state: "error", error: result.error });
   };
 
   return (
@@ -43,35 +53,57 @@ export function LabsScreen() {
       <main className="mx-auto max-w-3xl space-y-4 p-6">
         <h1 className="text-xl font-semibold">Labs</h1>
         <p className="text-sm text-stone-600">
-          A lab is an interactive plot of a formula your documents state. The function is written for the formula and is shown only after the server has checked it
-          with rules that allow only arithmetic and verified it against reference cases.
+          A lab is an interactive plot of a formula your documents state. It is offered only where a stored passage states the formula, and its
+          function is shown only after the server has checked it with rules that allow only arithmetic and verified it on every setting the sliders
+          can reach.
         </p>
-        <div className="flex flex-wrap gap-2">
-          {LABS.map((lab) => (
-            <button
-              key={lab.id}
-              type="button"
-              aria-disabled={view.state === "making"}
-              onClick={() => {
-                if (view.state !== "making") void make(lab.id);
-              }}
-              className="rounded-lg bg-stone-900 px-3 py-1.5 text-sm text-white"
-            >
-              Make the {lab.label} lab
-            </button>
-          ))}
-        </div>
-        {view.state === "making" && (
+        {list.state === "loading" && (
+          <p role="status" aria-busy="true" className="text-sm text-stone-500">
+            Looking at which formulas your documents state…
+          </p>
+        )}
+        {list.state === "error" && (
+          <p role="alert" className="text-sm text-red-700">
+            {list.error.message}
+          </p>
+        )}
+        {list.state === "ready" && (
+          <ul aria-label="Available labs" className="space-y-2">
+            {list.labs.map((lab) => (
+              <li key={lab.contractId} className="rounded-lg border border-stone-200 bg-white p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-medium text-stone-900">{lab.title}</p>
+                    <p className="text-xs text-stone-500">
+                      {lab.available
+                        ? `Stated in ${lab.docTitle ?? "a stored document"}${lab.page != null ? ` · page ${lab.page}` : ""}`
+                        : (lab.reason ?? "Not supported by your documents.")}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={!lab.available || made.state === "making"}
+                    onClick={() => void make(lab.contractId)}
+                    className="rounded-lg bg-stone-900 px-3 py-1.5 text-sm text-white disabled:cursor-not-allowed disabled:bg-stone-300"
+                  >
+                    Make this lab
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+        {made.state === "making" && (
           <p role="status" aria-busy="true" className="text-sm text-stone-500">
             Making and checking the lab…
           </p>
         )}
-        {view.state === "error" && (
+        {made.state === "error" && (
           <p role="alert" className="text-sm text-red-700">
-            {view.error.message}
+            {made.error.message}
           </p>
         )}
-        {view.state === "ready" && view.blocks.map((block) => <div key={block.id}>{renderBlock(block)}</div>)}
+        {made.state === "ready" && made.blocks.map((block) => <div key={block.id}>{renderBlock(block)}</div>)}
       </main>
     </div>
   );

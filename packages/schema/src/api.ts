@@ -118,6 +118,25 @@ export interface LabRequest {
   contractId: string;
 }
 
+/**
+ * One lab the server can make and whether the stored passages support it now (the evidence precondition): `available` is true only if a
+ * stored passage states the lab's formula, and then `docTitle` and `page` say where. Otherwise `reason` says why not, in words.
+ */
+export interface LabSummary {
+  contractId: string;
+  title: string;
+  available: boolean;
+  docTitle: string | null;
+  /** @int */
+  page: number | null;
+  reason: string | null;
+}
+
+/** GET /labs: every lab the server knows, with whether the documents support it. */
+export interface LabList {
+  labs: LabSummary[];
+}
+
 // ── Vault lint (M2.8, D-35): GET /vault/lint ──────────────────────────────────────────────────────────────────────────
 
 /** A page named in the lint report. */

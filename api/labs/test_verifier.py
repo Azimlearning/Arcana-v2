@@ -93,7 +93,7 @@ def test_a_function_that_fails_the_static_check_never_reaches_the_runner():
 def test_a_slow_call_is_refused_because_the_sliders_call_it_once_per_sweep_point_on_every_move(
     monkeypatch,
 ):
-    monkeypatch.setattr("api.labs.verifier.MAX_CALL_MS", 0.0)  # any measurable call is too slow
+    monkeypatch.setattr("api.labs.verifier.MAX_MEAN_CALL_MS", 0.0)  # any measurable call is too slow
     assert stage_of(GOOD) == "run"
 
 

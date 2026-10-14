@@ -215,6 +215,11 @@ class LabChecked(BaseModel):
     gridPoints: int
 
 
+class LabList(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    labs: list[LabSummary]
+
+
 class LabParameter(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
     name: str
@@ -228,6 +233,16 @@ class LabParameter(BaseModel):
 class LabRequest(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
     contractId: str
+
+
+class LabSummary(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    contractId: str
+    title: str
+    available: bool
+    docTitle: str | None
+    page: int | None
+    reason: str | None
 
 
 class LayoutEvent(BaseModel):
@@ -651,8 +666,10 @@ GridDimension.model_rebuild()
 GridRow.model_rebuild()
 IngestResponse.model_rebuild()
 LabChecked.model_rebuild()
+LabList.model_rebuild()
 LabParameter.model_rebuild()
 LabRequest.model_rebuild()
+LabSummary.model_rebuild()
 LayoutEvent.model_rebuild()
 LayoutSpec.model_rebuild()
 LearnerEventRequest.model_rebuild()

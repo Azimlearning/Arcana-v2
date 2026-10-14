@@ -3,6 +3,8 @@
 import type {
   ErrorEnvelope,
   IngestResponse,
+  LabList,
+  LabSummary,
   LayoutMode,
   LearnerSignal,
   PatternState,
@@ -269,6 +271,43 @@ export async function fetchLint(options: { baseUrl?: string; fetchImpl?: typeof 
   try {
     const body: unknown = await response.json();
     if (isLintReport(body)) return { ok: true, report: body };
+  } catch {
+    // not JSON
+  }
+  return { ok: false, error: clientError("The server sent an unreadable response.", false) };
+}
+
+export type LabsResult = { ok: true; labs: LabSummary[] } | { ok: false; error: ErrorEnvelope };
+
+function isLabList(value: unknown): value is LabList {
+  if (typeof value !== "object" || value === null) return false;
+  const labs = (value as { labs?: unknown }).labs;
+  return (
+    Array.isArray(labs) &&
+    labs.every(
+      (l) =>
+        typeof l === "object" &&
+        l !== null &&
+        typeof (l as LabSummary).contractId === "string" &&
+        typeof (l as LabSummary).title === "string" &&
+        typeof (l as LabSummary).available === "boolean",
+    )
+  );
+}
+
+/** The labs the server can make, and whether the stored passages support each (D-36). A body that is not a list is an error. */
+export async function fetchLabs(options: { baseUrl?: string; fetchImpl?: typeof fetch; signal?: AbortSignal } = {}): Promise<LabsResult> {
+  const { baseUrl = API_BASE, fetchImpl = fetch, signal } = options;
+  let response: Response;
+  try {
+    response = await fetchImpl(`${baseUrl}/labs`, { signal });
+  } catch {
+    return { ok: false, error: clientError("Could not reach the server.") };
+  }
+  if (!response.ok) return { ok: false, error: await envelopeFromResponse(response) };
+  try {
+    const body: unknown = await response.json();
+    if (isLabList(body)) return { ok: true, labs: body.labs };
   } catch {
     // not JSON
   }

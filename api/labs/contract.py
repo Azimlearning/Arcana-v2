@@ -204,7 +204,34 @@ def ranknet_loss(si: float, sj: float) -> float:
     return d + math.log1p(math.exp(-d)) if d > 0 else math.log1p(math.exp(d))
 
 
-REFERENCES: dict[str, Callable[..., float]] = {"ranknet_loss": ranknet_loss}
+def f1_at_k(hits: float, k: float, relevant: float) -> float:
+    """F1@k from counts: precision@k is hits / k, recall@k is hits / relevant, and F1@k "the harmonic mean of precision and recall" (as the
+    stored passage states). `hits` cannot exceed `k` (you retrieved k) or `relevant` (there are that many), so it is clamped to both."""
+    h = min(hits, k, relevant)
+    if h <= 0:
+        return 0.0
+    precision = h / k
+    recall = h / relevant
+    return 2 * precision * recall / (precision + recall)
+
+
+def infonce_loss(phi_pos: float, phi_neg: float, negatives: float) -> float:
+    """The InfoNCE loss as the stored passage prints it: -log( phi(t, r+) / ( phi(t, r+) + sum over the negatives of phi(t, n_i) ) ), here
+    with the same similarity `phi_neg` for each of `negatives` negatives."""
+    return -math.log(phi_pos / (phi_pos + negatives * phi_neg))
+
+
+def cosine_chunk_distance(angle: float) -> float:
+    """The semantic distance the passage's chunker uses: d = 1 - max(cos(emb(a), emb(b)), 0), with the angle between the two embeddings in degrees."""
+    return 1.0 - max(math.cos(math.radians(angle)), 0.0)
+
+
+REFERENCES: dict[str, Callable[..., float]] = {
+    "ranknet_loss": ranknet_loss,
+    "f1_at_k": f1_at_k,
+    "infonce_loss": infonce_loss,
+    "cosine_chunk_distance": cosine_chunk_distance,
+}
 """Reference functions by key; a contract names one. Adding a lab means adding its reference here, written from the cited formula."""
 
 
@@ -254,5 +281,106 @@ def ranknet_contract() -> LabContract:
     )
 
 
-CONTRACTS: dict[str, Callable[[], LabContract]] = {"ranknet_pairwise_loss": ranknet_contract}
+def f1_at_k_contract() -> LabContract:
+    """F1@k from the number of relevant hits, k and the number of relevant documents. Evidence: the stored passage that defines F1@k as the
+    harmonic mean of precision and recall (and, next to it, recall@k and precision@k as fractions)."""
+    return LabContract(
+        id="f1_at_k",
+        title="F1@k: the harmonic mean of precision and recall",
+        parameters=(
+            LabParameter(name="hits", label="relevant documents among the k retrieved", min=0.0, max=20.0, default=3.0),
+            LabParameter(name="k", label="documents retrieved (k)", min=1.0, max=21.0, default=10.0),
+            LabParameter(name="relevant", label="relevant documents in the corpus", min=1.0, max=21.0, default=5.0),
+        ),
+        sweep="k",
+        grid=20,
+        output_label="F1@k",
+        source_phrase="F1@k: The harmonic mean of precision and recall",
+        reference="f1_at_k",
+        cases=(
+            ReferenceCase(params={"hits": 3.0, "k": 10.0, "relevant": 5.0}, expected=0.4, tolerance=1e-9),
+            ReferenceCase(params={"hits": 5.0, "k": 5.0, "relevant": 5.0}, expected=1.0, tolerance=1e-9),
+            ReferenceCase(params={"hits": 0.0, "k": 10.0, "relevant": 5.0}, expected=0.0, tolerance=1e-9),
+            ReferenceCase(params={"hits": 8.0, "k": 10.0, "relevant": 4.0}, expected=4.0 / 7.0, tolerance=1e-9),
+            ReferenceCase(params={"hits": 2.0, "k": 4.0, "relevant": 8.0}, expected=1.0 / 3.0, tolerance=1e-9),
+        ),
+        properties=(
+            PropertySpec(kind="finite"),
+            PropertySpec(kind="non_negative"),
+            PropertySpec(kind="bounded", lo=0.0, hi=1.0),
+            PropertySpec(kind="monotone", param="hits", direction="increasing"),
+            PropertySpec(kind="matches_reference"),
+        ),
+    )
+
+
+def infonce_contract() -> LabContract:
+    """The InfoNCE loss for one positive and `negatives` equally similar negatives, as the stored passage prints it. Evidence: the sentence that
+    introduces it (`using the InfoNCE loss, min L = ...`)."""
+    return LabContract(
+        id="infonce_loss",
+        title="InfoNCE loss for one positive and several negatives",
+        parameters=(
+            LabParameter(name="phi_pos", label="similarity to the correct item", min=0.05, max=1.0, default=0.8),
+            LabParameter(name="phi_neg", label="similarity to each wrong item", min=0.05, max=1.0, default=0.3),
+            LabParameter(name="negatives", label="number of wrong items", min=0.0, max=19.0, default=5.0),
+        ),
+        sweep="negatives",
+        grid=19,
+        output_label="loss",
+        source_phrase="using the InfoNCE loss, min L",
+        reference="infonce_loss",
+        cases=(
+            ReferenceCase(params={"phi_pos": 0.8, "phi_neg": 0.3, "negatives": 5.0}, expected=math.log(2.3 / 0.8), tolerance=1e-9),
+            ReferenceCase(params={"phi_pos": 1.0, "phi_neg": 0.05, "negatives": 0.0}, expected=0.0, tolerance=1e-9),
+            ReferenceCase(params={"phi_pos": 0.5, "phi_neg": 0.5, "negatives": 1.0}, expected=math.log(2.0), tolerance=1e-9),
+            ReferenceCase(params={"phi_pos": 0.25, "phi_neg": 1.0, "negatives": 10.0}, expected=math.log(41.0), tolerance=1e-9),
+            ReferenceCase(params={"phi_pos": 0.05, "phi_neg": 0.05, "negatives": 19.0}, expected=math.log(20.0), tolerance=1e-9),
+        ),
+        properties=(
+            PropertySpec(kind="finite"),
+            PropertySpec(kind="non_negative"),
+            PropertySpec(kind="monotone", param="phi_pos", direction="decreasing"),
+            PropertySpec(kind="monotone", param="phi_neg", direction="increasing"),
+            PropertySpec(kind="monotone", param="negatives", direction="increasing"),
+            PropertySpec(kind="matches_reference"),
+        ),
+    )
+
+
+def cosine_chunk_distance_contract() -> LabContract:
+    """The distance a semantic chunker uses between two sentences' embeddings: 1 - max(cos, 0). Evidence: the stored passage that prints it
+    (`dcos(xa, xb) = 1 - max(cos(emb(xa), emb(xb)), 0)`)."""
+    return LabContract(
+        id="cosine_chunk_distance",
+        title="Cosine distance between two sentence embeddings (the chunker's distance)",
+        parameters=(LabParameter(name="angle", label="angle between the two embeddings", min=0.0, max=180.0, default=60.0, unit="degrees"),),
+        sweep="angle",
+        grid=72,
+        output_label="distance",
+        source_phrase="dcos(xa, xb) = 1 −max(cos(emb(xa), emb(xb)), 0)",  # noqa: RUF001  (the stored passage uses U+2212)
+        reference="cosine_chunk_distance",
+        cases=(
+            ReferenceCase(params={"angle": 0.0}, expected=0.0, tolerance=1e-9),
+            ReferenceCase(params={"angle": 60.0}, expected=0.5, tolerance=1e-9),
+            ReferenceCase(params={"angle": 45.0}, expected=1.0 - math.sqrt(0.5), tolerance=1e-9),
+            ReferenceCase(params={"angle": 90.0}, expected=1.0, tolerance=1e-9),
+            ReferenceCase(params={"angle": 150.0}, expected=1.0, tolerance=1e-9),
+        ),
+        properties=(
+            PropertySpec(kind="finite"),
+            PropertySpec(kind="non_negative"),
+            PropertySpec(kind="bounded", lo=0.0, hi=1.0),
+            PropertySpec(kind="monotone", param="angle", direction="increasing"),
+            PropertySpec(kind="matches_reference"),
+        ),
+    )
+
+
+CONTRACTS: dict[str, Callable[[], LabContract]] = {
+    "ranknet_pairwise_loss": ranknet_contract,
+    "f1_at_k": f1_at_k_contract,
+    "infonce_loss": infonce_contract,
+    "cosine_chunk_distance": cosine_chunk_distance_contract,
+}
 """The labs the server knows how to make, by id."""

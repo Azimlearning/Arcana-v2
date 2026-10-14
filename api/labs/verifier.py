@@ -37,8 +37,12 @@ FUZZ_SEED = 20261008
 FUZZ_CASES = 200
 RUN_TIMEOUT_SECONDS = 30
 PER_CALL_TIMEOUT_MS = 500
-MAX_CALL_MS = 50.0
-"""The slowest single call allowed: the host calls the function once per sweep point on every slider move, so a slow one freezes the page."""
+MAX_MEAN_CALL_MS = 5.0
+"""The mean call time allowed: the host calls the function once per sweep point (up to 101 times) on every slider move, so the mean is what a slider
+move costs, and a function over this makes the page janky. The mean, not the slowest call, because one scheduling hiccup on a busy machine must not
+refuse a good lab (a wall-clock maximum did exactly that under load)."""
+MAX_CALL_MS = 250.0
+"""...and no single call may take longer than this (a pathological function; the runner's own limit is `PER_CALL_TIMEOUT_MS`)."""
 CHUNK_VECTORS = 4000
 MAX_RUNNER_MEMORY_MB = 64
 EPS = 1e-12
@@ -182,7 +186,7 @@ def _battery(contract: LabContract) -> _Battery:
 # ── running ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 
-def _run_chunk(source: str, vectors: list[dict[str, float]]) -> tuple[list[float | str], float]:
+def _run_chunk(source: str, vectors: list[dict[str, float]]) -> tuple[list[float | str], float, float]:
     script = TOOL_DIR / "run.mjs"
     if not script.exists():
         raise LabToolError("the lab runner is missing")
@@ -210,17 +214,18 @@ def _run_chunk(source: str, vectors: list[dict[str, float]]) -> tuple[list[float
     values = body["values"]
     if len(values) != len(vectors):
         raise LabToolError("the lab runner returned the wrong number of values")
-    return values, float(body.get("slowestCallMs", 0.0))
+    return values, float(body.get("slowestCallMs", 0.0)), float(body.get("meanCallMs", 0.0))
 
 
 def _run(source: str, vectors: list[dict[str, float]]) -> list[float | str]:
     out: list[float | str] = []
     for i in range(0, len(vectors), CHUNK_VECTORS):
-        values, slowest = _run_chunk(source, vectors[i : i + CHUNK_VECTORS])
-        if slowest > MAX_CALL_MS:
+        values, slowest, mean = _run_chunk(source, vectors[i : i + CHUNK_VECTORS])
+        if mean > MAX_MEAN_CALL_MS or slowest > MAX_CALL_MS:
             raise VerificationFailed(
                 "run",
-                f"a call took {slowest:.0f} ms (the limit is {MAX_CALL_MS:.0f} ms): too slow for sliders",
+                f"calls took {mean:.1f} ms on average and {slowest:.0f} ms at most "
+                f"(limits {MAX_MEAN_CALL_MS:.0f} and {MAX_CALL_MS:.0f} ms): too slow for sliders",
             )
         out.extend(values)
     return out

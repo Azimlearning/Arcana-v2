@@ -22,6 +22,26 @@ RANKNET_SOURCE = """function lab(p) {
 """A correct RankNet pairwise loss, written without overflow (the formula the cited passage states)."""
 
 
+F1_AT_K_SOURCE = """function lab(p) {
+  const h = Math.min(p.hits, p.k, p.relevant);
+  if (h <= 0) {
+    return 0;
+  }
+  const precision = h / p.k;
+  const recall = h / p.relevant;
+  return 2 * precision * recall / (precision + recall);
+}"""
+
+INFONCE_SOURCE = """function lab(p) {
+  return -Math.log(p.phi_pos / (p.phi_pos + p.negatives * p.phi_neg));
+}"""
+
+COSINE_DISTANCE_SOURCE = """function lab(p) {
+  const c = Math.cos(p.angle * Math.PI / 180);
+  return 1 - Math.max(c, 0);
+}"""
+
+
 class LabGenerator(ABC):
     @abstractmethod
     def generate(self, contract: LabContract) -> str:
@@ -32,7 +52,12 @@ class FakeLabGenerator(LabGenerator):
     """Deterministic and free: a known function per contract, or `overrides[contract id]` (a defective one, in a test)."""
 
     def __init__(self, overrides: dict[str, str] | None = None):
-        self._known = {"ranknet_pairwise_loss": RANKNET_SOURCE}
+        self._known = {
+            "ranknet_pairwise_loss": RANKNET_SOURCE,
+            "f1_at_k": F1_AT_K_SOURCE,
+            "infonce_loss": INFONCE_SOURCE,
+            "cosine_chunk_distance": COSINE_DISTANCE_SOURCE,
+        }
         self._overrides = dict(overrides or {})
         self.calls: list[str] = []
 

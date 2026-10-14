@@ -40,13 +40,16 @@ try {
 const call = new vm.Script("__out = __lab(__p)", { filename: "call.js" });
 const values = [];
 let slowest = 0;
+let total = 0;
 for (const vector of vectors) {
   const p = Object.freeze(Object.assign(Object.create(null), vector));
   context.__p = p;
   const began = performance.now();
   try {
     call.runInContext(context, { timeout: timeoutMs });
-    slowest = Math.max(slowest, performance.now() - began);
+    const took = performance.now() - began;
+    slowest = Math.max(slowest, took);
+    total += took;
   } catch (error) {
     const message = String(error?.message ?? error).slice(0, 200);
     fail(/timed out/i.test(message) ? "timeout" : "threw", message);
@@ -55,4 +58,4 @@ for (const vector of vectors) {
   if (typeof out !== "number") fail("not_a_number", `the function returned a ${typeof out}`);
   values.push(Number.isFinite(out) ? out : String(out)); // "NaN", "Infinity", "-Infinity" stay visible to the verifier
 }
-process.stdout.write(JSON.stringify({ ok: true, values, slowestCallMs: slowest }));
+process.stdout.write(JSON.stringify({ ok: true, values, slowestCallMs: slowest, meanCallMs: total / vectors.length }));

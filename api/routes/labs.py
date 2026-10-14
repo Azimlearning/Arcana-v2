@@ -10,7 +10,9 @@ block that names the stage; the documents not stating the formula is an `empty` 
 from fastapi import APIRouter, Request
 
 from api.agents.compose import compose_lab
-from api.genui.generated import LabRequest, WorkspaceResponse
+from api.genui.generated import LabList, LabRequest, LabSummary, WorkspaceResponse
+from api.labs.contract import CONTRACTS
+from api.labs.evidence import find_source
 
 router = APIRouter()
 
@@ -22,3 +24,27 @@ def make_lab(body: LabRequest, request: Request) -> WorkspaceResponse:
         container.docs, container.lab_store, container.lab_generator, body.contractId
     )
     return WorkspaceResponse(layout=layout, blocks=blocks)
+
+
+@router.get("/labs")
+def list_labs(request: Request) -> LabList:
+    """Every lab the server can make, and whether the stored passages state its formula (constraint 7: a lab is offered only where the
+    documents support it). No model call."""
+    docs = request.app.state.container.docs
+    labs = []
+    for contract_id, make in CONTRACTS.items():
+        contract = make()
+        found = find_source(docs, contract)
+        labs.append(
+            LabSummary(
+                contractId=contract_id,
+                title=contract.title,
+                available=found is not None,
+                docTitle=found["docTitle"] if found else None,
+                page=found["page"] if found else None,
+                reason=None
+                if found
+                else "No stored passage states this formula, so there is nothing to ground the lab in.",
+            )
+        )
+    return LabList(labs=labs)
