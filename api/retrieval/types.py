@@ -12,6 +12,10 @@ ALL_SIGNALS: frozenset[Signal] = frozenset({"dense", "sparse", "graph"})
 TOP_K = 10
 RRF_K = 60
 
+# The product path (not the frozen benchmark) draws this many candidates from each signal before fusing and keeps the fused top TOP_K (D-38).
+# The benchmark protocol stays at TOP_K per signal (D-20): `hybrid_retrieve(depth=None)` is that.
+CANDIDATE_DEPTH = 30
+
 
 @dataclass(frozen=True)
 class RetrievedChunk:

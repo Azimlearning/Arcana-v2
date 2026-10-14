@@ -21,7 +21,7 @@ from api.retrieval.dense import DenseRetriever
 from api.retrieval.graph import GraphRetriever
 from api.retrieval.hybrid import hybrid_retrieve
 from api.retrieval.sparse import SparseRetriever
-from api.retrieval.types import RetrievalResult
+from api.retrieval.types import CANDIDATE_DEPTH, RetrievalResult
 from api.stores.doc_store import DocStore
 from api.stores.graph_store import GraphStore
 from api.stores.local.networkx_graph import NetworkXGraphStore
@@ -103,6 +103,7 @@ class Container:
             dense=DenseRetriever(vectors=self.vectors, docs=self.docs, embedder=self.embedder),
             sparse=SparseRetriever(docs=self.docs),
             graph=GraphRetriever(graph=self.graph, docs=self.docs),
+            depth=CANDIDATE_DEPTH,
         )
 
 

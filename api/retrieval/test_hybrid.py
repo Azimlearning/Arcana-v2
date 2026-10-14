@@ -135,3 +135,51 @@ async def test_retriever_result_type_is_what_the_protocol_promises(ingested):
     out = await SparseRetriever(docs=deps.docs).retrieve("Louvain")
     assert isinstance(out, RetrieverResult) and out.resolution is None
     assert out.chunks and out.chunks[0].sources == ("sparse",)
+
+
+class Ranked:
+    """A fixed ranking: returns the first `top_k` of its list, so the depth a caller asks for is the depth it gets."""
+
+    def __init__(self, ids: list[str], signal: str):
+        self.ids, self.signal = ids, signal
+        self.asked: list[int] = []
+
+    async def retrieve(self, query: str, top_k: int = 10) -> RetrieverResult:
+        from api.retrieval.types import RetrievedChunk
+
+        self.asked.append(top_k)
+        chunks = [
+            RetrievedChunk(i, "d", f"text {i}", 1, 1.0 / (n + 1), (self.signal,))
+            for n, i in enumerate(self.ids[:top_k])
+        ]  # type: ignore[arg-type]
+        return RetrieverResult(chunks=chunks)
+
+
+async def test_depth_lets_a_passage_ranked_beyond_ten_reach_the_fused_top_ten():
+    """Passage `x` is 15th for dense and 15th for sparse: invisible at the frozen depth (each signal cut at ten), and, ranked twice, it
+    outscores passages ranked once when each signal contributes 30 candidates (D-38). The fused list is still ten."""
+    filler_d = [f"d{i}" for i in range(14)]
+    filler_s = [f"s{i}" for i in range(14)]
+    dense = Ranked([*filler_d, "x", *[f"dd{i}" for i in range(20)]], "dense")
+    sparse = Ranked([*filler_s, "x", *[f"ss{i}" for i in range(20)]], "sparse")
+    graph = Ranked([], "graph")
+
+    frozen = await hybrid_retrieve("q", dense=dense, sparse=sparse, graph=graph)
+    assert "x" not in [c.id for c in frozen.chunks] and dense.asked == [10]
+
+    deep = await hybrid_retrieve("q", dense=dense, sparse=sparse, graph=graph, depth=30)
+    assert len(deep.chunks) == 10 and dense.asked[-1] == 30
+    assert "x" in [c.id for c in deep.chunks], (
+        "ranked 15th by two signals, it should outscore passages ranked by one"
+    )
+    assert len(deep.per_signal["dense"]) == 30
+
+
+async def test_depth_below_the_final_cut_is_refused_and_the_default_is_the_frozen_protocol():
+    r = Ranked([f"c{i}" for i in range(50)], "dense")
+    with pytest.raises(ValueError):
+        await hybrid_retrieve(
+            "q", dense=r, sparse=Ranked([], "sparse"), graph=Ranked([], "graph"), depth=5
+        )
+    await hybrid_retrieve("q", dense=r, sparse=Ranked([], "sparse"), graph=Ranked([], "graph"))
+    assert r.asked == [10]  # no depth given: exactly the frozen per-signal ten

@@ -28,6 +28,14 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-14: Candidate depth 30 adopted in the product retrieval path (D-38)
+- **Changed:** `api/retrieval/types.py` (`CANDIDATE_DEPTH = 30`), `api/retrieval/hybrid.py` (`depth` parameter: each retriever asked for `depth`, per-signal lists kept at `depth`, fused cut unchanged, a depth below `top_k` refused), `api/container.py` (`Container.retrieve` passes the depth), two tests in `api/retrieval/test_hybrid.py`; D-38, the PRD §7 row, STATUS, the evidence index.
+- **Decided:** D-38. The frozen benchmark arms keep depth equal to `top_k`; a final benchmark reports `hybrid_d30` beside the frozen hybrid. Azim: "if it improves the system then go for it".
+- **Deviations:** the depth is a post hoc choice among depths declared in advance; the evidence is exploratory (Recall@10 +0.093, 6 better, 12 tied, 1 worse, p = 0.094; nDCG@10 +0.030, mixed, p = 0.80). Stated in the ADR, not rounded up.
+- **Verified:** `uv run pytest -q`: 1339 passed; `uv run ruff check api`: clean; the new tests show a passage ranked beyond ten reaches the fused top ten and that the default is the frozen protocol.
+- **Noted, not changed:** no environment variable was added (the depth is a constant); `eval/` arms and the frozen tripwire are untouched.
+- **Known issues / next steps:** RAGAS last (needs a projection and Azim's amount); the enlarged question set would test whether depth 30 survives at a size where p can fall below 0.05.
+
 ### 2026-10-14: Look 5, the full-corpus `atomic2` build and compare (paid, $5.12), measured
 - **Changed:** the paid build (`data/m2/atomic2-full`, gitignored), its vault and label vectors, the compare result `eval/results/20261014T151443Z-m2-look5.json`, `refdocs/evidence/20261014-m2-look5-full-corpus.md`, the D-35 Look 5 paragraph and the A9 addendum, STATUS, the evidence index; tool changes: `eval/graph_variant.py` `--resume` (an unfinished rebuild of the same builder is continued, finished papers kept, spend summed), a provider-failure classification for an exhausted Anthropic credit balance.
 - **Decided:** none new; the run followed A9. The ceiling was $6.50 (the top of the range Azim agreed to; the cap he set, $15 with $6.54 left, would not have fit $7.00) and the resume's was $1.00.

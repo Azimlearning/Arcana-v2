@@ -41,7 +41,13 @@ async def hybrid_retrieve(
     signals: Collection[Signal] = _ORDER,
     top_k: int = TOP_K,
     rrf_k: int = RRF_K,
+    depth: int | None = None,
 ) -> RetrievalResult:
+    """`depth` is how many candidates each signal contributes before fusion (default: `top_k`, the frozen benchmark protocol); the fused list is
+    always cut to `top_k`. A deeper per-signal list lets a passage ranked 11 to `depth` by one signal reach the fused top ten (D-38)."""
+    per_signal_depth = top_k if depth is None else depth
+    if per_signal_depth < top_k:
+        raise ValueError("depth cannot be below top_k")
     wanted: frozenset[Signal] = frozenset(signals)
     unknown = wanted - set(_ORDER)
     if unknown:
@@ -52,7 +58,7 @@ async def hybrid_retrieve(
     retrievers: dict[Signal, Retriever] = {"dense": dense, "sparse": sparse, "graph": graph}
 
     started = time.perf_counter()
-    outcomes = await asyncio.gather(*(_safe(s, retrievers[s], query, top_k) for s in enabled))
+    outcomes = await asyncio.gather(*(_safe(s, retrievers[s], query, per_signal_depth) for s in enabled))
 
     per_signal: dict[Signal, list] = {}
     failed: list[Signal] = []
@@ -62,7 +68,7 @@ async def hybrid_retrieve(
             failed.append(signal)
             per_signal[signal] = []
             continue
-        per_signal[signal] = outcome.chunks[:top_k]  # the protocol is top k per signal, whatever a retriever returns
+        per_signal[signal] = outcome.chunks[:per_signal_depth]  # top `depth` per signal (top k in the frozen protocol), whatever a retriever returns
         if outcome.resolution is not None:
             resolution = outcome.resolution
 
