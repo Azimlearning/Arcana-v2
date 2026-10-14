@@ -301,7 +301,7 @@ async def run(args: argparse.Namespace) -> tuple[Path, dict[str, Any]]:
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)  # noqa: ASYNC240  (a one-off tool, not a server path)
     path = out_dir / f"{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}-{args.label}.json"
-    path.write_text(json.dumps(out, indent=2), encoding="utf-8")  # noqa: ASYNC240  (a one-off tool, not a server path)
+    path.write_text(json.dumps(out, indent=2), encoding="utf-8")
     return path, out
 
 
