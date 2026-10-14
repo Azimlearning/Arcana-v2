@@ -1,0 +1,25 @@
+question_id: q-x-c05
+status: benchmark
+approved_by: null
+note: 'Extension question (declared amendment, 2026-10-15). Drafted by the assistant from the papers''
+  text only: phrase search of the extracted PDF text, passages copied verbatim (whitespace collapsed).
+  Retrieval output was never consulted. Draft: not approved.'
+annotated_on: '2026-10-15'
+reference_contexts:
+- doc_id: 2410.05779v3
+  page: 9
+  text: Each community report averages 1,000 tokens, resulting in a total token consumption of 610,000
+    tokens (610 communities × 1,000 tokens per community).
+- doc_id: 2405.14831v3
+  page: 28
+  text: Specifically, as seen in Table 17, retrieval costs for IRCoT are 10 to 30 times higher than HippoRAG
+    since it only requires extracting relevant named entities from the query instead of processing all
+    of the retrieved documents.
+- doc_id: 2404.16130v2
+  page: 9
+  text: Graph indexing with a 600 token window (explained in Section A.2) took 281 minutes for the Podcast
+    dataset
+- doc_id: 2410.13070v1
+  page: 1
+  text: The results show that the computational costs associated with seman- tic chunking are not justified
+    by consistent per- formance gains.

@@ -1,0 +1,24 @@
+question_id: q-x-c04
+status: benchmark
+approved_by: null
+note: 'Extension question (declared amendment, 2026-10-15). Drafted by the assistant from the papers''
+  text only: phrase search of the extracted PDF text, passages copied verbatim (whitespace collapsed).
+  Retrieval output was never consulted. Draft: not approved.'
+annotated_on: '2026-10-15'
+reference_contexts:
+- doc_id: 2312.10997v5
+  page: 4
+  text: Re-ranking the retrieved information to relocate the most relevant content to the edges of the
+    prompt is a key strategy.
+- doc_id: 2005.11401v4
+  page: 5
+  text: RAG demonstrates that neither a re-ranker nor extractive reader is necessary for state-of-the-art
+    performance.
+- doc_id: 2304.09542v3
+  page: 1
+  text: leveraging the LLMs’ capabilities for passage re-ranking remains a chal- lenging and unanswered
+    task.
+- doc_id: 2401.15391v1
+  page: 6
+  text: Additionally, we also include a Reranker module to examine the retrieval perfor- mance, using
+    bge-reranker-large (Xiao et al., 2023).

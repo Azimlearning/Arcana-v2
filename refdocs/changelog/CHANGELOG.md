@@ -28,6 +28,14 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-15: Question-set extension drafted and verified (D-39, proposed); nothing registered or run
+- **Changed:** `eval/questions_ext.yaml` and `eval/gold_ext/q-x-*.yaml` (19 questions, 59 passages, all unapproved drafts); `refdocs/plans/2026-10-15-question-set-extension.md`, `refdocs/execution/2026-10-15-question-set-extension.md`, D-39, the PRD row.
+- **Decided:** D-39 proposed only. The frozen files are untouched; the guard code (`eval/frozen.py`, `eval/vault_compare.py`) is deliberately **not** changed until Azim approves the gold, because it is a freeze guard.
+- **Deviations:** none; no contradiction questions were drafted (reason in the plan).
+- **Verified:** `uv run python eval/verify_gold.py --corpus-dir ../Arcana/eval/corpus --status benchmark`: 0 problem(s) (every passage verbatim on its page and covered by a corpus chunk). Nothing else run.
+- **Noted, not changed:** the extension leans to single-paper mechanism questions (8 of 19); the drafter is also the system's author.
+- **Known issues / next steps:** Azim's approval of each gold file; then register the pins and the guard change with tests, run the arms (under $0.01), pool, and confirm or reverse D-38.
+
 ### 2026-10-15: Objective 03 resolved; P3 closed as a documented negative result
 - **Changed:** `refdocs/changelog/DECISIONS.md` (D-37 Resolved paragraph), `refdocs/evidence/README.md` (ledger item closed), `refdocs/STATUS.md` (P3 row).
 - **Decided:** on Azim's relay of the supervisor's rule (any component may be removed, skipped or left as is if testing shows no effect or an issue arises, provided it is documented) and his delegation ("up to u"): the re-rank engine stays built, additive and off by default; no distilled router and no trained mastery model; the report states the negative result as measured.

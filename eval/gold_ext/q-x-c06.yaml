@@ -1,0 +1,28 @@
+question_id: q-x-c06
+status: benchmark
+approved_by: null
+note: 'Extension question (declared amendment, 2026-10-15). Drafted by the assistant from the papers''
+  text only: phrase search of the extracted PDF text, passages copied verbatim (whitespace collapsed).
+  Retrieval output was never consulted. Draft: not approved.'
+annotated_on: '2026-10-15'
+reference_contexts:
+- doc_id: 2309.15217v2
+  page: 3
+  text: We focus in particular three quality aspects, which we argue are of central importance. First,
+    Faithfulness refers to the idea that the an- swer should be grounded in the given context.
+- doc_id: 2309.15217v2
+  page: 3
+  text: Sec- ond, Answer Relevance refers to the idea that the generated answer should address the actual
+    ques- tion that was provided. Finally, Context Relevance refers to the idea that the retrieved context
+    should be focused, containing as little irrelevant informa- tion as possible.
+- doc_id: 2408.04948v1
+  page: 4
+  text: Faithfulness is a crucial metric that measures the extent to which the generated answer can be
+    inferred from the provided context.
+- doc_id: 2408.04948v1
+  page: 4
+  text: The answer relevance metric assesses how well the generated answer addresses the original question,
+    irrespective of factual accuracy.
+- doc_id: 2312.10997v5
+  page: 12
+  text: Quality scores include context rele- vance, answer faithfulness, and answer relevance.

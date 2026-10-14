@@ -1,0 +1,21 @@
+question_id: q-x-s07
+status: benchmark
+approved_by: null
+note: 'Extension question (declared amendment, 2026-10-15). Drafted by the assistant from the papers''
+  text only: phrase search of the extracted PDF text, passages copied verbatim (whitespace collapsed).
+  Retrieval output was never consulted. Draft: not approved.'
+annotated_on: '2026-10-15'
+reference_contexts:
+- doc_id: 2410.05779v3
+  page: 2
+  text: 'LightRAG employs efficient dual-level retrieval strategies: low-level retrieval, which focuses
+    on precise information about specific entities and their relationships, and high-level retrieval,
+    which encompasses broader topics and themes.'
+- doc_id: 2410.05779v3
+  page: 4
+  text: Specific Queries. These queries are detail-oriented and typically reference specific entities
+    within the graph, requiring precise retrieval of information associated with particular nodes or edges.
+- doc_id: 2410.05779v3
+  page: 4
+  text: Abstract Queries. In contrast, abstract queries are more conceptual, encompassing broader topics,
+    summaries, or overarching themes that are not directly tied to specific entities.

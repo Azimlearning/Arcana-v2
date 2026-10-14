@@ -1,0 +1,22 @@
+question_id: q-x-s03
+status: benchmark
+approved_by: null
+note: 'Extension question (declared amendment, 2026-10-15). Drafted by the assistant from the papers''
+  text only: phrase search of the extracted PDF text, passages copied verbatim (whitespace collapsed).
+  Retrieval output was never consulted. Draft: not approved.'
+annotated_on: '2026-10-15'
+reference_contexts:
+- doc_id: 2212.10496v1
+  page: 1
+  text: Given a query, HyDE ﬁrst zero-shot instructs an instruction-following language model (e.g. InstructGPT)
+    to gen- erate a hypothetical document. The docu- ment captures relevance patterns but is unreal and
+    may contain false details.
+- doc_id: 2212.10496v1
+  page: 1
+  text: Then, an un- supervised contrastively learned encoder (e.g. Contriever) encodes the document into
+    an embedding vector. This vector identiﬁes a neighborhood in the corpus embedding space, where similar
+    real documents are retrieved based on vector similarity.
+- doc_id: 2212.10496v1
+  page: 1
+  text: This second step ground the generated document to the actual corpus, with the encoder’s dense
+    bottleneck ﬁltering out the incorrect details.

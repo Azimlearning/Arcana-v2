@@ -1,0 +1,20 @@
+question_id: q-x-c08
+status: benchmark
+approved_by: null
+note: 'Extension question (declared amendment, 2026-10-15). Drafted by the assistant from the papers''
+  text only: phrase search of the extracted PDF text, passages copied verbatim (whitespace collapsed).
+  Retrieval output was never consulted. Draft: not approved.'
+annotated_on: '2026-10-15'
+reference_contexts:
+- doc_id: 2404.16130v2
+  page: 1
+  text: However, RAG fails on global questions directed at an entire text corpus, such as “What are the
+    main themes in the dataset?”, since this is inherently a query- focused summarization (QFS) task,
+    rather than an explicit retrieval task.
+- doc_id: 2410.05779v3
+  page: 1
+  text: which can lead to fragmented answers that fail to capture complex inter-dependencies.
+- doc_id: 2501.00309v2
+  page: 3
+  text: This independence prevents the retrieval from capturing chunk relations, which hinders performance
+    on tasks requiring multi-hop reasoning and long-form planning.

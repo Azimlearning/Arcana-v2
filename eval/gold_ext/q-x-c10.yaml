@@ -1,0 +1,22 @@
+question_id: q-x-c10
+status: benchmark
+approved_by: null
+note: 'Extension question (declared amendment, 2026-10-15). Drafted by the assistant from the papers''
+  text only: phrase search of the extracted PDF text, passages copied verbatim (whitespace collapsed).
+  Retrieval output was never consulted. Draft: not approved.'
+annotated_on: '2026-10-15'
+reference_contexts:
+- doc_id: 2401.15391v1
+  page: 1
+  text: In this paper, we develop a novel dataset, MultiHop-RAG, which consists of a knowledge base, a
+    large collection of multi- hop queries, their ground-truth answers, and the associated supporting
+    evidence.
+- doc_id: 2401.15391v1
+  page: 2
+  text: We construct our RAG knowledge base using a collection of news articles.
+- doc_id: 2408.04948v1
+  page: 2
+  text: We also utilize a novel ground-truth Q&A dataset extracted from publicly available financial call
+    transcripts of the companies included in the Nifty-50 index which is an Indian stock market index
+    that represents the weighted average of 50 of the largest Indian companies listed on the National
+    Stock Exchange

@@ -1,0 +1,26 @@
+question_id: q-x-c03
+status: benchmark
+approved_by: null
+note: 'Extension question (declared amendment, 2026-10-15). Drafted by the assistant from the papers''
+  text only: phrase search of the extracted PDF text, passages copied verbatim (whitespace collapsed).
+  Retrieval output was never consulted. Draft: not approved.'
+annotated_on: '2026-10-15'
+reference_contexts:
+- doc_id: 2212.10496v1
+  page: 1
+  text: Given a query, HyDE ﬁrst zero-shot instructs an instruction-following language model (e.g. InstructGPT)
+    to gen- erate a hypothetical document. The docu- ment captures relevance patterns but is unreal and
+    may contain false details.
+- doc_id: 2312.10997v5
+  page: 4
+  text: While the goal of query optimization is to make the user’s original question clearer and more
+    suitable for the retrieval task. Common methods include query rewriting query transformation, query
+    expansion and other techniques [7], [9]–[11].
+- doc_id: 2410.05779v3
+  page: 4
+  text: our LightRAG proposes generating query keys at both detailed and abstract levels.
+- doc_id: 2405.14831v3
+  page: 2
+  text: Given a new query, HippoRAG identifies the key concepts in the query and runs the Personalized
+    PageRank (PPR) algorithm [30] on the KG, using the query concepts as the seeds, to integrate information
+    across passages for retrieval.

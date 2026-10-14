@@ -1,0 +1,27 @@
+question_id: q-x-c07
+status: benchmark
+approved_by: null
+note: 'Extension question (declared amendment, 2026-10-15). Drafted by the assistant from the papers''
+  text only: phrase search of the extracted PDF text, passages copied verbatim (whitespace collapsed).
+  Retrieval output was never consulted. Draft: not approved.'
+annotated_on: '2026-10-15'
+reference_contexts:
+- doc_id: 2310.11511v1
+  page: 1
+  text: However, indiscriminately retrieving and incorporating a fixed number of retrieved passages, regardless
+    of whether retrieval is necessary, or passages are relevant, diminishes LM versatility or can lead
+    to unhelpful response generation.
+- doc_id: 2310.11511v1
+  page: 1
+  text: Reflection tokens are categorized into retrieval and critique tokens to indicate the need for
+    retrieval and its generation quality respectively (Figure 1 right).
+- doc_id: 2401.15884v3
+  page: 2
+  text: A confidence degree is quantified based on which different knowledge retrieval actions of {Correct,
+    Incorrect, Ambiguous} can be triggered. For the latter two actions, large-scale web searches (Piktus
+    et al., 2021; Komeili et al., 2022) are integrated as a strategic extension, since retrieval from
+    static and limited corpora can only return sub-optimal documents in terms of scope and diversity.
+- doc_id: 2312.10997v5
+  page: 5
+  text: This approach transcends the fixed RAG retrieval process by evaluating the necessity of retrieval
+    based on different scenarios.

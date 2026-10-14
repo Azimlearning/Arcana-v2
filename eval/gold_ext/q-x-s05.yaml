@@ -1,0 +1,22 @@
+question_id: q-x-s05
+status: benchmark
+approved_by: null
+note: 'Extension question (declared amendment, 2026-10-15). Drafted by the assistant from the papers''
+  text only: phrase search of the extracted PDF text, passages copied verbatim (whitespace collapsed).
+  Retrieval output was never consulted. Draft: not approved.'
+annotated_on: '2026-10-15'
+reference_contexts:
+- doc_id: 2404.16130v2
+  page: 4
+  text: Community detection (e.g., Leiden, Traag et al., 2019) is used to partition the graph index into
+    groups of elements (nodes, edges, covariates) that the LLM can summarize in parallel at both indexing
+    time and query time.
+- doc_id: 2404.16130v2
+  page: 5
+  text: In our pipeline, we use Leiden community detection (Traag et al., 2019) in a hierarchical manner,
+    recursively detecting sub-communities within each detected community until reaching leaf communities
+    that can no longer be partitioned.
+- doc_id: 2404.16130v2
+  page: 1
+  text: Given a question, each community summary is used to generate a partial response, before all partial
+    responses are again summarized in a final response to the user.

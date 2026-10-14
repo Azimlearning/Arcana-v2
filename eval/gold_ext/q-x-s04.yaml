@@ -1,0 +1,17 @@
+question_id: q-x-s04
+status: benchmark
+approved_by: null
+note: 'Extension question (declared amendment, 2026-10-15). Drafted by the assistant from the papers''
+  text only: phrase search of the extracted PDF text, passages copied verbatim (whitespace collapsed).
+  Retrieval output was never consulted. Draft: not approved.'
+annotated_on: '2026-10-15'
+reference_contexts:
+- doc_id: 2405.14831v3
+  page: 2
+  text: Given a new query, HippoRAG identifies the key concepts in the query and runs the Personalized
+    PageRank (PPR) algorithm [30] on the KG, using the query concepts as the seeds, to integrate information
+    across passages for retrieval.
+- doc_id: 2405.14831v3
+  page: 3
+  text: we leverage the Personalized PageRank (PPR) algorithm [30], a version of PageRank that distributes
+    probability across a graph only through a set of user-defined source nodes.

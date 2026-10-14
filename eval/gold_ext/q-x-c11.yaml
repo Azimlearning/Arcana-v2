@@ -1,0 +1,18 @@
+question_id: q-x-c11
+status: benchmark
+approved_by: null
+note: 'Extension question (declared amendment, 2026-10-15). Drafted by the assistant from the papers''
+  text only: phrase search of the extracted PDF text, passages copied verbatim (whitespace collapsed).
+  Retrieval output was never consulted. Draft: not approved.'
+annotated_on: '2026-10-15'
+reference_contexts:
+- doc_id: 2404.03868v2
+  page: 9
+  text: We only considered schema canonicalization within the scope of this paper, it is of great interest
+    to incorporate an entity de-duplication mechanism in the future to reduce the redun- dancy in the
+    constructed KGs, e.g., via coref- erence resolution (Sukthanker et al., 2020). We briefly explored
+    this approach and the pre- liminary results can be found in Appendix F.
+- doc_id: 2501.00309v2
+  page: 3
+  text: This variability makes the relational information highly domain-specific, and it is nearly impossible
+    to design a unified GraphRAG applicable to different domains.

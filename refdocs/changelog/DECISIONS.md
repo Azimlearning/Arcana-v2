@@ -761,6 +761,14 @@ strings validated against the template's slots).
 
 **Rejected / trade-offs.** Waiting for a larger question set before adopting: the cost of being wrong is nearly nil (the fused cut is still 10, and one question is worse), and the gain is the largest measured in this project. Depth 50: smaller measured gain and more noise per signal. An environment variable for the depth: another knob that has no tested meaning at other values.
 
+## D-39: Extend the question set with 19 declared new questions; D-38's depth is tested on them (2026-10-15, proposed; pending Azim's gold approval)
+
+**Decision (proposed).** Add `eval/questions_ext.yaml` (19 questions) and `eval/gold_ext/` (59 passages) as a declared amendment to the pre-registered set (constraint 9; D-21, D-26). The frozen set, gold, manifest and protocol stamp are unchanged byte for byte; the extension has its own pins, set when Azim approves each gold file. Headline pairs H1 to H4 and the rule for D-38 are fixed in `refdocs/plans/2026-10-15-question-set-extension.md` **before** any arm is run on the new questions. H1 is the confirmatory test of the candidate depth on questions it was not chosen on.
+
+**Why.** Nineteen questions leave every retrieval effect measured so far below significance, and D-38's depth was chosen post hoc on those same nineteen. The new gold was drafted from paper text only (never from retrieval output) and passes the mechanical verifier (0 problems).
+
+**Rejected / trade-offs.** Waiting for a user study (D-06: out of scope). Editing `questions.yaml` (forbidden; a hash test pins it). Asking a model to write questions and gold (model-judged ground truth; D-15). Contradiction questions (not drafted: a thin gold is worse than none). **Limits:** the drafter built the system; the questions lean single-paper and mechanism-shaped; gold completeness is unproven; 38 questions is still small.
+
 ## Working assumptions (`ASSUMED:`)
 
 Not decisions; guesses made to keep moving. Each one must be confirmed or killed before anything

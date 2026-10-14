@@ -1,0 +1,25 @@
+question_id: q-x-c01
+status: benchmark
+approved_by: null
+note: 'Extension question (declared amendment, 2026-10-15). Drafted by the assistant from the papers''
+  text only: phrase search of the extracted PDF text, passages copied verbatim (whitespace collapsed).
+  Retrieval output was never consulted. Draft: not approved.'
+annotated_on: '2026-10-15'
+reference_contexts:
+- doc_id: 2401.15391v1
+  page: 1
+  text: However, we find that existing RAG sys- tems are inadequate in answering multi-hop queries, which
+    require retrieving and reasoning over multiple pieces of supporting evidence.
+- doc_id: 2405.14831v3
+  page: 2
+  text: Nevertheless, even perfectly executed multi-step RAG is still oftentimes insufficient to accomplish
+    many scenarios of knowledge integration, as we illustrate in what we call path-finding multi-hop questions
+    in Figure 1.
+- doc_id: 2405.14831v3
+  page: 1
+  text: Single-step retrieval with HippoRAG achieves comparable or better performance than iterative retrieval
+    like IRCoT while being 10-20 times cheaper and 6-13 times faster
+- doc_id: 2501.00309v2
+  page: 3
+  text: This independence prevents the retrieval from capturing chunk relations, which hinders performance
+    on tasks requiring multi-hop reasoning and long-form planning.

@@ -1,0 +1,159 @@
+# Extension to the pre-registered question set (declared amendment, 2026-10-15; D-39).
+# The frozen set (questions.yaml, 20 questions) is unchanged. These questions were drafted from the papers'
+# text only, before any arm was run on them, and are pinned by SHA-256 once their gold is approved.
+# Changing a question is a declared amendment (constraint 9), never an edit.
+# HEADER_END
+
+questions:
+
+  - id: q-x-s01
+    category: single_document
+    question: >
+      Which three quality aspects does the Ragas framework focus on when evaluating retrieval-augmented generation, and what does each one mean?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: "Single-paper definitional question (Ragas)."
+
+  - id: q-x-s02
+    category: single_document
+    question: >
+      In Corrective Retrieval Augmented Generation (CRAG), how does the confidence of the retrieval evaluator change what the system does with the retrieved documents?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: "Single-paper mechanism question (CRAG)."
+
+  - id: q-x-s03
+    category: single_document
+    question: >
+      How does HyDE retrieve documents for a query without any relevance labels?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: "Single-paper mechanism question (HyDE)."
+
+  - id: q-x-s04
+    category: single_document
+    question: >
+      What role does the Personalized PageRank algorithm play in HippoRAG's retrieval?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: "Single-paper mechanism question (HippoRAG)."
+
+  - id: q-x-s05
+    category: single_document
+    question: >
+      How does the Graph RAG approach of Edge et al. use community detection to answer questions about an entire text corpus?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: "Single-paper mechanism question (GraphRAG, Microsoft)."
+
+  - id: q-x-s06
+    category: single_document
+    question: >
+      What are reflection tokens in Self-RAG, and what are they used for?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: "Single-paper definitional question (Self-RAG)."
+
+  - id: q-x-s07
+    category: single_document
+    question: >
+      What are the two levels of retrieval in LightRAG, and what kind of query does each serve?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: "Single-paper definitional question (LightRAG)."
+
+  - id: q-x-s08
+    category: single_document
+    question: >
+      What are the three phases of the Extract-Define-Canonicalize (EDC) framework for knowledge graph construction?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: "Single-paper definitional question (EDC)."
+
+  - id: q-x-c01
+    category: cross_document
+    question: >
+      How do the papers describe multi-hop questions, why are they hard for standard retrieval, and what do they propose to handle them?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: "Cross-paper inventory: MultiHop-RAG, HippoRAG, GraphRAG survey."
+
+  - id: q-x-c02
+    category: cross_document
+    question: >
+      How do the papers use large language models to build knowledge graphs from text?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: "Cross-paper technique inventory: GraphRAG, HippoRAG, EDC, LightRAG, GraphRAG survey."
+
+  - id: q-x-c03
+    category: cross_document
+    question: >
+      What techniques do the papers use to transform, expand or analyse a user's query before or during retrieval?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: "Cross-paper technique inventory: HyDE, the RAG survey, LightRAG, HippoRAG."
+
+  - id: q-x-c04
+    category: cross_document
+    question: >
+      What role do the papers give to re-ranking in retrieval-augmented systems, and do they find it necessary?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: "Cross-paper question with qualifying evidence: RAG survey, original RAG, ChatGPT re-ranking, MultiHop-RAG."
+
+  - id: q-x-c05
+    category: cross_document
+    question: >
+      How do the papers report the computational or monetary cost of graph-based indexing and retrieval compared with alternatives?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: "Cross-paper cost question: LightRAG, HippoRAG, GraphRAG, semantic chunking."
+
+  - id: q-x-c06
+    category: cross_document
+    question: >
+      Which aspects of a generated answer do the papers propose to measure for retrieval-augmented systems, and how are they defined?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: "Cross-paper definitions: Ragas, HybridRAG, the RAG survey."
+
+  - id: q-x-c07
+    category: cross_document
+    question: >
+      Which papers decide whether or when to retrieve, or how to react to poor retrieval, instead of always retrieving a fixed number of passages, and how do they do it?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: "Cross-paper mechanism question: Self-RAG, CRAG, the RAG survey."
+
+  - id: q-x-c08
+    category: cross_document
+    question: >
+      What do the papers say conventional chunk-based retrieval cannot do for questions about relationships or an entire corpus, and what do they propose instead?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: "Cross-paper limitation question: GraphRAG, LightRAG, GraphRAG survey."
+
+  - id: q-x-c09
+    category: cross_document
+    question: >
+      What kinds of hallucination or unfaithful output do the papers distinguish, and how do they relate retrieval to them?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: "Cross-paper definitions: hallucination survey, Self-RAG, Ragas."
+
+  - id: q-x-c10
+    category: cross_document
+    question: >
+      What new datasets or evaluation corpora do the papers build for testing retrieval-augmented systems, and what do they contain?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: "Cross-paper inventory: MultiHop-RAG, HybridRAG."
+
+  - id: q-x-c11
+    category: cross_document
+    question: >
+      What limitations and open problems do the papers acknowledge for LLM-built knowledge graphs and graph-based retrieval?
+    gold_doc_ids: []
+    gold_pages: []
+    notes: "Cross-paper limitation question: EDC, GraphRAG survey, HybridRAG."

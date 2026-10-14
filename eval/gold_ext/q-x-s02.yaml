@@ -1,0 +1,19 @@
+question_id: q-x-s02
+status: benchmark
+approved_by: null
+note: 'Extension question (declared amendment, 2026-10-15). Drafted by the assistant from the papers''
+  text only: phrase search of the extracted PDF text, passages copied verbatim (whitespace collapsed).
+  Retrieval output was never consulted. Draft: not approved.'
+annotated_on: '2026-10-15'
+reference_contexts:
+- doc_id: 2401.15884v3
+  page: 2
+  text: A confidence degree is quantified based on which different knowledge retrieval actions of {Correct,
+    Incorrect, Ambiguous} can be triggered. For the latter two actions, large-scale web searches (Piktus
+    et al., 2021; Komeili et al., 2022) are integrated as a strategic extension, since retrieval from
+    static and limited corpora can only return sub-optimal documents in terms of scope and diversity.
+- doc_id: 2401.15884v3
+  page: 3
+  text: If the action Correct is triggered, the retrieved documents will be re- fined into more precise
+    knowledge strips. This refinement operation involves knowledge decom- position, filter, and recomposition
+    (Section 4.4).

@@ -1,0 +1,16 @@
+question_id: q-x-s06
+status: benchmark
+approved_by: null
+note: 'Extension question (declared amendment, 2026-10-15). Drafted by the assistant from the papers''
+  text only: phrase search of the extracted PDF text, passages copied verbatim (whitespace collapsed).
+  Retrieval output was never consulted. Draft: not approved.'
+annotated_on: '2026-10-15'
+reference_contexts:
+- doc_id: 2310.11511v1
+  page: 1
+  text: Reflection tokens are categorized into retrieval and critique tokens to indicate the need for
+    retrieval and its generation quality respectively (Figure 1 right).
+- doc_id: 2310.11511v1
+  page: 1
+  text: Generating reflection tokens makes the LM controllable during the inference phase, enabling it
+    to tailor its behavior to diverse task requirements.

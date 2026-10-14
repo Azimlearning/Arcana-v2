@@ -1,0 +1,33 @@
+question_id: q-x-c02
+status: benchmark
+approved_by: null
+note: 'Extension question (declared amendment, 2026-10-15). Drafted by the assistant from the papers''
+  text only: phrase search of the extracted PDF text, passages copied verbatim (whitespace collapsed).
+  Retrieval output was never consulted. Draft: not approved.'
+annotated_on: '2026-10-15'
+reference_contexts:
+- doc_id: 2404.16130v2
+  page: 2
+  text: GraphRAG first uses an LLM to construct a knowledge graph, where nodes correspond to key entities
+    in the corpus and edges represent relationships between those entities.
+- doc_id: 2405.14831v3
+  page: 2
+  text: using an LLM to transform a corpus into a schemaless knowledge graph (KG) as our artificial hippocampal
+    index.
+- doc_id: 2404.03868v2
+  page: 2
+  text: 'the key idea is to decompose KGC into three primary phases corresponding to three subtasks (Fig.
+    1): 1. Open Information Extraction: extract a list of entity-relation triplets from the input text
+    freely. 2. Schema Definition: generate a definition for each component of the schema, e.g. entity
+    type and relation type, induced by triplets ob- tained in the extraction phase. 3. Schema Canonicalization:
+    use the schema definitions to standardize the triplets such that semantically-equivalent entities/relations
+    types have the same noun/relation phrase.'
+- doc_id: 2501.00309v2
+  page: 19
+  text: 'LLM-based construction: Recently, work has explored how LLMs can be used to construct KGs from
+    a set of documents. In such a way, the LLM can automatically extract the entities and relations and
+    link those together to form facts in the given text.'
+- doc_id: 2410.05779v3
+  page: 5
+  text: we use the large language model (LLM) to extract entities and relationships from each chunk of
+    text.
