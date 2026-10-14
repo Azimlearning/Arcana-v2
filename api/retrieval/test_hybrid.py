@@ -10,7 +10,7 @@ from api.retrieval.fusion import reciprocal_rank_fusion
 from api.retrieval.graph import GraphRetriever
 from api.retrieval.hybrid import hybrid_retrieve
 from api.retrieval.sparse import SparseRetriever
-from api.retrieval.types import Retriever, RetrieverResult
+from api.retrieval.types import Retriever, RetrieverResult, Signal
 
 # All three signals have something to say about this question on the fixture: the entities
 # "Dense Retrieval" and "BM25" are graph nodes, and both phrases occur in the text.
@@ -140,8 +140,9 @@ async def test_retriever_result_type_is_what_the_protocol_promises(ingested):
 class Ranked:
     """A fixed ranking: returns the first `top_k` of its list, so the depth a caller asks for is the depth it gets."""
 
-    def __init__(self, ids: list[str], signal: str):
-        self.ids, self.signal = ids, signal
+    def __init__(self, ids: list[str], signal: Signal):
+        self.ids = ids
+        self.signal: Signal = signal
         self.asked: list[int] = []
 
     async def retrieve(self, query: str, top_k: int = 10) -> RetrieverResult:
@@ -151,7 +152,7 @@ class Ranked:
         chunks = [
             RetrievedChunk(i, "d", f"text {i}", 1, 1.0 / (n + 1), (self.signal,))
             for n, i in enumerate(self.ids[:top_k])
-        ]  # type: ignore[arg-type]
+        ]
         return RetrieverResult(chunks=chunks)
 
 

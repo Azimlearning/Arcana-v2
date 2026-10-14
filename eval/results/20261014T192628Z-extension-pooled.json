@@ -1,0 +1,199 @@
+{
+  "pairs": {
+    "H1 hybrid_n30 vs hybrid, new 19 [recall_at_10]": {
+      "questions": 19,
+      "mean_a": 0.5088,
+      "mean_b": 0.5158,
+      "mean_difference": -0.007,
+      "better": 1,
+      "tied": 17,
+      "worse": 1,
+      "p_value": 1.0,
+      "effect_size_rb": -0.3333333333333333
+    },
+    "H1x hybrid_n30 vs hybrid, original 19 (where the depth was chosen) [recall_at_10]": {
+      "questions": 19,
+      "mean_a": 0.3054,
+      "mean_b": 0.2123,
+      "mean_difference": 0.0931,
+      "better": 6,
+      "tied": 12,
+      "worse": 1,
+      "p_value": 0.09375,
+      "effect_size_rb": 0.75
+    },
+    "H1p hybrid_n30 vs hybrid, pooled 38 [recall_at_10]": {
+      "questions": 38,
+      "mean_a": 0.4071,
+      "mean_b": 0.364,
+      "mean_difference": 0.043,
+      "better": 7,
+      "tied": 29,
+      "worse": 2,
+      "p_value": 0.19140625,
+      "effect_size_rb": 0.5111111111111111
+    },
+    "H2 hybrid vs flat, new 19 [recall_at_10]": {
+      "questions": 19,
+      "mean_a": 0.5158,
+      "mean_b": 0.5553,
+      "mean_difference": -0.0395,
+      "better": 1,
+      "tied": 14,
+      "worse": 4,
+      "p_value": 0.5625,
+      "effect_size_rb": -0.3333333333333333
+    },
+    "H2 hybrid vs flat, original 19 [recall_at_10]": {
+      "questions": 19,
+      "mean_a": 0.2123,
+      "mean_b": 0.1855,
+      "mean_difference": 0.0268,
+      "better": 4,
+      "tied": 14,
+      "worse": 1,
+      "p_value": 0.4375,
+      "effect_size_rb": 0.4666666666666667
+    },
+    "H2 hybrid vs flat, pooled 38 [recall_at_10]": {
+      "questions": 38,
+      "mean_a": 0.364,
+      "mean_b": 0.3704,
+      "mean_difference": -0.0063,
+      "better": 5,
+      "tied": 28,
+      "worse": 5,
+      "p_value": 0.55078125,
+      "effect_size_rb": -0.23636363636363636
+    },
+    "H3 hybrid_vault (atomic2) vs baseline hybrid, pooled 38 [recall_at_10]": {
+      "questions": 38,
+      "mean_a": 0.3559,
+      "mean_b": 0.364,
+      "mean_difference": -0.0081,
+      "better": 4,
+      "tied": 30,
+      "worse": 4,
+      "p_value": 0.640625,
+      "effect_size_rb": 0.19444444444444445
+    },
+    "H4 vault vs own frozen graph (atomic2), pooled 38 [recall_at_10]": {
+      "questions": 38,
+      "mean_a": 0.2361,
+      "mean_b": 0.1687,
+      "mean_difference": 0.0674,
+      "better": 10,
+      "tied": 24,
+      "worse": 4,
+      "p_value": 0.1129150390625,
+      "effect_size_rb": 0.4857142857142857
+    },
+    "H1 hybrid_n30 vs hybrid, new 19 [ndcg_at_10]": {
+      "questions": 19,
+      "mean_a": 0.3357,
+      "mean_b": 0.3519,
+      "mean_difference": -0.0162,
+      "better": 5,
+      "tied": 8,
+      "worse": 6,
+      "p_value": 0.7001953125,
+      "effect_size_rb": -0.15151515151515152
+    },
+    "H1x hybrid_n30 vs hybrid, original 19 (where the depth was chosen) [ndcg_at_10]": {
+      "questions": 19,
+      "mean_a": 0.2383,
+      "mean_b": 0.208,
+      "mean_difference": 0.0303,
+      "better": 8,
+      "tied": 4,
+      "worse": 7,
+      "p_value": 0.803955078125,
+      "effect_size_rb": 0.08333333333333333
+    },
+    "H1p hybrid_n30 vs hybrid, pooled 38 [ndcg_at_10]": {
+      "questions": 38,
+      "mean_a": 0.287,
+      "mean_b": 0.28,
+      "mean_difference": 0.0071,
+      "better": 13,
+      "tied": 12,
+      "worse": 13,
+      "p_value": 1.0,
+      "effect_size_rb": -0.002849002849002849
+    },
+    "H2 hybrid vs flat, new 19 [ndcg_at_10]": {
+      "questions": 19,
+      "mean_a": 0.3519,
+      "mean_b": 0.3937,
+      "mean_difference": -0.0417,
+      "better": 2,
+      "tied": 6,
+      "worse": 11,
+      "p_value": 0.068115234375,
+      "effect_size_rb": -0.5824175824175825
+    },
+    "H2 hybrid vs flat, original 19 [ndcg_at_10]": {
+      "questions": 19,
+      "mean_a": 0.208,
+      "mean_b": 0.1686,
+      "mean_difference": 0.0394,
+      "better": 7,
+      "tied": 8,
+      "worse": 4,
+      "p_value": 0.1474609375,
+      "effect_size_rb": 0.5151515151515151
+    },
+    "H2 hybrid vs flat, pooled 38 [ndcg_at_10]": {
+      "questions": 38,
+      "mean_a": 0.28,
+      "mean_b": 0.2811,
+      "mean_difference": -0.0012,
+      "better": 9,
+      "tied": 14,
+      "worse": 15,
+      "p_value": 0.6895116567611694,
+      "effect_size_rb": -0.09666666666666666
+    },
+    "H3 hybrid_vault (atomic2) vs baseline hybrid, pooled 38 [ndcg_at_10]": {
+      "questions": 38,
+      "mean_a": 0.2903,
+      "mean_b": 0.28,
+      "mean_difference": 0.0103,
+      "better": 11,
+      "tied": 14,
+      "worse": 13,
+      "p_value": 0.8553357124328613,
+      "effect_size_rb": -0.04666666666666667
+    },
+    "H4 vault vs own frozen graph (atomic2), pooled 38 [ndcg_at_10]": {
+      "questions": 38,
+      "mean_a": 0.1483,
+      "mean_b": 0.1071,
+      "mean_difference": 0.0412,
+      "better": 14,
+      "tied": 15,
+      "worse": 9,
+      "p_value": 0.3446848392486572,
+      "effect_size_rb": 0.2318840579710145
+    }
+  },
+  "d38_rule": {
+    "rule": "D-38 stands only if the mean Recall@10 difference (hybrid_n30 minus hybrid) on the 19 new questions is positive",
+    "mean_recall_difference_new_19": -0.007,
+    "stands": false
+  },
+  "run": {
+    "timestamp": "2026-10-14T19:26:28.319840+00:00",
+    "code": {
+      "commit": "fe0883d130df937e465cc43a8360a53e4742d40c",
+      "dirty": false,
+      "changed_files": []
+    },
+    "inputs": [
+      "20261014T151443Z-m2-look5.json",
+      "20261014T135007Z-p3-rerank.json",
+      "20261014T192526Z-m2-ext.json",
+      "20261014T192055Z-ext-rerank.json"
+    ]
+  }
+}

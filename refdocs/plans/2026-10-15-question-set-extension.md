@@ -1,7 +1,7 @@
 # Plan: extending the question set (declared amendment, D-39)
 
 > Execution doc: `refdocs/execution/2026-10-15-question-set-extension.md`. ADR: D-39 (proposed). Source of the need: every retrieval result so far rests on 19 answerable questions and none has p below 0.09 (Look 5, P3-lite, D-38).
-> Status: **Draft (2026-10-15).** Questions and gold are drafted and mechanically verified; **nothing is registered or run until Azim approves the gold.** The paid cost is the question embeddings only (about $0.0003).
+> Status: **Done (2026-10-15).** Gold approved by Azim, registered, run and reported (about $0.0002); see `refdocs/evidence/20261015-question-set-extension.md` and D-40.
 
 ## Why this exists
 

@@ -751,7 +751,7 @@ strings validated against the template's slots).
 
 **Result (2026-10-14, Azim: "implement").** Built: `api/engines` (the `Engine` interface, the fallback rule, a cross-encoder re-rank engine on `fastembed`/ONNX as the optional `engines` extra). Measured with a protocol committed before the run (`eval/rerank_compare.py`, `refdocs/evidence/20261014-p3-rerank.md`): on the 19 questions, `rerank_n50` against its depth control `hybrid_n50` gives -0.007 nDCG@10 (7 better, 7 worse, 5 tied, p = 0.90), so by the rule fixed in advance the engine is **not shown to help**; at 30 candidates +0.021 (p = 0.60). It costs about 5 s per query on CPU. The engine stays built, additive and **off by default**. **A finding that matters more:** the candidate depth alone (30 per signal instead of 10) raises the hybrid arm's Recall@10 from 0.212 to 0.305 with no model (exploratory, p = 0.21); that is a candidate protocol amendment for the final benchmark, declared before it, not applied (adopted in the product path by D-38). Spend $0.000062. **Resolved 2026-10-15 (Azim, relaying the supervisor).** The supervisor's position is that any component may be removed, skipped or left as is when testing shows no effect or an issue is met, provided it is documented. So Objective 03 is treated as **met by an honestly evaluated trained-tool component with a documented negative result**, not by a benefit. The assistant's call, as Azim delegated it: the engine **stays built, additive and off by default** (the code, the tests and the harness are the evidence and cost nothing to keep; the `engines` extra is optional, so nothing heavy is in the default install); **no further trained-model work** (no distilled router, no trained mastery model); the report states the result as measured and does not present the re-ranker as a contribution. Reopen only if the supervisor asks for a different engine.
 
-## D-38: The product retrieval path takes 30 candidates per signal before fusion; the frozen benchmark arms are unchanged (2026-10-14, follows D-37)
+## D-38: The product retrieval path takes 30 candidates per signal before fusion; the frozen benchmark arms are unchanged (2026-10-14, follows D-37; **reversed by D-40, 2026-10-15**)
 
 **Decision.** `Container.retrieve` (the product path, which every agent and route uses) asks each retriever for `CANDIDATE_DEPTH = 30` passages before RRF fusion; the fused cut stays at 10 (`TOP_K`). `hybrid_retrieve(..., depth=None)` keeps the frozen protocol by default (depth equals `top_k`, D-20), refuses a depth below `top_k`, and the frozen benchmark arms are not touched. It is a code constant, not an environment variable. For a final benchmark the amendment is to **report `hybrid_d30` (from `eval/rerank_compare.py`) beside the frozen `hybrid`**, never in place of it.
 
@@ -761,13 +761,23 @@ strings validated against the template's slots).
 
 **Rejected / trade-offs.** Waiting for a larger question set before adopting: the cost of being wrong is nearly nil (the fused cut is still 10, and one question is worse), and the gain is the largest measured in this project. Depth 50: smaller measured gain and more noise per signal. An environment variable for the depth: another knob that has no tested meaning at other values.
 
-## D-39: Extend the question set with 19 declared new questions; D-38's depth is tested on them (2026-10-15, proposed; pending Azim's gold approval)
+## D-39: Extend the question set with 19 declared new questions; D-38's depth is tested on them (2026-10-15, accepted: Azim approved the gold; run and reported, see D-40)
 
 **Decision (proposed).** Add `eval/questions_ext.yaml` (19 questions) and `eval/gold_ext/` (59 passages) as a declared amendment to the pre-registered set (constraint 9; D-21, D-26). The frozen set, gold, manifest and protocol stamp are unchanged byte for byte; the extension has its own pins, set when Azim approves each gold file. Headline pairs H1 to H4 and the rule for D-38 are fixed in `refdocs/plans/2026-10-15-question-set-extension.md` **before** any arm is run on the new questions. H1 is the confirmatory test of the candidate depth on questions it was not chosen on.
 
 **Why.** Nineteen questions leave every retrieval effect measured so far below significance, and D-38's depth was chosen post hoc on those same nineteen. The new gold was drafted from paper text only (never from retrieval output) and passes the mechanical verifier (0 problems).
 
 **Rejected / trade-offs.** Waiting for a user study (D-06: out of scope). Editing `questions.yaml` (forbidden; a hash test pins it). Asking a model to write questions and gold (model-judged ground truth; D-15). Contradiction questions (not drafted: a thin gold is worse than none). **Limits:** the drafter built the system; the questions lean single-paper and mechanism-shaped; gold completeness is unproven; 38 questions is still small.
+
+## D-40: D-38 reversed: the product candidate depth returns to 10 (2026-10-15, follows D-38 and D-39)
+
+**Decision.** `CANDIDATE_DEPTH` in `api/retrieval/types.py` is `TOP_K` (10) again, so the product path runs the frozen protocol. The `depth` parameter of `hybrid_retrieve` and its tests stay (the experiments use it). D-39 is accepted: Azim approved the 19 gold files on 2026-10-15; they are pinned in `eval/frozen.py`, the freeze guard accepts the registered pair only, and `eval/rerank_compare.py` now checks the freeze too.
+
+**Why.** The rule for D-38, fixed in `refdocs/plans/2026-10-15-question-set-extension.md` before any arm was run on the new questions, was: D-38 stands only if the mean Recall@10 difference (`hybrid_n30` minus `hybrid`) on the 19 new questions is positive. It is -0.007 (1 better, 17 tied, 1 worse). Pooled over 38 it is +0.043 (p = 0.19), not significant. The rule is applied as written; a gain that does not hold on questions it was not chosen on is not a gain.
+
+**Consequence for the project's claims.** Candidate depth is not a lever. The graph signal's +0.039 over `flat` does not replicate (pooled -0.001, p = 0.69). The headline is stated plainly in `refdocs/evidence/20261015-question-set-extension.md`: on this corpus and these 38 questions, hybrid retrieval with the graph signal is not shown to beat dense retrieval alone.
+
+**Rejected / trade-offs.** Keeping 30 on the pooled number: the pre-registered rule says otherwise, and it would turn a post hoc choice into a claim.
 
 ## Working assumptions (`ASSUMED:`)
 

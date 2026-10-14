@@ -28,6 +28,15 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-15: Question-set extension approved, registered and run; D-38 reversed (D-39 accepted, D-40)
+- **Changed:** `eval/frozen.py` (extension pins, `is_registered_pair`, `check_frozen` accepts the registered extension), `eval/vault_compare.py` (path guard), `eval/rerank_compare.py` (`--questions-file`, `--gold-dir`, freeze check), `eval/pooled_extension.py` (new), `eval/tests/test_frozen_assets.py` (three tests), `.gitattributes` (extension files stored byte-exact), `eval/gold_ext/*` (approved, pinned), `api/retrieval/types.py` (`CANDIDATE_DEPTH = TOP_K`), `api/retrieval/test_hybrid.py` (the test fake's types fixed); four result files; evidence record; D-39 accepted, D-40; STATUS, PRD, ledger.
+- **Decided:** D-40. By the rule written before the run, D-38 (depth 30) is reversed: Recall@10 -0.007 on the 19 new questions.
+- **Deviations:** none from the plan. The first attempt to edit the freeze guard was held back until Azim approved the gold; the guard change followed his approval.
+- **Verified:** `uv run python eval/verify_gold.py --corpus-dir ../Arcana/eval/corpus --gold-dir eval/gold_ext`: 0 problems; `uv run pytest eval/tests`: 180 passed; `uv run pytest api/retrieval`: 85 passed; `uv run pytest -q`: 1342 passed; ruff and pyright clean on the touched files; the three runs at a clean tree with the baseline store hashes equal.
+- **Measured:** see the evidence record. The graph signal's gain over flat does not replicate (pooled -0.001, p = 0.69); depth 30 does not confirm; the vault is +0.041 over its own graph signal (p = 0.34).
+- **Spend:** about $0.0002 (question embeddings); the month is unchanged at about $13.94 of $15.
+- **Known issues / next steps:** the limits chapter; audit samples unread; RAGAS last. (`uv run pytest -q`: 1342 passed after the depth reversal.)
+
 ### 2026-10-15: Question-set extension drafted and verified (D-39, proposed); nothing registered or run
 - **Changed:** `eval/questions_ext.yaml` and `eval/gold_ext/q-x-*.yaml` (19 questions, 59 passages, all unapproved drafts); `refdocs/plans/2026-10-15-question-set-extension.md`, `refdocs/execution/2026-10-15-question-set-extension.md`, D-39, the PRD row.
 - **Decided:** D-39 proposed only. The frozen files are untouched; the guard code (`eval/frozen.py`, `eval/vault_compare.py`) is deliberately **not** changed until Azim approves the gold, because it is a freeze guard.

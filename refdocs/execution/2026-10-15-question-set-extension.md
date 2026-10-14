@@ -1,6 +1,6 @@
 # Execution: extending the question set (D-39)
 
-> Plan: `refdocs/plans/2026-10-15-question-set-extension.md`. Status: **Draft (2026-10-15)**, X1 and X2 done; X3 waits for Azim.
+> Plan: `refdocs/plans/2026-10-15-question-set-extension.md`. Status: **Done (2026-10-15)**: X1 to X6 complete; result in `refdocs/evidence/20261015-question-set-extension.md`, D-39 accepted, D-38 reversed (D-40).
 
 ### Task X1: draft the questions and gold from the papers' text (done 2026-10-15)
 

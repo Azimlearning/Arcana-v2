@@ -12,9 +12,10 @@ ALL_SIGNALS: frozenset[Signal] = frozenset({"dense", "sparse", "graph"})
 TOP_K = 10
 RRF_K = 60
 
-# The product path (not the frozen benchmark) draws this many candidates from each signal before fusing and keeps the fused top TOP_K (D-38).
-# The benchmark protocol stays at TOP_K per signal (D-20): `hybrid_retrieve(depth=None)` is that.
-CANDIDATE_DEPTH = 30
+# The product path draws this many candidates from each signal before fusing and keeps the fused top TOP_K. D-38 set it to 30; the declared
+# extension questions did not confirm it (D-40: Recall@10 -0.007 on 19 new questions), so by the rule fixed in advance it is back at TOP_K,
+# the frozen protocol (D-20). The `depth` parameter of `hybrid_retrieve` stays for the experiments.
+CANDIDATE_DEPTH = TOP_K
 
 
 @dataclass(frozen=True)
