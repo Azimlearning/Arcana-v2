@@ -31,7 +31,7 @@
 | `one_more_word` lint reason is noisy on real data | `refdocs/execution/2026-10-07-m2-lint-screen.md` | Open |
 | Quiz wrong answers are chosen without a model: some are too easy | D-35 A8 limits | Open |
 | VerifiedLab: a branch off the grid and off the fuzz is not seen (the interface cannot ask for it); the live generator is not built; the lifecycle states beyond `verified` are P4b | D-36 amendment | Open |
-| P3: whether a negative result for one trained engine satisfies Objective 03 | `refdocs/evidence/20261014-p3-rerank.md` | Azim |
+| ~~P3: whether a negative result for one trained engine satisfies Objective 03~~ **Resolved 2026-10-15** (supervisor via Azim: a component may be removed or left when tested to no effect, if documented; D-37 Resolved) | `refdocs/evidence/20261014-p3-rerank.md` | Closed |
 | A depth-30 hybrid arm as a declared protocol amendment before the final benchmark | `refdocs/evidence/20261014-p3-rerank.md` | P5 F4 |
 
 ## Screenshots

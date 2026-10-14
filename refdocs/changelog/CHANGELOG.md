@@ -28,6 +28,13 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-15: Objective 03 resolved; P3 closed as a documented negative result
+- **Changed:** `refdocs/changelog/DECISIONS.md` (D-37 Resolved paragraph), `refdocs/evidence/README.md` (ledger item closed), `refdocs/STATUS.md` (P3 row).
+- **Decided:** on Azim's relay of the supervisor's rule (any component may be removed, skipped or left as is if testing shows no effect or an issue arises, provided it is documented) and his delegation ("up to u"): the re-rank engine stays built, additive and off by default; no distilled router and no trained mastery model; the report states the negative result as measured.
+- **Deviations:** none.
+- **Verified:** nothing run; documentation only.
+- **Known issues / next steps:** the supervisor's statement is relayed, not quoted from a document; if the assessment brief states otherwise, reopen D-37.
+
 ### 2026-10-15: Link audit sample drawn for the full-corpus `atomic2` vault (free)
 - **Changed:** `eval/results/20261014T185317Z-m2-audit-sample.{md,json}` and the key apart in `eval/results/audit-keys/20261014T185317Z-m2-audit-key.json` (the existing `eval/vault_compare.py audit` over `data/m2/atomic2-full-vault1`, default seed and 50 per kind); the evidence ledger and the P5 F3 task name it.
 - **Decided:** none.
