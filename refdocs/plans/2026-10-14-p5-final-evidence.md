@@ -43,7 +43,7 @@ P0 to P4 built the system. What a final-year project is judged on is what it **s
 
 | Item | Estimate | Basis | Needs |
 |---|---|---|---|
-| E1 full `atomic2` build, then the compare | $3 to $6.50, plus about $0.01 for embeddings | The slice cost $0.8928 for 285 passages (about $0.0031 each); 1,570 passages scale to about $4.9, with a 25 percent margin each way | The cap raised; Azim's confirmation of the ceiling; a clean tree; run from the repo root |
+| E1 full `atomic2` build, then the compare | **expected $4.92, plausible up to $6.92, ceiling $7.00**, plus under $0.01 for embeddings (cost audit, 2026-10-14) | Measured per-call tokens of the slice build ($0.003134 per passage) applied to 1,570 passages; the largest chunk is bounded, so output tokens are the uncertainty | The cap raised (at least about $15.60 now, $7.10 after 2026-11-01); Azim's confirmation of the $7.00 ceiling; a clean tree; run from the repo root |
 | E2 RAGAS on a subset | $1 to $3 (unmeasured guess) | 19 questions by 3 metrics, a mid-tier judge | `cost-auditor` projection and Azim's confirmation first |
 | E4 deeper candidate lists | about $0.001 | 19 question embeddings, a few times | Confirmation (tiny) |
 | Everything else | $0 | Fakes or local computation | n/a |

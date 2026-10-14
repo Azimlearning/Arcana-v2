@@ -2,7 +2,7 @@
 
 > Plan: `refdocs/plans/2026-10-14-p5-final-evidence.md`. Tasks run in order unless marked as waiting. A task is not done until its **Verify** passes.
 > If reality diverges from this doc, **edit this doc** (CLAUDE.md rule 4) and note it in the changelog's Deviations line.
-> Status: **In progress (2026-10-14).** F1 and F2 are free and under way; F4 and F5 spend money and wait for the cap and Azim's confirmation of each amount.
+> Status: **In progress (2026-10-14).** F1 done (the evidence index), F6 done (P3-lite), F2 and F7 are free and open; F3 waits for Azim's reading; F4 is fully prepared (amendment A9, cost audit, commands) and waits only for the cap and Azim's confirmation of the $7.00 ceiling; F5 (RAGAS) is last.
 
 ## Before starting
 
@@ -23,8 +23,8 @@ Azim reads `eval/results/20261007T060948Z-m2-audit-sample.md` and `20261007T1409
 
 ### Task F4: the full-corpus `atomic2` build and the compare (paid, waiting on the cap and Azim's amount)
 
-1. Protocol amendment (D-35 A9): arms, headline pairs named in advance, the ceiling, the preconditions (clean tree, repo root).
-2. `cost-auditor`; Azim confirms the ceiling; the build; the compare; the evidence record.
+1. Protocol amendment (D-35 A9): **written 2026-10-14** (arms, headline pairs named in advance, the ceiling $7.00, the preconditions, the commands).
+2. `cost-auditor`: **done 2026-10-14** (expected $4.92, high $6.92; two free fixes made). Azim confirms the ceiling (**$7.00**) and edits the cap in `.env` (at least about $15.60 now, or $7.10 after 2026-11-01); then the build, the compare and the evidence record.
 
 **Verify:** chunk and vector hashes identical across arms; the frozen arms reproduce the earlier numbers; the spend is within the ceiling and in the ledger.
 
@@ -32,7 +32,7 @@ Azim reads `eval/results/20261007T060948Z-m2-audit-sample.md` and `20261007T1409
 
 Install RAGAS as a library; run the secondary metrics on the bounded subset; report as secondary. **Verify:** the metrics are filled in the benchmark schema; the cost is in the ledger; no model-judged number is called primary.
 
-### Task F6: P3-lite (waiting on Azim's go)
+### Task F6: P3-lite (done 2026-10-14: not shown to help; `refdocs/evidence/20261014-p3-rerank.md`)
 
 See `2026-10-14-p3-lite-rerank.md`.
 

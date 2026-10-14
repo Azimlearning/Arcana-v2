@@ -115,13 +115,17 @@ from eval.run_ablation import (
 EXPECTED_PER_CHUNK_USD = 0.0040
 """The start-of-document projection before anything has been measured in a build: the pilot measured $0.00358 per chunk for
 the atomic prompt (35 chunks, 2026-10-07), rounded up. The first estimate, $0.0067, was the cost auditor's guess."""
-EXPECTED_BY_BUILDER = {"atomic": EXPECTED_PER_CHUNK_USD, "atomic2": 0.0030}
-"""The start-of-document projection per builder: atomic2 returns no sentences, so it is cheaper than g1-3 (the cost audit expects
-about $0.0022 per passage; 0.0030 keeps the projection safe without stopping a build that would fit)."""
+EXPECTED_BY_BUILDER = {"atomic": EXPECTED_PER_CHUNK_USD, "atomic2": 0.0033}
+"""The start-of-document projection per builder. For atomic2 it is the **measured** mean of the 285-passage slice build ($0.003134 per
+passage, 2026-10-07) rounded up; the first cost audit's $0.0022 was an expectation the build did not meet, and 0.0030 (used for the slice run)
+was 4 percent under the measurement (the full-corpus cost audit, 2026-10-14)."""
 ARMS_COMPARED = ("graph", "hybrid", "flat")
 MAX_NDCG_DROP = 0.05
 PAIRED_MIN_FOR_SIGNIFICANCE = 10
 VARIANT_FILE = "variant.json"
+MAX_EXTRACTION_FAILURE_SHARE = 0.05
+"""A build in which more than this share of passages returned an unusable extraction (still paid for) is not complete: a graph with holes is not
+compared as if it were whole."""
 CLAIMS_FILE = "claims.json"
 STORE_FILES = ("arcana.db", "vectors.npz", "graph.json", INGESTION_REPORT)
 
@@ -237,6 +241,13 @@ async def rebuild_graph(
     if max_usd <= 0:
         raise RunInvalid("--max-usd must be a positive ceiling")
     target.mkdir(parents=True, exist_ok=True)
+    # An interrupted build (a kill, Ctrl-C, an unexpected exception) must never look like a finished one or like a copy of the pinned stores:
+    # the record exists from the start, says it is not complete, and is overwritten only when the build ends (a full-corpus cost audit found
+    # that a hard stop left no record and the partial graph could reach a compare silently).
+    (target / VARIANT_FILE).write_text(
+        json.dumps({"builder": builder, "complete": False, "interrupted": "the rebuild started and did not finish", "max_usd": max_usd}, indent=2),
+        encoding="utf-8",
+    )
     copy_database(slice_dir / "arcana.db", target / "arcana.db")
     shutil.copyfile(slice_dir / "vectors.npz", target / "vectors.npz")
 
@@ -312,6 +323,8 @@ async def rebuild_graph(
             }
         )
     spent = round(container.ledger.month_total() - spent_before, 6)
+    total_chunks = sum(d["chunks"] for d in documents) or 1
+    failure_share = sum(d.get("extraction_failures", 0) for d in documents) / total_chunks
     (target / INGESTION_REPORT).write_text(json.dumps(documents, indent=2), encoding="utf-8")
     if builder == "atomic2":  # claim notes belong to the vault: kept beside the graph for `vault_tool.py build`
         (target / CLAIMS_FILE).write_text(
@@ -324,7 +337,10 @@ async def rebuild_graph(
         "max_usd": max_usd,
         "spent_usd": spent,
         "documents": len(documents),
-        "complete": all(d["status"] == "ready" for d in documents) and len(documents) == len(saved),
+        "complete": all(d["status"] == "ready" for d in documents)
+        and len(documents) == len(saved)
+        and failure_share <= MAX_EXTRACTION_FAILURE_SHARE,
+        "extraction_failure_share": round(failure_share, 4),
         "code": git_state(),
         "mode": {"llm": settings.arcana_llm_mode, "embed": settings.arcana_embed_mode},
         "slice_hashes": {

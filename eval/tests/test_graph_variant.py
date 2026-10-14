@@ -449,3 +449,17 @@ def test_compare_refuses_a_variant_with_no_complete_rebuild_record(two_papers, c
     assert main(args) == 2 and "complete rebuild record" in capsys.readouterr().err
     record.unlink()
     assert main(args) == 2
+
+
+def test_an_interrupted_rebuild_leaves_a_record_that_says_it_is_not_complete(two_papers, monkeypatch):
+    _, tmp, data = two_papers
+    slice_stores(data, tmp / "slice", [FIRST])
+
+    async def boom(*_args, **_kwargs):
+        raise KeyboardInterrupt  # a hard stop that the tool does not catch
+
+    monkeypatch.setattr(graph_variant, "build_graph", boom)
+    with pytest.raises(KeyboardInterrupt):
+        asyncio.run(rebuild_graph(tmp / "slice", tmp / "killed", "atomic", 1.0, allow_paid=False))
+    record = json.loads((tmp / "killed" / "variant.json").read_text(encoding="utf-8"))
+    assert record["complete"] is False and "did not finish" in record["interrupted"]

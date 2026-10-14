@@ -28,6 +28,13 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-14: the full-corpus `atomic2` run prepared (A9, cost audit); two free tool fixes
+- **Changed:** `eval/graph_variant.py` (the start-of-document projection for `atomic2` 0.0030 to 0.0033, the measured cost rounded up; a rebuild writes `variant.json` with `complete: false` at the start so an interrupted build cannot pass as finished or as a copy of the pinned stores; a build with more than 5 percent unusable extractions is not complete), a test for the interruption, D-35 amendment A9, the P5 plan and execution doc.
+- **Decided:** none new; A9 fixes the protocol before the run: the headline pairs, the baseline `data/eval-live-live`, the ceiling `--max-usd 7.00`, the commands and the preconditions.
+- **Verified:** `eval/tests` 176 passed (one new); a `cost-auditor` review (read-only): expected cost **$4.92**, plausible up to $6.92, embeddings under $0.01; every paid path goes through the seam and the ledger; retries cannot multiply cost; the build is not resumable.
+- **Blocked, by design:** the app reports cap $10, spent $8.46, $1.54 left, so the seam would stop the build after about $1.5 and waste it. The run needs the cap raised in `.env` (only Azim can: at least about $15.60 now, or $7.10 after the 2026-11-01 reset) and his confirmation of the $7.00 ceiling.
+- **Noted, not changed:** per-paper persistence so a stop at paper 15 does not repay 14 (the audit's optional item); the embeddings price in `api/llm/pricing.py` is still marked `ASSUMED` and the ledger prices with the same table, so the figure should be reconciled with the provider console after the run.
+
 ### 2026-10-14: P3-lite built and measured: a cross-encoder re-ranker is not shown to help
 - **Changed:** `api/engines/` (the `Engine` interface, `apply_rerank` with the heuristic fallback, a `fastembed` cross-encoder engine), `fastembed` as the optional `engines` extra (`pyproject.toml`, `uv.lock`), `eval/rerank_compare.py` (the experiment, its protocol written in the file before the run), the evidence record `refdocs/evidence/20261014-p3-rerank.md` and the result `eval/results/20261014T135007Z-p3-rerank.json`; D-37 from proposed to measured; STATUS, plan, execution doc and indexes.
 - **Decided:** (Azim, "implement") P3-lite. The engine stays built, additive and off by default because it was not shown to help.
