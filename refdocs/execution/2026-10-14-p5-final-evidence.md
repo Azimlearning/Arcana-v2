@@ -2,7 +2,7 @@
 
 > Plan: `refdocs/plans/2026-10-14-p5-final-evidence.md`. Tasks run in order unless marked as waiting. A task is not done until its **Verify** passes.
 > If reality diverges from this doc, **edit this doc** (CLAUDE.md rule 4) and note it in the changelog's Deviations line.
-> Status: **In progress (2026-10-14).** F1 done (the evidence index), F6 done (P3-lite), F2 and F7 are free and open; F3 waits for Azim's reading; F4 is fully prepared (amendment A9, cost audit, commands) and waits only for the cap and Azim's confirmation of the $7.00 ceiling; F5 (RAGAS) is last.
+> Status: **In progress (2026-10-14).** F1 done (the evidence index), F6 done (P3-lite), F2 and F7 are free and open; F3 waits for Azim's reading; F4 is **done** (Look 5); F5 (RAGAS) is last and waits for the cap and a projection.
 
 ## Before starting
 
@@ -21,7 +21,7 @@ E5 and E6: counts from the real vault and corpus: items made per claim, leak cou
 
 Azim reads `eval/results/20261007T060948Z-m2-audit-sample.md` and `20261007T140924Z-m2-audit-sample.md`; the key is applied by the existing tool; precision of stated and co-mention links with the sample size is recorded. **Verify:** the result file names both samples and keeps the key apart until the labels are in.
 
-### Task F4: the full-corpus `atomic2` build and the compare (paid, waiting on the cap and Azim's amount)
+### Task F4: the full-corpus `atomic2` build and the compare (**done 2026-10-14**: `refdocs/evidence/20261014-m2-look5-full-corpus.md`; $5.12 build; see D-35 Look 5 and the A9 addendum)
 
 1. Protocol amendment (D-35 A9): **written 2026-10-14** (arms, headline pairs named in advance, the ceiling $7.00, the preconditions, the commands).
 2. `cost-auditor`: **done 2026-10-14** (expected $4.92, high $6.92; two free fixes made). Azim confirms the ceiling (**$7.00**) and edits the cap in `.env` (at least about $15.60 now, or $7.10 after 2026-11-01); then the build, the compare and the evidence record.

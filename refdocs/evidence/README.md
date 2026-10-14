@@ -14,6 +14,7 @@
 | [20261007T060911Z-m2-look2.md](20261007T060911Z-m2-look2.md) | `eval/results/20261007T060911Z-m2-look2.json`, `20261007T060948Z-m2-audit-sample.*` | The vault is a stronger graph signal over the same nodes (0.141 to 0.227) but does not improve the hybrid | 3 papers; gate clause 3 uninformative by construction |
 | [20261007T131202Z-m2-look3-scale.md](20261007T131202Z-m2-look3-scale.md) | `eval/results/20261007T131202Z-m2-look3-scale.json` | The graph signal helps the hybrid more as the corpus grows (-0.022 to +0.039) | Free-form graph; descriptive |
 | [20261007T140853Z-m2-look4.md](20261007T140853Z-m2-look4.md) | `eval/results/20261007T140853Z-m2-look4.json`, `20261007T140924Z-m2-audit-sample.*` | The `atomic2` graph and the vault over it (0.2107 to 0.2871; hybrid 0.3496) | 3 papers; still below the no-graph control there |
+| [20261014-m2-look5-full-corpus.md](20261014-m2-look5-full-corpus.md) | `eval/results/20261014T151443Z-m2-look5.json` | The `atomic2` graph and the vault over all 16 papers: the vault lifts its own graph signal (+0.034) but `hybrid_vault` is level with its own frozen hybrid and -0.026 below the baseline's; +0.014 over `flat` (descriptive) | 19 questions; one build per graph; two provider routes in two invocations; gate clause 3 fails |
 | [20261014-p3-rerank.md](20261014-p3-rerank.md) | `eval/results/20261014T135007Z-p3-rerank.json` | A pretrained cross-encoder re-ranker is not shown to help the hybrid arm (rerank_n50 against hybrid_n50: -0.007 nDCG@10, p = 0.90); candidate depth alone raises Recall@10 0.212 to 0.305 (exploratory) | 19 questions; one generic pretrained model; about 5 s per query on CPU |
 | [20261008-p4-v1-formula-probe.md](20261008-p4-v1-formula-probe.md) | `eval/results/20261008-p4-v1-formula-probe.json` | Which formulas the passages state (RRF and BM25: none) | Regex over mangled PDF text: a lower bound |
 | [20261008-p4-lab-mutation-suite.md](20261008-p4-lab-mutation-suite.md) | `eval/results/20261007T173611Z-p4-lab-mutations.json` | 120 planted defects, all refused by the stage named; the browser's sandbox and CSP probes | A planted set the project wrote; the independent reviews are the stronger evidence |
@@ -24,7 +25,7 @@
 | Item | Where | Owner |
 |---|---|---|
 | The two 100-item link audit samples are unread | `eval/results/20261007T060948Z-m2-audit-sample.md`, `20261007T140924Z-m2-audit-sample.md` | Azim |
-| The full 16-paper `atomic2` build is not run | P5 F4 | Azim (the cap) |
+| The full-corpus `atomic2` result is within noise and below the free-form baseline's hybrid; the link audit of this build is not drawn | Look 5 | Azim (reading) |
 | RAGAS metrics are null; the library is installed at the end | P5 F5 | Azim's standing instruction |
 | `one_more_word` lint reason is noisy on real data | `refdocs/execution/2026-10-07-m2-lint-screen.md` | Open |
 | Quiz wrong answers are chosen without a model: some are too easy | D-35 A8 limits | Open |
