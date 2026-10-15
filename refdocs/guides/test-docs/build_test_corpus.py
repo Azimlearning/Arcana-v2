@@ -1,3 +1,4 @@
+# ruff: noqa: ASYNC240  (an offline command-line tool: blocking file operations inside its coroutines are fine)
 """Build a data directory from the three test PDFs in which the Studio's vault tools have material (`refdocs/guides/manual-testing.md`).
 
     ARCANA_LLM_MODE=live uv run python refdocs/guides/test-docs/build_test_corpus.py --out data/manual-test --allow-paid
@@ -24,6 +25,7 @@ import json
 import shutil
 import sys
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
@@ -38,11 +40,11 @@ from eval.vault_tool import build as build_vault  # noqa: E402
 DOCS = Path(__file__).resolve().parent
 
 
-async def stage(staging: Path) -> list[dict[str, str]]:
+async def stage(staging: Path) -> list[dict[str, Any]]:
     """Ingest the PDFs into `staging` and return the ingestion report entries the rebuild tool reads."""
     settings = load_settings().model_copy(update={"arcana_data_dir": staging, "arcana_llm_mode": "fake"})
     container = build_container(settings)
-    report: list[dict[str, str]] = []
+    report: list[dict[str, Any]] = []
     for pdf in sorted(DOCS.glob("*.pdf")):
         result = await ingest_pdf(pdf.read_bytes(), pdf.name, container.ingest_deps)
         if result.status != "ready":

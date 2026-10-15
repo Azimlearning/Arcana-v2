@@ -59,3 +59,5 @@
 ## Studio breadth and panes (D-43, D-44)
 
 A brief is the vault's own sentences, not a summary, and is only as complete as the vault; insights draw a trend only from 7 active days of 14 and the weekly seasonal fit VERA used is not built; the workload applies the schedule's fixed rule and does not model further forgetting; a literature review of a topic whose passages come from one paper is a review of one source; read-aloud is a deferred enhancement (the Listen button does nothing yet); the live check of the writing kinds is one attempt per turn and measures grounding, not quality; Timeline, a shown plagiarism report and a gaps block are not built.
+
+An upload in the app gets answers, comparisons and writing at once, but the learning tools (quiz, flashcards, blurting, Cornell notes, Socratic questions, brief, cheat sheet) derive from claims that only the atomic builder writes, and the app's ingestion uses the default extractor; a corpus for them is built with `refdocs/guides/test-docs/build_test_corpus.py` or the project's graph-variant and vault tools. Making the atomic builder the product default is a decision with spend (D-34) and is left as future work.

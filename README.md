@@ -74,6 +74,12 @@ A live run needs `LLM_MONTHLY_CAP_USD` set to a positive number (every paid call
 before sending if it would pass it) and the three keys; RAGAS is the optional `eval` extra
 (`uv sync --extra eval`).
 
+**A note on the learning tools.** A PDF uploaded in the app gets answers, comparisons and writing at once, but quiz, flashcards,
+blurting, Cornell notes, Socratic questions, brief and cheat sheet derive from claims that only the atomic builder writes. Build a
+corpus for them with `uv run python refdocs/guides/test-docs/build_test_corpus.py --out data/manual-live --allow-paid` (about $0.02 for
+the three small test papers in `refdocs/guides/test-docs/`), or see `refdocs/guides/manual-testing.md` for the full hand-test script:
+prompts, expected output and expected visuals for every tool.
+
 ### A short demonstration
 
 1. Start the API and the web app, upload a PDF, and ask a question: an answer with numbered citations,
