@@ -28,6 +28,16 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-15: P5 S6, the live grounding run (the whole system, a real model, $1.026)
+- **Changed:** `eval/grounding_live.py` (the tool; protocol committed first; every paid row kept on disk; a ceiling and a cap check), results and rows files, `refdocs/evidence/20261015-grounding-live.md`, the ledger, limits, STATUS, the execution doc.
+- **Decided:** none new. The ceiling was $1.5 (the cost review: expected $0.91, high $1.70); the month's cap was set per command because `.env` holds an empty value.
+- **Deviations:** none from the protocol; a two-question smoke run came first ($0.08).
+- **Verified:** 39 turns and 8 write turns completed within the ceiling; every citation re-checked verbatim in the shipped block.
+- **Measured:** 38 of 38 answered, the control empty, 130 of 140 segments kept by the model judge, 123 model quotes against 11 replaced, precision 0.209, gold recall 0.215 (original 0.132, extension 0.297), 8 of 8 drafts passed; $0.017 per question and $0.045 per draft.
+- **Spend:** $1.026 for the run, about $1.10 with the smoke run; the month is now above $15 (the cap value in `.env` is empty).
+- **Noted, not changed:** one live `TraversalView` block was refused by the validator and not shown (fail closed); citation precision is low because retrieval's ceiling shows through and the gold is a floor.
+- **Known issues / next steps:** the phone-width pass; the final STATUS and hand-over docs.
+
 ### 2026-10-15: P5 S5, the adaptive dashboard and the Studio blocks checked in a real browser; two defects found and fixed
 - **Changed:** `api/agents/graph.py` (the last gate re-validates notes-family blocks against the vault and the reading they were derived from), `api/agents/state.py` and `api/agents/compose.py` (`mastery_snapshot`, `last_rated_snapshot`), `web/components/shell/Studio.tsx` (the shelf is the launcher: starters that put a request in the question box), `web/app/Workspace.tsx` (`ask` takes an override), tests; `refdocs/evidence/20261015-p5-studio-browser.md` and the screenshots.
 - **Decided:** none new (D-42 stands).

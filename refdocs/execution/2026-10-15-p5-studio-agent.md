@@ -1,6 +1,6 @@
 # Execution: P5 Studio, the learning and writing agent (D-42)
 
-> Plan: `refdocs/plans/2026-10-15-p5-studio-agent.md`. Status: **In progress (2026-10-15).** S1 (writing), S2 (learning) and S3 (review schedule) built and tested; S5 and S6 next (S4's context is built: the vault and learner store are on the turn). Each slice is green end to end before the next starts.
+> Plan: `refdocs/plans/2026-10-15-p5-studio-agent.md`. Status: **In progress (2026-10-15).** S1 to S6 done (S4's context is built: the vault and learner store are on the turn); the phone-width pass is the one open item. Each slice is green end to end before the next starts.
 
 ## S1: Writing
 
@@ -31,6 +31,6 @@
 
 Re-verify end to end in a real browser (Basic and Adaptive, saved views, fallback, trace); take only what the catalog's rules allow from the interactive-UI direction; record screenshots.
 
-## S6: The live grounding run
+## S6: The live grounding run (**done 2026-10-15**: `refdocs/evidence/20261015-grounding-live.md`, $1.026)
 
 `cost-auditor` projection first; then the agent on the 38 questions with a real model; the quote check without a model; the Fact Checker's judge live; results and limits recorded.

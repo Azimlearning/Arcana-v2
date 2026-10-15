@@ -23,6 +23,15 @@
 | **No human has read a link audit sample.** One sample (the `atomic2` build) was labelled by the assistant: asserted links 0.86 yes, co-mention 0.58 yes; 30 of 100 sentences are bibliography entries. The two earlier samples are unread | Link precision is a model-judged estimate on one sample; the human reading would supersede it | `refdocs/evidence/README.md` ledger; `eval/results/*-m2-audit-sample.md` |
 | The full-corpus build was made over two provider routes of the same model in two invocations (Anthropic credit ran out mid-run) | Disclosed provenance; a clean single-route rebuild would differ | `20261014-m2-look5-full-corpus.md`; D-35 A9 addendum |
 
+## 2b. Threats to the live-system conclusions
+
+| Limit | Effect | Source |
+|---|---|---|
+| One live run of 39 questions and 8 writing topics, one model, no repetition | Rates are descriptive; a rerun would differ | `20261015-grounding-live.md` |
+| Citation precision 0.21 and gold recall 0.21 against a gold set that is a floor; half the answers cite no gold-relevant chunk | The answers are grounded, not shown to be relevant or correct; no model-judged quality exists | same; constraint 9 |
+| The Fact Checker removed 7 percent of claims that had valid quotes | It is a measured gate with a cost: some supported claims may be removed too (not measured: no labelled support set) | same |
+| The browser check was desktop width with fake text | Phone-width layout and real-text rendering are unverified | `20261015-p5-studio-browser.md` |
+
 ## 3. Threats to the model-judged and trained-tool conclusions
 
 | Limit | Effect | Source |
