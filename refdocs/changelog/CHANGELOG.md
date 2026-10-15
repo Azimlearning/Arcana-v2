@@ -28,6 +28,12 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-15: P5 S5 phone-width pass: the layout stacks below the md breakpoint
+- **Changed:** `web/components/shell/Shell.tsx` and `Panel.tsx` (panels stack on phones: answer, Studio, sources; each as tall as its content; page scroll), evidence note, screenshots and `p5-phone-check.json`.
+- **Diagnosed:** at 390 px three flex panels shared the width, so the sources and the studio panels were a few characters wide.
+- **Verified:** a headless-browser run at 390 and 768 px (empty workspace, study set, writing draft): no horizontal overflow; `pnpm --filter web test`: 393 passed; typecheck and lint clean.
+- **Known issues / next steps:** none open for the layout.
+
 ### 2026-10-15: Lab lifecycle is walked by ordinary use (D-41 addendum)
 - **Changed:** `api/agents/compose.py` (a reuse that was already `cached` becomes `audited`: it was verified again and the evidence is still stored; the delivery count then promotes it), `api/labs/test_lifecycle.py` (a test through six requests), D-41, limits, ledger.
 - **Decided:** the audit the PRD names is the re-verification plus the evidence check a reuse already does; no separate scheduler.

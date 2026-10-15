@@ -30,7 +30,7 @@
 | One live run of 39 questions and 8 writing topics, one model, no repetition | Rates are descriptive; a rerun would differ | `20261015-grounding-live.md` |
 | Citation precision 0.21 and gold recall 0.21 against a gold set that is a floor; half the answers cite no gold-relevant chunk | The answers are grounded, not shown to be relevant or correct; no model-judged quality exists | same; constraint 9 |
 | The Fact Checker removed 7 percent of claims that had valid quotes | It is a measured gate with a cost: some supported claims may be removed too (not measured: no labelled support set) | same |
-| The browser check was desktop width with fake text | Phone-width layout and real-text rendering are unverified | `20261015-p5-studio-browser.md` |
+| The browser checks used fake text; the phone-width pass checked layout only (no horizontal overflow at 390 and 768 px) | Real-model text in the UI was seen only in the data, not in a browser | `20261015-p5-studio-browser.md` |
 
 ## 3. Threats to the model-judged and trained-tool conclusions
 

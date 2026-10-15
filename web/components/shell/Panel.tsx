@@ -17,6 +17,9 @@ const LABELS: Record<PanelId, string> = { sources: "Sources", chat: "Chat", stud
 const REGION_LABELS: Record<RegionId, string> = { main: "Main area", secondary: "Side area", shelf: "Outputs" };
 
 const MOTION = "transition-[flex-grow] duration-300 motion-reduce:transition-none";
+/** At phone width the panels stack in this order and each is as tall as its content; a collapsed panel is not drawn. */
+const STACK_ORDER: Record<PanelId, string> = { chat: "max-md:order-1", studio: "max-md:order-2", sources: "max-md:order-3" };
+const STACKED = "max-md:flex-none! max-md:overflow-visible!";
 
 export function Panel({
   spec,
@@ -37,8 +40,8 @@ export function Panel({
       aria-hidden={collapsed || undefined}
       inert={collapsed}
       className={`relative flex min-h-0 min-w-0 overflow-y-auto [overflow-wrap:anywhere] ${
-        spec.direction === "columns" ? "flex-row gap-4" : "flex-col gap-4"
-      } ${MOTION}`}
+        spec.direction === "columns" ? "flex-row gap-4 max-md:flex-col" : "flex-col gap-4"
+      } ${MOTION} ${STACKED} ${STACK_ORDER[spec.id]} ${collapsed ? "max-md:hidden" : ""}`}
       style={{ flexGrow: spec.width, flexShrink: 0, flexBasis: 0 }}
     >
       {spec.regions.map((region) => {
@@ -51,7 +54,7 @@ export function Panel({
             aria-label={split ? REGION_LABELS[region.id] : undefined}
             aria-hidden={hidden || undefined}
             inert={hidden}
-            className={`relative min-h-0 min-w-0 overflow-y-auto [overflow-wrap:anywhere] ${MOTION}`}
+            className={`relative min-h-0 min-w-0 overflow-y-auto [overflow-wrap:anywhere] ${MOTION} ${STACKED} ${hidden ? "max-md:hidden" : ""}`}
             style={{ flexGrow: region.size, flexShrink: 0, flexBasis: 0 }}
           >
             {regions[region.id]}

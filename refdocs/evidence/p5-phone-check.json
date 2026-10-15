@@ -1,0 +1,50 @@
+[
+  {
+    "width": 390,
+    "step": "basic empty",
+    "scrollWidth": 390,
+    "clientWidth": 390,
+    "horizontalOverflow": false,
+    "wide": []
+  },
+  {
+    "width": 390,
+    "step": "study set",
+    "scrollWidth": 390,
+    "clientWidth": 390,
+    "horizontalOverflow": false,
+    "wide": []
+  },
+  {
+    "width": 390,
+    "step": "writing draft",
+    "scrollWidth": 390,
+    "clientWidth": 390,
+    "horizontalOverflow": false,
+    "wide": []
+  },
+  {
+    "width": 768,
+    "step": "basic empty",
+    "scrollWidth": 768,
+    "clientWidth": 768,
+    "horizontalOverflow": false,
+    "wide": []
+  },
+  {
+    "width": 768,
+    "step": "study set",
+    "scrollWidth": 768,
+    "clientWidth": 768,
+    "horizontalOverflow": false,
+    "wide": []
+  },
+  {
+    "width": 768,
+    "step": "writing draft",
+    "scrollWidth": 768,
+    "clientWidth": 768,
+    "horizontalOverflow": false,
+    "wide": []
+  }
+]
