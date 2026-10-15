@@ -73,6 +73,7 @@ def _checked(block: UIBlock, ctx: TurnContext) -> BlockEvent:
         ctx.mastery_snapshot,
         None,
         ctx.last_rated_snapshot,
+        ctx.activity_snapshot,
     )
     return BlockEvent(type="block", block=checked)
 

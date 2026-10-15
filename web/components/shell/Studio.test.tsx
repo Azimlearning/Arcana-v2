@@ -13,6 +13,7 @@ describe("Studio", () => {
       "BlurtingRecall, then check",
       "Cornell notesName a topic",
       "Socratic questionsName a topic",
+      "Learning insightsWhere you stand",
       "Review scheduleWhat is due",
       "Document briefKey points, next steps",
       "Cheat sheetOne page, with a diagram",
@@ -45,7 +46,7 @@ describe("Studio", () => {
 
   it("every starter opens with words the server's rules recognise, so none is a plain question", () => {
     const writes = /^(write|draft|compose|outline|make an audio overview)/i;
-    const studies = /^(quiz me|brief me|make a cheat sheet|make flashcards|make a blurting|give me cornell|guide me|what should i review)/i;
+    const studies = /^(quiz me|brief me|show my learning insights|make a cheat sheet|make flashcards|make a blurting|give me cornell|guide me|what should i review)/i;
     for (const s of STARTERS) expect(writes.test(s.request) || studies.test(s.request)).toBe(true);
   });
 });

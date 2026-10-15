@@ -2,7 +2,7 @@ import type { CitedSummary as CitedSummaryBlock, UIBlock } from "@arcana/schema"
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { block, comparisonGrid, conceptMap, conceptPage, graphView, notesGraph, quizCard, sourceList, traversalView, docBrief, cheatSheet, studyPlan, studySet, verifiedLab, writingDraft } from "@/test/fixtures";
+import { block, comparisonGrid, conceptMap, conceptPage, graphView, notesGraph, quizCard, sourceList, traversalView, docBrief, cheatSheet, learningInsights, studyPlan, studySet, verifiedLab, writingDraft } from "@/test/fixtures";
 
 import { CitedSummary } from "./CitedSummary";
 import { ComparisonGrid } from "./ComparisonGrid";
@@ -16,6 +16,7 @@ import { WritingDraft } from "./WritingDraft";
 import { SourceList } from "./SourceList";
 import { CheatSheet } from "./CheatSheet";
 import { DocBrief } from "./DocBrief";
+import { LearningInsights } from "./LearningInsights";
 import { StudyPlan } from "./StudyPlan";
 import { StudySet } from "./StudySet";
 import { TraversalView } from "./TraversalView";
@@ -24,7 +25,7 @@ import { registry, renderBlock, type Registry } from "./registry";
 describe("block registry", () => {
   it("registers a component for every block type in the wire union", () => {
     // Compile-time too: `registry: Registry<UIBlock>` fails to typecheck if a variant is missing.
-    const types: UIBlock["type"][] = ["CitedSummary", "SourceList", "GraphView", "TraversalView", "ComparisonGrid", "ConceptMap", "ConceptPage", "NotesGraph", "QuizCard", "VerifiedLab", "WritingDraft", "StudySet", "StudyPlan", "DocBrief", "CheatSheet"];
+    const types: UIBlock["type"][] = ["CitedSummary", "SourceList", "GraphView", "TraversalView", "ComparisonGrid", "ConceptMap", "ConceptPage", "NotesGraph", "QuizCard", "VerifiedLab", "WritingDraft", "StudySet", "StudyPlan", "DocBrief", "CheatSheet", "LearningInsights"];
     for (const type of types) expect(registry[type]).toBeTypeOf("function");
     expect(registry.CitedSummary).toBe(CitedSummary);
     expect(registry.SourceList).toBe(SourceList);
@@ -41,6 +42,7 @@ describe("block registry", () => {
     expect(registry.StudyPlan).toBe(StudyPlan);
     expect(registry.DocBrief).toBe(DocBrief);
     expect(registry.CheatSheet).toBe(CheatSheet);
+    expect(registry.LearningInsights).toBe(LearningInsights);
   });
 
   it("renders a known block through its registered component", () => {
@@ -94,6 +96,11 @@ describe("block registry", () => {
   it("renders a StudyPlan block through the registry", () => {
     render(<>{renderBlock(studyPlan("ready"))}</>);
     expect(screen.getByRole("region", { name: "Review schedule" })).toBeInTheDocument();
+  });
+
+  it("renders a LearningInsights block through the registry", () => {
+    render(<>{renderBlock(learningInsights("ready"))}</>);
+    expect(screen.getByRole("region", { name: "Mastery" })).toBeInTheDocument();
   });
 
   it("renders a CheatSheet block through the registry", () => {

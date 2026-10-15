@@ -1,4 +1,4 @@
-import type { CitedSummary, ComparisonGrid, ConceptMap, ConceptPage, ErrorEnvelope, GraphView, LayoutSpec, NotesGraph, QuizAnswerResponse, QuizCard, DocBrief, CheatSheet, StudyPlan, StudySet, VerifiedLab, WritingDraft, SavedPattern, SourceList, TraversalView, WorkspaceResponse, StreamEvent, TurnTrace } from "@arcana/schema";
+import type { CitedSummary, ComparisonGrid, ConceptMap, ConceptPage, ErrorEnvelope, GraphView, LayoutSpec, NotesGraph, QuizAnswerResponse, QuizCard, DocBrief, CheatSheet, LearningInsights, StudyPlan, StudySet, VerifiedLab, WritingDraft, SavedPattern, SourceList, TraversalView, WorkspaceResponse, StreamEvent, TurnTrace } from "@arcana/schema";
 
 export const TITLE = "Hybrid Retrieval over Knowledge Graphs";
 
@@ -725,6 +725,38 @@ export function cheatSheet(
           ]
         : [],
       skipped: content ? 1 : 0,
+      ...overrides,
+    },
+  };
+}
+
+export function learningInsights(
+  status: LearningInsights["meta"]["status"],
+  overrides: Partial<LearningInsights["data"]> = {},
+  error: ErrorEnvelope | null = null,
+): LearningInsights {
+  const content = status === "ready" || status === "partial";
+  const days = (from: number, counts: number[]) =>
+    counts.map((count, i) => ({ date: `2026-10-${String(from + i).padStart(2, "0")}`, count }));
+  return {
+    type: "LearningInsights",
+    id: "turn-1-learning-insights",
+    meta: { status, error },
+    data: {
+      asOf: "2026-10-15",
+      pages: content ? 20 : 0,
+      ratedPages: content ? 5 : 0,
+      bands: content ? { needsWork: 2, gettingThere: 1, comfortable: 2 } : { needsWork: 0, gettingThere: 0, comfortable: 0 },
+      weakest: content
+        ? [
+            { pageId: "bm25", pageLabel: "BM25", score: 0.2, events: 3 },
+            { pageId: "rrf", pageLabel: "reciprocal rank fusion", score: 0.45, events: 2 },
+          ]
+        : [],
+      activity: content ? days(2, [0, 1, 0, 2, 3, 0, 1, 0, 0, 2, 4, 1, 0, 3]) : [],
+      activeDays: content ? 8 : 0,
+      trend: content ? { slopePerDay: 0.12, movingAverage: [0, 0.5, 0.33, 1, 1.67, 1.67, 1.33, 0.33, 0.33, 0.67, 2, 2.33, 1.67, 1.33] } : null,
+      workload: content ? days(16, [2, 2, 3, 3, 3, 4, 5]).map((d) => ({ date: d.date, due: d.count })) : [],
       ...overrides,
     },
   };

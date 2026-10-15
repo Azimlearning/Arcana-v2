@@ -314,6 +314,19 @@ Status: **built** (D-43, V4, 2026-10-15). A notes-family component (see ConceptP
 - **Validator invariants:** `loading` and `error` carry nothing; the data equals the sheet derived again from the focus page, the vault and the stored passages, exactly; a `ready` block has at least one entry; an `empty` block is refused when the vault can make entries; no block is checked without the vault.
 - **The diagram** is drawn by the web from the entries and edges (the focus in the middle, the others round it); the entries and connections are listed beside it as the text alternative, so the picture adds nothing the lists do not say.
 
+## LearningInsights
+
+Status: **built** (D-43, V5, 2026-10-15). A notes-family component (see ConceptPage), made by the Studio for the `study` intent when the request is for the learner's position ("show my learning insights", "how am I doing"); no model call. The VERA "Analytics" function aimed at the learner.
+
+- **Precondition:** the learner has rated at least one page that the vault holds. Every figure is a count or a fixed rule over the learner's own ratings and their dates; a trend is shown only when at least 7 of the last 14 days have activity.
+- **Supplied by:** the vault (pages), the learner store (mastery, the date of each page's last rating, ratings per day). No model, no trained forecaster.
+- **Payload:** `asOf`, `pages`, `ratedPages`, `bands {needsWork, gettingThere, comfortable}`, `weakest {pageId, pageLabel, score, events}[]`, `activity {date, count}[]` (14 days, zeros included), `activeDays`, `trend {slopePerDay, movingAverage[]} | null`, `workload {date, due}[]` (the next 7 days).
+- **Rules:** bands use the notes view's thresholds (0.67 and 0.4); the five lowest scores; the trend is a least-squares line through the 14 daily counts with a 3-day trailing average, only with 7 or more active days; the workload applies the review schedule's rule (under 0.5 due now; 0.5 to 0.75 soon after 2 days; 0.75 and over soon after 7) to each coming day, with scores held as they are.
+- **Caps:** 5 weakest pages, a 14 day window, a 7 day horizon, at least 7 active days for a trend, label at most 120 characters.
+- **Fences:** caps `weakest=5 window_days=14 horizon_days=7 min_active_days=7 label_chars=120`; grounding `vault_rederived`; a11y `region:Mastery | region:Activity | region:Review workload`. Template version 1; reusable without Research: no.
+- **Validator invariants:** `loading` and `error` carry nothing; the data equals the insights derived again from the vault, the mastery, the rating dates and the activity for the day the block states, exactly (a trend where the data cannot support one is refused); a `ready` block has a rated page; an `empty` block is refused when pages are rated; no block is checked without the vault.
+- **Limits, stated on the screen:** counts and a fixed rule over the learner's ratings, not a prediction; further forgetting is not modelled in the workload; the weekly seasonal adjustment VERA used is not fitted because two weeks cannot separate a weekly pattern from noise.
+
 ## VerifiedLab
 
 Status: **built** (P4 first slice, D-36, 2026-10-08, four labs by 2026-10-14; fakes only, no live generator yet). New in v2. `GET /labs` lists every lab the server can make and whether the stored passages state its formula (a lab is offered only where one does); `POST /labs {contractId}` makes one. The only block that carries code, and only code that the verifier minted. A **lab component**, not a turn component: the Composer never offers it to a question and the trace never lists it. It is made on request (`POST /labs`) and has its own small registry (`api/genui/lab_catalog.py`).

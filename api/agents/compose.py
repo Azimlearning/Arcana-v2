@@ -58,6 +58,7 @@ from api.learner.mastery import MasteryScore
 from api.learner.store import LearnerStore
 from api.stores.doc_store import DocStore, Document
 from api.vault.brief import default_doc_id, derive_doc_brief
+from api.vault.insights import activity_window_start, derive_insights
 from api.vault.quiz import derive_quiz
 from api.vault.review import derive_study_plan
 from api.vault.sheet import default_focus, derive_cheat_sheet
@@ -484,6 +485,34 @@ def _sheet_block(ctx: TurnContext, focus: object) -> tuple[UIBlock | None, Compo
     return block, ComponentRecord("CheatSheet", "admitted", (), block.id)
 
 
+def _insights_block(ctx: TurnContext) -> tuple[UIBlock | None, ComponentRecord]:
+    """The learner's insights for today (D-43, V5), derived by the Composer and validated against the vault, the mastery, the dates of the
+    ratings and the activity they were made from; never raises. Nothing rated is no insights."""
+    block_id = f"{ctx.block_id}-learning-insights"
+    if ctx.vault is None or ctx.learner is None:
+        return None, ComponentRecord("LearningInsights", "refused", ("no_study_material",))
+    try:
+        now = datetime.now(UTC)
+        mastery = _mastery_snapshot(ctx.vault, ctx.learner)
+        rated = {p: m for p, m in (mastery or {}).items() if p in ctx.vault.pages}
+        if not rated:
+            return None, ComponentRecord("LearningInsights", "refused", ("no_study_material",))
+        last_rated = ctx.learner.last_rated(rated)
+        activity = ctx.learner.daily_activity(activity_window_start(now.date()), now.date())
+        ctx.mastery_snapshot, ctx.last_rated_snapshot, ctx.activity_snapshot = rated, last_rated, activity
+        data = derive_insights(ctx.vault, rated, last_rated, activity, now)
+        block = validate_block(
+            BUILDERS["LearningInsights"](block_id, "ready", data=data), ctx.docs, ctx.graph, ctx.vault, rated, None, last_rated, activity
+        )
+    except ValidationFailed as exc:
+        log.warning("insights_rejected", issues=[i.path for i in exc.issues])
+        return None, ComponentRecord("LearningInsights", "error", ("block_failed_validation",), block_id)
+    except Exception as exc:  # a learner file that cannot be read: no insights, and the turn goes on
+        log.warning("insights_failed", error=type(exc).__name__)
+        return None, ComponentRecord("LearningInsights", "error", ("block_failed_validation",), block_id)
+    return block, ComponentRecord("LearningInsights", "admitted", (), block.id)
+
+
 def _study_block(ctx: TurnContext) -> tuple[UIBlock | None, ComponentRecord]:
     """The StudySet the Studio asked for, derived by the Composer from the vault and validated against it (the notes family: it is
     re-derived, so nothing the agent said is trusted). (None, a record saying why) when there is no request, no vault or nothing
@@ -501,6 +530,8 @@ def _study_block(ctx: TurnContext) -> tuple[UIBlock | None, ComponentRecord]:
         return _brief_block(ctx, request.get("doc_id"))
     if kind == "sheet":
         return _sheet_block(ctx, focus)
+    if kind == "insights":
+        return _insights_block(ctx)
     if kind not in STUDY_KINDS or ctx.vault is None or not ctx.vault.pages:
         return None, ComponentRecord("StudySet", "refused", ("no_study_material",))
     block_id = f"{ctx.block_id}-study-set"

@@ -10,7 +10,7 @@ import sqlite3
 from abc import ABC, abstractmethod
 from collections.abc import Collection, Mapping
 from contextlib import closing
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 from api.learner.mastery import SIGNALS, LearnerEvent, MasteryScore, Signal, mastery_of
@@ -36,6 +36,11 @@ class LearnerStore(ABC):
     def last_rated(self, page_ids: Collection[str]) -> Mapping[str, datetime]:
         """When each of these pages was last rated (its newest event). A page with no events is absent. The default holds nothing
         (a store with no times gives a schedule that counts every page as just rated)."""
+        return {}
+
+    def daily_activity(self, since: date, until: date) -> Mapping[str, int]:
+        """Events per UTC day from `since` to `until` inclusive, by ISO date. A day with none is absent. The default holds
+        nothing (a store with no times shows no activity)."""
         return {}
 
     @abstractmethod
@@ -117,6 +122,15 @@ class SqliteLearnerStore(LearnerStore):
                 ):
                     out[page_id] = datetime.fromisoformat(at)
         return out
+
+    def daily_activity(self, since: date, until: date) -> Mapping[str, int]:
+        with closing(self._connect()) as db:
+            rows = db.execute(
+                "SELECT substr(at, 1, 10) AS day, COUNT(*) FROM learner_events "
+                "WHERE substr(at, 1, 10) BETWEEN ? AND ? GROUP BY day",
+                (since.isoformat(), until.isoformat()),
+            ).fetchall()
+        return {day: count for day, count in rows}
 
     def delete_all(self) -> int:
         with closing(self._connect()) as db, db:

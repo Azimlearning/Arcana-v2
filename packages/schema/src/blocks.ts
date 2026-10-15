@@ -14,6 +14,7 @@ import type {
   StudyPlanData,
   DocBriefData,
   CheatSheetData,
+  LearningInsightsData,
   StudySetData,
   WritingDraftData,
   ComparisonGridData,
@@ -178,6 +179,15 @@ export interface CheatSheet {
   data: CheatSheetData;
 }
 
+/** The learner's own position: coverage, weakest pages, activity and the review workload ahead (D-43, V5). No model call. */
+export interface LearningInsights {
+  type: "LearningInsights";
+  /** Non-empty. Stable across updates: a later block with the same id replaces this one. */
+  id: string;
+  meta: BlockMeta;
+  data: LearningInsightsData;
+}
+
 export type UIBlock =
   | CitedSummary
   | SourceList
@@ -193,4 +203,5 @@ export type UIBlock =
   | StudySet
   | StudyPlan
   | DocBrief
-  | CheatSheet;
+  | CheatSheet
+  | LearningInsights;

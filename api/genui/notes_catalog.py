@@ -14,6 +14,7 @@ from dataclasses import dataclass
 
 from api.genui.catalog import A11yRequirement, Fences, PlacementHint
 from api.vault.brief import brief_caps
+from api.vault.insights import insights_caps
 from api.vault.quiz import MAX_ITEMS, OPTION_COUNT
 from api.vault.review import MAX_ITEMS as PLAN_ITEMS
 from api.vault.sheet import sheet_caps
@@ -160,6 +161,26 @@ CHEAT_SHEET = NotesSpec(
     placement=PlacementHint(panel="chat", priority=16),
 )
 
+LEARNING_INSIGHTS = NotesSpec(
+    name="LearningInsights",
+    precondition=(
+        "The learner has rated at least one page that the vault holds. Every figure is a count or a fixed rule over the learner's own "
+        "ratings and their dates; a trend is shown only when at least 7 of the last 14 days have activity."
+    ),
+    supplied_by=("vault",),
+    fences=Fences(
+        caps=insights_caps(),
+        grounding="vault_rederived",
+        a11y=(
+            A11yRequirement("region", "Mastery"),
+            A11yRequirement("region", "Activity"),
+            A11yRequirement("region", "Review workload"),
+        ),
+    ),
+    placement=PlacementHint(panel="chat", priority=19),
+)
+
 NOTES_CATALOG: dict[str, NotesSpec] = {
-    s.name: s for s in (CONCEPT_PAGE, NOTES_GRAPH, QUIZ_CARD, STUDY_SET, STUDY_PLAN, DOC_BRIEF, CHEAT_SHEET)
+    s.name: s
+    for s in (CONCEPT_PAGE, NOTES_GRAPH, QUIZ_CARD, STUDY_SET, STUDY_PLAN, DOC_BRIEF, CHEAT_SHEET, LEARNING_INSIGHTS)
 }

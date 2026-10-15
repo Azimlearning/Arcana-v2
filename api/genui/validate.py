@@ -50,6 +50,7 @@ from api.genui.generated import (
     FieldIssue,
     GraphView,
     LayoutSpec,
+    LearningInsights,
     NotesGraph,
     QuizCard,
     SourceList,
@@ -72,6 +73,7 @@ from api.retrieval.traversal import SeedNode, seed_weight, steps_for_display, tr
 from api.stores.doc_store import DocStore
 from api.stores.graph_store import GraphStore
 from api.vault.brief import derive_doc_brief
+from api.vault.insights import derive_insights
 from api.vault.quiz import derive_quiz
 from api.vault.review import derive_study_plan
 from api.vault.sheet import derive_cheat_sheet
@@ -109,6 +111,7 @@ def validate_block(
     mastery: Mapping[str, MasteryScore] | None = None,
     labs: LabStore | None = None,
     last_rated: Mapping[str, datetime] | None = None,
+    activity: Mapping[str, int] | None = None,
 ) -> UIBlock:
     """Return the validated block, or raise ValidationFailed naming every violated field. `graph` is the graph store
     the claims of a graph-derived block (a `TraversalView`) are re-derived from, and `vault` the vault those of a
@@ -121,7 +124,7 @@ def validate_block(
     except ValidationError as exc:
         raise ValidationFailed("The block does not match the wire schema.", _schema_issues(exc, tag)) from exc
 
-    issues = _content_issues(block, docs, graph, vault, mastery, labs, last_rated)
+    issues = _content_issues(block, docs, graph, vault, mastery, labs, last_rated, activity)
     if issues:
         raise ValidationFailed("The block failed content validation.", issues)
     return block
@@ -135,6 +138,7 @@ def _content_issues(
     mastery: Mapping[str, MasteryScore] | None = None,
     labs: LabStore | None = None,
     last_rated: Mapping[str, datetime] | None = None,
+    activity: Mapping[str, int] | None = None,
 ) -> list[FieldIssue]:
     """Rules common to every block, then the rules of its own type. A type with no rules here is refused:
     a component is not shown until its invariants are written down (constraint 7)."""
@@ -169,6 +173,8 @@ def _content_issues(
         issues += _doc_brief_issues(block, docs, vault, mastery)
     elif isinstance(block, CheatSheet):
         issues += _cheat_sheet_issues(block, docs, vault, mastery)
+    elif isinstance(block, LearningInsights):
+        issues += _insights_issues(block, vault, mastery, last_rated, activity)
     else:
         issues.append(FieldIssue(path="type", message="no content rules exist for this block type"))
     return issues
@@ -928,6 +934,37 @@ def _cheat_sheet_issues(
         issues.append(FieldIssue(path="data.entries", message="a ready sheet needs at least one entry"))
     if status == "empty" and derived["entries"]:
         issues.append(FieldIssue(path="data.entries", message="the vault can make entries here: this block must not be empty"))
+    _differences(data, derived, "data", issues)
+    return issues
+
+
+def _insights_issues(
+    block: LearningInsights,
+    vault: Vault | None,
+    mastery: Mapping[str, MasteryScore] | None,
+    last_rated: Mapping[str, datetime] | None,
+    activity: Mapping[str, int] | None,
+) -> list[FieldIssue]:
+    """The learner's insights are a function of the vault, the mastery, the dates of the ratings, the activity per day and the day the
+    block states, so they are checked by deriving them again: every count, band, weakest page, daily figure, the trend (present only with
+    enough active days) and every day of the workload must equal the derived ones."""
+    data, status = block.data.model_dump(), block.meta.status
+    if status in {"loading", "error"} or (status == "empty" and vault is None):
+        if data["ratedPages"] or data["weakest"] or data["activity"] or data["workload"] or data["trend"] is not None:
+            return [FieldIssue(path="data", message=f"a '{status}' block must carry nothing")]
+        return []
+    if vault is None:
+        return [FieldIssue(path="data", message="learning insights can only be checked against the vault")]
+    try:
+        day = datetime.fromisoformat(data["asOf"]).replace(tzinfo=UTC)
+    except ValueError:
+        return [FieldIssue(path="data.asOf", message="must be a date, YYYY-MM-DD")]
+    derived = derive_insights(vault, mastery, last_rated, activity, day)
+    issues: list[FieldIssue] = []
+    if status == "ready" and not data["ratedPages"]:
+        issues.append(FieldIssue(path="data.ratedPages", message="ready insights need at least one rated page"))
+    if status == "empty" and derived["ratedPages"]:
+        issues.append(FieldIssue(path="data.ratedPages", message="pages are rated: this block must not be empty"))
     _differences(data, derived, "data", issues)
     return issues
 

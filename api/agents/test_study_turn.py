@@ -41,6 +41,9 @@ from api.vault.types import Definition
         "Action items for BM25",
         "Make a cheat sheet for reciprocal rank fusion",
         "Give me a one-pager on dense retrieval",
+        "Show my learning insights",
+        "How am I doing?",
+        "What are my stats?",
     ],
 )
 def test_a_request_to_study_is_recognised(question: str):
@@ -76,6 +79,8 @@ def test_no_frozen_benchmark_question_is_rerouted_to_study():
         ("Give me action items for BM25", "brief"),
         ("Make a cheat sheet for BM25", "sheet"),
         ("Make an infographic of dense retrieval", "sheet"),
+        ("Show my learning insights", "insights"),
+        ("How am I doing with my notes?", "insights"),
         ("Give me cornell notes on reranking", "cornell"),
         ("Help me recall what BM25 is", "blurt"),
         ("Guide me through RRF with socratic questions", "socratic"),
@@ -285,3 +290,56 @@ async def test_a_cheat_sheet_turn_streams_through_the_last_gate_without_an_error
     events = [e async for e in run_turn(GRAPH, "Make a cheat sheet", ctx)]
     assert not any(isinstance(e, StreamErrorEvent) for e in events)
     assert "CheatSheet" in [e.block.type for e in events if isinstance(e, BlockEvent)]
+
+
+def _rated(ctx, tmp_path: Path):
+    """A learner store with a few ratings on pages the handmade vault holds."""
+    from datetime import UTC, datetime, timedelta
+
+    from api.learner.mastery import LearnerEvent
+    from api.learner.store import SqliteLearnerStore
+
+    store = SqliteLearnerStore(tmp_path / "learner-turn.db")
+    now = datetime.now(UTC)
+    for page, signal, days in [("bm25", "dont_know", 1), ("bm25", "unsure", 0), ("dense_retrieval", "know", 2)]:
+        store.record(LearnerEvent(page, signal, now - timedelta(days=days)))  # type: ignore[arg-type]
+    ctx.learner = store
+    return store
+
+
+async def test_an_insights_turn_ends_at_the_composer_with_validated_insights(tmp_path: Path):
+    """V5 (D-43): "show my learning insights" is the learner's position, derived from the vault, mastery, rating dates and activity."""
+    ctx, _ = _world(tmp_path)
+    _rated(ctx, tmp_path)
+    state = await GRAPH.ainvoke({"question": "Show my learning insights"}, context=ctx)
+    composition = state["composition"]
+    assert ctx.intent == "study" and composition.blocks[0].type == "CitedSummary"
+    insights = next(b for b in composition.blocks if b.type == "LearningInsights")
+    assert insights.meta.status == "ready" and insights.data.ratedPages == 2  # type: ignore[union-attr]
+    assert len(insights.data.activity) == 14 and len(insights.data.workload) == 7  # type: ignore[union-attr]
+    assert insights.data.trend is None  # two active days is not enough for a line  # type: ignore[union-attr]
+    assert any(r.component == "LearningInsights" and r.outcome == "admitted" for r in composition.records)
+
+
+async def test_an_insights_turn_streams_through_the_last_gate_without_an_error(tmp_path: Path):
+    """The last gate re-validates with the very activity the block was made from."""
+    from api.agents.graph import run_turn
+    from api.genui.generated import BlockEvent, StreamErrorEvent
+
+    ctx, _ = _world(tmp_path)
+    _rated(ctx, tmp_path)
+    events = [e async for e in run_turn(GRAPH, "Show my learning insights", ctx)]
+    assert not any(isinstance(e, StreamErrorEvent) for e in events)
+    assert "LearningInsights" in [e.block.type for e in events if isinstance(e, BlockEvent)]
+
+
+async def test_with_nothing_rated_there_are_no_insights_and_the_turn_still_answers(tmp_path: Path):
+    from api.learner.store import SqliteLearnerStore
+
+    ctx, _ = _world(tmp_path)
+    ctx.learner = SqliteLearnerStore(tmp_path / "empty-learner.db")
+    state = await GRAPH.ainvoke({"question": "Show my learning insights"}, context=ctx)
+    composition = state["composition"]
+    assert composition.blocks[0].type == "CitedSummary"
+    assert "LearningInsights" not in [b.type for b in composition.blocks]
+    assert any(r.component == "LearningInsights" and r.reasons == ("no_study_material",) for r in composition.records)

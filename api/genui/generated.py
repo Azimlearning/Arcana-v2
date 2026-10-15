@@ -286,6 +286,39 @@ class IngestResponse(BaseModel):
     error: str | None
 
 
+class InsightBands(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    needsWork: int
+    gettingThere: int
+    comfortable: int
+
+
+class InsightDay(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    date: str
+    count: int
+
+
+class InsightTrend(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    slopePerDay: float
+    movingAverage: list[float]
+
+
+class InsightWeak(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    pageId: str
+    pageLabel: str
+    score: float
+    events: int
+
+
+class InsightWorkloadDay(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    date: str
+    due: int
+
+
 class LabChecked(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
     referenceCases: int
@@ -349,6 +382,27 @@ class LearnerEventResponse(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
     pageId: str
     mastery: Mastery
+
+
+class LearningInsights(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    type: Literal['LearningInsights']
+    id: str
+    meta: BlockMeta
+    data: LearningInsightsData
+
+
+class LearningInsightsData(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    asOf: str
+    pages: int
+    ratedPages: int
+    bands: InsightBands
+    weakest: list[InsightWeak]
+    activity: list[InsightDay]
+    activeDays: int
+    trend: InsightTrend | None
+    workload: list[InsightWorkloadDay]
 
 
 class LintDefinition(BaseModel):
@@ -817,7 +871,7 @@ StudyKind = Literal['flashcard', 'blurt', 'cornell', 'socratic']
 
 TurnOutcome = Literal['answered', 'empty', 'error']
 
-UIBlock = Annotated[CitedSummary | SourceList | GraphView | ComparisonGrid | ConceptMap | TraversalView | ConceptPage | NotesGraph | QuizCard | VerifiedLab | WritingDraft | StudySet | StudyPlan | DocBrief | CheatSheet, Field(discriminator='type')]
+UIBlock = Annotated[CitedSummary | SourceList | GraphView | ComparisonGrid | ConceptMap | TraversalView | ConceptPage | NotesGraph | QuizCard | VerifiedLab | WritingDraft | StudySet | StudyPlan | DocBrief | CheatSheet | LearningInsights, Field(discriminator='type')]
 
 AgentStep.model_rebuild()
 BibliographyEntry.model_rebuild()
@@ -855,6 +909,11 @@ GridCell.model_rebuild()
 GridDimension.model_rebuild()
 GridRow.model_rebuild()
 IngestResponse.model_rebuild()
+InsightBands.model_rebuild()
+InsightDay.model_rebuild()
+InsightTrend.model_rebuild()
+InsightWeak.model_rebuild()
+InsightWorkloadDay.model_rebuild()
 LabChecked.model_rebuild()
 LabList.model_rebuild()
 LabParameter.model_rebuild()
@@ -864,6 +923,8 @@ LayoutEvent.model_rebuild()
 LayoutSpec.model_rebuild()
 LearnerEventRequest.model_rebuild()
 LearnerEventResponse.model_rebuild()
+LearningInsights.model_rebuild()
+LearningInsightsData.model_rebuild()
 LintDefinition.model_rebuild()
 LintDuplicate.model_rebuild()
 LintPageRef.model_rebuild()

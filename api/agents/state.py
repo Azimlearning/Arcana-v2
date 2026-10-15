@@ -67,6 +67,8 @@ class TurnContext:
     checks the block against the very reading it was made from (a rating that lands in between cannot make it differ)."""
     last_rated_snapshot: Mapping[str, datetime] | None = None
     """When each rated page was last rated, as read for a review schedule of this turn (set with `mastery_snapshot`)."""
+    activity_snapshot: Mapping[str, int] | None = None
+    """Ratings per day (ISO date to count) as read for the learning insights of this turn."""
     limits: TurnLimits = field(default_factory=TurnLimits)
     # What happened this turn:
     results: dict[str, AgentResult] = field(default_factory=dict)

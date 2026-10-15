@@ -247,6 +247,33 @@ def cheat_sheet(
     }
 
 
+def learning_insights(
+    block_id: str,
+    status: str,
+    *,
+    data: dict[str, Any] | None = None,
+    error: ErrorEnvelope | None = None,
+    as_of: str = "1970-01-01",
+) -> dict[str, Any]:
+    blank = {
+        "asOf": as_of,
+        "pages": 0,
+        "ratedPages": 0,
+        "bands": {"needsWork": 0, "gettingThere": 0, "comfortable": 0},
+        "weakest": [],
+        "activity": [],
+        "activeDays": 0,
+        "trend": None,
+        "workload": [],
+    }
+    return {
+        "type": "LearningInsights",
+        "id": block_id,
+        "meta": {"status": status, "error": error.model_dump() if error is not None else None},
+        "data": data if data is not None else blank,
+    }
+
+
 def verified_lab(
     block_id: str,
     status: str,
@@ -318,5 +345,6 @@ BUILDERS: dict[str, Callable[..., dict[str, Any]]] = {
     "StudyPlan": study_plan,
     "DocBrief": doc_brief,
     "CheatSheet": cheat_sheet,
+    "LearningInsights": learning_insights,
 }
 """One builder per catalog component, keyed by block type. A test keeps this in step with the catalog and the schema."""

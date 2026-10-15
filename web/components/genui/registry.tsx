@@ -13,6 +13,7 @@ import { ConceptMap } from "./ConceptMap";
 import { ConceptPage } from "./ConceptPage";
 import { DocBrief } from "./DocBrief";
 import { GraphView } from "./GraphView";
+import { LearningInsights } from "./LearningInsights";
 import { NotesGraph } from "./NotesGraph";
 import { QuizCard } from "./QuizCard";
 import { SourceList } from "./SourceList";
@@ -43,6 +44,7 @@ export const registry: Registry<UIBlock> = {
   StudyPlan,
   DocBrief,
   CheatSheet,
+  LearningInsights,
 };
 
 export function UnknownBlock({ type }: { type: string }) {

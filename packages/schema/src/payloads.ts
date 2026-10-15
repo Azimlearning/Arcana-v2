@@ -611,3 +611,66 @@ export interface CheatSheetData {
   /** Neighbours passed over because the vault holds no citable sentence for them. @int */
   skipped: number;
 }
+
+// ── Studio: learning insights (D-43, V5) ───────────────────────────────────────
+
+/** How many rated pages fall in each band of mastery (the thresholds of the notes view's words). */
+export interface InsightBands {
+  /** @int */
+  needsWork: number;
+  /** @int */
+  gettingThere: number;
+  /** @int */
+  comfortable: number;
+}
+
+/** One of the lowest-mastery pages. */
+export interface InsightWeak {
+  pageId: string;
+  pageLabel: string;
+  score: number;
+  /** @int */
+  events: number;
+}
+
+/** Ratings recorded on one day (YYYY-MM-DD). */
+export interface InsightDay {
+  date: string;
+  /** @int */
+  count: number;
+}
+
+/** Pages the review schedule's rule would have due on one coming day, if nothing changes. */
+export interface InsightWorkloadDay {
+  date: string;
+  /** @int */
+  due: number;
+}
+
+/** A least-squares line through the window's daily counts and a trailing 3-day average; present only with enough active days. */
+export interface InsightTrend {
+  slopePerDay: number;
+  movingAverage: number[];
+}
+
+/**
+ * The learner's own position (D-43, the VERA "Analytics" function as a learning tool): coverage and bands of mastery, the weakest
+ * pages, the last 14 days of activity with a trend only when 7 days have activity, and the review workload for the next 7 days by the
+ * schedule's fixed rule. Derived from the vault, the mastery, the rating dates and the activity with no model call; the server
+ * validator derives it again and requires exactly this data.
+ */
+export interface LearningInsightsData {
+  /** The day the figures are for, as YYYY-MM-DD. */
+  asOf: string;
+  /** Pages in the vault. @int */
+  pages: number;
+  /** Pages the learner has rated. @int */
+  ratedPages: number;
+  bands: InsightBands;
+  weakest: InsightWeak[];
+  activity: InsightDay[];
+  /** Days of the window with at least one rating. @int */
+  activeDays: number;
+  trend: InsightTrend | null;
+  workload: InsightWorkloadDay[];
+}
