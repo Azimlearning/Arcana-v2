@@ -47,3 +47,12 @@ P0 to P4 built retrieval, agents, a typed catalog, an adaptive layout and verifi
 ## Definition of done
 
 Each slice: a plan task checked, the new component's registration suite passes and its planted defects are caught, a turn through the real graph with the fake LLM ends at the Composer with the block validated, the web component renders every state in a real browser, the full suites, ruff and pyright clean, `schema-guardian` and `test-runner` reviews done, D-42, STATUS and CHANGELOG current. Overall: the Studio agent is on the roster; `write` and `study` turns work end to end; the live grounding run is recorded.
+
+## Related direction: "intelligent UI" in the large assistants (noted 2026-10-15, at Azim's suggestion)
+
+Azim asked whether the adaptive dashboard and generative components could take ideas from OpenAI's "Intelligent UI" in ChatGPT with GPT-6 (announced 2026-10-07: responses that include charts, forms, buttons, calculators, editable graphs and checklists, with the model deciding when an interactive element helps). Secondary reports describe it as a library of standardised components with a compiler rather than model-written front-end code; I did not open the vendor announcement, so that account is unconfirmed. The wider 2026 pattern (declarative component specs streamed over an event transport) is the one this project already follows, so there is little to import and one distinction to keep:
+
+- **What matches:** a closed, typed catalog; the model never writes UI code on the main path; layout is data; labs are the "calculator or editable graph" case, and they are verified.
+- **What this project does differently on purpose:** the component is chosen by the Composer from a written, checkable precondition on retrieved evidence, not by the model's judgement of usefulness (constraint 7); and every shown sentence is a stored quote.
+- **What was taken:** interactive starters (the Studio shelf puts a request in the box or asks at once), reveal-on-demand study items with self-rating, a review schedule as a checklist-like surface. Nothing was added that the catalog's rules do not allow.
+- **Not taken, with reasons:** model-chosen components (it would break the admission rule), free-form generated forms, any client-side code generation beyond the verified lab.
