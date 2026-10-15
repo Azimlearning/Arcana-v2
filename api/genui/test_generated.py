@@ -102,7 +102,7 @@ def test_step_enums_are_closed(overrides: dict, where: str):
 
 
 def test_every_roster_role_is_a_valid_agent_name():
-    for name in ("orchestrator", "research", "graph", "fact_checker", "composer", "tutor", "writer", "lab_builder"):
+    for name in ("orchestrator", "research", "graph", "fact_checker", "composer", "studio", "lab_builder"):
         AgentStep.model_validate(step(agent=name))
 
 

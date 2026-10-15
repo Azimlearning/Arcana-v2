@@ -59,6 +59,7 @@ async def test_a_turn_yields_one_cited_summary_and_one_source_list_with_two_admi
         ("TraversalView", "refused"),
         ("ComparisonGrid", "refused"),
         ("ConceptMap", "refused"),
+        ("WritingDraft", "refused"),  # no Studio draft on this turn
     ]
     assert [r.block_id for r in composition.records if r.outcome == "admitted"] == [b.id for b in composition.blocks]
     listing = composition.blocks[1]
@@ -78,6 +79,7 @@ async def test_a_comparison_with_a_graph_adds_a_grounded_graph_view(ingested, tm
         "admitted",
         "admitted",
         "admitted",
+        "refused",
         "refused",
         "refused",
     ]
@@ -117,6 +119,7 @@ async def test_no_evidence_is_an_empty_record_and_still_one_block(ingested, tmp_
         ("TraversalView", "refused", ("nothing_resolved",)),
         ("ComparisonGrid", "refused", ("no_shared_entities",)),
         ("ConceptMap", "refused", ("not_a_path",)),
+        ("WritingDraft", "refused", ("no_grounded_draft",)),
     ]
 
 

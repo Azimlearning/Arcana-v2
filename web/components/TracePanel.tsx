@@ -41,6 +41,8 @@ const REASON_WORDS: Record<DecisionReason, string> = {
   nothing_resolved: "the question did not match a concept in your documents, so the search followed nothing",
   no_edge_followed: "the search followed no relation that led to a passage it returned",
   too_many_seeds: "the question matched more concepts than the search path can show at once",
+  no_grounded_draft: "nothing could be drafted that stood on a verified quote of your documents",
+  no_study_material: "your notes held nothing citable to make study items from",
   block_failed_validation: "it was built but failed the server's checks, so it was not sent",
   answer_unavailable: "the answer could not be produced or checked",
   not_considered: "the turn ended before it was considered",
@@ -56,6 +58,9 @@ const COMPONENT_WORDS: Record<string, string> = {
   TraversalView: "Search path",
   ComparisonGrid: "Document comparison",
   ConceptMap: "Connection path",
+  WritingDraft: "Cited draft",
+  StudySet: "Study set",
+  StudyPlan: "Review schedule",
 };
 
 const OUTCOME_WORDS: Record<TurnOutcome, string> = {

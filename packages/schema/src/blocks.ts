@@ -11,6 +11,9 @@
 import type { ErrorEnvelope } from "./errors";
 import type {
   CitedSummaryData,
+  StudyPlanData,
+  StudySetData,
+  WritingDraftData,
   ComparisonGridData,
   ConceptMapData,
   ConceptPageData,
@@ -128,6 +131,33 @@ export interface VerifiedLab {
   data: VerifiedLabData;
 }
 
+/** A drafted outline and cited sections with a bibliography (P5 S1, D-42): every passage stands on a verified quote. */
+export interface WritingDraft {
+  type: "WritingDraft";
+  /** Non-empty. Stable across updates: a later block with the same id replaces this one. */
+  id: string;
+  meta: BlockMeta;
+  data: WritingDraftData;
+}
+
+/** A study set from the vault: flashcards, blurting, Cornell notes or a Socratic turn (P5 S2, D-42). No model call. */
+export interface StudySet {
+  type: "StudySet";
+  /** Non-empty. Stable across updates: a later block with the same id replaces this one. */
+  id: string;
+  meta: BlockMeta;
+  data: StudySetData;
+}
+
+/** The learner's review schedule: which rated pages to revisit and how soon (P5 S3, D-42). No model call. */
+export interface StudyPlan {
+  type: "StudyPlan";
+  /** Non-empty. Stable across updates: a later block with the same id replaces this one. */
+  id: string;
+  meta: BlockMeta;
+  data: StudyPlanData;
+}
+
 export type UIBlock =
   | CitedSummary
   | SourceList
@@ -138,4 +168,7 @@ export type UIBlock =
   | ConceptPage
   | NotesGraph
   | QuizCard
-  | VerifiedLab;
+  | VerifiedLab
+  | WritingDraft
+  | StudySet
+  | StudyPlan;

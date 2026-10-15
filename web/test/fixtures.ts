@@ -1,4 +1,4 @@
-import type { CitedSummary, ComparisonGrid, ConceptMap, ConceptPage, ErrorEnvelope, GraphView, LayoutSpec, NotesGraph, QuizAnswerResponse, QuizCard, VerifiedLab, SavedPattern, SourceList, TraversalView, WorkspaceResponse, StreamEvent, TurnTrace } from "@arcana/schema";
+import type { CitedSummary, ComparisonGrid, ConceptMap, ConceptPage, ErrorEnvelope, GraphView, LayoutSpec, NotesGraph, QuizAnswerResponse, QuizCard, StudyPlan, StudySet, VerifiedLab, WritingDraft, SavedPattern, SourceList, TraversalView, WorkspaceResponse, StreamEvent, TurnTrace } from "@arcana/schema";
 
 export const TITLE = "Hybrid Retrieval over Knowledge Graphs";
 
@@ -543,6 +543,109 @@ export function verifiedLab(
           ]
         : [],
       checked: content ? { referenceCases: 4, properties: 5, fuzzCases: 200, gridPoints: 4225 } : { referenceCases: 0, properties: 0, fuzzCases: 0, gridPoints: 0 },
+      ...overrides,
+    },
+  };
+}
+
+export function writingDraft(
+  status: WritingDraft["meta"]["status"],
+  overrides: Partial<WritingDraft["data"]> = {},
+  error: ErrorEnvelope | null = null,
+): WritingDraft {
+  const content = status === "ready" || status === "partial";
+  return {
+    type: "WritingDraft",
+    id: "turn-1-writing-draft",
+    meta: { status, error },
+    data: {
+      title: content ? "Hybrid retrieval in brief" : "",
+      sections: content
+        ? [
+            { heading: "Background", segments: [{ text: "Dense retrieval embeds passages and queries.", citationIds: ["c1"] }] },
+            { heading: "Sparse methods", segments: [{ text: "BM25 scores exact terms.", citationIds: ["c1", "c2"] }] },
+          ]
+        : [],
+      citations: content
+        ? [
+            { id: "c1", chunkId: "d_c_1", docId: "d", docTitle: TITLE, page: 1, quote: "Dense Retrieval embeds passages and queries." },
+            { id: "c2", chunkId: "d_c_2", docId: "e", docTitle: "BM25 in Practice", page: null, quote: "BM25 is a sparse method." },
+          ]
+        : [],
+      bibliography: content
+        ? [
+            { docId: "d", apa: `${TITLE}.`, ieee: `"${TITLE}."`, bibtex: `@misc{arcanad,\n  title = {${TITLE}}\n}` },
+            {
+              docId: "e",
+              apa: "BM25 in Practice. arXiv:2401.00001.",
+              ieee: '"BM25 in Practice," arXiv:2401.00001.',
+              bibtex: "@misc{arcanae,\n  title = {BM25 in Practice},\n  eprint = {2401.00001},\n  archivePrefix = {arXiv}\n}",
+            },
+          ]
+        : [],
+      ...overrides,
+    },
+  };
+}
+
+export function studySet(
+  status: StudySet["meta"]["status"],
+  overrides: Partial<StudySet["data"]> = {},
+  error: ErrorEnvelope | null = null,
+  item: Partial<StudySet["data"]["items"][number]> = {},
+  withSummary = false,
+): StudySet {
+  const content = status === "ready" || status === "partial";
+  const quote = "Dense retrieval finds passages by comparing embedding vectors of the query and the text.";
+  return {
+    type: "StudySet",
+    id: "turn-1-study-set",
+    meta: { status, error },
+    data: {
+      kind: "flashcard",
+      focusId: content ? "dense_retrieval" : null,
+      items: content
+        ? [
+            {
+              id: "i1",
+              prompt: "dense retrieval",
+              hint: null,
+              pageId: "dense_retrieval",
+              pageLabel: "dense retrieval",
+              notes: [{ citationId: "c1" }],
+              ...item,
+            },
+          ]
+        : [],
+      summary: content && withSummary ? { citationId: "c1" } : null,
+      citations: content ? [{ id: "c1", chunkId: "d_c_1", docId: "d1", docTitle: "Paper One", page: 3, quote }] : [],
+      skipped: 0,
+      ...overrides,
+    },
+  };
+}
+
+export function studyPlan(
+  status: StudyPlan["meta"]["status"],
+  overrides: Partial<StudyPlan["data"]> = {},
+  error: ErrorEnvelope | null = null,
+): StudyPlan {
+  const content = status === "ready" || status === "partial";
+  return {
+    type: "StudyPlan",
+    id: "turn-1-study-plan",
+    meta: { status, error },
+    data: {
+      asOf: "2026-10-15",
+      items: content
+        ? [
+            { pageId: "bm25", pageLabel: "BM25", score: 0.2, events: 3, due: "now", daysSince: 1 },
+            { pageId: "rrf", pageLabel: "reciprocal rank fusion", score: 0.6, events: 1, due: "soon", daysSince: 3 },
+            { pageId: "dense_retrieval", pageLabel: "dense retrieval", score: 0.9, events: 6, due: "later", daysSince: 0 },
+          ]
+        : [],
+      ratedPages: content ? 5 : 0,
+      leftOut: content ? 2 : 0,
       ...overrides,
     },
   };

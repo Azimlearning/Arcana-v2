@@ -3,7 +3,7 @@
 > Written in P2 task A1, before any component's schema type exists (hard constraint 7: a component joins the
 > catalog on evidence, with a written structural precondition that retrieval can satisfy). Plan:
 > `refdocs/plans/2026-10-06-p2-genui-catalog-dashboard.md`. Decisions: D-27 (layout), D-28 (Composer), D-29 (scope),
-> D-31 (pipeline). Status of each component is stated in its section; five are built (`CitedSummary`, `SourceList`, `GraphView`, `ComparisonGrid`, `ConceptMap`) and `InsightCard` is deferred.
+> D-31 (pipeline). Status of each component is stated in its section. Turn components: `CitedSummary`, `SourceList`, `GraphView`, `TraversalView`, `ComparisonGrid`, `ConceptMap` and (P5 S1) `WritingDraft`; notes components (derived from the vault): `ConceptPage`, `NotesGraph`, `QuizCard` and (P5 S2, S3) `StudySet`, `StudyPlan`; `VerifiedLab` (P4); `InsightCard` is deferred.
 
 ## The bound
 
@@ -260,6 +260,34 @@ Status: **built** (Q1, D-35 amendment A8, which amends D-29: it was "Studio agen
 - **Failures:** a store failure while the server derives a quiz is a generic error envelope (the validator turns the same failure into a refusal); if the documents change after a quiz was shown, answers are refused (404 or 422, nothing recorded) and the screen offers more questions. The reply to an answer is built before the event is recorded.
 - **Limit, stated on the screen:** a cloze tests recognising a name in a sentence, not understanding it; distractors chosen without a model can be too easy.
 
+## StudySet
+
+Status: **built** (P5 S2, D-42, 2026-10-15). A notes-family component (see ConceptPage): derived from the vault, not from one turn's retrieval. The Studio agent makes it for the `study` intent and the Composer shows it beside the grounded answer in the chat panel; no model call.
+
+- **Precondition:** the vault holds at least one concept page with a stored definition or claim (a Socratic set: a page with an asserted link whose evidence sentence is a verbatim span of a stored passage). Every sentence shown is a verbatim span of a stored passage and is cited, and no prompt or hint contains a sentence it withholds.
+- **Supplied by:** the vault (pages, definitions, claims, links), the stored passages, the learner's mastery for the order. No model.
+- **Payload:** `kind` (`flashcard`, `blurt`, `cornell`, `socratic`), `focusId`, `items: {id, prompt, hint, pageId, pageLabel, notes: {citationId}[]}[]`, `summary` (a Cornell set's definition), `citations`, `skipped`. A note's text is its citation's quote, never a second copy.
+- **Caps:** 5 items, 4 notes under an item, label at most 120 characters.
+- **Fences:** caps `items=5 notes=4 label_chars=120`; grounding `vault_rederived`; a11y `region:Study items | group:Rate yourself`. Template version 1; reusable without Research: no.
+- **What each kind asks:** flashcard, the page's name and its definition (a claim if it has none); blurt, "write down what you remember about X" and up to four sentences to check against; Cornell, a cue per page, up to three notes (claims first) and the first page's definition as the summary; Socratic, "how do A and B relate?" for an asserted link (with a focus page, one per link; without, one per page) with a hint that points at the source and does not state the relation.
+- **Choosing pages:** a focus page, or the pages the learner knows least first (an unrated page counts 0.5), then most mentioned, then id.
+- **Rating:** the reveal offers the same three self-ratings as a concept page (`POST /learner/events`), so the mastery colouring moves.
+- **Validator invariants:** `loading` and `error` carry nothing; the data equals the set derived again from `kind` and `focusId` exactly (every prompt, hint, note, citation, the summary and `skipped`), which includes the withholding; a `ready` block has at least one item; an `empty` block is refused when the vault can make items; no block is checked without the vault.
+- **Limit, stated on the screen:** these activities are prompts for the learner's own recall; nothing here grades free text.
+
+## StudyPlan
+
+Status: **built** (P5 S3, D-42, 2026-10-15). A notes-family component (see ConceptPage), made by the Studio for the `study` intent when the request is for a review schedule ("what should I review", "a review schedule"); no model call.
+
+- **Precondition:** the learner has rated at least one page that the vault holds. Each item is a rated page with its mastery and the whole days since its last rating; when it is due follows a fixed rule over those two numbers.
+- **Supplied by:** the vault (the pages), the learner store (mastery and the date of each page's last rating). No model, and no trained scheduler (D-37 found no data worth one).
+- **Payload:** `asOf` (the day, YYYY-MM-DD), `items: {pageId, pageLabel, score, events, due, daysSince}[]`, `ratedPages`, `leftOut`.
+- **Rule:** score under 0.5 is due now; 0.5 to under 0.75 is due soon once 2 days have passed since the last rating; 0.75 or more is due soon once 7 days have passed; otherwise later. Soonest first, then the lowest score, then the longest unseen, then id; at most 10.
+- **Caps:** 10 items, label at most 120 characters.
+- **Fences:** caps `items=10 label_chars=120`; grounding `vault_rederived`; a11y `region:Review schedule`. Template version 1; reusable without Research: no.
+- **Validator invariants:** `loading` and `error` carry nothing; the data equals the schedule derived again from the vault, the mastery and the rating dates for the day the block states, exactly; a `ready` block has at least one item; an `empty` block is refused when pages are rated; no block is checked without the vault.
+- **Limit, stated on the screen:** a fixed interval over a belief the learner set by hand; it is not a model of forgetting.
+
 ## VerifiedLab
 
 Status: **built** (P4 first slice, D-36, 2026-10-08, four labs by 2026-10-14; fakes only, no live generator yet). New in v2. `GET /labs` lists every lab the server can make and whether the stored passages state its formula (a lab is offered only where one does); `POST /labs {contractId}` makes one. The only block that carries code, and only code that the verifier minted. A **lab component**, not a turn component: the Composer never offers it to a question and the trace never lists it. It is made on request (`POST /labs`) and has its own small registry (`api/genui/lab_catalog.py`).
@@ -274,6 +302,22 @@ Status: **built** (P4 first slice, D-36, 2026-10-08, four labs by 2026-10-14; fa
 - **Delivery gate (hard constraint 3):** the block builder accepts only a `VerifiedArtifact`; the validator re-derives the block from the stored verified record by `labId` and requires equality (source byte for byte, hash, template version, parameters, counts, citation); it also compares the contract's fingerprint (a lab verified for another version of its contract is refused), **re-hashes and re-runs the checker on the stored source** (an edited `labs.db` row is not delivered), and refuses a forged block, a changed byte, a stale template version, an unknown or unverified lab, a store that cannot be read, and a `partial` block. The mint is a function whose token lives in a closure, the class cannot be subclassed, changed or copied, the store ties the id to the hash and never replaces a lab, and a test scans the repository for any other construction.
 - **Honest limits:** the lab says it is verified on stated reference cases, properties and every grid setting, which is not a proof for every input, and does not say a model wrote it until a model did (the generator is a fixture in fake mode and no live generator exists yet); `node:vm` is a correctness and resource harness, not the isolation claim (the process boundary and the browser sandbox are).
 - **Validator invariants:** placeholders carry nothing; ready needs the verified record and equality with the derived block; no lab is delivered without the store the check needs.
+
+## WritingDraft
+
+Status: **built** (P5 S1, D-42, 2026-10-15). A turn component, supplied by the Studio agent and checked by the Fact Checker; it is shown beside the grounded answer when the question asks for a piece of writing (the Orchestrator's `write` intent: an outline, a draft, a section, a bibliography).
+
+- **Precondition:** the Studio agent drafted at least one section, every passage of it cites a stored chunk by a verbatim quote after the Fact Checker removed what the evidence did not support, and the bibliography has exactly one reference for each cited document, built by code from the stored document record.
+- **Supplied by:** Studio `draft_section` (retrieval first, one model call, server-verified quotes), Fact Checker `check_draft` and `check_citation_accuracy`.
+- **Payload:** `title`, `sections: {heading, segments: {text, citationIds}[]}[]`, `citations` (as in `CitedSummary`), `bibliography: {docId, apa, ieee, bibtex}[]`.
+- **Caps:** 6 sections, 6 passages per section, 40 citations, 20 references, 120 characters of heading, 160 of title.
+- **Fences:** caps `sections=6 segments=6 citations=40 bibliography=20 heading_chars=120 title_chars=160`; grounding `citation_verbatim_quote_and_derived_bibliography`; a11y `region:Draft | region:Bibliography | region:Sources`. Template version 1; not reusable (it needs a Studio draft on the turn).
+- **References are derived, never generated** (`api/genui/bibliography.py`): the stored title (a leading arXiv id and underscores from a file name tidied), the arXiv id when the source file name starts with one, nothing else. No author, year or venue is invented; the three styles say less rather than something false. The validator derives them again from the stored record and requires equality.
+- **Validator invariants:** placeholders carry nothing; every passage cites at least one citation of this block, none twice; every citation passes the rules every citation obeys (a stored chunk under the document it names, matching title and page, a verbatim quote long enough to be evidence, cited by something); section headings non-empty and unique; the bibliography has exactly the cited documents, once each, each equal to the record's reference.
+- **States:** all four. Ready: a title, the sections with citation markers, the sources and the bibliography with copy and download (BibTeX or Markdown).
+- **Reported, not removed:** a passage whose longest verbatim run of words from its evidence is at least 80 percent of it (and at least 8 words) is counted as `too_close_to_source` in the Fact Checker's report.
+- **Placement hint:** chat panel, priority 15 (below the answer).
+- **Admissible with flat retrieval:** yes (it needs passages, not graph structure).
 
 ## InsightCard (stretch)
 
@@ -324,7 +368,7 @@ keeps (the studio always keeps `shelf`), sharing the panel in the weights main 3
 shelf are 60 and 40, main and secondary are 60 and 40), in whole numbers summing to 100. The direction is that of the
 highest-priority hint in the panel that names one, else the panel's default (chat `columns`, studio and sources `rows`).
 The studio panel is the graph area (`main`) above the shelf; the chat panel splits into `main` and `secondary` only when
-a component asks for `secondary` (none of the five built ones does; the Studio components of P5 will). The prebuilt
+a component asks for `secondary` (none of the turn components does; a Studio component may). The prebuilt
 layout always shows the studio's graph area above its shelf; in Basic the graph shows below the answer, so the graph
 area says so. A new region role is a schema change, like a new panel. The fixed prebuilt layout is the exception to the shares: its studio is graph area 25 and shelf 75 (Basic shows graphs in chat, so the graph area is a sentence). A hint may name any region of any panel: a block placed in a region the screen gives no content of its own is still shown there. The chat panel always has a `main` region.
 

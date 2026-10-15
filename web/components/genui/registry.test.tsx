@@ -2,7 +2,7 @@ import type { CitedSummary as CitedSummaryBlock, UIBlock } from "@arcana/schema"
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { block, comparisonGrid, conceptMap, conceptPage, graphView, notesGraph, quizCard, sourceList, traversalView, verifiedLab } from "@/test/fixtures";
+import { block, comparisonGrid, conceptMap, conceptPage, graphView, notesGraph, quizCard, sourceList, traversalView, studyPlan, studySet, verifiedLab, writingDraft } from "@/test/fixtures";
 
 import { CitedSummary } from "./CitedSummary";
 import { ComparisonGrid } from "./ComparisonGrid";
@@ -12,14 +12,17 @@ import { GraphView } from "./GraphView";
 import { NotesGraph } from "./NotesGraph";
 import { QuizCard } from "./QuizCard";
 import { VerifiedLab } from "./VerifiedLab";
+import { WritingDraft } from "./WritingDraft";
 import { SourceList } from "./SourceList";
+import { StudyPlan } from "./StudyPlan";
+import { StudySet } from "./StudySet";
 import { TraversalView } from "./TraversalView";
 import { registry, renderBlock, type Registry } from "./registry";
 
 describe("block registry", () => {
   it("registers a component for every block type in the wire union", () => {
     // Compile-time too: `registry: Registry<UIBlock>` fails to typecheck if a variant is missing.
-    const types: UIBlock["type"][] = ["CitedSummary", "SourceList", "GraphView", "TraversalView", "ComparisonGrid", "ConceptMap", "ConceptPage", "NotesGraph", "QuizCard", "VerifiedLab"];
+    const types: UIBlock["type"][] = ["CitedSummary", "SourceList", "GraphView", "TraversalView", "ComparisonGrid", "ConceptMap", "ConceptPage", "NotesGraph", "QuizCard", "VerifiedLab", "WritingDraft", "StudySet", "StudyPlan"];
     for (const type of types) expect(registry[type]).toBeTypeOf("function");
     expect(registry.CitedSummary).toBe(CitedSummary);
     expect(registry.SourceList).toBe(SourceList);
@@ -31,6 +34,9 @@ describe("block registry", () => {
     expect(registry.NotesGraph).toBe(NotesGraph);
     expect(registry.QuizCard).toBe(QuizCard);
     expect(registry.VerifiedLab).toBe(VerifiedLab);
+    expect(registry.WritingDraft).toBe(WritingDraft);
+    expect(registry.StudySet).toBe(StudySet);
+    expect(registry.StudyPlan).toBe(StudyPlan);
   });
 
   it("renders a known block through its registered component", () => {
@@ -69,6 +75,21 @@ describe("block registry", () => {
     render(<>{renderBlock(verifiedLab("ready"))}</>);
     expect(screen.getByRole("region", { name: "Lab" })).toBeInTheDocument();
     expect(await screen.findByTitle(/^Lab: /)).toHaveAttribute("sandbox", "allow-scripts");
+  });
+
+  it("renders a WritingDraft block through the registry", () => {
+    render(<>{renderBlock(writingDraft("ready"))}</>);
+    expect(screen.getByRole("region", { name: "Draft" })).toBeInTheDocument();
+  });
+
+  it("renders a StudySet block through the registry", () => {
+    render(<>{renderBlock(studySet("ready"))}</>);
+    expect(screen.getByRole("region", { name: "Study items" })).toBeInTheDocument();
+  });
+
+  it("renders a StudyPlan block through the registry", () => {
+    render(<>{renderBlock(studyPlan("ready"))}</>);
+    expect(screen.getByRole("region", { name: "Review schedule" })).toBeInTheDocument();
   });
 
   it("renders a ComparisonGrid block through the registry", () => {

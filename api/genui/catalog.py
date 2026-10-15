@@ -41,6 +41,9 @@ class ComposerEvidence:
     intent: str
     chunk_counts: Mapping[str, int] = field(default_factory=dict)
     """Stored passage count per document id, for the documents listed above."""
+    studio: dict[str, Any] | None = None
+    """The Studio agent's draft after the Fact Checker (title, sections, citations, bibliography), or None when none was made or
+    nothing in it survived the check (D-42)."""
 
 
 @dataclass(frozen=True)
@@ -477,8 +480,36 @@ SOURCE_LIST = Spec(
     check=_check_source_list,
 )
 
+def _check_writing_draft(evidence: ComposerEvidence) -> Result:
+    draft = evidence.studio
+    sections = draft.get("sections") if draft else None
+    return Result(True) if sections else Result(False, ("no_grounded_draft",))
+
+
+WRITING_DRAFT = Spec(
+    name="WritingDraft",
+    precondition=(
+        "The Studio agent drafted at least one section, and every passage of it cites a stored chunk by a verbatim quote after the "
+        "Fact Checker removed what the evidence did not support. The bibliography has exactly one reference for each cited document, "
+        "built by code from the stored document record."
+    ),
+    supplied_by=("studio", "fact_checker"),
+    fences=Fences(
+        caps={"sections": 6, "segments": 6, "citations": 40, "bibliography": 20, "heading_chars": 120, "title_chars": 160},
+        grounding="citation_verbatim_quote_and_derived_bibliography",
+        a11y=(
+            A11yRequirement("region", "Draft"),
+            A11yRequirement("region", "Bibliography"),
+            A11yRequirement("region", "Sources"),
+        ),
+    ),
+    placement=PlacementHint(panel="chat", priority=15),
+    check=_check_writing_draft,
+)
+
 CATALOG: dict[str, Spec] = {
-    spec.name: spec for spec in (CITED_SUMMARY, SOURCE_LIST, GRAPH_VIEW, TRAVERSAL_VIEW, COMPARISON_GRID, CONCEPT_MAP)
+    spec.name: spec
+    for spec in (CITED_SUMMARY, SOURCE_LIST, GRAPH_VIEW, TRAVERSAL_VIEW, COMPARISON_GRID, CONCEPT_MAP, WRITING_DRAFT)
 }
 """Every component the Composer may admit, in the order it considers them (the terminal one first)."""
 

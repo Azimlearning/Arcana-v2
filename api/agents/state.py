@@ -13,16 +13,26 @@ from api.agents.framework import AgentResult, Roster, TurnLimits
 from api.core.budget import TokenBudget
 from api.genui.catalog import ComponentRecord, Composition, ViewComponent, component_decisions
 from api.genui.generated import AgentStep, TurnOutcome, TurnTrace, UIBlock
+from api.learner.store import LearnerStore
 from api.llm.service import LLMService
 from api.retrieval.types import RetrievalResult
 from api.stores.doc_store import DocStore
 from api.stores.graph_store import GraphStore
+from api.vault.types import Vault
 
 
 @dataclass(frozen=True)
 class Answer:
     """What the Research agent hands over: a CitedSummary PAYLOAD, not a block.
     Agents never build UIBlocks; only the Composer does (constraint 4)."""
+
+    data: dict[str, Any]
+
+
+@dataclass(frozen=True)
+class Draft:
+    """What the Studio agent hands over: a `WritingDraft` PAYLOAD (title, sections, citations, bibliography), not a block. Like `Answer`,
+    only the Composer turns it into one (constraint 4)."""
 
     data: dict[str, Any]
 
@@ -46,6 +56,10 @@ class TurnContext:
     roster: Roster = field(default_factory=Roster)
     graph: GraphStore | None = None
     """The knowledge graph, for the Graph agent. None when a turn is built without one."""
+    vault: Vault | None = None
+    """The compiled vault the Studio's learning tools derive from and the Composer checks a study set against. None when there is none."""
+    learner: LearnerStore | None = None
+    """The learner's events, for the mastery that orders a study set. None when a turn is built without one."""
     limits: TurnLimits = field(default_factory=TurnLimits)
     # What happened this turn:
     results: dict[str, AgentResult] = field(default_factory=dict)

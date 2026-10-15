@@ -13,12 +13,13 @@ construct a block, so nothing reaches the wire that the Composer did not build a
 import re
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import replace
+from datetime import UTC, datetime
 from typing import Any
 
 from langgraph.runtime import Runtime
 
 from api.agents.framework import AgentResult, route_to_agent
-from api.agents.state import TurnContext, TurnState
+from api.agents.state import Draft, TurnContext, TurnState
 from api.core.errors import ArcanaError, NotFound, PatternRefused, ValidationFailed
 from api.core.logging import get_logger
 from api.genui.builders import BUILDERS, cited_summary
@@ -57,6 +58,8 @@ from api.learner.mastery import MasteryScore
 from api.learner.store import LearnerStore
 from api.stores.doc_store import DocStore, Document
 from api.vault.quiz import derive_quiz
+from api.vault.review import derive_study_plan
+from api.vault.study import STUDY_KINDS, derive_study_set
 from api.vault.types import Vault
 from api.vault.view import derive_concept_page, derive_notes_graph
 
@@ -131,6 +134,21 @@ def _documents(ctx: TurnContext) -> tuple[tuple[Document, ...], dict[str, int]]:
         return (), {}
 
 
+def _studio_draft(ctx: TurnContext) -> dict[str, Any] | None:
+    """The Studio agent's draft the Composer may show: with a Fact Checker on the roster only what it passed, and none if it did not
+    run or failed (fail closed, as for the answer); without one, the agent's own draft."""
+    studio = ctx.results.get("studio")
+    if studio is None or studio.status not in ("ok", "partial"):
+        return None
+    draft = studio.payload.get("draft")
+    if ctx.roster.get("fact_checker"):
+        checker = ctx.results.get("fact_checker")
+        if checker is None or checker.status in ("failed", "refused"):
+            return None
+        draft = checker.payload.get("draft")
+    return draft.data if isinstance(draft, Draft) else None
+
+
 def _evidence(ctx: TurnContext, answer: dict[str, Any] | None) -> ComposerEvidence:
     graph = ctx.results.get("graph")
     documents, chunk_counts = _documents(ctx)
@@ -140,6 +158,7 @@ def _evidence(ctx: TurnContext, answer: dict[str, Any] | None) -> ComposerEviden
         documents=documents,
         intent=ctx.intent,
         chunk_counts=chunk_counts,
+        studio=_studio_draft(ctx),
     )
 
 
@@ -335,6 +354,10 @@ def _raw_concept_map(spec: Spec, ctx: TurnContext, evidence: ComposerEvidence, e
     return BUILDERS[spec.name](_block_id(spec, ctx), "ready", data=_concept_data(evidence))
 
 
+def _raw_writing_draft(spec: Spec, ctx: TurnContext, evidence: ComposerEvidence, empty: bool) -> dict[str, Any]:
+    return BUILDERS[spec.name](_block_id(spec, ctx), "ready", data=evidence.studio)
+
+
 RawBuilder = Callable[[Spec, TurnContext, ComposerEvidence, bool], dict[str, Any]]
 _RAW: dict[str, RawBuilder] = {
     "CitedSummary": _raw_cited_summary,
@@ -343,6 +366,7 @@ _RAW: dict[str, RawBuilder] = {
     "TraversalView": _raw_traversal_view,
     "ComparisonGrid": _raw_comparison_grid,
     "ConceptMap": _raw_concept_map,
+    "WritingDraft": _raw_writing_draft,
 }
 """How each catalog component's raw block is made from the evidence: one entry per component (the recipe in
 catalog.md, "How to add a component"). The completeness test keeps this, the catalog and the builders in step."""
@@ -351,6 +375,66 @@ catalog.md, "How to add a component"). The completeness test keeps this, the cat
 def _raw(spec: Spec, ctx: TurnContext, evidence: ComposerEvidence, *, empty: bool) -> dict[str, Any]:
     """The unvalidated block for one admitted (or, for the terminal component, empty) spec."""
     return _RAW[spec.name](spec, ctx, evidence, empty)
+
+
+def _plan_block(ctx: TurnContext) -> tuple[UIBlock | None, ComponentRecord]:
+    """The learner's review schedule for today, derived by the Composer and validated against the vault, the mastery and the dates of the
+    ratings it was made from; never raises. Nothing rated is no schedule."""
+    block_id = f"{ctx.block_id}-study-plan"
+    if ctx.vault is None or ctx.learner is None:
+        return None, ComponentRecord("StudyPlan", "refused", ("no_study_material",))
+    try:
+        mastery = _mastery_snapshot(ctx.vault, ctx.learner)
+        rated = {p: m for p, m in (mastery or {}).items() if p in ctx.vault.pages}
+        last_rated = ctx.learner.last_rated(rated)
+        data = derive_study_plan(ctx.vault, rated, last_rated, datetime.now(UTC))
+        if not data["items"]:
+            return None, ComponentRecord("StudyPlan", "refused", ("no_study_material",))
+        block = validate_block(
+            BUILDERS["StudyPlan"](block_id, "ready", data=data),
+            ctx.docs,
+            ctx.graph,
+            ctx.vault,
+            rated,
+            None,
+            last_rated,
+        )
+    except ValidationFailed as exc:
+        log.warning("study_plan_rejected", issues=[i.path for i in exc.issues])
+        return None, ComponentRecord("StudyPlan", "error", ("block_failed_validation",), block_id)
+    except Exception as exc:  # a learner file that cannot be read: no schedule, and the turn goes on
+        log.warning("study_plan_failed", error=type(exc).__name__)
+        return None, ComponentRecord("StudyPlan", "error", ("block_failed_validation",), block_id)
+    return block, ComponentRecord("StudyPlan", "admitted", (), block.id)
+
+
+def _study_block(ctx: TurnContext) -> tuple[UIBlock | None, ComponentRecord]:
+    """The StudySet the Studio asked for, derived by the Composer from the vault and validated against it (the notes family: it is
+    re-derived, so nothing the agent said is trusted). (None, a record saying why) when there is no request, no vault or nothing
+    citable; never raises."""
+    studio = ctx.results.get("studio")
+    request = studio.payload.get("study") if studio is not None and studio.status in ("ok", "partial") else None
+    if not isinstance(request, dict):
+        return None, ComponentRecord("StudySet", "refused", ("not_considered",))
+    kind, focus = request.get("kind"), request.get("focus_id")
+    if kind == "plan":
+        return _plan_block(ctx)
+    if kind not in STUDY_KINDS or ctx.vault is None or not ctx.vault.pages:
+        return None, ComponentRecord("StudySet", "refused", ("no_study_material",))
+    block_id = f"{ctx.block_id}-study-set"
+    try:
+        mastery = _mastery_snapshot(ctx.vault, ctx.learner)
+        data = derive_study_set(ctx.vault, ctx.docs, kind, focus if isinstance(focus, str) else None, mastery)
+        if data is None or not data["items"]:
+            return None, ComponentRecord("StudySet", "refused", ("no_study_material",))
+        block = validate_block(BUILDERS["StudySet"](block_id, "ready", data=data), ctx.docs, ctx.graph, ctx.vault, mastery)
+    except ValidationFailed as exc:
+        log.warning("study_block_rejected", issues=[i.path for i in exc.issues])
+        return None, ComponentRecord("StudySet", "error", ("block_failed_validation",), block_id)
+    except Exception as exc:  # a store that cannot be read: no study set, and the turn goes on
+        log.warning("study_set_failed", error=type(exc).__name__)
+        return None, ComponentRecord("StudySet", "error", ("block_failed_validation",), block_id)
+    return block, ComponentRecord("StudySet", "admitted", (), block.id)
 
 
 def _compose_blocks(ctx: TurnContext) -> Composition:
@@ -387,6 +471,11 @@ def _compose_blocks(ctx: TurnContext) -> Composition:
             params = component_params(spec.name, evidence.graph)
             if params is not None:  # the block passed validation just above: the view is verified
                 view.append(ViewComponent(spec.name, spec.version, params, True))
+    study, study_record = _study_block(ctx)
+    if study is not None:
+        blocks.append(study)
+    if study_record.reasons != ("not_considered",):
+        records.append(study_record)
     return Composition(tuple(blocks), tuple(records), view=tuple(view))
 
 

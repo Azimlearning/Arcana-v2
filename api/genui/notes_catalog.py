@@ -14,6 +14,9 @@ from dataclasses import dataclass
 
 from api.genui.catalog import A11yRequirement, Fences, PlacementHint
 from api.vault.quiz import MAX_ITEMS, OPTION_COUNT
+from api.vault.review import MAX_ITEMS as PLAN_ITEMS
+from api.vault.study import MAX_ITEMS as STUDY_ITEMS
+from api.vault.study import MAX_NOTES as STUDY_NOTES
 from api.vault.view import CAPS
 
 
@@ -86,4 +89,37 @@ QUIZ_CARD = NotesSpec(
     placement=PlacementHint(panel="chat", priority=10),
 )
 
-NOTES_CATALOG: dict[str, NotesSpec] = {s.name: s for s in (CONCEPT_PAGE, NOTES_GRAPH, QUIZ_CARD)}
+STUDY_SET = NotesSpec(
+    name="StudySet",
+    precondition=(
+        "The vault holds at least one concept page with a stored definition or claim (for a Socratic set, a page with an asserted "
+        "link whose evidence sentence is a verbatim span of a stored passage). Every sentence shown is a verbatim span of a stored "
+        "passage and is cited; no prompt or hint contains a sentence it withholds."
+    ),
+    supplied_by=("vault",),
+    fences=Fences(
+        caps={"items": STUDY_ITEMS, "notes": STUDY_NOTES, "label_chars": CAPS["label_chars"]},
+        grounding="vault_rederived",
+        a11y=(A11yRequirement("region", "Study items"), A11yRequirement("group", "Rate yourself")),
+    ),
+    placement=PlacementHint(panel="chat", priority=18),
+)
+
+STUDY_PLAN = NotesSpec(
+    name="StudyPlan",
+    precondition=(
+        "The learner has rated at least one page that the vault holds. Each item is a rated page with its mastery and the whole days "
+        "since its last rating; when it is due follows a fixed rule over those two numbers."
+    ),
+    supplied_by=("vault",),
+    fences=Fences(
+        caps={"items": PLAN_ITEMS, "label_chars": CAPS["label_chars"]},
+        grounding="vault_rederived",
+        a11y=(A11yRequirement("region", "Review schedule"),),
+    ),
+    placement=PlacementHint(panel="chat", priority=19),
+)
+
+NOTES_CATALOG: dict[str, NotesSpec] = {
+    s.name: s for s in (CONCEPT_PAGE, NOTES_GRAPH, QUIZ_CARD, STUDY_SET, STUDY_PLAN)
+}

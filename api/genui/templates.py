@@ -25,6 +25,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.pool import StaticPool
 
 from api.core.errors import ValidationFailed
+from api.genui.bibliography import reference_for
 from api.genui.builders import BUILDERS
 from api.genui.catalog import CATALOG, Spec
 from api.genui.validate import validate_block
@@ -543,6 +544,112 @@ def _concept_map() -> tuple[dict[str, Any], list[PlantedDefect]]:
     ]
 
 
+def _reference(doc_id: str, title: str) -> dict[str, Any]:
+    """The bibliography entry the stored record of a fixture document gives (what the validator will re-derive)."""
+    document = Document(doc_id, title, f"{doc_id}.pdf", "ready", 1, None, "2026-01-01")
+    return {"docId": doc_id, **reference_for(document)}
+
+
+def _writing_draft() -> tuple[dict[str, Any], list[PlantedDefect]]:
+    raw = BUILDERS["WritingDraft"](
+        "fx-draft",
+        "ready",
+        data={
+            "title": "Alpha Method and Beta Index",
+            "sections": [
+                {
+                    "heading": "Background",
+                    "segments": [{"text": "Alpha Method builds on Beta Index.", "citationIds": ["c1"]}],
+                },
+                {
+                    "heading": "In the second paper",
+                    "segments": [{"text": "The second paper uses Beta Index as its sparse arm.", "citationIds": ["c2"]}],
+                },
+            ],
+            "citations": [
+                _cite("c1", "fx-a-1", "fx-a", TITLE_A, 1, A1),
+                _cite("c2", "fx-b-2", "fx-b", TITLE_B, 2, B2),
+            ],
+            "bibliography": [_reference("fx-a", TITLE_A), _reference("fx-b", TITLE_B)],
+        },
+    )
+
+    def sections(r: dict[str, Any], count: int) -> None:
+        _data(r)["sections"] = [
+            {"heading": f"Section {i}", "segments": [{"text": "Alpha Method builds on Beta Index.", "citationIds": ["c1"]}]}
+            for i in range(count)
+        ]
+
+    def passages(r: dict[str, Any], count: int) -> None:
+        _data(r)["sections"][0]["segments"] = [
+            {"text": f"Alpha Method builds on Beta Index ({i}).", "citationIds": ["c1"]} for i in range(count)
+        ]
+
+    def many_citations(r: dict[str, Any]) -> None:
+        """One passage citing 41 distinct, verbatim citations: only the citation cap is exceeded."""
+        citations = [_cite(f"c{i}", "fx-a-1", "fx-a", TITLE_A, 1, A1) for i in range(1, 42)]
+        _data(r)["citations"] = citations
+        _data(r)["sections"] = [
+            {
+                "heading": "Background",
+                "segments": [{"text": "Alpha Method builds on Beta Index.", "citationIds": [c["id"] for c in citations]}],
+            }
+        ]
+        _data(r)["bibliography"] = [_reference("fx-a", TITLE_A)]
+
+    def bibliography_extra(r: dict[str, Any], count: int) -> None:
+        _data(r)["bibliography"] += [_reference(f"fx-s{i}", f"Fixture Extra {i}") for i in range(count)]
+
+    return raw, [
+        *_common(),
+        PlantedDefect("uncited_passage", _set("data.sections.0.segments.0.citationIds", [])),
+        PlantedDefect("passage_cites_missing_citation", _set("data.sections.0.segments.0.citationIds", ["c7"])),
+        PlantedDefect("passage_cites_twice", _set("data.sections.0.segments.0.citationIds", ["c1", "c1"])),
+        PlantedDefect("empty_passage_text", _set("data.sections.0.segments.0.text", "  ")),
+        PlantedDefect("ready_without_sections", lambda r: _data(r).update(sections=[]), expects="data.sections"),
+        PlantedDefect(
+            "section_without_passages", _set("data.sections.0.segments", []), expects="data.sections.0.segments"
+        ),
+        PlantedDefect("empty_heading", _set("data.sections.0.heading", " "), expects="data.sections.0.heading"),
+        PlantedDefect(
+            "duplicate_heading", _set("data.sections.1.heading", "background"), expects="data.sections.1.heading"
+        ),
+        PlantedDefect(
+            "over_long_heading", _set("data.sections.0.heading", "H" * 121), expects="data.sections.0.heading"
+        ),
+        PlantedDefect("over_cap_sections", lambda r: sections(r, 7), expects="data.sections"),
+        PlantedDefect("over_cap_passages", lambda r: passages(r, 7), expects="data.sections.0.segments"),
+        PlantedDefect("over_cap_citations", many_citations, expects="data.citations"),
+        PlantedDefect(
+            "duplicate_citation_id", _set("data.citations.1.id", "c1"), expects="data.citations"
+        ),
+        PlantedDefect("empty_title", _set("data.title", " "), expects="data.title"),
+        PlantedDefect("over_long_title", _set("data.title", "T" * 161), expects="data.title"),
+        PlantedDefect("bibliography_missing_reference", lambda r: _data(r)["bibliography"].pop(), expects="data.bibliography"),
+        PlantedDefect(
+            "bibliography_unknown_document", _set("data.bibliography.0.docId", "ghost"), expects="data.bibliography.0.docId"
+        ),
+        PlantedDefect(
+            "bibliography_for_uncited_document",
+            lambda r: _data(r)["bibliography"].append(_reference("fx-c", "Fixture Paper C")),
+            expects="data.bibliography.2.docId",
+        ),
+        PlantedDefect(
+            "bibliography_duplicate_entry",
+            lambda r: _data(r)["bibliography"].append(dict(_data(r)["bibliography"][0])),
+            expects="data.bibliography.2.docId",
+        ),
+        PlantedDefect(
+            "bibliography_reference_not_the_records", _set("data.bibliography.0.apa", "Invented, A. (2020)."), expects="data.bibliography.0.apa"
+        ),
+        PlantedDefect(
+            "bibliography_bibtex_not_the_records", _set("data.bibliography.1.bibtex", "@misc{x}"), expects="data.bibliography.1.bibtex"
+        ),
+        PlantedDefect("over_cap_bibliography", lambda r: bibliography_extra(r, 19), expects="data.bibliography"),
+        PlantedDefect("placeholder_with_draft", _set("meta.status", "empty")),
+    ]
+
+
 SUITES: dict[str, Callable[[], tuple[dict[str, Any], list[PlantedDefect]]]] = {
     "CitedSummary": _cited_summary,
     "SourceList": _source_list,
@@ -550,6 +657,7 @@ SUITES: dict[str, Callable[[], tuple[dict[str, Any], list[PlantedDefect]]]] = {
     "TraversalView": _traversal_view,
     "ComparisonGrid": _comparison_grid,
     "ConceptMap": _concept_map,
+    "WritingDraft": _writing_draft,
 }
 """For each built-in template, a valid fixture block and its planted defects."""
 

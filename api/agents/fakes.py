@@ -33,6 +33,21 @@ def fake_research_responder(request: LLMRequest) -> str:
     return json.dumps({"segments": segments})
 
 
+def fake_draft_responder(request: LLMRequest) -> str:
+    """A two-section draft over the numbered passages, quoting each passage's first sentence (as the research fake does), so the whole
+    Studio path runs without a key. It does not understand the topic."""
+    passages = [(int(n), _WS.sub(" ", body).strip()) for n, _, body in _PASSAGE.findall(request.prompt)]
+    sections = []
+    for heading, chosen in (("Overview", passages[:1]), ("Further evidence", passages[1:2])):
+        segments = []
+        for number, body in chosen:
+            first = _SENTENCE.split(body)[0][:160]
+            segments.append({"text": f"The document states: {first}", "cites": [{"passage": number, "quote": first}]})
+        if segments:
+            sections.append({"heading": heading, "segments": segments})
+    return json.dumps({"title": "Draft from your documents", "sections": sections})
+
+
 def fake_check_responder(request: LLMRequest) -> str:
     """Fake mode has no judge: an empty reply gives no verdicts, so the Fact Checker's deterministic
     lexical rule decides every claim. Honest: a fake that approved everything would hide a broken check."""

@@ -167,8 +167,8 @@ def test_slots_are_typed_strings_and_only_graph_supplied_templates_are_reusable_
     for name, template in CATALOG.items():
         for slot in template.slots:
             assert slot.kind in ("entity", "document_id") and 0 <= slot.min_count <= slot.max_count
-        if name == "CitedSummary":
-            assert template.slots == () and not template.reusable  # the answer needs Research: not reusable
+        if name in ("CitedSummary", "WritingDraft"):
+            assert template.slots == () and not template.reusable  # the answer and a draft need Research or Studio: not reusable
         else:
             assert template.reusable
     assert [s.name for s in CATALOG["ConceptMap"].slots] == ["entities"] and CATALOG["ConceptMap"].slots[

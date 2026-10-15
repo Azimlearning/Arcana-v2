@@ -268,5 +268,5 @@ async def test_without_a_checker_on_the_roster_the_answer_is_not_gated(tmp_path:
 
 
 def test_the_checkers_tool_has_no_caller_chosen_inputs():
-    assert [t.name for t in FACT_CHECKER.tools] == ["check_claims"]
-    assert FACT_CHECKER.tools[0].input_schema["properties"] == {}
+    assert [t.name for t in FACT_CHECKER.tools] == ["check_claims", "check_draft", "check_citation_accuracy"]
+    assert all(t.input_schema["properties"] == {} for t in FACT_CHECKER.tools)

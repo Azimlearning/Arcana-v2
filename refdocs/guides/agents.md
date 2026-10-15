@@ -24,10 +24,10 @@ agents: they sit behind `Engine`, additive to a heuristic (D-12).
 | **Graph** | Owns graph structure: paths, neighbourhoods, cross-document alignment | P1 | Research (passages) |
 | **Fact Checker** | **Trust boundary**: nothing is shown that it has not passed; fails closed | P1 | Every generator (a checker merged into a generator grades its own work) |
 | **Composer** | **Terminal responsibility**: the only thing that chooses components and layout (constraint 4) | P1 stub, P2 | Everyone else (agents return payloads, never blocks) |
-| **Studio** (learning and writing) | Owns learner state (review schedule, mastery) and draft state | P5 | Research (it consumes Research evidence) |
+| **Studio** (learning and writing) | Owns learner state (review schedule, mastery) and draft state | P5 (S1 writing built 2026-10-15, D-42) | Research (it consumes Research evidence) |
 | **Lab Builder** | **Trust boundary**: generated code, only through the verifier | P4 | Everything else |
 
-Seven in the end, five built today (counting the Composer), against v1's 25. D-22 had separate Tutor and Writer;
+Seven in the end, six built today (the Studio's writing and learning groups were built in P5 S1 and S2; counting the Composer), against v1's 25. D-22 had separate Tutor and Writer;
 D-30 merges them into Studio (ASSUMED, settled in the P5 plan).
 
 ## Tools by agent
@@ -66,9 +66,10 @@ D-30 merges them into Studio (ASSUMED, settled in the P5 plan).
 | Tool | Status | Notes |
 |---|---|---|
 | `check_claims` (verbatim quote check, judge, lexical fallback) | built | fail closed, enforced in the Composer |
-| `verify_claim` (re-retrieve and judge) | P5 | absorbs v1's claim verification for Studio outputs |
-| `check_citation_accuracy` | P5 | absorbs v1's Citation agent's accuracy side |
-| `originality_check` | P5 | absorbs v1's Plagiarism check |
+| `verify_claim` (re-retrieve and judge) | P5 | absorbs v1's claim verification for Studio outputs; covered for drafts by `check_draft`'s judge |
+| `check_draft` | built (P5 S1) | the quote screen and judge over a Studio draft, survivors regrouped, references rebuilt, close copies reported |
+| `check_citation_accuracy` | built (P5 S1) | each reference matches the stored record (rebuilt from it otherwise) |
+| `originality_check` | built inside `check_draft` (P5 S1) | longest verbatim run of words from the cited evidence; reported, not removed |
 | mutation suites for each checker | built for `check_claims`; each new checker ships with one | detection rates reported, not asserted |
 
 ### Composer
@@ -83,10 +84,10 @@ D-30 merges them into Studio (ASSUMED, settled in the P5 plan).
 ### Studio (P5)
 | Tool group | Absorbs from v1 |
 |---|---|
-| learning: flashcards, quiz, blurting, Feynman explainer, Cornell notes | Learning agent |
-| Socratic turn (withholds the answer, asks) | Socratic Tutor |
-| review scheduling | Study Planner (needs the optional Mastery engine, P3) |
-| writing: outline, draft section with citations, bibliography export, citation formatting | Writing agent, Citation agent's formatting side, Document agent's export side |
+| learning: flashcards, quiz, blurting, Feynman explainer, Cornell notes | Learning agent. **Built (S2):** `make_study` (flashcards, blurting, Cornell, Socratic; the block is `StudySet`, derived by the Composer from the vault, no model call); the quiz is the notes workspace's; the Feynman explainer is the Research answer asked for plainly |
+| Socratic turn (withholds the answer, asks) | Socratic Tutor. **Built (S2):** a Socratic `StudySet`: a question per asserted link, a hint that points at the source, the sentence revealed on request |
+| review scheduling | Study Planner. **Built (S3):** `StudyPlan`, a fixed interval over mastery and rating dates (no trained engine, D-37) |
+| writing: outline, draft section with citations, bibliography export, citation formatting | Writing agent, Citation agent's formatting side, Document agent's export side. **Built (S1):** `draft_section`, `format_bibliography`; the block is `WritingDraft` |
 
 ### Lab Builder (P4)
 | Tool | Notes |

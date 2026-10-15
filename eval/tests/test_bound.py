@@ -8,10 +8,16 @@ from pathlib import Path
 
 import pytest
 
-from api.genui.catalog import CATALOG
 from api.stores.doc_store import Document
 from eval import bound
-from eval.bound import FLAT_ADMITS, admission, evidence_for, main, summarise
+from eval.bound import (
+    CATALOG,  # the retrieval-supplied components: the Studio's draft is not part of the study
+    FLAT_ADMITS,
+    admission,
+    evidence_for,
+    main,
+    summarise,
+)
 from eval.run_ablation import RunInvalid, require_expected_hashes
 from eval.tests.test_runner import (  # noqa: F401  (a tiny fake-mode benchmark world)
     bench,

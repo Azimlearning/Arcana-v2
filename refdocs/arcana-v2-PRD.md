@@ -68,7 +68,7 @@ downstream decision.
                          │  ┌─────────────── PILLAR: AGENTS ───────┐ │
                          │  │ Orchestrator (+ distilled router)    │ │
                          │  │ Research · Graph · Fact Checker      │ │
-                         │  │ Tutor · Writer · Lab Builder         │ │
+                         │  │ Studio (learn · write) · Lab Builder │ │
                          │  │ Composer (only one picking UI)       │ │
                          │  └──────────────────────────────────────┘ │
                          │  ┌─────────────── PILLAR: GENUI ────────┐ │
@@ -182,7 +182,7 @@ Explicitly out of scope. Revisit only by adding an ADR that says why.
 | **P2** GenUI catalog + adaptive dashboard | Level 1 catalog (ported from v1 where suitable) with the bound applied per component; Composer; level 2 `LayoutSpec`; the typed UI pipeline spine (templates, fences, checks, saved patterns, D-31) | Every catalog component has its precondition documented and enforced; dashboard composes from LayoutSpec |
 | **P3** Trained tools | `Engine` interface; distilled mode/intent router; Re-Rank; Mastery optional | Each engine evaluated against its heuristic; fallback verified |
 | **P4** VerifiedLab + governed lifecycle | Extends the P2 pipeline (D-31) with generated code: contract, checker, generator, verifier, delivery gate, sandbox host; lifecycle states, eviction, staleness, crystallisation | No path to the client bypasses the verifier (test); mutation-suite detection rate recorded |
-| **P5** Learning/writing depth + polish | Tutor and Writer depth, final eval runs, evidence for the report | Final benchmark, audit and mutation results committed |
+| **P5** Learning/writing depth + polish | Studio depth (learning and writing tool groups, D-42), final eval runs, evidence for the report | Final benchmark, audit and mutation results committed |
 
 ---
 
@@ -220,6 +220,7 @@ under the same id.
 | D-39 | The question set is extended by 19 declared questions (own files and pins; frozen assets untouched) and D-38's depth is tested on them before anything else is claimed; proposed, pending Azim's gold approval | 2026-10-15 |
 | D-40 | D-38 reversed: on the 19 declared new questions the 30-candidate depth changed Recall@10 by -0.007, so by the rule fixed in advance the product depth is 10 again; D-39 accepted (gold approved and pinned); the graph signal's gain over flat does not replicate (pooled -0.001) | 2026-10-15 |
 | D-41 | Verified labs get a governed lifecycle (verified, cached, audited, promoted; evicted, stale): a closed transition table, a cache path that verifies the stored source again, audit, staleness at start; crystallisation reported, not built | 2026-10-15 |
+| D-42 | Studio is one agent with tool groups (settles D-22 and D-30); S1 builds the writing group and the `WritingDraft` component (derived references, Fact Checker draft checks, `write` intent) | 2026-10-15, Azim: "the full studio agent as planned" |
 | D-36 | VerifiedLab (P4) starts as one generated pure function in a fixed hash-pinned template; an AST-allowlist checker and an isolated verifier gate it; only the verifier can mint the deliverable type; sandboxed iframe plus CSP; a mutation suite with a recorded detection rate; lifecycle states beyond `verified` are P4b. Amends Q-06 (domain: retrieval formulas) | 2026-10-08, proposed on Azim's "proceed"; `ASSUMED:` rows await his confirmation |
 | D-35 | Mark 2 compiles the graph into a vault (links, concept pages above nodes, claim notes) with a new retrieval arm (`vault-1`), a sentence-numbered builder `atomic2`, a notes view, a learner layer and lint; protocol fixed before any run, a looks ledger on the shared 19 questions | Azim 2026-10-07: do directions A to G; constraint 9 |
 | D-33 | `TraversalView`: what the search followed for a prompt, as its own component grounded by provenance; the retriever is not edited | Azim 2026-10-07: show node traversal per prompt in the top-right graph |

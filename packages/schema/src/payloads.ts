@@ -409,3 +409,117 @@ export interface Mastery {
   /** @int */
   events: number;
 }
+
+// ── Studio: writing (P5 S1, D-42) ──────────────────────────────────────────────
+
+/** One drafted passage of a section: the text and the citations it stands on (ids into the draft's `citations`). */
+export interface DraftSegment {
+  text: string;
+  citationIds: string[];
+}
+
+/** One section of a draft: a heading and the passages under it, in order. */
+export interface DraftSection {
+  heading: string;
+  segments: DraftSegment[];
+}
+
+/**
+ * One reference for a cited document, built by code from the stored document record (title, source file, arXiv id when the file
+ * name carries one): nothing is generated, and a field the record lacks is left out, never invented. The three strings are the same
+ * reference in three styles, ready to copy.
+ */
+export interface BibliographyEntry {
+  docId: string;
+  apa: string;
+  ieee: string;
+  bibtex: string;
+}
+
+/**
+ * A cited draft: a title, sections of cited passages, the citations they stand on and a bibliography of the documents cited. In a
+ * `ready` block every passage cites at least one entry of `citations`, every citation's quote is a verbatim span of its stored chunk,
+ * and the bibliography has exactly one entry for each cited document, derived from the document record. The server validator checks
+ * all of it; the schema cannot.
+ */
+export interface WritingDraftData {
+  title: string;
+  sections: DraftSection[];
+  citations: Citation[];
+  bibliography: BibliographyEntry[];
+}
+
+// ── Studio: learning (P5 S2, D-42) ─────────────────────────────────────────────
+
+/** The four study activities the Studio can make from the vault, with no model call. */
+export type StudyKind = "flashcard" | "blurt" | "cornell" | "socratic";
+
+/** A sentence a study item rests on: the text is the cited quote of `citationId`, never a second copy. */
+export interface StudyNote {
+  citationId: string;
+}
+
+/**
+ * One study item about one concept page. `prompt` is what the learner is asked and `hint` a nudge that does not state the
+ * answer (a Socratic item only); `notes` are what the learner's documents state, verbatim and cited, to be revealed after the
+ * attempt. Neither `prompt` nor `hint` ever contains a note's sentence.
+ */
+export interface StudyItem {
+  id: string;
+  prompt: string;
+  hint: string | null;
+  pageId: string;
+  pageLabel: string;
+  notes: StudyNote[];
+}
+
+/**
+ * A study set made from the vault's concept pages: with a `focusId`, that page (a Socratic set, the pages it is linked to);
+ * without one, the pages the learner knows least first. At most 5 items. Derived from the vault, the stored passages and the
+ * learner's mastery and checked against them: re-deriving the set from `kind` and `focusId` gives exactly these items,
+ * `summary` and `citations`. `summary` is a Cornell set's closing summary (a definition of its first page), else null.
+ * `skipped` counts pages looked at and passed over (nothing citable to show). A `ready` block has at least one item;
+ * `empty`, `loading` and `error` carry nothing. The schema cannot say so; the server validator does.
+ */
+export interface StudySetData {
+  kind: StudyKind;
+  focusId: string | null;
+  items: StudyItem[];
+  summary: StudyNote | null;
+  citations: Citation[];
+  /** @int */
+  skipped: number;
+}
+
+// ── Studio: review schedule (P5 S3, D-42) ──────────────────────────────────────
+
+/** How soon a page is due for review: now, soon, or later. A fixed rule over mastery and the days since the last rating. */
+export type PlanDue = "now" | "soon" | "later";
+
+/** One rated page in the review schedule. `score` and `events` are the page's mastery; `daysSince` is whole days since its last rating. */
+export interface PlanItem {
+  pageId: string;
+  pageLabel: string;
+  score: number;
+  /** @int */
+  events: number;
+  due: PlanDue;
+  /** @int */
+  daysSince: number;
+}
+
+/**
+ * The learner's review schedule as of one day: the pages they have rated, soonest first (at most 10), derived from the vault, the
+ * learner's mastery and the dates of their ratings, and checked against them: re-deriving from `asOf` gives exactly these items,
+ * `ratedPages` and `leftOut`. A page nobody has rated is not in it. A `ready` block has at least one item; `empty` (nothing rated
+ * yet), `loading` and `error` carry nothing. The schema cannot say so; the server validator does.
+ */
+export interface StudyPlanData {
+  /** The day the schedule is for, as YYYY-MM-DD. */
+  asOf: string;
+  items: PlanItem[];
+  /** @int */
+  ratedPages: number;
+  /** @int */
+  leftOut: number;
+}

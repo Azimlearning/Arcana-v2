@@ -9,8 +9,7 @@ export type AgentName =
   | "graph"
   | "fact_checker"
   | "composer"
-  | "tutor"
-  | "writer"
+  | "studio"
   | "lab_builder";
 
 /**
@@ -57,6 +56,8 @@ export interface AgentStep {
  *   nothing_resolved       the question resolved to no concept in the graph, so the search followed nothing;
  *   no_edge_followed       the search followed no edge that led to a passage it returned;
  *   too_many_seeds         the question resolved to more concepts than a traversal view shows (it would no longer be the whole search);
+ *   no_grounded_draft      the Studio agent produced no draft section that stood on a verified quote (nothing was drafted, or the Fact Checker removed it all);
+ *   no_study_material      the vault held nothing citable to make a study set from for what was asked;
  *   block_failed_validation the block was built but failed server validation, so it was not sent;
  *   answer_unavailable     the answer could not be produced or checked (the turn's error is on the answer block);
  *   not_considered         the turn ended before the Composer could consider this component;
@@ -77,6 +78,8 @@ export type DecisionReason =
   | "nothing_resolved"
   | "no_edge_followed"
   | "too_many_seeds"
+  | "no_grounded_draft"
+  | "no_study_material"
   | "block_failed_validation"
   | "answer_unavailable"
   | "not_considered"

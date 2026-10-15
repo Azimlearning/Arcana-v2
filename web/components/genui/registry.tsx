@@ -14,8 +14,11 @@ import { GraphView } from "./GraphView";
 import { NotesGraph } from "./NotesGraph";
 import { QuizCard } from "./QuizCard";
 import { SourceList } from "./SourceList";
+import { StudyPlan } from "./StudyPlan";
+import { StudySet } from "./StudySet";
 import { TraversalView } from "./TraversalView";
 import { VerifiedLab } from "./VerifiedLab";
+import { WritingDraft } from "./WritingDraft";
 
 /** One component per member of the block union `B`, each receiving exactly its own variant. */
 export type Registry<B extends { type: string }> = {
@@ -33,6 +36,9 @@ export const registry: Registry<UIBlock> = {
   NotesGraph,
   QuizCard,
   VerifiedLab,
+  WritingDraft,
+  StudySet,
+  StudyPlan,
 };
 
 export function UnknownBlock({ type }: { type: string }) {

@@ -22,6 +22,14 @@ class AgentStep(BaseModel):
     note: str | None
 
 
+class BibliographyEntry(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    docId: str
+    apa: str
+    ieee: str
+    bibtex: str
+
+
 class BlockEvent(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
     type: Literal['block']
@@ -134,6 +142,18 @@ class ConceptPageData(BaseModel):
 class DoneEvent(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
     type: Literal['done']
+
+
+class DraftSection(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    heading: str
+    segments: list[DraftSegment]
+
+
+class DraftSegment(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    text: str
+    citationIds: list[str]
 
 
 class ErrorEnvelope(BaseModel):
@@ -404,6 +424,16 @@ class Placement(BaseModel):
     order: int
 
 
+class PlanItem(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    pageId: str
+    pageLabel: str
+    score: float
+    events: int
+    due: PlanDue
+    daysSince: int
+
+
 class QuizAnswerRequest(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
     itemId: str
@@ -504,6 +534,55 @@ class StreamErrorEvent(BaseModel):
     error: ErrorEnvelope
 
 
+class StudyItem(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    id: str
+    prompt: str
+    hint: str | None
+    pageId: str
+    pageLabel: str
+    notes: list[StudyNote]
+
+
+class StudyNote(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    citationId: str
+
+
+class StudyPlan(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    type: Literal['StudyPlan']
+    id: str
+    meta: BlockMeta
+    data: StudyPlanData
+
+
+class StudyPlanData(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    asOf: str
+    items: list[PlanItem]
+    ratedPages: int
+    leftOut: int
+
+
+class StudySet(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    type: Literal['StudySet']
+    id: str
+    meta: BlockMeta
+    data: StudySetData
+
+
+class StudySetData(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    kind: StudyKind
+    focusId: str | None
+    items: list[StudyItem]
+    summary: StudyNote | None
+    citations: list[Citation]
+    skipped: int
+
+
 class SummarySegment(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
     text: str
@@ -595,13 +674,29 @@ class WorkspaceResponse(BaseModel):
     blocks: list[UIBlock]
 
 
-AgentName = Literal['orchestrator', 'research', 'graph', 'fact_checker', 'composer', 'tutor', 'writer', 'lab_builder']
+class WritingDraft(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    type: Literal['WritingDraft']
+    id: str
+    meta: BlockMeta
+    data: WritingDraftData
+
+
+class WritingDraftData(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    title: str
+    sections: list[DraftSection]
+    citations: list[Citation]
+    bibliography: list[BibliographyEntry]
+
+
+AgentName = Literal['orchestrator', 'research', 'graph', 'fact_checker', 'composer', 'studio', 'lab_builder']
 
 BlockStatus = Literal['empty', 'loading', 'partial', 'ready', 'error']
 
 ChatRole = Literal['user', 'assistant']
 
-DecisionReason = Literal['no_grounded_answer', 'no_ready_document', 'no_graph_result', 'no_grounded_edge', 'no_shared_entities', 'not_a_path', 'single_hop', 'path_too_long', 'broken_path', 'ungrounded_hop', 'repeated_concept', 'nothing_resolved', 'no_edge_followed', 'too_many_seeds', 'block_failed_validation', 'answer_unavailable', 'not_considered', 'unspecified']
+DecisionReason = Literal['no_grounded_answer', 'no_ready_document', 'no_graph_result', 'no_grounded_edge', 'no_shared_entities', 'not_a_path', 'single_hop', 'path_too_long', 'broken_path', 'ungrounded_hop', 'repeated_concept', 'nothing_resolved', 'no_edge_followed', 'too_many_seeds', 'no_grounded_draft', 'no_study_material', 'block_failed_validation', 'answer_unavailable', 'not_considered', 'unspecified']
 
 ErrorCode = Literal['validation_failed', 'bad_request', 'not_found', 'budget_exhausted', 'spend_cap_exceeded', 'provider_unavailable', 'pattern_refused', 'internal']
 
@@ -623,6 +718,8 @@ PatternRefusalReason = Literal['precondition_not_met', 'template_changed', 'docu
 
 PatternState = Literal['generated', 'verified', 'saved']
 
+PlanDue = Literal['now', 'soon', 'later']
+
 ReachedVia = Literal['mentions', 'edge', 'neighbour']
 
 RegionId = Literal['main', 'secondary', 'shelf']
@@ -635,11 +732,14 @@ StepStatus = Literal['ok', 'partial', 'failed', 'refused']
 
 StreamEvent = Annotated[BlockEvent | LayoutEvent | StreamErrorEvent | DoneEvent, Field(discriminator='type')]
 
+StudyKind = Literal['flashcard', 'blurt', 'cornell', 'socratic']
+
 TurnOutcome = Literal['answered', 'empty', 'error']
 
-UIBlock = Annotated[CitedSummary | SourceList | GraphView | ComparisonGrid | ConceptMap | TraversalView | ConceptPage | NotesGraph | QuizCard | VerifiedLab, Field(discriminator='type')]
+UIBlock = Annotated[CitedSummary | SourceList | GraphView | ComparisonGrid | ConceptMap | TraversalView | ConceptPage | NotesGraph | QuizCard | VerifiedLab | WritingDraft | StudySet | StudyPlan, Field(discriminator='type')]
 
 AgentStep.model_rebuild()
+BibliographyEntry.model_rebuild()
 BlockEvent.model_rebuild()
 BlockMeta.model_rebuild()
 ChatMessage.model_rebuild()
@@ -655,6 +755,8 @@ ConceptMapData.model_rebuild()
 ConceptPage.model_rebuild()
 ConceptPageData.model_rebuild()
 DoneEvent.model_rebuild()
+DraftSection.model_rebuild()
+DraftSegment.model_rebuild()
 ErrorEnvelope.model_rebuild()
 FieldIssue.model_rebuild()
 GraphEdge.model_rebuild()
@@ -692,6 +794,7 @@ PathStep.model_rebuild()
 PatternList.model_rebuild()
 PatternParam.model_rebuild()
 Placement.model_rebuild()
+PlanItem.model_rebuild()
 QuizAnswerRequest.model_rebuild()
 QuizAnswerResponse.model_rebuild()
 QuizCard.model_rebuild()
@@ -705,6 +808,12 @@ SourceItem.model_rebuild()
 SourceList.model_rebuild()
 SourceListData.model_rebuild()
 StreamErrorEvent.model_rebuild()
+StudyItem.model_rebuild()
+StudyNote.model_rebuild()
+StudyPlan.model_rebuild()
+StudyPlanData.model_rebuild()
+StudySet.model_rebuild()
+StudySetData.model_rebuild()
 SummarySegment.model_rebuild()
 TraversalSeed.model_rebuild()
 TraversalStep.model_rebuild()
@@ -715,3 +824,5 @@ VaultLintResponse.model_rebuild()
 VerifiedLab.model_rebuild()
 VerifiedLabData.model_rebuild()
 WorkspaceResponse.model_rebuild()
+WritingDraft.model_rebuild()
+WritingDraftData.model_rebuild()

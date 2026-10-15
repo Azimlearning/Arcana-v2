@@ -33,6 +33,11 @@ class LearnerStore(ABC):
     ) -> Mapping[str, MasteryScore]:
         """The mastery of each of these pages that has events, at `now`. A page with none is absent."""
 
+    def last_rated(self, page_ids: Collection[str]) -> Mapping[str, datetime]:
+        """When each of these pages was last rated (its newest event). A page with no events is absent. The default holds nothing
+        (a store with no times gives a schedule that counts every page as just rated)."""
+        return {}
+
     @abstractmethod
     def delete_all(self) -> int:
         """Remove every event. Returns how many were removed."""
@@ -98,6 +103,19 @@ class SqliteLearnerStore(LearnerStore):
             score = mastery_of(events, now)
             if score is not None:
                 out[page_id] = score
+        return out
+
+    def last_rated(self, page_ids: Collection[str]) -> Mapping[str, datetime]:
+        wanted = sorted(set(page_ids))
+        out: dict[str, datetime] = {}
+        with closing(self._connect()) as db:
+            for start in range(0, len(wanted), 500):
+                batch = wanted[start : start + 500]
+                marks = ",".join("?" * len(batch))
+                for page_id, at in db.execute(
+                    f"SELECT page_id, MAX(at) FROM learner_events WHERE page_id IN ({marks}) GROUP BY page_id", batch
+                ):
+                    out[page_id] = datetime.fromisoformat(at)
         return out
 
     def delete_all(self) -> int:

@@ -31,11 +31,13 @@ points into the block.
 from __future__ import annotations
 
 from collections.abc import Collection, Mapping
+from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import TypeAdapter, ValidationError
 
 from api.core.errors import ValidationFailed
+from api.genui.bibliography import reference_for
 from api.genui.catalog import CATALOG
 from api.genui.generated import (
     Citation,
@@ -49,9 +51,12 @@ from api.genui.generated import (
     NotesGraph,
     QuizCard,
     SourceList,
+    StudyPlan,
+    StudySet,
     TraversalView,
     UIBlock,
     VerifiedLab,
+    WritingDraft,
 )
 from api.genui.text import MIN_LABEL_CHARS, MIN_QUOTE_CHARS, label_in_quote
 from api.genui.text import normalise as _norm
@@ -65,6 +70,8 @@ from api.retrieval.traversal import SeedNode, seed_weight, steps_for_display, tr
 from api.stores.doc_store import DocStore
 from api.stores.graph_store import GraphStore
 from api.vault.quiz import derive_quiz
+from api.vault.review import derive_study_plan
+from api.vault.study import derive_study_set
 from api.vault.types import Vault
 from api.vault.view import derive_concept_page, derive_notes_graph
 
@@ -97,6 +104,7 @@ def validate_block(
     vault: Vault | None = None,
     mastery: Mapping[str, MasteryScore] | None = None,
     labs: LabStore | None = None,
+    last_rated: Mapping[str, datetime] | None = None,
 ) -> UIBlock:
     """Return the validated block, or raise ValidationFailed naming every violated field. `graph` is the graph store
     the claims of a graph-derived block (a `TraversalView`) are re-derived from, and `vault` the vault those of a
@@ -109,7 +117,7 @@ def validate_block(
     except ValidationError as exc:
         raise ValidationFailed("The block does not match the wire schema.", _schema_issues(exc, tag)) from exc
 
-    issues = _content_issues(block, docs, graph, vault, mastery, labs)
+    issues = _content_issues(block, docs, graph, vault, mastery, labs, last_rated)
     if issues:
         raise ValidationFailed("The block failed content validation.", issues)
     return block
@@ -122,6 +130,7 @@ def _content_issues(
     vault: Vault | None = None,
     mastery: Mapping[str, MasteryScore] | None = None,
     labs: LabStore | None = None,
+    last_rated: Mapping[str, datetime] | None = None,
 ) -> list[FieldIssue]:
     """Rules common to every block, then the rules of its own type. A type with no rules here is refused:
     a component is not shown until its invariants are written down (constraint 7)."""
@@ -146,6 +155,12 @@ def _content_issues(
         issues += _quiz_card_issues(block, docs, vault, mastery)
     elif isinstance(block, VerifiedLab):
         issues += _verified_lab_issues(block, docs, labs)
+    elif isinstance(block, WritingDraft):
+        issues += _writing_draft_issues(block, docs)
+    elif isinstance(block, StudySet):
+        issues += _study_set_issues(block, docs, vault, mastery)
+    elif isinstance(block, StudyPlan):
+        issues += _study_plan_issues(block, vault, mastery, last_rated)
     else:
         issues.append(FieldIssue(path="type", message="no content rules exist for this block type"))
     return issues
@@ -824,6 +839,65 @@ def _quiz_card_issues(
     return issues
 
 
+def _study_set_issues(
+    block: StudySet, docs: DocStore, vault: Vault | None, mastery: Mapping[str, MasteryScore] | None = None
+) -> list[FieldIssue]:
+    """A study set is a function of its kind, its focus, the vault, the stored passages and the learner's mastery, so it is checked by
+    deriving it again: every prompt, hint, note, citation, the summary and the count passed over must equal the derived ones. That
+    includes the withholding: a prompt or hint that held a note's sentence would not equal what is derived."""
+    data, status = block.data.model_dump(), block.meta.status
+    blank = {"focusId": None, "items": [], "summary": None, "citations": [], "skipped": 0}
+    if status in {"loading", "error"} or (status == "empty" and vault is None):
+        if any(data.get(k) != v for k, v in blank.items()):
+            return [FieldIssue(path="data", message=f"a '{status}' block must carry nothing")]
+        return []
+    if vault is None:
+        return [FieldIssue(path="data", message="a study set can only be checked against the vault")]
+    try:
+        derived = derive_study_set(vault, docs, block.data.kind, block.data.focusId, mastery)
+    except Exception:  # a store that cannot be read is a block that cannot be checked: refuse, never crash
+        return [FieldIssue(path="data", message="the study set could not be re-derived from the vault")]
+    if derived is None:
+        return [FieldIssue(path="data.focusId", message="the vault has no page with this id")]
+    issues: list[FieldIssue] = []
+    if status == "ready" and not data["items"]:
+        issues.append(FieldIssue(path="data.items", message="a ready study set needs at least one item"))
+    if status == "empty" and derived["items"]:
+        issues.append(FieldIssue(path="data.items", message="the vault can make items here: this block must not be empty"))
+    _differences(data, derived, "data", issues)
+    return issues
+
+
+def _study_plan_issues(
+    block: StudyPlan,
+    vault: Vault | None,
+    mastery: Mapping[str, MasteryScore] | None,
+    last_rated: Mapping[str, datetime] | None,
+) -> list[FieldIssue]:
+    """A review schedule is a function of the vault, the learner's mastery and the dates of their ratings (and the day it is for, which
+    the block states), so it is checked by deriving it again: every item, its due word and day count, and the totals must equal the
+    derived ones."""
+    data, status = block.data.model_dump(), block.meta.status
+    if status in {"loading", "error"} or (status == "empty" and vault is None):
+        if data["items"] or data["ratedPages"] or data["leftOut"]:
+            return [FieldIssue(path="data", message=f"a '{status}' block must carry nothing")]
+        return []
+    if vault is None:
+        return [FieldIssue(path="data", message="a review schedule can only be checked against the vault")]
+    try:
+        day = datetime.fromisoformat(data["asOf"]).replace(tzinfo=UTC)
+    except ValueError:
+        return [FieldIssue(path="data.asOf", message="must be a date, YYYY-MM-DD")]
+    derived = derive_study_plan(vault, mastery, last_rated, day)
+    issues: list[FieldIssue] = []
+    if status == "ready" and not data["items"]:
+        issues.append(FieldIssue(path="data.items", message="a ready schedule needs at least one page"))
+    if status == "empty" and derived["items"]:
+        issues.append(FieldIssue(path="data.items", message="pages are rated: this block must not be empty"))
+    _differences(data, derived, "data", issues)
+    return issues
+
+
 def _cited_summary_issues(block: CitedSummary, docs: DocStore) -> list[FieldIssue]:
     issues: list[FieldIssue] = []
     status = block.meta.status
@@ -876,6 +950,105 @@ def _cited_summary_issues(block: CitedSummary, docs: DocStore) -> list[FieldIssu
                 )
 
     issues += _citation_issues(data.citations, referenced, docs)
+    return issues
+
+
+def _writing_draft_issues(block: WritingDraft, docs: DocStore) -> list[FieldIssue]:
+    """A draft's rules (P5 S1, D-42): placeholders carry nothing; otherwise every passage stands on a citation in the block, every
+    citation passes the rules every citation obeys, and the bibliography is exactly the references the stored records of the cited
+    documents give (re-derived here, so a reference the store does not support is refused)."""
+    issues: list[FieldIssue] = []
+    data = block.data
+    status = block.meta.status
+    if status in PLACEHOLDER_STATUSES:
+        if data.title or data.sections or data.citations or data.bibliography:
+            issues.append(FieldIssue(path="data", message=f"a '{status}' block must carry no draft"))
+        return issues
+
+    caps = _caps("WritingDraft")
+    if not data.title.strip():
+        issues.append(FieldIssue(path="data.title", message="a draft needs a title"))
+    elif len(data.title) > caps["title_chars"]:
+        issues.append(FieldIssue(path="data.title", message=f"at most {caps['title_chars']} characters"))
+    if len(data.sections) > caps["sections"]:
+        issues.append(FieldIssue(path="data.sections", message=f"at most {caps['sections']} sections may be shown"))
+    if status == "ready" and not data.sections:
+        issues.append(FieldIssue(path="data.sections", message="a ready draft needs at least one section"))
+    if len(data.citations) > caps["citations"]:
+        issues.append(FieldIssue(path="data.citations", message=f"at most {caps['citations']} citations may be shown"))
+    by_id = {c.id: c for c in data.citations}
+    if len(by_id) != len(data.citations):
+        issues.append(FieldIssue(path="data.citations", message="citation ids must be unique"))
+
+    referenced: set[str] = set()
+    headings: set[str] = set()
+    for i, section in enumerate(data.sections):
+        heading = section.heading.strip()
+        if not heading:
+            issues.append(FieldIssue(path=f"data.sections.{i}.heading", message="a section needs a heading"))
+        elif len(heading) > caps["heading_chars"]:
+            issues.append(
+                FieldIssue(path=f"data.sections.{i}.heading", message=f"at most {caps['heading_chars']} characters")
+            )
+        elif heading.lower() in headings:
+            issues.append(FieldIssue(path=f"data.sections.{i}.heading", message="section headings must be unique"))
+        headings.add(heading.lower())
+        if not section.segments:
+            issues.append(FieldIssue(path=f"data.sections.{i}.segments", message="a section needs at least one passage"))
+        elif len(section.segments) > caps["segments"]:
+            issues.append(
+                FieldIssue(
+                    path=f"data.sections.{i}.segments", message=f"at most {caps['segments']} passages per section"
+                )
+            )
+        for j, segment in enumerate(section.segments):
+            where = f"data.sections.{i}.segments.{j}"
+            if not segment.text.strip():
+                issues.append(FieldIssue(path=f"{where}.text", message="a passage needs text"))
+            if not segment.citationIds:
+                issues.append(FieldIssue(path=f"{where}.citationIds", message="a passage must cite evidence"))
+            seen_here: set[str] = set()
+            for k, cid in enumerate(segment.citationIds):
+                referenced.add(cid)
+                if cid in seen_here:
+                    issues.append(
+                        FieldIssue(path=f"{where}.citationIds.{k}", message=f"{cid!r} is cited twice in this passage")
+                    )
+                seen_here.add(cid)
+                if cid not in by_id:
+                    issues.append(
+                        FieldIssue(path=f"{where}.citationIds.{k}", message=f"no citation with id {cid!r} in this block")
+                    )
+
+    issues += _citation_issues(data.citations, referenced, docs)
+
+    # the bibliography: one derived reference per cited document, nothing else
+    if len(data.bibliography) > caps["bibliography"]:
+        issues.append(
+            FieldIssue(path="data.bibliography", message=f"at most {caps['bibliography']} references may be shown")
+        )
+    cited_docs = {c.docId for c in data.citations}
+    listed: set[str] = set()
+    for i, entry in enumerate(data.bibliography):
+        if entry.docId in listed:
+            issues.append(FieldIssue(path=f"data.bibliography.{i}.docId", message="a document is listed once"))
+        listed.add(entry.docId)
+        document = docs.get_document(entry.docId)
+        if document is None:
+            issues.append(FieldIssue(path=f"data.bibliography.{i}.docId", message="no stored document has this id"))
+            continue
+        if entry.docId not in cited_docs:
+            issues.append(FieldIssue(path=f"data.bibliography.{i}.docId", message="no citation in this draft is from this document"))
+        want = reference_for(document)
+        for style in ("apa", "ieee", "bibtex"):
+            if getattr(entry, style) != want[style]:
+                issues.append(
+                    FieldIssue(
+                        path=f"data.bibliography.{i}.{style}", message="does not match the reference the stored record gives"
+                    )
+                )
+    for missing in sorted(cited_docs - listed):
+        issues.append(FieldIssue(path="data.bibliography", message=f"a cited document has no reference ({missing})"))
     return issues
 
 

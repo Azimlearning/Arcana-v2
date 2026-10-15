@@ -56,7 +56,8 @@ from api.container import build_container
 from api.core.budget import TokenBudget
 from api.core.logging import configure_logging
 from api.core.settings import Settings, load_settings
-from api.genui.catalog import CATALOG, ComposerEvidence, alignment_grid, concept_path, graph_edges
+from api.genui.catalog import CATALOG as _FULL_CATALOG
+from api.genui.catalog import ComposerEvidence, alignment_grid, concept_path, graph_edges
 from api.ingestion.embed import CachingEmbedder
 from api.retrieval.arms import ARMS
 from api.retrieval.dense import DenseRetriever
@@ -75,6 +76,10 @@ from eval.run_ablation import (
     resolution_record,
     sha256_file,
 )
+
+# The bound study (D-26..D-29) measures which components retrieval and the graph can admit. A component the Studio supplies (a draft)
+# is not a retrieval component: it is left out, so the protocol's set of components is the one it was fixed with.
+CATALOG = {name: spec for name, spec in _FULL_CATALOG.items() if "studio" not in spec.supplied_by}
 
 ROOT = Path(__file__).resolve().parents[1]
 LAYERS = ("flat", "hybrid")

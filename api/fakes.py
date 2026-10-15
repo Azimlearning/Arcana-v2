@@ -1,6 +1,11 @@
 """One responder for fake LLM mode: dispatch on the request's purpose to the matching fake."""
 
-from api.agents.fakes import fake_check_responder, fake_research_responder, fake_route_responder
+from api.agents.fakes import (
+    fake_check_responder,
+    fake_draft_responder,
+    fake_research_responder,
+    fake_route_responder,
+)
 from api.ingestion.atomic import ATOMIC_MARKER
 from api.ingestion.atomic2 import ATOMIC2_MARKER
 from api.ingestion.fakes import (
@@ -21,6 +26,8 @@ def fake_llm_responder(request: LLMRequest) -> str:
         return fake_extraction_responder(request)
     if request.purpose == "research":
         return fake_research_responder(request)
+    if request.purpose == "draft":
+        return fake_draft_responder(request)
     if request.purpose == "route":
         return fake_route_responder(request)
     if request.purpose == "check":

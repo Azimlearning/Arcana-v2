@@ -153,6 +153,60 @@ def quiz_card(
     }
 
 
+def writing_draft(
+    block_id: str,
+    status: str,
+    *,
+    data: dict[str, Any] | None = None,
+    error: ErrorEnvelope | None = None,
+) -> dict[str, Any]:
+    return {
+        "type": "WritingDraft",
+        "id": block_id,
+        "meta": {"status": status, "error": error.model_dump() if error is not None else None},
+        "data": data
+        if data is not None
+        else {"title": "", "sections": [], "citations": [], "bibliography": []},
+    }
+
+
+def study_set(
+    block_id: str,
+    status: str,
+    *,
+    data: dict[str, Any] | None = None,
+    error: ErrorEnvelope | None = None,
+    kind: str = "flashcard",
+    focus_id: str | None = None,
+) -> dict[str, Any]:
+    return {
+        "type": "StudySet",
+        "id": block_id,
+        "meta": {"status": status, "error": error.model_dump() if error is not None else None},
+        "data": data
+        if data is not None
+        else {"kind": kind, "focusId": focus_id, "items": [], "summary": None, "citations": [], "skipped": 0},
+    }
+
+
+def study_plan(
+    block_id: str,
+    status: str,
+    *,
+    data: dict[str, Any] | None = None,
+    error: ErrorEnvelope | None = None,
+    as_of: str = "1970-01-01",
+) -> dict[str, Any]:
+    return {
+        "type": "StudyPlan",
+        "id": block_id,
+        "meta": {"status": status, "error": error.model_dump() if error is not None else None},
+        "data": data
+        if data is not None
+        else {"asOf": as_of, "items": [], "ratedPages": 0, "leftOut": 0},
+    }
+
+
 def verified_lab(
     block_id: str,
     status: str,
@@ -219,5 +273,8 @@ BUILDERS: dict[str, Callable[..., dict[str, Any]]] = {
     "NotesGraph": notes_graph,
     "QuizCard": quiz_card,
     "VerifiedLab": verified_lab,
+    "WritingDraft": writing_draft,
+    "StudySet": study_set,
+    "StudyPlan": study_plan,
 }
 """One builder per catalog component, keyed by block type. A test keeps this in step with the catalog and the schema."""
