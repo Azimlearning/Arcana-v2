@@ -1,0 +1,223 @@
+{
+  "run": {
+    "timestamp": "2026-10-15T12:34:58.804264+00:00",
+    "code": {
+      "commit": "726c37c15ed92ad79764a9804f817c72e6544036",
+      "dirty": false,
+      "changed_files": []
+    },
+    "mode": {
+      "llm": "live",
+      "embed": "live"
+    },
+    "turns": 3
+  },
+  "summary": {
+    "answerable_turns": 2,
+    "answered": 2,
+    "answer_rate": 1.0,
+    "control_turns": 0,
+    "control_empty": 0,
+    "control_answered": 0,
+    "verbatim_all": true,
+    "mean_citation_precision": 0.25,
+    "mean_gold_recall": 0.1429,
+    "drafts_shown": 1,
+    "write_turns": 1
+  },
+  "stopped": null,
+  "rows_file": "20261015T123418Z-grounding-live.rows.jsonl",
+  "turns": [
+    {
+      "intent": "compare",
+      "status": "ready",
+      "latency_s": 13.91,
+      "tokens": 6706,
+      "spent_usd": 0.019407,
+      "blocks": [
+        "CitedSummary",
+        "SourceList",
+        "GraphView",
+        "TraversalView",
+        "ComparisonGrid"
+      ],
+      "steps": [
+        [
+          "orchestrator",
+          "ok",
+          null
+        ],
+        [
+          "graph",
+          "ok",
+          null
+        ],
+        [
+          "research",
+          "ok",
+          null
+        ],
+        [
+          "fact_checker",
+          "partial",
+          "removed 1 of 5 segments"
+        ]
+      ],
+      "id": "q-cross-01",
+      "category": "cross_document",
+      "answerable": true,
+      "segments": 4,
+      "citations": 4,
+      "cited_chunks": 4,
+      "cited_documents": 4,
+      "verbatim": "4/4",
+      "citation_precision": 0.25,
+      "gold_recall": 0.1429,
+      "research": {
+        "passages": 8,
+        "quotes_model": 4,
+        "quotes_server": 1,
+        "documents_cited": 5,
+        "documents_available": 8
+      },
+      "answer_check": {
+        "segments_in": 5,
+        "segments_kept": 4,
+        "citations_dropped": 0,
+        "unsupported": 1,
+        "judged_by_model": 5,
+        "judged_by_lexical": 0
+      },
+      "checker_note": "removed 1 of 5 segments"
+    },
+    {
+      "intent": "compare",
+      "status": "ready",
+      "latency_s": 8.79,
+      "tokens": 6891,
+      "spent_usd": 0.017595,
+      "blocks": [
+        "CitedSummary",
+        "SourceList",
+        "GraphView",
+        "ComparisonGrid"
+      ],
+      "steps": [
+        [
+          "orchestrator",
+          "ok",
+          null
+        ],
+        [
+          "graph",
+          "ok",
+          null
+        ],
+        [
+          "research",
+          "ok",
+          null
+        ],
+        [
+          "fact_checker",
+          "ok",
+          null
+        ]
+      ],
+      "id": "q-cross-02",
+      "category": "cross_document",
+      "answerable": true,
+      "segments": 4,
+      "citations": 4,
+      "cited_chunks": 4,
+      "cited_documents": 3,
+      "verbatim": "4/4",
+      "citation_precision": 0.25,
+      "gold_recall": 0.1429,
+      "research": {
+        "passages": 8,
+        "quotes_model": 4,
+        "quotes_server": 0,
+        "documents_cited": 3,
+        "documents_available": 7
+      },
+      "answer_check": {
+        "segments_in": 4,
+        "segments_kept": 4,
+        "citations_dropped": 0,
+        "unsupported": 0,
+        "judged_by_model": 4,
+        "judged_by_lexical": 0
+      },
+      "checker_note": null
+    }
+  ],
+  "writes": [
+    {
+      "intent": "write",
+      "status": "ready",
+      "latency_s": 17.86,
+      "tokens": 16368,
+      "spent_usd": 0.042768,
+      "blocks": [
+        "CitedSummary",
+        "SourceList",
+        "WritingDraft"
+      ],
+      "steps": [
+        [
+          "orchestrator",
+          "ok",
+          null
+        ],
+        [
+          "research",
+          "ok",
+          null
+        ],
+        [
+          "studio",
+          "ok",
+          null
+        ],
+        [
+          "fact_checker",
+          "ok",
+          null
+        ]
+      ],
+      "topic": "dense retrieval versus sparse retrieval",
+      "draft": "ready",
+      "sections": 3,
+      "passages": 6,
+      "citations": 5,
+      "documents": 2,
+      "references": 2,
+      "research": {
+        "passages": 8,
+        "quotes_model": 5,
+        "quotes_server": 0,
+        "documents_cited": 2,
+        "documents_available": 2
+      },
+      "answer_check": {
+        "segments_in": 6,
+        "segments_kept": 6,
+        "citations_dropped": 0,
+        "unsupported": 0,
+        "judged_by_model": 6,
+        "judged_by_lexical": 0
+      },
+      "draft_check": {
+        "passages_in": 6,
+        "passages_kept": 6,
+        "citations_dropped": 0,
+        "unsupported": 0,
+        "too_close_to_source": 0,
+        "references_rebuilt": 0
+      },
+      "checker_note": null
+    }
+  ],
+  "spent_usd": 0.07977
+}
