@@ -28,6 +28,12 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-15: Lab lifecycle is walked by ordinary use (D-41 addendum)
+- **Changed:** `api/agents/compose.py` (a reuse that was already `cached` becomes `audited`: it was verified again and the evidence is still stored; the delivery count then promotes it), `api/labs/test_lifecycle.py` (a test through six requests), D-41, limits, ledger.
+- **Decided:** the audit the PRD names is the re-verification plus the evidence check a reuse already does; no separate scheduler.
+- **Verified:** `uv run pytest api/labs api/genui/test_lab_block.py`: 215 passed.
+- **Known issues / next steps:** none.
+
 ### 2026-10-15: P5 S6, the live grounding run (the whole system, a real model, $1.026)
 - **Changed:** `eval/grounding_live.py` (the tool; protocol committed first; every paid row kept on disk; a ceiling and a cap check), results and rows files, `refdocs/evidence/20261015-grounding-live.md`, the ledger, limits, STATUS, the execution doc.
 - **Decided:** none new. The ceiling was $1.5 (the cost review: expected $0.91, high $1.70); the month's cap was set per command because `.env` holds an empty value.

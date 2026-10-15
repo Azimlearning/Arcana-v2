@@ -222,3 +222,19 @@ def test_flagging_twice_is_not_an_error_and_a_flagged_lab_stays_out(world):
     labs.flag(stored_id, "first")
     labs.flag(stored_id, "second request failing at once")
     assert labs.counts() == {"evicted": 1} and labs.get(stored_id) is None
+
+
+def test_ordinary_use_walks_a_lab_through_cached_audited_and_promoted(world):
+    """The lifecycle is not only reachable by a test calling `audit_lab`: each reuse verifies the stored source again and checks the
+    evidence, so the second reuse audits the lab and, with three deliveries, promotes it."""
+    docs, labs = world
+    generator = FakeLabGenerator()
+    states = []
+    for _ in range(6):
+        made(docs, labs, generator)
+        stored = labs.find_servable(LAB)
+        assert stored is not None
+        states.append(stored.state)
+    assert generator.calls == [LAB]  # generated once, reused five times
+    # delivery 1 mints (verified); 2 reuses (cached); 3 audits it and, with three deliveries, promotes it in the same step
+    assert states == ["verified", "cached", "promoted", "promoted", "promoted", "promoted"]

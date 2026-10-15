@@ -745,7 +745,10 @@ def compose_lab(
                 delivered = shown(builder(LAB_ID, "ready", artifact=again, contract=contract, citation=citation))  # the gate first
                 if reused.state == "verified":
                     labs.transition(reused.lab_id, "cached", "served again from the store")
-                labs.record_delivery(reused.lab_id)
+                elif reused.state == "cached":
+                    # verified again just now and the passage that states the formula is still stored (the evidence check above): an audit
+                    labs.transition(reused.lab_id, "audited", "re-verified, evidence still stored, on a later delivery")
+                labs.record_delivery(reused.lab_id)  # an audited lab delivered enough times is promoted
                 return delivered
     if generator is None:
         return shown(

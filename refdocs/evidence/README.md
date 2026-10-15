@@ -36,7 +36,7 @@
 | ~~RAGAS metrics are null~~ **Resolved 2026-10-15**: installed and run; the non-LLM context metrics are 0.0 for every arm (chunk-length mismatch, threshold not tuned); LLM-judged RAGAS not run (needs the seam) | `refdocs/evidence/20261015-ragas-context-metrics.md` | Closed |
 | `one_more_word` lint reason is noisy on real data | `refdocs/execution/2026-10-07-m2-lint-screen.md` | Open |
 | Quiz wrong answers are chosen without a model: some are too easy | D-35 A8 limits | Open |
-| VerifiedLab: a branch off the grid and off the fuzz is not seen (the interface cannot ask for it); the live generator is built and measured (2 of 8, then 6 of 8 after a prompt revision); `audit_lab` has no scheduled caller | D-36 amendment; D-41; `20261015-lab-live-generator.md` | Open |
+| VerifiedLab: a branch off the grid and off the fuzz is not seen (the interface cannot ask for it); the live generator is built and measured (2 of 8, then 6 of 8 after a prompt revision); ordinary reuse walks a lab through cached, audited and promoted (`audit_lab` itself has no scheduled caller) | D-36 amendment; D-41; `20261015-lab-live-generator.md` | Open |
 | ~~P3: whether a negative result for one trained engine satisfies Objective 03~~ **Resolved 2026-10-15** (supervisor via Azim: a component may be removed or left when tested to no effect, if documented; D-37 Resolved) | `refdocs/evidence/20261014-p3-rerank.md` | Closed |
 | ~~A depth-30 hybrid arm as a declared protocol amendment~~ **Resolved 2026-10-15**: not confirmed on the extension questions, reversed (D-40) | `refdocs/evidence/20261015-question-set-extension.md` | Closed |
 

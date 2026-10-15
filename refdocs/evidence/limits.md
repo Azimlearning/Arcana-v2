@@ -43,7 +43,7 @@
 
 | Limit | Effect | Source |
 |---|---|---|
-| VerifiedLab: a branch off the grid and off the fuzz is not seen; the live generator is built and measured on 4 contracts and 8 attempts (6 of 8 accepted after one prompt revision; F1@k refused twice for want of the contract's clamp); the lifecycle (D-41) is built but `audit_lab` has no scheduled caller and crystallisation into a level 1 component is reported only, not built | The lab claim is "a verified artifact from a stored formula under a fixed template", not "any generated lab" | D-36 and its amendments |
+| VerifiedLab: a branch off the grid and off the fuzz is not seen; the live generator is built and measured on 4 contracts and 8 attempts (6 of 8 accepted after one prompt revision; F1@k refused twice for want of the contract's clamp); the lifecycle (D-41) is built but `audit_lab` has no scheduled caller (ordinary reuse audits and promotes a lab) and crystallisation into a level 1 component is reported only, not built | The lab claim is "a verified artifact from a stored formula under a fixed template", not "any generated lab" | D-36 and its amendments |
 | The labs offered depend on formulas the stored passages state (4 of 4 candidate contracts met; ASSUMED reading of the domain) | Usability evidence is four labs, not a general capability | D-36; `STATUS.md` working assumptions item 1 |
 | Quiz wrong answers are chosen without a model, so some are too easy; the `one_more_word` lint reason is noisy on real data | Learning-feature quality is descriptive only; no user study (D-06) | D-35 A8; `refdocs/execution/2026-10-07-m2-lint-screen.md` |
 | The dashboard is cramped at 1440 px and untried at phone width | UI claims are desktop only | `STATUS.md` P2 row |
