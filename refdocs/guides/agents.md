@@ -87,7 +87,12 @@ D-30 merges them into Studio (ASSUMED, settled in the P5 plan).
 | learning: flashcards, quiz, blurting, Feynman explainer, Cornell notes | Learning agent. **Built (S2):** `make_study` (flashcards, blurting, Cornell, Socratic; the block is `StudySet`, derived by the Composer from the vault, no model call); the quiz is the notes workspace's; the Feynman explainer is the Research answer asked for plainly |
 | Socratic turn (withholds the answer, asks) | Socratic Tutor. **Built (S2):** a Socratic `StudySet`: a question per asserted link, a hint that points at the source, the sentence revealed on request |
 | review scheduling | Study Planner. **Built (S3):** `StudyPlan`, a fixed interval over mastery and rating dates (no trained engine, D-37) |
-| writing: outline, draft section with citations, bibliography export, citation formatting | Writing agent, Citation agent's formatting side, Document agent's export side. **Built (S1):** `draft_section`, `format_bibliography`; the block is `WritingDraft` |
+| writing: outline, draft section with citations, bibliography export, citation formatting | Writing agent, Citation agent's formatting side, Document agent's export side. **Built (S1):** `draft_section`, `format_bibliography`; the block is `WritingDraft`. **D-43 (V2):** `kind` is `outline`, `literature_review`, `abstract` or `script`, one pipeline |
+| audio overview | v1 Audio (dropped as generation). **Built (D-43 V2):** a two-voice script as a `WritingDraft` of kind `script`, every line cited and checked; the browser reads it aloud with its own voice (`ASSUMED:` not "audio generation"); the server makes no audio |
+| quiz in the turn | **Built (D-43 V1):** study kind `quiz`: the notes workspace's cloze quiz (`QuizCard`) derived by the Composer; the choice is checked by the server |
+| document brief | VERA's Meetings function, v1 Document agent. **Built (D-43 V3):** `DocBrief`: key points, key terms and next steps for one document, from the vault and mastery, no model |
+| cheat sheet | VERA's Visual function, v1 Visual agent. **Built (D-43 V4):** `CheatSheet`: a concept and its neighbours with a diagram drawn from the same entries, no model, no image generation |
+| learning insights | VERA's Analytics function, v1 Progress dashboard. **Built (D-43 V5):** `LearningInsights`: coverage, bands, weakest pages, 14 days of activity (a trend only from 7 active days) and the review workload for the next 7 days by the schedule's rule |
 
 ### Lab Builder (P4)
 | Tool | Notes |
@@ -113,16 +118,16 @@ v1 names 25 agents; the table maps the 24 named in its PRD tiers and in `api/age
 | Annotation | Research | P5 |
 | Document | Research (summaries), Composer (source list), Studio (export) | `SourceList` (P2) |
 | Graph | Graph | built |
-| Visual | Graph (data), Composer (layout and rendering) | `GraphView` (P2) |
+| Visual | Graph (data), Composer (layout and rendering), Studio (sheet) | `GraphView` (P2), `CheatSheet` (D-43 V4) |
 | Timeline | Graph | not planned: no extracted dates |
 | UI | Composer | P2 |
 | Fact Checker | Fact Checker | built |
 | Citation | Fact Checker (accuracy), Studio (formatting) | P5 |
-| Learning, Study Planner | Studio | P5 (planner needs Mastery, P3) |
-| Socratic Tutor | Studio | P5 |
-| Writing | Studio | P5 |
+| Learning, Study Planner | Studio | built (P5 S2, S3, D-43 V1, V5: flashcards, blurting, Cornell, quiz, schedule, insights) |
+| Socratic Tutor | Studio | built (P5 S2) |
+| Writing | Studio | built (P5 S1, D-43 V2: outline, literature review, abstract, script) |
 | Web Search | dropped | general web search is a PRD non-goal |
-| Audio | dropped | audio generation is a PRD non-goal |
+| Audio | Studio (script) | no audio is generated (PRD non-goal); a cited script the browser can read aloud (D-43 V2, `ASSUMED:`) |
 
 ## Engines (trained tools, not agents)
 

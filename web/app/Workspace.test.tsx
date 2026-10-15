@@ -673,13 +673,15 @@ describe("Workspace: panes in the centre area (D-44)", () => {
     expect(conversation().className).not.toContain("hidden");
   });
 
-  it("makes the centre panel wider while a pane is open, and restores the server's width after", async () => {
+  it("makes the centre panel wider (from the Sources share) while a pane is open, and restores the server's width after", async () => {
     await answered();
     const chat = document.querySelector('[data-panel="chat"]') as HTMLElement;
     expect(chat.style.flexGrow).toBe("45");
     fireEvent.click(within(screen.getByLabelText("Answer")).getAllByRole("button", { name: /Open in a pane: Answer/ })[0]!);
     await screen.findByRole("complementary", { name: "Panes" });
-    expect(chat.style.flexGrow).toBe("90");
+    expect(chat.style.flexGrow).toBe("52"); // 45 plus 35 percent of the Sources share (20)
+    const studio = document.querySelector('[data-panel="studio"]') as HTMLElement;
+    expect(studio.style.flexGrow).toBe("35"); // the Studio keeps its share, so its buttons do not break mid-word
     fireEvent.click(screen.getByRole("button", { name: "Close all" }));
     expect(chat.style.flexGrow).toBe("45");
   });

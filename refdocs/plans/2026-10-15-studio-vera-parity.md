@@ -18,7 +18,27 @@ VERA AI (the PETRONAS Upstream project, May 2026; `vera-ai/VERA_AI_Project_Summa
 | Analytics | Trends and a forecast (regression, moving average, weekly seasonal) | **Learning insights**: coverage, mastery spread, weakest concepts, activity trend and the review workload ahead | none | `LearningInsights` |
 | Visual | Infographics and image tagging | **Cheat sheet**: a one-page visual of a concept and its neighbours, printable | none | `CheatSheet` |
 
-After this the Studio holds twelve tools: flashcards, blurting, Cornell notes, Socratic questions, quiz, review schedule, outline, literature review, abstract, audio overview, document brief, cheat sheet, and learning insights. Every one has a request pattern that reaches it through the Orchestrator and a button on the shelf.
+After this the Studio holds thirteen tools: flashcards, blurting, Cornell notes, Socratic questions, quiz, review schedule, learning insights, outline, literature review, abstract, audio overview, document brief and cheat sheet. Every one has a request pattern that reaches it through the Orchestrator and a button on the shelf.
+
+## Where v1's outputs and agents went (Azim, 2026-10-15: refer to v1, but merge and upgrade, do not rebuild all of them)
+
+v1 had 25 agents and 24 output components. D-05 stands: these became tools of one agent, and several v1 outputs were merged into one v2 block or into a view of one.
+
+| v1 output or agent | v2 | Status |
+|---|---|---|
+| FlashcardDeck, BlurtingPrompt, CornellNotes, SocraticDialog, FeynmanExplainer | `StudySet` (four kinds) and the plain Research answer | built (P5 S2) |
+| QuizCard | `QuizCard`, now also in the turn | built (V1) |
+| StudyPlanner | `StudyPlan` | built (P5 S3) |
+| ProgressDashboard, InsightCard | `LearningInsights` | built (V5) |
+| DraftEditor, BibliographyExport, CitationPreview | `WritingDraft` (kinds, bibliography, citation pills) | built (P5 S1, V2) |
+| AudioSummary | `WritingDraft` kind `script`, read aloud by the browser | built (V2) |
+| ConceptMap, KnowledgeGraphView | `ConceptMap`, `GraphView`, `NotesGraph`, `CheatSheet` | built |
+| ComparisonChart, LiteratureMatrix, DataTable | `ComparisonGrid` and the panes' Table view (sort, filter, CSV) | built (D-44) |
+| SourceList | `SourceList` | built |
+| PlagiarismReport | the Fact Checker counts passages close to their source (`too_close_to_source`); not a shown block | partial: counted, not shown (limit) |
+| ContradictionAlert, GapAnalysis | the Notes screen's lint (orphans, duplicate names, concepts two papers define, hubs): reported there, never fixed | covered in Notes, not a Studio block (decision: it has no cited sentences to re-derive a block from) |
+| Timeline | none | not built: no dates are extracted |
+| Web Search | none | PRD non-goal |
 
 ## Design
 
@@ -49,4 +69,4 @@ After this the Studio holds twelve tools: flashcards, blurting, Cornell notes, S
 
 ## Definition of done
 
-Each slice: its plan task checked, its registration suite's planted defects all rejected, a turn through the real graph with the fake LLM ends at the Composer with the block validated, the web component renders every state, the full suites, ruff and pyright clean, D-43, STATUS and CHANGELOG current. Overall: all twelve tools reachable from the shelf and from a typed request; a real-browser pass over the new blocks at desktop and phone width; the one live check of the new writing kinds recorded.
+Each slice: its plan task checked, its registration suite's planted defects all rejected, a turn through the real graph with the fake LLM ends at the Composer with the block validated, the web component renders every state, the full suites, ruff and pyright clean, D-43, STATUS and CHANGELOG current. Overall: all thirteen tools reachable from the shelf and from a typed request; a real-browser pass over the new blocks at desktop and phone width; the one live check of the new writing kinds recorded.

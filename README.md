@@ -80,9 +80,15 @@ before sending if it would pass it) and the three keys; RAGAS is the optional `e
    each a verbatim quote of a stored passage; choose **Adaptive** to see the layout the server composed.
 2. In the Studio shelf choose **Write an outline**, finish the request with a topic: a cited draft with a
    bibliography you can copy as APA, IEEE or BibTeX.
-3. Choose **Flashcards** (or Cornell notes, Socratic questions), reveal a sentence and rate yourself; then
-   **Review schedule** to see what is due.
-4. Open **Labs** to run a verified formula lab (offered only where a stored passage states the formula),
+3. Choose **Flashcards** (or Cornell notes, Socratic questions, Blurting), reveal a sentence and rate yourself;
+   **Quiz me** for fill-in-the-blank questions checked by the server; then **Review schedule** to see what is
+   due and **Learning insights** for where you stand.
+4. Try **Document brief** (key points, terms and next steps for one document), **Cheat sheet** (a concept
+   and its neighbours on a page, with a diagram), **Literature review**, **Abstract** and **Audio overview**
+   (a two-voice script with a Listen button that uses your browser's own voice).
+5. On any output choose **Open in a pane**: it opens beside the conversation, with a **Table** view you can
+   sort, filter and download as CSV; drag the divider, or **Expand** to give the pane the whole centre.
+6. Open **Labs** to run a verified formula lab (offered only where a stored passage states the formula),
    and **Notes** for the concept pages, graph, quiz and lint.
 
 ## Project layout

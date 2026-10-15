@@ -7,12 +7,22 @@
 // with a CSS transition on `flex-grow` (Synapse's adaptive layout animates its column template the same way), switched
 // off for `prefers-reduced-motion`. Whether the browser interpolates `flex-grow` is checked in the real browser (P2b F5).
 
-import type { LayoutSpec, PanelId, RegionId } from "@arcana/schema";
+import type { LayoutSpec, PanelId, PanelSpec, RegionId } from "@arcana/schema";
 import type { ReactNode } from "react";
 
 import { Panel } from "./Panel";
 
 const TAGS: Record<PanelId, "aside" | "main" | "section"> = { sources: "aside", chat: "main", studio: "section" };
+
+/** While panes are open the centre panel takes 35 percent of the Sources panel's share; the Studio keeps its own, so its buttons do not
+ *  break mid-word (seen in the real browser). A viewer's arrangement only: the server's numbers are untouched. */
+const FROM_SOURCES = 0.35;
+function widened(panel: PanelSpec, layout: LayoutSpec): PanelSpec {
+  const sources = layout.panels.find((p) => p.id === "sources")?.width ?? 0;
+  if (panel.id === "chat") return { ...panel, width: panel.width + sources * FROM_SOURCES };
+  if (panel.id === "sources") return { ...panel, width: sources * (1 - FROM_SOURCES) };
+  return panel;
+}
 
 export function Shell({
   layout,
@@ -22,7 +32,7 @@ export function Shell({
 }: {
   layout: LayoutSpec;
   header: ReactNode;
-  /** True while panes are open: the centre panel takes twice its share, the others keep theirs (a viewer's arrangement, D-44). */
+  /** True while panes are open: the centre panel takes most of the Sources panel's share, the Studio keeps its own (a viewer's arrangement, D-44). */
   widenChat?: boolean;
   /** What each region of each panel holds. A panel the layout does not list is not rendered. */
   panels: Record<PanelId, Partial<Record<RegionId, ReactNode>>>;
@@ -42,7 +52,7 @@ export function Shell({
         {layout.panels.map((panel) => (
           <Panel
             key={panel.id}
-            spec={widenChat && panel.id === "chat" ? { ...panel, width: panel.width * 2 } : panel}
+            spec={widenChat ? widened(panel, layout) : panel}
             regions={panels[panel.id]}
             as={TAGS[panel.id]}
           />

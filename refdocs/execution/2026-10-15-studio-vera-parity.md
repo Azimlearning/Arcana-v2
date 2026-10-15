@@ -11,7 +11,8 @@
 | **V3 Document brief** | `DocBrief` (notes family): key points, key terms, action items for one document; `brief` study kind | new payload and block | none |
 | **V4 Cheat sheet** | `CheatSheet` (notes family): one page for a concept and its neighbours, a small diagram with a text list beside it, copy and print; `sheet` study kind | new payload and block | none |
 | **V5 Learning insights** | `LearningInsights` (notes family): coverage, mastery spread, weakest pages, activity by day with a fitted trend and a moving average, the review workload for the next 7 days; `LearnerStore.daily_activity`; `insights` study kind | new payload and block | none |
-| **V6 Close** | Shelf complete; real-browser pass at desktop and phone width; one live check of the writing kinds; guides, D-43, PRD row, STATUS, README, CHANGELOG | none | the live check |
+| **V6 Panes** | The centre area's pane system (D-44): open any output beside the conversation, Table view with sort, filter and CSV, resizable, expandable; `web/lib/tables.ts`, `Panes.tsx`, `TableView.tsx`, store and workspace | none | none |
+| **V7 Close** | Shelf complete; real-browser pass at desktop and phone width; one live check of the writing kinds; guides, D-43, PRD row, STATUS, README, CHANGELOG | none | the live check |
 
 ## V1: Quiz in the turn
 
@@ -63,6 +64,10 @@
 | I4 | Composer `insights` kind (passes the activity into the validator through the turn context) | Turn test |
 | I5 | Web: counts, a bar chart as an accessible table, the workload row | Vitest |
 
-## V6: Close
+## V6: Panes (built 2026-10-15)
+
+`useWorkspace` holds `panes` (at most three), `paneShare` (30 to 70 percent) and `paneFocus`; `Workspace` splits the centre panel into the conversation, a keyboard-operable separator and `Panes`; `Shell` widens the centre panel while panes are open; each block in the conversation gets "Open in a pane"; a pane's Table view comes from `tablesOf` (a pure function of the block). Tests: `web/lib/tables.test.ts`, `web/components/shell/Panes.test.tsx`, store and workspace tests.
+
+## V7: Close
 
 Shelf with all tools; Orchestrator patterns anchored and frozen-question test green; `catalog.md` caps parity; real-browser pass; the live check; docs.

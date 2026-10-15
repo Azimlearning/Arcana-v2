@@ -1,0 +1,100 @@
+{
+  "results": [
+    {
+      "name": "the shelf offers thirteen tools",
+      "ok": true,
+      "detail": "13: Quiz me, Flashcards, Blurting, Cornell notes, Socratic questions, Learning insights, Review schedule, Document brief, Cheat sheet, Write an outline, Literature review, Abstract, Audio overview"
+    },
+    {
+      "name": "Quiz me shows a quiz in the chat",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "a choice is checked by the server from the chat",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "a brief shows key points, terms and next steps",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "a cheat sheet draws a diagram and lists the concepts",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "insights show mastery, activity and the review workload",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "an output offers to open in a pane",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the pane opens beside the conversation",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the question box is still there",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the Table view lists rows",
+      "ok": true,
+      "detail": "2 rows"
+    },
+    {
+      "name": "the divider resizes by keyboard",
+      "ok": true,
+      "detail": "45 to 50"
+    },
+    {
+      "name": "a pane stays open across a new question",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "closing all panes restores the layout",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "an abstract is labelled as one",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "an audio overview is a script with labelled speakers",
+      "ok": true,
+      "detail": "host 0, guest 1"
+    },
+    {
+      "name": "it offers Listen, or says the browser cannot",
+      "ok": true,
+      "detail": "Listen offered"
+    },
+    {
+      "name": "no uncaught page errors",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "at 390 px a pane causes no horizontal overflow",
+      "ok": true,
+      "detail": "390 / 390"
+    },
+    {
+      "name": "at 390 px the divider is not drawn",
+      "ok": true,
+      "detail": ""
+    }
+  ],
+  "errors": []
+}
