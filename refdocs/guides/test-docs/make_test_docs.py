@@ -37,6 +37,24 @@ PAPERS: dict[str, tuple[str, list[tuple[str, list[str]]]]] = {
                     "Dense retrieval can miss rare names and acronyms that a keyword method finds easily.",
                 ],
             ),
+            (
+                "3 Training and indexing",
+                [
+                    "A bi-encoder is trained on pairs of questions and the passages that answer them.",
+                    "Dense retrieval depends on the quality of the embedding vectors a bi-encoder produces.",
+                    "Approximate nearest neighbour search trades a little accuracy for a large gain in speed.",
+                    "Cosine similarity is the usual score for comparing the embedding vectors of a query and a passage.",
+                    "Hybrid retrieval adds a keyword method to dense retrieval so that rare names are not lost.",
+                ],
+            ),
+            (
+                "4 Limits",
+                [
+                    "Dense retrieval can return passages that sound related but do not answer the question.",
+                    "A reranker can correct the order of the passages that dense retrieval returns.",
+                    "Dense retrieval and BM25 fail in different ways, which is why hybrid retrieval combines them.",
+                ],
+            ),
         ],
     ),
     "sparse_retrieval_and_bm25.pdf": (
@@ -57,6 +75,23 @@ PAPERS: dict[str, tuple[str, list[tuple[str, list[str]]]]] = {
                     "Sparse retrieval fails when the query and the passage use different words for the same idea.",
                     "BM25 needs no training and no vector index.",
                     "Dense retrieval is a technique that maps text to vectors and ranks passages by their similarity to the query.",
+                ],
+            ),
+            (
+                "3 Term weighting",
+                [
+                    "TF-IDF rewards a term that is frequent in a passage and rare in the corpus.",
+                    "BM25 improves on TF-IDF by saturating the effect of a term that repeats many times.",
+                    "An inverted index lets BM25 find every passage that holds a query term without scanning the corpus.",
+                    "BM25 is the usual first stage of a hybrid retrieval pipeline together with dense retrieval.",
+                ],
+            ),
+            (
+                "4 Failure and fusion",
+                [
+                    "Sparse retrieval misses a passage that explains the idea in other words.",
+                    "Reciprocal rank fusion merges the BM25 ranking with a dense retrieval ranking without tuning weights.",
+                    "A cross-encoder can rerank the merged list because it reads the query and each passage together.",
                 ],
             ),
         ],
@@ -83,6 +118,23 @@ PAPERS: dict[str, tuple[str, list[tuple[str, list[str]]]]] = {
                     "Reranking can improve precision at k but it cannot recover a passage the first stage never retrieved.",
                 ],
             ),
+            (
+                "3 Combining in practice",
+                [
+                    "Reciprocal rank fusion needs no training and no weights, which makes it a safe default for hybrid retrieval.",
+                    "A cross-encoder is slower than a bi-encoder because it must read the query again for every passage.",
+                    "Reranking with a cross-encoder is applied only to the top passages of the fused list.",
+                    "Hybrid retrieval with reciprocal rank fusion usually beats BM25 alone and dense retrieval alone.",
+                ],
+            ),
+            (
+                "4 Reading the metrics",
+                [
+                    "Recall at k falls when the first stage misses relevant passages, and reranking cannot repair that.",
+                    "Precision at k rises when a cross-encoder moves relevant passages above irrelevant ones.",
+                    "F1@k balances recall at k and precision at k in one number.",
+                ],
+            ),
         ],
     ),
 }
@@ -90,19 +142,18 @@ PAPERS: dict[str, tuple[str, list[tuple[str, list[str]]]]] = {
 
 def build(path: Path, title: str, sections: list[tuple[str, list[str]]]) -> None:
     doc = fitz.open()
-    page = doc.new_page()
-    y = 72.0
-    page.insert_text((72, y), title, fontsize=18, fontname="helv")
-    y += 36
-    for heading, sentences in sections:
-        page.insert_text((72, y), heading, fontsize=13, fontname="helv")
+    for number, (heading, sentences) in enumerate(sections):
+        # one page per section, so the document is stored as several passages (a quiz needs a concept to occur in more than one)
+        page = doc.new_page()
+        y = 72.0
+        if number == 0:
+            page.insert_text((72, y), title, fontsize=18, fontname="helv")
+            y += 36
+        page.insert_text((72, y), heading + ".", fontsize=13, fontname="helv")  # a full stop, so a heading is not glued to the first sentence
         y += 22
-        body = " ".join(s if s.endswith((".", "k", "s")) or s[-1].isalpha() else s for s in sentences)
-        # one paragraph per section, wrapped by the text box
-        rect = fitz.Rect(72, y, 523, y + 220)
-        leftover = page.insert_textbox(rect, body, fontsize=11, fontname="helv")
+        body = " ".join(sentences)
+        leftover = page.insert_textbox(fitz.Rect(72, y, 523, y + 400), body, fontsize=11, fontname="helv")
         assert leftover >= 0, f"{path.name}: a section did not fit the page"
-        y += 220 - leftover + 16
     doc.set_metadata({"title": title, "author": "Arcana manual test", "subject": "invented test paper"})
     doc.save(path)
     doc.close()

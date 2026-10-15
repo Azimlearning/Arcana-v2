@@ -91,7 +91,7 @@ async def run(args: argparse.Namespace) -> dict[str, Any]:
     out_dir.mkdir(parents=True, exist_ok=True)  # noqa: ASYNC240  (a one-off tool, not a server path)
     rows: list[dict[str, Any]] = []
     stopped: str | None = None
-    for topic in TOPICS:
+    for topic in args.topic or TOPICS:
         for kind, template in REQUESTS:
             if container.ledger.month_total() - start > args.max_usd:
                 stopped = f"stopped at the ceiling of {args.max_usd}"
@@ -120,6 +120,7 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--data-dir", required=True)
     p.add_argument("--max-usd", type=float, default=0.4)
+    p.add_argument("--topic", action="append", help="a topic to write about (repeatable); the fixed topics by default")
     p.add_argument("--out", default=str(ROOT / "eval" / "results"))
     p.add_argument("--allow-paid", action="store_true")
     args = p.parse_args(argv)
