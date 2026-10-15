@@ -49,5 +49,5 @@ Four kinds on two topics, one attempt each, no retry. `eval/results/20261015T150
 - The fake LLM's text is a stand-in; the browser run shows structure and interaction, not writing quality. The live check measures grounding, not quality (constraint 9).
 - Insights show a trend only with 7 of 14 days active; the weekly seasonal fit VERA used is not built (two weeks cannot separate it from noise). The workload applies the schedule's rule forward and does not model further forgetting.
 - A brief is the vault's own sentences, not a summary, so it is only as complete as the vault.
-- Read-aloud uses the browser's speech voice if it has one; it was seen to be offered in headless Chromium but was not listened to. The `ASSUMED:` reading of the audio non-goal (D-43) awaits Azim.
+- Read-aloud is a deferred enhancement (Azim, 2026-10-15): the Listen button is drawn and does nothing (`AUDIO_ENABLED = false`); the speech code is kept and tested with the flag passed on, and was never listened to.
 - Not built from v1: Timeline (no extracted dates), a shown plagiarism report (the checker counts close passages and does not put them on the wire), a Studio block for gaps and contradictions (the Notes screen's lint reports them).

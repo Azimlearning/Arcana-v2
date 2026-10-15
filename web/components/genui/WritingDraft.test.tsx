@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { TITLE, envelope, writingDraft } from "@/test/fixtures";
 
-import { WritingDraft, bibliographyText, draftMarkdown } from "./WritingDraft";
+import { ReadAloud, WritingDraft, bibliographyText, draftMarkdown } from "./WritingDraft";
 
 describe("WritingDraft: the five wire states", () => {
   it("loading: a busy status and none of the draft", () => {
@@ -117,7 +117,19 @@ describe("WritingDraft: kinds and the audio-overview script (D-43)", () => {
     expect(screen.getAllByRole("link", { name: /Source c1/ }).length).toBeGreaterThan(0);
   });
 
-  it("reads the lines aloud in order with the browser's voice, and stops", () => {
+  it("read-aloud is a future enhancement: the button is drawn and does nothing, with no message", () => {
+    const speak = vi.fn();
+    vi.stubGlobal("speechSynthesis", { speak, cancel: vi.fn() });
+    vi.stubGlobal("SpeechSynthesisUtterance", class {});
+    const { container } = render(<WritingDraft block={script()} />);
+    const listen = screen.getByRole("button", { name: "Listen" });
+    expect(listen).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(listen);
+    expect(speak).not.toHaveBeenCalled();
+    expect(container).not.toHaveTextContent(/enhancement|Reading aloud/);
+  });
+
+  it("when switched on, reads the lines aloud in order with the browser's voice, and stops", () => {
     const spoken: string[] = [];
     const cancel = vi.fn();
     vi.stubGlobal("speechSynthesis", { speak: (u: { text: string }) => spoken.push(u.text), cancel });
@@ -129,7 +141,7 @@ describe("WritingDraft: kinds and the audio-overview script (D-43)", () => {
         constructor(public text: string) {}
       },
     );
-    render(<WritingDraft block={script()} />);
+    render(<ReadAloud enabled lines={[{ speaker: "host", text: "What does dense retrieval do?" }, { speaker: "guest", text: "It embeds passages and queries." }]} />);
     fireEvent.click(screen.getByRole("button", { name: "Listen" }));
     expect(spoken).toEqual(["What does dense retrieval do?", "It embeds passages and queries."]);
     expect(screen.getByRole("status")).toHaveTextContent("Reading aloud");
@@ -138,8 +150,8 @@ describe("WritingDraft: kinds and the audio-overview script (D-43)", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Nothing is sent anywhere");
   });
 
-  it("says so, and draws no Listen button, when the browser cannot speak", () => {
-    render(<WritingDraft block={script()} />);
+  it("when switched on, says so and draws no Listen button when the browser cannot speak", () => {
+    render(<ReadAloud enabled lines={[{ speaker: "host", text: "Hello." }]} />);
     expect(screen.queryByRole("button", { name: "Listen" })).not.toBeInTheDocument();
     expect(screen.getByText(/cannot read aloud/)).toBeInTheDocument();
   });

@@ -28,6 +28,11 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-15: Audio deferred; manual test guide and test documents
+- **Decided:** audio is a future enhancement (Azim). The Listen button stays in the script block and does nothing, with no message (`AUDIO_ENABLED = false`); D-43's `ASSUMED:` is resolved by deferral.
+- **Changed:** `web/components/genui/WritingDraft.tsx` and its tests; the docs that mentioned read-aloud; `refdocs/guides/manual-testing.md` and `refdocs/guides/test-docs/` (see that guide).
+- **Verified:** `pnpm exec vitest run components/genui/WritingDraft.test.tsx`: 16 passed.
+
 ### 2026-10-15: Studio breadth to cover VERA AI's six functions, and panes in the centre area (D-43, D-44)
 - **Reported:** Azim: the Studio "is supposed to be more" than VERA AI's six functions; refer to v1's outputs, merge and upgrade rather than rebuild them all; the centre area needs a pane system "like Claude or ChatGPT", such as splitting with a spreadsheet.
 - **Changed:** plan and execution docs `2026-10-15-studio-vera-parity`; D-43, D-44; PRD rows. V1 quiz in the turn (`quiz` study kind, `QuizCard` answers from the chat). V2 writing kinds (`WritingDraft.kind`: outline, literature review, abstract, script; `speaker`; per-kind prompts; the Fact Checker keeps speakers; validator rules; Listen with the browser's voice). V3 `DocBrief`, V4 `CheatSheet`, V5 `LearningInsights` (`api/vault/{brief,sheet,insights}.py`, `LearnerStore.daily_activity`, the activity threaded through the last gate, catalog entries, registration suites, web components, `catalog.md`). Panes: `web/lib/tables.ts`, `Panes.tsx`, `TableView.tsx`, store and workspace; the shelf is thirteen tools. `eval/studio_kinds_live.py`.

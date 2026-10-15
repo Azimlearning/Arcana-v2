@@ -85,7 +85,7 @@ before sending if it would pass it) and the three keys; RAGAS is the optional `e
    due and **Learning insights** for where you stand.
 4. Try **Document brief** (key points, terms and next steps for one document), **Cheat sheet** (a concept
    and its neighbours on a page, with a diagram), **Literature review**, **Abstract** and **Audio overview**
-   (a two-voice script with a Listen button that uses your browser's own voice).
+   (a cited two-voice script; read-aloud is a future enhancement, so its Listen button does nothing yet).
 5. On any output choose **Open in a pane**: it opens beside the conversation, with a **Table** view you can
    sort, filter and download as CSV; drag the divider, or **Expand** to give the pane the whole centre.
 6. Open **Labs** to run a verified formula lab (offered only where a stored passage states the formula),

@@ -43,11 +43,24 @@ function speech(): SpeechSynthesis | null {
 
 type Listening = "idle" | "playing";
 
-function ReadAloud({ lines }: { lines: { speaker: DraftSpeaker; text: string }[] }) {
+/** Read-aloud is a future enhancement (Azim, 2026-10-15): the control is drawn and the code is kept, but the button does nothing until
+ *  this is switched on. No text explains it; the script is the overview. Nothing is spoken and nothing is sent anywhere either way. */
+export const AUDIO_ENABLED = false;
+
+export function ReadAloud({ lines, enabled = AUDIO_ENABLED }: { lines: { speaker: DraftSpeaker; text: string }[]; enabled?: boolean }) {
   const [state, setState] = useState<Listening>("idle");
   const synth = speech();
   useEffect(() => () => speech()?.cancel(), []); // leaving the block stops the voice
 
+  if (!enabled) {
+    return (
+      <div role="group" aria-label="Read aloud" className="flex flex-wrap items-center gap-2">
+        <button type="button" aria-disabled="true" className="cursor-default rounded border border-stone-300 px-2 py-1 text-xs text-stone-700">
+          Listen
+        </button>
+      </div>
+    );
+  }
   if (synth === null) {
     return (
       <p className="text-xs text-stone-500">
