@@ -33,6 +33,11 @@ dependencies = [
 engines = [
     "fastembed>=0.9.0",
 ]
+eval = [
+    "langchain-community<0.4",
+    "ragas>=0.4.3",
+    "rapidfuzz>=3.14.6",
+]
 
 [dependency-groups]
 dev = [
