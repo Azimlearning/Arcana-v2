@@ -58,11 +58,28 @@ describe("QuizCard: ready, before any answer", () => {
     expect(groups[0]).toHaveTextContent("BM25dense retrievalrerankingreciprocal rank fusion");
   });
 
-  it("does not say which choice is right, and draws plain choices (no buttons) when the screen cannot check an answer", () => {
+  it("does not say which choice is right before an answer, and offers the choices as buttons even with no notes screen", () => {
     render(<QuizCard block={quizCard("ready")} />);
-    expect(screen.queryByRole("button")).not.toBeInTheDocument();
     expect(screen.queryByText(/the answer/i)).not.toBeInTheDocument();
-    expect(screen.getByText(/Open the notes screen to answer/)).toBeInTheDocument();
+    expect(screen.queryByText(/Open the notes screen/)).not.toBeInTheDocument();
+    expect(screen.getAllByRole("button")).toHaveLength(8);
+  });
+
+  it("in the chat (no notes screen) a choice is checked by asking the server directly", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify(quizAnswer()), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      render(<QuizCard block={quizCard("ready")} />);
+      const first = screen.getAllByRole("group", { name: "Answer choices" })[0]!;
+      fireEvent.click(within(first).getByRole("button", { name: "dense retrieval" }));
+      await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+      const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+      expect(url).toMatch(/\/quiz\/answer$/);
+      expect(JSON.parse(String(init.body))).toEqual({ itemId: "claim-1~dense_retrieval", chosenId: "dense_retrieval" });
+      expect(await screen.findByText("Correct.")).toBeInTheDocument();
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it("renders the document's text as text, never as markup", () => {

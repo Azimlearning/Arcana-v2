@@ -15,7 +15,9 @@ export interface StudioStarter {
 
 /** The tools the Studio agent has, in the order they are shown. Each request opens with the words the server recognises. */
 export const STARTERS: readonly StudioStarter[] = [
+  { id: "quiz", label: "Quiz me", hint: "Fill the blank", request: "Quiz me on ", submit: false },
   { id: "flashcards", label: "Flashcards", hint: "Name a topic", request: "Make flashcards for ", submit: false },
+  { id: "blurt", label: "Blurting", hint: "Recall, then check", request: "Make a blurting exercise for ", submit: false },
   { id: "cornell", label: "Cornell notes", hint: "Name a topic", request: "Give me cornell notes on ", submit: false },
   { id: "socratic", label: "Socratic questions", hint: "Name a topic", request: "Guide me with socratic questions about ", submit: false },
   { id: "review", label: "Review schedule", hint: "What is due", request: "What should I review today?", submit: true },
@@ -45,8 +47,8 @@ export function Studio({ onStart }: { onStart?: (request: string, submit: boolea
             href="/notes"
             className="block h-full rounded-lg border border-stone-300 bg-white p-2 hover:border-stone-500"
           >
-            <span className="block font-medium text-stone-800">Quiz</span>
-            <span className="block text-xs text-stone-500">In your notes</span>
+            <span className="block font-medium text-stone-800">Notes</span>
+            <span className="block text-xs text-stone-500">Pages, graph, quiz</span>
           </a>
         </li>
       </ul>

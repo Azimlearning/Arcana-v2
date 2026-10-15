@@ -4,17 +4,19 @@ import { describe, expect, it, vi } from "vitest";
 import { STARTERS, Studio } from "./Studio";
 
 describe("Studio", () => {
-  it("lists the tools the Studio agent has, in order, each a button, and a link to the notes quiz", () => {
+  it("lists the tools the Studio agent has, in order, each a button, and a link to the notes", () => {
     render(<Studio onStart={() => {}} />);
     const buttons = within(screen.getByRole("region", { name: "Studio" })).getAllByRole("button");
     expect(buttons.map((b) => b.textContent)).toEqual([
+      "Quiz meFill the blank",
       "FlashcardsName a topic",
+      "BlurtingRecall, then check",
       "Cornell notesName a topic",
       "Socratic questionsName a topic",
       "Review scheduleWhat is due",
       "Write an outlineName a topic",
     ]);
-    expect(screen.getByRole("link", { name: /Quiz/ })).toHaveAttribute("href", "/notes");
+    expect(screen.getByRole("link", { name: /Notes/ })).toHaveAttribute("href", "/notes");
   });
 
   it("a tool that needs a topic puts its opening words in the question box and does not ask", () => {
@@ -38,7 +40,7 @@ describe("Studio", () => {
 
   it("every starter opens with words the server's rules recognise, so none is a plain question", () => {
     const writes = /^(write|draft|compose|outline)/i;
-    const studies = /^(make flashcards|give me cornell|guide me|what should i review)/i;
+    const studies = /^(quiz me|make flashcards|make a blurting|give me cornell|guide me|what should i review)/i;
     for (const s of STARTERS) expect(writes.test(s.request) || studies.test(s.request)).toBe(true);
   });
 });

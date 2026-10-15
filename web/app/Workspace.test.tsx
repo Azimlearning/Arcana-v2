@@ -475,7 +475,7 @@ describe("Workspace", () => {
       const studio = document.querySelector('[data-panel="studio"]') as HTMLElement;
       expect(studio.querySelector('[data-region="shelf"]')).toBeNull();
       expect(await within(studio).findByRole("list", { name: "Saved views" })).toBeInTheDocument();
-      expect(within(studio).getByText("Quiz")).toBeInTheDocument();
+      expect(within(studio).getByRole("link", { name: /Notes/ })).toBeInTheDocument();
     });
   });
 

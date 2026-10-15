@@ -15,6 +15,8 @@
 import type { QuizAnswerResponse, QuizCard as QuizCardBlock, QuizItem } from "@arcana/schema";
 import { useState } from "react";
 
+import { answerQuiz } from "@/lib/api";
+
 import { EmptyState, ErrorState, Frame, LoadingState, PartialState } from "./BlockStates";
 import { BAND_WORDS, band } from "./mastery";
 import { useNotesNav } from "./notesNav";
@@ -176,10 +178,11 @@ function Body({ block }: { block: QuizCardBlock }) {
   const nav = useNotesNav();
   const [results, setResults] = useState<Record<string, Result>>({});
   const d = block.data;
-  const answer = nav?.answer;
+  // The notes screen supplies its own checker; anywhere else (a Studio turn in the chat) the server is asked directly: it holds the
+  // answer and the vault, so nothing here can reveal or forge a result either way.
+  const answer = nav?.answer ?? ((itemId: string, chosenId: string) => answerQuiz(itemId, chosenId));
 
   const choose = async (item: QuizItem, chosenId: string) => {
-    if (!answer) return;
     setResults((r) => ({ ...r, [item.id]: { state: "checking" } }));
     const reply = await answer(item.id, chosenId);
     setResults((r) => ({ ...r, [item.id]: reply ? { state: "done", chosenId, reply } : { state: "failed" } }));
@@ -200,7 +203,6 @@ function Body({ block }: { block: QuizCardBlock }) {
           {d.focusId === null ? "Choose the concept that fills each blank, starting with the ones you know least." : "Choose the concept that fills each blank."}{" "}
           Every sentence is from your documents.
         </p>
-        {!answer && <p className="text-xs text-stone-500">Open the notes screen to answer these questions.</p>}
       </header>
       <ol className="space-y-3">
         {d.items.map((item, i) => (
@@ -210,7 +212,7 @@ function Body({ block }: { block: QuizCardBlock }) {
             index={i}
             total={d.items.length}
             result={results[item.id]}
-            onChoose={answer ? (chosenId) => void choose(item, chosenId) : null}
+            onChoose={(chosenId) => void choose(item, chosenId)}
           />
         ))}
       </ol>

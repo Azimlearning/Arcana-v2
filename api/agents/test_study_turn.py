@@ -65,7 +65,8 @@ def test_no_frozen_benchmark_question_is_rerouted_to_study():
     ("request_text", "kind"),
     [
         ("Make flashcards for BM25", "flashcard"),
-        ("Quiz me on dense retrieval", "flashcard"),
+        ("Quiz me on dense retrieval", "quiz"),
+        ("Test me on BM25 with practice questions", "quiz"),
         ("Give me cornell notes on reranking", "cornell"),
         ("Help me recall what BM25 is", "blurt"),
         ("Guide me through RRF with socratic questions", "socratic"),
@@ -171,8 +172,8 @@ async def test_without_a_vault_the_turn_still_answers_and_says_why_there_is_no_s
     state = await GRAPH.ainvoke({"question": "Quiz me on dense retrieval"}, context=ctx)
     composition = state["composition"]
     assert composition.blocks[0].type == "CitedSummary"
-    assert "StudySet" not in [b.type for b in composition.blocks]
-    assert any(r.component == "StudySet" and r.reasons == ("no_study_material",) for r in composition.records)
+    assert "QuizCard" not in [b.type for b in composition.blocks]
+    assert any(r.component == "QuizCard" and r.reasons == ("no_study_material",) for r in composition.records)
 
 
 async def test_the_set_follows_the_learners_mastery_and_the_learner_store_is_only_read(tmp_path: Path):
@@ -199,3 +200,25 @@ async def test_the_set_follows_the_learners_mastery_and_the_learner_store_is_onl
     study = next(b for b in state["composition"].blocks if b.type == "StudySet")
     labels = [i.pageLabel for i in study.data.items]  # type: ignore[union-attr]
     assert labels[0] == "BM25" and learner.recorded == 0  # the page known least comes first; nothing was written
+
+
+async def test_a_quiz_turn_ends_at_the_composer_with_a_validated_quiz_that_carries_no_answer(tmp_path: Path):
+    """V1 (D-43): "quiz me" is the cloze quiz the notes screen has, in the turn, derived from the vault and validated against it."""
+    ctx, vault = _world(tmp_path)
+    state = await GRAPH.ainvoke({"question": "Quiz me"}, context=ctx)
+    composition = state["composition"]
+    assert ctx.intent == "study" and composition.blocks[0].type == "CitedSummary"
+    quiz = next(b for b in composition.blocks if b.type == "QuizCard")
+    assert quiz.meta.status == "ready" and quiz.data.items  # type: ignore[union-attr]
+    assert not hasattr(quiz.data.items[0], "answer") and not hasattr(quiz.data.items[0], "correct")  # type: ignore[union-attr]
+    assert any(r.component == "QuizCard" and r.outcome == "admitted" for r in composition.records)
+
+
+async def test_a_quiz_turn_streams_through_the_last_gate_without_an_error(tmp_path: Path):
+    from api.agents.graph import run_turn
+    from api.genui.generated import BlockEvent, StreamErrorEvent
+
+    ctx, _ = _world(tmp_path)
+    events = [e async for e in run_turn(GRAPH, "Quiz me", ctx)]
+    assert not any(isinstance(e, StreamErrorEvent) for e in events)
+    assert "QuizCard" in [e.block.type for e in events if isinstance(e, BlockEvent)]

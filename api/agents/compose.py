@@ -409,6 +409,29 @@ def _plan_block(ctx: TurnContext) -> tuple[UIBlock | None, ComponentRecord]:
     return block, ComponentRecord("StudyPlan", "admitted", (), block.id)
 
 
+def _quiz_block(ctx: TurnContext, focus: object) -> tuple[UIBlock | None, ComponentRecord]:
+    """The cloze quiz the Studio asked for (D-43, V1), derived by the Composer from the vault and validated against it and the learner's
+    mastery, exactly as the notes screen's quiz is. The block carries no answer: the learner's choice is checked by the server. Never
+    raises; no claim a fair question can be made from is no quiz."""
+    block_id = f"{ctx.block_id}-quiz-card"
+    if ctx.vault is None or not ctx.vault.pages:
+        return None, ComponentRecord("QuizCard", "refused", ("no_study_material",))
+    try:
+        mastery = _mastery_snapshot(ctx.vault, ctx.learner)
+        ctx.mastery_snapshot = mastery  # the last gate before the wire checks the block against this very reading
+        data = derive_quiz(ctx.vault, ctx.docs, focus if isinstance(focus, str) else None, mastery)
+        if data is None or not data["items"]:
+            return None, ComponentRecord("QuizCard", "refused", ("no_study_material",))
+        block = validate_block(BUILDERS["QuizCard"](block_id, "ready", data=data), ctx.docs, ctx.graph, ctx.vault, mastery)
+    except ValidationFailed as exc:
+        log.warning("quiz_block_rejected", issues=[i.path for i in exc.issues])
+        return None, ComponentRecord("QuizCard", "error", ("block_failed_validation",), block_id)
+    except Exception as exc:  # a store that cannot be read: no quiz, and the turn goes on
+        log.warning("quiz_failed", error=type(exc).__name__)
+        return None, ComponentRecord("QuizCard", "error", ("block_failed_validation",), block_id)
+    return block, ComponentRecord("QuizCard", "admitted", (), block.id)
+
+
 def _study_block(ctx: TurnContext) -> tuple[UIBlock | None, ComponentRecord]:
     """The StudySet the Studio asked for, derived by the Composer from the vault and validated against it (the notes family: it is
     re-derived, so nothing the agent said is trusted). (None, a record saying why) when there is no request, no vault or nothing
@@ -420,6 +443,8 @@ def _study_block(ctx: TurnContext) -> tuple[UIBlock | None, ComponentRecord]:
     kind, focus = request.get("kind"), request.get("focus_id")
     if kind == "plan":
         return _plan_block(ctx)
+    if kind == "quiz":
+        return _quiz_block(ctx, focus)
     if kind not in STUDY_KINDS or ctx.vault is None or not ctx.vault.pages:
         return None, ComponentRecord("StudySet", "refused", ("no_study_material",))
     block_id = f"{ctx.block_id}-study-set"
