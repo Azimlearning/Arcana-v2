@@ -24,9 +24,9 @@ from api.llm.types import LLMRequest
 from api.stores.doc_store import DocStore
 
 MAX_TOKENS = 700
-LIVE_PROMPT_VERSION = "live-lab-1"
+LIVE_PROMPT_VERSION = "live-lab-2"
 
-SYSTEM = """You write exactly one small pure JavaScript function for an interactive lab. Reply with the function source only: no markdown, no code fence, no comments, no explanation.
+SYSTEM = """You write exactly one small pure JavaScript function for an interactive lab. Reply with the function source only: no markdown, no code fence, no comments, no explanation, no draft and no correction. Write the function once, as your final answer, and nothing after it.
 
 The function is `function lab(p) { ... }`. `p` holds the parameters as numbers (p.name). It must return one finite number for every combination of parameter values in the stated ranges, so write it to be numerically stable (for example, avoid exp overflow).
 
@@ -34,7 +34,7 @@ The language is deliberately tiny and everything else is rejected:
 - numbers and booleans only: no strings, arrays, objects, template literals, closures, classes, `new`, `this`, regex, or computed property access;
 - `const` and `let` locals, `if`/`else`, `return`, `for` loops with integer literal bounds up to 1000 (at most two nested), `while` is not allowed;
 - operators: + - * / % ** < <= > >= == != === !== && || ! and assignment (= += -= *= /=, ++, --);
-- only these Math functions: abs, min, max, pow, sqrt, exp, log, log1p, expm1, sin, cos, tan, tanh, floor, ceil, round, sign, hypot, atan, atan2, and Math.PI, Math.E;
+- only these Math functions, always written with the `Math.` prefix (Math.max, Math.exp, ...): abs, min, max, pow, sqrt, exp, log, log1p, expm1, sin, cos, tan, tanh, floor, ceil, round, sign, hypot, atan, atan2, and Math.PI, Math.E; a bare `max(...)` or `exp(...)` is rejected;
 - do not name a local `p`, `Math`, `lab`, or any global.
 
 Implement exactly the formula the passage states, using the parameter meanings given."""

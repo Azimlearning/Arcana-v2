@@ -1,0 +1,160 @@
+{
+  "run": {
+    "timestamp": "2026-10-15T06:01:22.946547+00:00",
+    "code": {
+      "commit": "76d7d8a9f742895f946c0a05f3ec9a9e12e58e36",
+      "dirty": false,
+      "changed_files": []
+    },
+    "prompt_version": "live-lab-1",
+    "mode": {
+      "llm": "live"
+    },
+    "repeats": 2
+  },
+  "attempts": [
+    {
+      "contract": "ranknet_pairwise_loss",
+      "attempt": 1,
+      "status": "error",
+      "calls": 2,
+      "tokens_in": 1033,
+      "tokens_out": 140,
+      "cost_usd": 0.003466,
+      "models": [
+        "anthropic:claude-sonnet-5-5",
+        "openrouter:anthropic/claude-sonnet-5.5"
+      ],
+      "stage": "check",
+      "reason": "syntax: Unexpected token (6:6)"
+    },
+    {
+      "contract": "ranknet_pairwise_loss",
+      "attempt": 2,
+      "status": "error",
+      "calls": 2,
+      "tokens_in": 1033,
+      "tokens_out": 132,
+      "cost_usd": 0.003386,
+      "models": [
+        "anthropic:claude-sonnet-5-5",
+        "openrouter:anthropic/claude-sonnet-5.5"
+      ],
+      "stage": "check",
+      "reason": "syntax: Unexpected token (6:5)"
+    },
+    {
+      "contract": "f1_at_k",
+      "attempt": 1,
+      "status": "error",
+      "calls": 2,
+      "tokens_in": 986,
+      "tokens_out": 89,
+      "cost_usd": 0.002862,
+      "models": [
+        "anthropic:claude-sonnet-5-5",
+        "openrouter:anthropic/claude-sonnet-5.5"
+      ],
+      "stage": "reference_cases",
+      "reason": "{'hits': 8.0, 'k': 10.0, 'relevant': 4.0} gave 1.142857142857143, the formula gives 0.5714285714285714"
+    },
+    {
+      "contract": "f1_at_k",
+      "attempt": 2,
+      "status": "error",
+      "calls": 2,
+      "tokens_in": 986,
+      "tokens_out": 89,
+      "cost_usd": 0.002862,
+      "models": [
+        "anthropic:claude-sonnet-5-5",
+        "openrouter:anthropic/claude-sonnet-5.5"
+      ],
+      "stage": "reference_cases",
+      "reason": "{'hits': 8.0, 'k': 10.0, 'relevant': 4.0} gave 1.142857142857143, the formula gives 0.5714285714285714"
+    },
+    {
+      "contract": "infonce_loss",
+      "attempt": 1,
+      "status": "error",
+      "calls": 2,
+      "tokens_in": 954,
+      "tokens_out": 130,
+      "cost_usd": 0.003208,
+      "models": [
+        "anthropic:claude-sonnet-5-5",
+        "openrouter:anthropic/claude-sonnet-5.5"
+      ],
+      "stage": "check",
+      "reason": "syntax: Unexpected token (6:16)"
+    },
+    {
+      "contract": "infonce_loss",
+      "attempt": 2,
+      "status": "error",
+      "calls": 2,
+      "tokens_in": 954,
+      "tokens_out": 138,
+      "cost_usd": 0.003288,
+      "models": [
+        "anthropic:claude-sonnet-5-5",
+        "openrouter:anthropic/claude-sonnet-5.5"
+      ],
+      "stage": "check",
+      "reason": "syntax: Unexpected token (6:16)"
+    },
+    {
+      "contract": "cosine_chunk_distance",
+      "attempt": 1,
+      "status": "ready",
+      "calls": 2,
+      "tokens_in": 961,
+      "tokens_out": 53,
+      "cost_usd": 0.002452,
+      "models": [
+        "anthropic:claude-sonnet-5-5",
+        "openrouter:anthropic/claude-sonnet-5.5"
+      ]
+    },
+    {
+      "contract": "cosine_chunk_distance",
+      "attempt": 2,
+      "status": "ready",
+      "calls": 0,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_usd": 0,
+      "models": []
+    }
+  ],
+  "accepted": 2,
+  "total": 8,
+  "spent_usd": 0.021524,
+  "rejected_records": [
+    {
+      "contract_id": "ranknet_pairwise_loss",
+      "source_sha256": "1f403e2c35b9843131336966245964d8ac32f3debaa0dccb3fa34bd7a09785b0",
+      "reason": "check: syntax: Unexpected token (6:6)"
+    },
+    {
+      "contract_id": "ranknet_pairwise_loss",
+      "source_sha256": "9266f15661acf275c724c4c49e73c9ab4155df96cb048395cdb88b72826e4e92",
+      "reason": "check: syntax: Unexpected token (6:5)"
+    },
+    {
+      "contract_id": "f1_at_k",
+      "source_sha256": "67b4f59c45af553ad1aac187167b1e056ca63cb87fbeb2b61bf9a60c8e75815b",
+      "reason": "reference_cases: {'hits': 8.0, 'k': 10.0, 'relevant': 4.0} gave 1.142857142857143, the formula gives 0.5714285714285714"
+    },
+    {
+      "contract_id": "infonce_loss",
+      "source_sha256": "e27947a5c5acd12b64f2a3ddfc7af1bdc4020470689ef7cd2894a17aa9d1c0ff",
+      "reason": "check: syntax: Unexpected token (6:16)"
+    },
+    {
+      "contract_id": "infonce_loss",
+      "source_sha256": "91b52d0c49e12ba562efab69efb73b19f3a69dfa562c9326974a5d8d47b2f175",
+      "reason": "check: syntax: Unexpected token (6:16)"
+    }
+  ]
+}
