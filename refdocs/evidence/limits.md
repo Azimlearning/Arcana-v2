@@ -20,7 +20,7 @@
 |---|---|---|
 | The vault lifts its own graph signal (+0.041 pooled, p = 0.34) but not the fused result (+0.010, p = 0.86) | Its case is the notes, links, claims, quiz and mastery, not a retrieval gain | `20261015-question-set-extension.md`; D-35 Look 5 |
 | The gate's clause 3 (question words recognised) fails for the `atomic2` graph: 0.632 against 0.657 | `ready_for_azim_to_decide` is false for this build | `20261014-m2-look5-full-corpus.md` |
-| **Three 100-item link audit samples are unread**: link precision is unknown | The claim "the links are right" is unsupported; only structural checks exist | `refdocs/evidence/README.md` ledger; `eval/results/*-m2-audit-sample.md` |
+| **No human has read a link audit sample.** One sample (the `atomic2` build) was labelled by the assistant: asserted links 0.86 yes, co-mention 0.58 yes; 30 of 100 sentences are bibliography entries. The two earlier samples are unread | Link precision is a model-judged estimate on one sample; the human reading would supersede it | `refdocs/evidence/README.md` ledger; `eval/results/*-m2-audit-sample.md` |
 | The full-corpus build was made over two provider routes of the same model in two invocations (Anthropic credit ran out mid-run) | Disclosed provenance; a clean single-route rebuild would differ | `20261014-m2-look5-full-corpus.md`; D-35 A9 addendum |
 
 ## 3. Threats to the model-judged and trained-tool conclusions

@@ -1,0 +1,627 @@
+{
+  "sample": "20261014T185317Z-m2-audit-sample",
+  "labeller": "the assistant (model-judged, from the sentence alone); NOT the human audit the protocol asks for",
+  "rubric": "yes: the sentence supports the relation between the two concepts; weak: related only loosely, trivially (name containment) or by co-occurrence; no: not related as shown, or a concept is spurious",
+  "summary": {
+    "asserted": {
+      "n": 50,
+      "yes": 43,
+      "weak": 1,
+      "no": 6,
+      "precision_yes": 0.86,
+      "precision_yes_or_weak": 0.88,
+      "reference_list_entries": 20
+    },
+    "co_mention": {
+      "n": 50,
+      "yes": 29,
+      "weak": 16,
+      "no": 5,
+      "precision_yes": 0.58,
+      "precision_yes_or_weak": 0.9,
+      "reference_list_entries": 10
+    }
+  },
+  "labels": [
+    {
+      "id": 1,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": true
+    },
+    {
+      "id": 2,
+      "label": "n",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 3,
+      "label": "y",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 4,
+      "label": "w",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 5,
+      "label": "y",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 6,
+      "label": "y",
+      "kind": "co_mention",
+      "reference_list_entry": true
+    },
+    {
+      "id": 7,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": true
+    },
+    {
+      "id": 8,
+      "label": "n",
+      "kind": "asserted",
+      "reference_list_entry": false
+    },
+    {
+      "id": 9,
+      "label": "y",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 10,
+      "label": "y",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 11,
+      "label": "w",
+      "kind": "asserted",
+      "reference_list_entry": false
+    },
+    {
+      "id": 12,
+      "label": "w",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 13,
+      "label": "y",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 14,
+      "label": "n",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 15,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": false
+    },
+    {
+      "id": 16,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": false
+    },
+    {
+      "id": 17,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": true
+    },
+    {
+      "id": 18,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": false
+    },
+    {
+      "id": 19,
+      "label": "y",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 20,
+      "label": "n",
+      "kind": "asserted",
+      "reference_list_entry": false
+    },
+    {
+      "id": 21,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": true
+    },
+    {
+      "id": 22,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": false
+    },
+    {
+      "id": 23,
+      "label": "y",
+      "kind": "co_mention",
+      "reference_list_entry": true
+    },
+    {
+      "id": 24,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": true
+    },
+    {
+      "id": 25,
+      "label": "y",
+      "kind": "co_mention",
+      "reference_list_entry": true
+    },
+    {
+      "id": 26,
+      "label": "y",
+      "kind": "co_mention",
+      "reference_list_entry": true
+    },
+    {
+      "id": 27,
+      "label": "w",
+      "kind": "co_mention",
+      "reference_list_entry": true
+    },
+    {
+      "id": 28,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": false
+    },
+    {
+      "id": 29,
+      "label": "w",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 30,
+      "label": "y",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 31,
+      "label": "y",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 32,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": false
+    },
+    {
+      "id": 33,
+      "label": "y",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 34,
+      "label": "w",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 35,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": true
+    },
+    {
+      "id": 36,
+      "label": "y",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 37,
+      "label": "n",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 38,
+      "label": "n",
+      "kind": "asserted",
+      "reference_list_entry": false
+    },
+    {
+      "id": 39,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": false
+    },
+    {
+      "id": 40,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": true
+    },
+    {
+      "id": 41,
+      "label": "n",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 42,
+      "label": "w",
+      "kind": "co_mention",
+      "reference_list_entry": true
+    },
+    {
+      "id": 43,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": false
+    },
+    {
+      "id": 44,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": true
+    },
+    {
+      "id": 45,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": false
+    },
+    {
+      "id": 46,
+      "label": "w",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 47,
+      "label": "y",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 48,
+      "label": "y",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 49,
+      "label": "w",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 50,
+      "label": "y",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 51,
+      "label": "y",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 52,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": false
+    },
+    {
+      "id": 53,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": false
+    },
+    {
+      "id": 54,
+      "label": "w",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 55,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": false
+    },
+    {
+      "id": 56,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": true
+    },
+    {
+      "id": 57,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": false
+    },
+    {
+      "id": 58,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": false
+    },
+    {
+      "id": 59,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": false
+    },
+    {
+      "id": 60,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": true
+    },
+    {
+      "id": 61,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": false
+    },
+    {
+      "id": 62,
+      "label": "n",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 63,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": true
+    },
+    {
+      "id": 64,
+      "label": "n",
+      "kind": "asserted",
+      "reference_list_entry": false
+    },
+    {
+      "id": 65,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": false
+    },
+    {
+      "id": 66,
+      "label": "y",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 67,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": false
+    },
+    {
+      "id": 68,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": true
+    },
+    {
+      "id": 69,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": true
+    },
+    {
+      "id": 70,
+      "label": "w",
+      "kind": "co_mention",
+      "reference_list_entry": true
+    },
+    {
+      "id": 71,
+      "label": "w",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 72,
+      "label": "y",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 73,
+      "label": "n",
+      "kind": "asserted",
+      "reference_list_entry": true
+    },
+    {
+      "id": 74,
+      "label": "w",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 75,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": true
+    },
+    {
+      "id": 76,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": true
+    },
+    {
+      "id": 77,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": false
+    },
+    {
+      "id": 78,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": true
+    },
+    {
+      "id": 79,
+      "label": "y",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 80,
+      "label": "y",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 81,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": true
+    },
+    {
+      "id": 82,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": false
+    },
+    {
+      "id": 83,
+      "label": "w",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 84,
+      "label": "y",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 85,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": false
+    },
+    {
+      "id": 86,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": false
+    },
+    {
+      "id": 87,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": true
+    },
+    {
+      "id": 88,
+      "label": "y",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 89,
+      "label": "y",
+      "kind": "co_mention",
+      "reference_list_entry": true
+    },
+    {
+      "id": 90,
+      "label": "n",
+      "kind": "asserted",
+      "reference_list_entry": false
+    },
+    {
+      "id": 91,
+      "label": "y",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 92,
+      "label": "w",
+      "kind": "co_mention",
+      "reference_list_entry": true
+    },
+    {
+      "id": 93,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": false
+    },
+    {
+      "id": 94,
+      "label": "y",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 95,
+      "label": "y",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 96,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": true
+    },
+    {
+      "id": 97,
+      "label": "y",
+      "kind": "co_mention",
+      "reference_list_entry": true
+    },
+    {
+      "id": 98,
+      "label": "y",
+      "kind": "asserted",
+      "reference_list_entry": false
+    },
+    {
+      "id": 99,
+      "label": "w",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    },
+    {
+      "id": 100,
+      "label": "w",
+      "kind": "co_mention",
+      "reference_list_entry": false
+    }
+  ]
+}

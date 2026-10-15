@@ -28,6 +28,14 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-15: Link audit sample labelled by the assistant (secondary, not the human audit)
+- **Changed:** `eval/results/20261014T185317Z-m2-audit-assistant-labels.json`, `refdocs/evidence/20261015-link-audit-assistant-labels.md`, the ledger and `limits.md`.
+- **Decided:** report the assistant's labels as a secondary, model-judged estimate and keep the human reading as the open item (constraint 9); no change to the graph or the vault.
+- **Deviations:** the protocol (D-35) asks a person to read the sample; this does not replace that.
+- **Verified:** the key was applied after all 100 labels were fixed; counts: asserted 43 yes, 1 weak, 6 no; co-mention 29 yes, 16 weak, 5 no.
+- **Noted, not changed:** 30 of the 100 sentences are reference-list entries; no filter was added (it would change a built, measured graph).
+- **Known issues / next steps:** the human reading of the three samples.
+
 ### 2026-10-15: P4 V9, the live lab generator, built and measured
 - **Changed:** `api/labs/live_generator.py` (new; one call through the seam, hands the call back to the app's event loop), `api/agents/compose.py` (a refused or failed generator call is an error block, not a crash), `api/container.py` (the live generator in live mode), `api/labs/test_live_generator.py` (7 tests), `eval/lab_live.py` (new), two result files, `refdocs/evidence/20261015-lab-live-generator.md`.
 - **Decided:** the generator is untrusted like the fake; it is not given the reference cases; the prompt version is the generator identity, so a prompt change marks stored labs stale (D-41).
