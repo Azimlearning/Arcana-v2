@@ -28,6 +28,14 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-15: P4b-lite, the governed lifecycle for verified labs (D-41)
+- **Changed:** `api/labs/lifecycle.py` (states, closed transition table), `api/labs/audit.py` (re-verify and re-check evidence), `api/labs/store.py` (lifecycle columns added to an older `labs.db`, servable-only `get`, `find_servable`, `transition`, `flag`, `record_delivery`, `mark_stale`, `counts`, `crystallisation_candidates`, revalidation of a stale row), `api/labs/generator.py` (`generator_id`), `api/agents/compose.py` (the cache path; re-verifies the stored source), `api/container.py` (stale marking at build), `api/labs/test_lifecycle.py` (12 tests); plan, execution doc, D-41, PRD row.
+- **Decided:** D-41. Crystallisation is reported only and not built (no repeated pattern; constraint 7).
+- **Deviations:** the audit is in its own module (import cycle with the store); a stale lab can be revalidated back to verified (the plan had it terminal).
+- **Verified:** `uv run pytest api/labs api/genui`: 533 passed (the existing "no path bypasses the verifier" and forgery tests included); `uv run pytest api/labs/test_lifecycle.py`: 12 passed; `uv run pytest -q`: 1354 passed after the review fixes; `ruff` and `pyright` clean. `schema-guardian` review: no blocking defects; six non-blocking findings, four fixed (a `run`-stage failure no longer evicts; delivery is counted after the gate; an audit compares the record to the current template and contract and marks it stale on a mismatch; the revalidation UPDATE pins the source hash and resets the delivery count), `flag` made idempotent.
+- **Noted, not changed:** deliveries count requests, not users; the promotion threshold (3) is a rule of thumb.
+- **Known issues / next steps:** the live lab generator (paid, needs Azim's amount and credit); `audit_lab` has no scheduled or user-facing caller; a UI for flags.
+
 ### 2026-10-15: Limits chapter drafted (P5 F7)
 - **Changed:** `refdocs/evidence/limits.md` (new), the ledger heading in `refdocs/evidence/README.md`, the F7 task in the P5 execution doc.
 - **Decided:** none.

@@ -50,6 +50,7 @@ from api.genui.validate import validate_block, validate_layout
 from api.labs.contract import CONTRACTS
 from api.labs.evidence import find_source
 from api.labs.generator import LabGenerator
+from api.labs.lifecycle import TRANSIENT_STAGES
 from api.labs.store import LabStore
 from api.labs.verifier import LabToolError, VerificationFailed, verify
 from api.learner.mastery import MasteryScore
@@ -639,6 +640,22 @@ def compose_lab(
     citation = find_source(docs, contract)
     if citation is None:
         return shown(builder(LAB_ID, "empty"))  # the documents do not state this formula: no lab
+    reused = labs.find_servable(contract.id)  # P4b (D-41): a servable lab for this contract is reused, and verified again, not regenerated
+    if reused is not None:
+        try:
+            again = verify(contract, reused.source)
+        except VerificationFailed as failed:
+            if failed.stage not in TRANSIENT_STAGES:  # a timeout under load is the machine, not the lab: not a reason to evict
+                labs.flag(reused.lab_id, f"reuse: {failed.stage}: {failed.reason}"[:200])
+        except LabToolError:
+            pass  # the verifier is unavailable: nothing is served from the store on trust; generation below reports it
+        else:
+            if again.lab_id == reused.lab_id:
+                delivered = shown(builder(LAB_ID, "ready", artifact=again, contract=contract, citation=citation))  # the gate first
+                if reused.state == "verified":
+                    labs.transition(reused.lab_id, "cached", "served again from the store")
+                labs.record_delivery(reused.lab_id)
+                return delivered
     if generator is None:
         return shown(
             builder(LAB_ID, "error", error=_lab_error("provider_unavailable", "Live lab generation is not available yet.", "generator"))
@@ -651,8 +668,13 @@ def compose_lab(
         return shown(builder(LAB_ID, "error", error=_lab_error("validation_failed", failed.reason, failed.stage)))
     except LabToolError as unavailable:
         return shown(builder(LAB_ID, "error", error=_lab_error("internal", str(unavailable), "verifier")))
-    labs.put_verified(artifact)
-    return shown(builder(LAB_ID, "ready", artifact=artifact, contract=contract, citation=citation))
+    try:
+        labs.put_verified(artifact, generator.generator_id)
+    except ValueError as refused:  # e.g. the same source was evicted before: it is not stored or served again
+        return shown(builder(LAB_ID, "error", error=_lab_error("validation_failed", str(refused)[:200], "store")))
+    delivered = shown(builder(LAB_ID, "ready", artifact=artifact, contract=contract, citation=citation))
+    labs.record_delivery(artifact.lab_id)  # counted only once the gate has let the block through
+    return delivered
 
 
 def compose_block(ctx: TurnContext) -> UIBlock:

@@ -43,6 +43,9 @@ COSINE_DISTANCE_SOURCE = """function lab(p) {
 
 
 class LabGenerator(ABC):
+    generator_id: str = "unknown"
+    """Which generator (and prompt) made a source; a stored lab whose id differs from the current one is marked stale (P4b, D-41)."""
+
     @abstractmethod
     def generate(self, contract: LabContract) -> str:
         """The source text of `lab(p)` for `contract`. Untrusted: the caller checks and verifies it."""
@@ -50,6 +53,8 @@ class LabGenerator(ABC):
 
 class FakeLabGenerator(LabGenerator):
     """Deterministic and free: a known function per contract, or `overrides[contract id]` (a defective one, in a test)."""
+
+    generator_id = "fake-lab-1"
 
     def __init__(self, overrides: dict[str, str] | None = None):
         self._known = {

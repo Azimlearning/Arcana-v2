@@ -11,8 +11,10 @@ from api.fakes import fake_llm_responder
 from api.genui.templates import ensure_builtin_registered
 from api.ingestion.embed import Embedder, build_embedder
 from api.ingestion.pipeline import IngestDeps
+from api.labs.contract import CONTRACTS
 from api.labs.generator import FakeLabGenerator, LabGenerator
 from api.labs.store import LabStore, SqliteLabStore
+from api.labs.verifier import TEMPLATE_VERSION, contract_sha256
 from api.learner.store import LearnerStore, SqliteLearnerStore
 from api.llm.factory import build_llm_service
 from api.llm.ledger import SpendLedger
@@ -119,6 +121,13 @@ def build_container(settings: Settings) -> Container:
     # must not erase the spend history. Fake mode keeps it beside the data, so tests stay isolated.
     ledger_engine = make_engine(ledger_path) if ledger_path else engine
     ledger = SpendLedger(ledger_engine, settings.llm_monthly_cap_usd)
+    lab_store = SqliteLabStore(data / "labs.db")
+    lab_generator = FakeLabGenerator() if settings.arcana_llm_mode == "fake" else None
+    lab_store.mark_stale(  # P4b (D-41): a lab made under another template, contract or generator is not served until re-verified
+        TEMPLATE_VERSION,
+        {cid: contract_sha256(make()) for cid, make in CONTRACTS.items()},
+        lab_generator.generator_id if lab_generator else "",
+    )
     return Container(
         settings=settings,
         engine=engine,
@@ -131,6 +140,6 @@ def build_container(settings: Settings) -> Container:
         uploads_dir=data / "uploads",
         vault_store=JsonVaultStore(data / "vault.json"),
         learner_store=SqliteLearnerStore(data / "learner.db"),
-        lab_store=SqliteLabStore(data / "labs.db"),
-        lab_generator=FakeLabGenerator() if settings.arcana_llm_mode == "fake" else None,
+        lab_store=lab_store,
+        lab_generator=lab_generator,
     )
