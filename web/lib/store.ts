@@ -111,6 +111,8 @@ export function toErrorBlock(block: UIBlock, error: ErrorEnvelope): UIBlock {
   }
 }
 
+export const MAX_PANES = 3;
+
 interface WorkspaceState {
   documents: IngestResponse[];
   /** Block ids in first-seen order, and the blocks themselves. */
@@ -131,6 +133,18 @@ interface WorkspaceState {
   turnError: ErrorEnvelope | null;
   /** The user's saved views, as the server last listed them. */
   patterns: SavedPattern[];
+  /** Blocks the viewer opened beside the conversation (D-44): snapshots of blocks the server composed, at most MAX_PANES. They are
+   *  the viewer's arrangement only; a new question leaves them, closing them restores the server's layout. */
+  panes: UIBlock[];
+  /** The panes' share of the centre area's width, in percent. */
+  paneShare: number;
+  /** True when the panes fill the centre area and the conversation is set aside. */
+  paneFocus: boolean;
+  openPane: (block: UIBlock) => void;
+  closePane: (id: string) => void;
+  closePanes: () => void;
+  setPaneShare: (share: number) => void;
+  togglePaneFocus: () => void;
 
   addDocument: (doc: IngestResponse) => void;
   startTurn: () => void;
@@ -158,6 +172,23 @@ export const useWorkspace = create<WorkspaceState>()((set) => ({
   turn: "idle",
   turnError: null,
   patterns: [],
+  panes: [],
+  paneShare: 45,
+  paneFocus: false,
+
+  openPane: (block) =>
+    set((s) => {
+      const rest = s.panes.filter((p) => p.id !== block.id);
+      return { panes: [...rest, block].slice(-MAX_PANES) }; // opening a fourth closes the oldest
+    }),
+  closePane: (id) =>
+    set((s) => {
+      const panes = s.panes.filter((p) => p.id !== id);
+      return { panes, paneFocus: panes.length > 0 && s.paneFocus };
+    }),
+  closePanes: () => set({ panes: [], paneFocus: false }),
+  setPaneShare: (share) => set({ paneShare: Math.min(70, Math.max(30, Math.round(share))) }),
+  togglePaneFocus: () => set((s) => ({ paneFocus: s.panes.length > 0 && !s.paneFocus })),
 
   addDocument: (doc) =>
     set((s) => ({ documents: [...s.documents.filter((d) => d.docId !== doc.docId), doc] })),
@@ -178,6 +209,8 @@ export const useWorkspace = create<WorkspaceState>()((set) => ({
     set((s) => ({
       order: s.order.includes(block.id) ? s.order : [...s.order, block.id],
       blocks: { ...s.blocks, [block.id]: block },
+      // a block that is open in a pane follows its updates (a partial one becoming ready)
+      panes: s.panes.some((p) => p.id === block.id) ? s.panes.map((p) => (p.id === block.id ? block : p)) : s.panes,
     })),
 
   setPatterns: (patterns) => set({ patterns }),

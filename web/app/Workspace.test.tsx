@@ -635,3 +635,63 @@ describe("Workspace", () => {
   });
 });
 
+describe("Workspace: panes in the centre area (D-44)", () => {
+  async function answered() {
+    routes["/chat"] = () => answerWith(layout(places(), { panels: researchPanels(20, 45, 35) }));
+    render(<Workspace />);
+    ask();
+    await screen.findByText(/Dense retrieval embeds passages/);
+  }
+
+  it("opens an output beside the conversation, leaves a note where it was, and gives it back when closed", async () => {
+    await answered();
+    const answer = screen.getByLabelText("Answer");
+    expect(screen.queryByRole("complementary", { name: "Panes" })).not.toBeInTheDocument();
+    fireEvent.click(within(answer).getAllByRole("button", { name: /Open in a pane: Document comparison/ })[0]!);
+
+    const panes = await screen.findByRole("complementary", { name: "Panes" });
+    expect(within(panes).getByRole("region", { name: "Pane: Document comparison" })).toBeInTheDocument();
+    expect(within(answer).getByText(/Document comparison is open in a pane/)).toBeInTheDocument();
+    expect(screen.getByRole("separator", { name: "Resize the panes" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Question")).toBeInTheDocument(); // the conversation is still there to ask in
+
+    fireEvent.click(within(panes).getByRole("button", { name: "Close pane: Document comparison" }));
+    expect(screen.queryByRole("complementary", { name: "Panes" })).not.toBeInTheDocument();
+    expect(within(answer).queryByText(/is open in a pane/)).not.toBeInTheDocument();
+  });
+
+  it("expanding sets the conversation aside and brings it back", async () => {
+    await answered();
+    fireEvent.click(within(screen.getByLabelText("Answer")).getAllByRole("button", { name: /Open in a pane: Answer/ })[0]!);
+    const panes = await screen.findByRole("complementary", { name: "Panes" });
+    fireEvent.click(within(panes).getByRole("button", { name: "Expand" }));
+    // (the stylesheet is not loaded here, so "set aside" is the `hidden` class on the conversation column)
+    const conversation = () => screen.getByLabelText("Question").closest("div.min-w-0") as HTMLElement;
+    expect(conversation().className).toContain("hidden");
+    expect(screen.queryByRole("separator")).not.toBeInTheDocument();
+    fireEvent.click(within(panes).getByRole("button", { name: "Back to the conversation" }));
+    expect(conversation().className).not.toContain("hidden");
+  });
+
+  it("makes the centre panel wider while a pane is open, and restores the server's width after", async () => {
+    await answered();
+    const chat = document.querySelector('[data-panel="chat"]') as HTMLElement;
+    expect(chat.style.flexGrow).toBe("45");
+    fireEvent.click(within(screen.getByLabelText("Answer")).getAllByRole("button", { name: /Open in a pane: Answer/ })[0]!);
+    await screen.findByRole("complementary", { name: "Panes" });
+    expect(chat.style.flexGrow).toBe("90");
+    fireEvent.click(screen.getByRole("button", { name: "Close all" }));
+    expect(chat.style.flexGrow).toBe("45");
+  });
+
+  it("a pane stays open when a new question replaces the conversation", async () => {
+    await answered();
+    fireEvent.click(within(screen.getByLabelText("Answer")).getAllByRole("button", { name: /Open in a pane: Document comparison/ })[0]!);
+    await screen.findByRole("complementary", { name: "Panes" });
+    routes["/chat"] = okStream;
+    ask("And what about BM25?");
+    await waitFor(() => expect(useWorkspace.getState().turn).toBe("idle"));
+    const panes = screen.getByRole("complementary", { name: "Panes" });
+    expect(within(panes).getByRole("region", { name: "Pane: Document comparison" })).toBeInTheDocument();
+  });
+});

@@ -18,9 +18,12 @@ export function Shell({
   layout,
   header,
   panels,
+  widenChat = false,
 }: {
   layout: LayoutSpec;
   header: ReactNode;
+  /** True while panes are open: the centre panel takes twice its share, the others keep theirs (a viewer's arrangement, D-44). */
+  widenChat?: boolean;
   /** What each region of each panel holds. A panel the layout does not list is not rendered. */
   panels: Record<PanelId, Partial<Record<RegionId, ReactNode>>>;
 }) {
@@ -37,7 +40,12 @@ export function Shell({
         data-layout-mode={layout.mode}
       >
         {layout.panels.map((panel) => (
-          <Panel key={panel.id} spec={panel} regions={panels[panel.id]} as={TAGS[panel.id]} />
+          <Panel
+            key={panel.id}
+            spec={widenChat && panel.id === "chat" ? { ...panel, width: panel.width * 2 } : panel}
+            regions={panels[panel.id]}
+            as={TAGS[panel.id]}
+          />
         ))}
       </div>
     </div>

@@ -164,3 +164,52 @@ describe("workspace store", () => {
     expect(failed.data).toEqual({ documents: [] });
   });
 });
+
+describe("panes (D-44): the viewer's arrangement of blocks the server composed", () => {
+  const withId = (id: string) => ({ ...block("ready"), id });
+
+  it("opens a block in a pane, at most three, the oldest making way for a fourth", () => {
+    for (const id of ["a", "b", "c", "d"]) s().openPane(withId(id));
+    expect(s().panes.map((p) => p.id)).toEqual(["b", "c", "d"]);
+  });
+
+  it("opening a block that is already open does not duplicate it", () => {
+    s().openPane(withId("a"));
+    s().openPane(withId("b"));
+    s().openPane(withId("a"));
+    expect(s().panes.map((p) => p.id)).toEqual(["b", "a"]);
+  });
+
+  it("a pane follows its block's updates, and survives a new question", () => {
+    s().startTurn();
+    s().upsertBlock({ ...block("loading"), id: "x" });
+    s().openPane({ ...block("partial"), id: "x" });
+    s().upsertBlock({ ...block("ready"), id: "x" });
+    expect(s().panes[0]?.meta.status).toBe("ready");
+    s().startTurn();
+    expect(s().panes.map((p) => p.id)).toEqual(["x"]); // the conversation is replaced; the pinned output stays
+    expect(s().blocks).toEqual({});
+  });
+
+  it("closing the last pane takes focus mode with it, and focus needs a pane", () => {
+    s().togglePaneFocus();
+    expect(s().paneFocus).toBe(false);
+    s().openPane(withId("a"));
+    s().togglePaneFocus();
+    expect(s().paneFocus).toBe(true);
+    s().closePane("a");
+    expect(s().panes).toEqual([]);
+    expect(s().paneFocus).toBe(false);
+  });
+
+  it("close all empties the panes, and the share is kept between its limits", () => {
+    s().openPane(withId("a"));
+    s().openPane(withId("b"));
+    s().closePanes();
+    expect(s().panes).toEqual([]);
+    s().setPaneShare(5);
+    expect(s().paneShare).toBe(30);
+    s().setPaneShare(99);
+    expect(s().paneShare).toBe(70);
+  });
+});

@@ -13,16 +13,20 @@ import { renderBlock } from "@/components/genui/registry";
 import { LayoutSwitch } from "@/components/shell/LayoutSwitch";
 import { SaveView, type SaveOutcome } from "@/components/shell/SaveView";
 import { SavedViews, refusalWords } from "@/components/shell/SavedViews";
+import { PaneSeparator, Panes } from "@/components/shell/Panes";
 import { Shell } from "@/components/shell/Shell";
 import { Studio } from "@/components/shell/Studio";
 import { TracePanel } from "@/components/TracePanel";
 import { deletePattern, fetchWorkspace, listPatterns, reverifyPattern, savePattern, uploadPdf } from "@/lib/api";
 import { flattenPlaced, placeBlocksByRegion } from "@/lib/layout";
+import { blockTitle } from "@/lib/tables";
 import { streamApply, streamChat } from "@/lib/stream";
 import { activeLayout, useWorkspace } from "@/lib/store";
 
 export function Workspace() {
-  const { documents, order, blocks, workspaceBlocks, layouts, layoutChoice, turn, turnError, patterns } = useWorkspace();
+  const { documents, order, blocks, workspaceBlocks, layouts, layoutChoice, turn, turnError, patterns, panes, paneShare, paneFocus } =
+    useWorkspace();
+  const centre = useRef<HTMLDivElement | null>(null);
   const [question, setQuestion] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<ErrorEnvelope | null>(null);
@@ -168,9 +172,38 @@ export function Workspace() {
     ComparisonGrid: "Document comparison",
     ConceptMap: "Connection path",
   };
+  const inPane = (block: UIBlock) => panes.some((p) => p.id === block.id);
   const withSave = (block: UIBlock) => (
     <div key={block.id}>
-      {renderBlock(block)}
+      {block.meta.status === "ready" || block.meta.status === "partial" ? (
+        <div className="mb-1 flex justify-end print:hidden">
+          {inPane(block) ? (
+            <button
+              type="button"
+              onClick={() => useWorkspace.getState().closePane(block.id)}
+              className="rounded border border-stone-300 px-2 py-0.5 text-xs text-stone-600 hover:bg-stone-50"
+            >
+              Show here again
+            </button>
+          ) : (
+            <button
+              type="button"
+              aria-label={`Open in a pane: ${blockTitle(block)}`}
+              onClick={() => useWorkspace.getState().openPane(block)}
+              className="rounded border border-stone-300 px-2 py-0.5 text-xs text-stone-600 hover:bg-stone-50"
+            >
+              Open in a pane
+            </button>
+          )}
+        </div>
+      ) : null}
+      {inPane(block) ? (
+        <p className="rounded border border-dashed border-stone-300 p-3 text-sm text-stone-500">
+          {blockTitle(block)} is open in a pane.
+        </p>
+      ) : (
+        renderBlock(block)
+      )}
       {turnId && block.meta.status === "ready" && SAVEABLE.includes(block.type) && block.id.startsWith(turnId) && (
         <SaveView
           defaultName={KIND_NAMES[block.type] ?? block.type}
@@ -255,7 +288,18 @@ export function Workspace() {
     },
     chat: {
       main: (
-        <div className="space-y-4 p-1">
+        <div
+          ref={centre}
+          className={panes.length > 0 ? "grid gap-2 p-1 md:[grid-template-columns:var(--cols)]" : "p-1"}
+          style={
+            panes.length > 0
+              ? ({
+                  "--cols": paneFocus ? "minmax(0,1fr)" : `minmax(0,${100 - paneShare}fr) 0.5rem minmax(0,${paneShare}fr)`,
+                } as React.CSSProperties)
+              : undefined
+          }
+        >
+        <div className={`min-w-0 space-y-4 ${paneFocus && panes.length > 0 ? "hidden" : ""}`}>
           <form
             className="flex gap-2"
             onSubmit={(e) => {
@@ -289,6 +333,21 @@ export function Workspace() {
               </p>
             )}
           </section>
+        </div>
+        {panes.length > 0 && (
+          <>
+            {!paneFocus && (
+              <PaneSeparator share={paneShare} onShare={(n) => useWorkspace.getState().setPaneShare(n)} container={centre} />
+            )}
+            <Panes
+              panes={panes}
+              onClose={(id) => useWorkspace.getState().closePane(id)}
+              onCloseAll={() => useWorkspace.getState().closePanes()}
+              focused={paneFocus}
+              onToggleFocus={() => useWorkspace.getState().togglePaneFocus()}
+            />
+          </>
+        )}
         </div>
       ),
       secondary:
@@ -329,6 +388,7 @@ export function Workspace() {
   return (
     <Shell
       layout={layout}
+      widenChat={panes.length > 0 && !paneFocus}
       header={
         <>
           <span className="text-lg font-semibold text-stone-900">Arcana</span>
