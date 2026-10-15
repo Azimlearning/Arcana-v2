@@ -19,7 +19,7 @@ from langgraph.runtime import Runtime
 
 from api.agents.framework import AgentResult, route_to_agent
 from api.agents.state import TurnContext, TurnState
-from api.core.errors import NotFound, PatternRefused, ValidationFailed
+from api.core.errors import ArcanaError, NotFound, PatternRefused, ValidationFailed
 from api.core.logging import get_logger
 from api.genui.builders import BUILDERS, cited_summary
 from api.genui.catalog import (
@@ -660,7 +660,10 @@ def compose_lab(
         return shown(
             builder(LAB_ID, "error", error=_lab_error("provider_unavailable", "Live lab generation is not available yet.", "generator"))
         )
-    source = generator.generate(contract)
+    try:
+        source = generator.generate(contract)
+    except ArcanaError as unavailable:  # the seam refused (cap, budget) or no provider answered: said as it is, nothing is made
+        return shown(builder(LAB_ID, "error", error=_lab_error(unavailable.code, unavailable.message[:200], "generator", unavailable.retryable)))
     try:
         artifact = verify(contract, source)
     except VerificationFailed as failed:

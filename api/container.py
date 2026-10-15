@@ -13,6 +13,7 @@ from api.ingestion.embed import Embedder, build_embedder
 from api.ingestion.pipeline import IngestDeps
 from api.labs.contract import CONTRACTS
 from api.labs.generator import FakeLabGenerator, LabGenerator
+from api.labs.live_generator import LiveLabGenerator
 from api.labs.store import LabStore, SqliteLabStore
 from api.labs.verifier import TEMPLATE_VERSION, contract_sha256
 from api.learner.store import LearnerStore, SqliteLearnerStore
@@ -122,20 +123,24 @@ def build_container(settings: Settings) -> Container:
     ledger_engine = make_engine(ledger_path) if ledger_path else engine
     ledger = SpendLedger(ledger_engine, settings.llm_monthly_cap_usd)
     lab_store = SqliteLabStore(data / "labs.db")
-    lab_generator = FakeLabGenerator() if settings.arcana_llm_mode == "fake" else None
+    docs_store = SqliteDocStore(engine)
+    llm_service = build_llm_service(settings, ledger, fake_responder=fake_llm_responder)
+    lab_generator: LabGenerator = (
+        FakeLabGenerator() if settings.arcana_llm_mode == "fake" else LiveLabGenerator(llm_service, docs_store)
+    )
     lab_store.mark_stale(  # P4b (D-41): a lab made under another template, contract or generator is not served until re-verified
         TEMPLATE_VERSION,
         {cid: contract_sha256(make()) for cid, make in CONTRACTS.items()},
-        lab_generator.generator_id if lab_generator else "",
+        lab_generator.generator_id,
     )
     return Container(
         settings=settings,
         engine=engine,
-        docs=SqliteDocStore(engine),
+        docs=docs_store,
         vectors=NumpyVectorStore(data / "vectors.npz"),
         graph=NetworkXGraphStore(data / "graph.json"),
         ledger=ledger,
-        llm=build_llm_service(settings, ledger, fake_responder=fake_llm_responder),
+        llm=llm_service,
         embedder=build_embedder(settings, ledger),
         uploads_dir=data / "uploads",
         vault_store=JsonVaultStore(data / "vault.json"),
