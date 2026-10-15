@@ -54,3 +54,10 @@ Backend reads `.env` at startup. The web app reads only `NEXT_PUBLIC_*` variable
 ## When a variable changes
 
 Adding, renaming, or removing one means updating, in the same session: this file, `.env.example`, the deploy target's dashboard (if one ever exists), and a changelog entry.
+
+## Added 2026-10-15
+
+- **`LLM_MONTHLY_CAP_USD` must be a positive number in live mode** (constraint 8). An empty value (`LLM_MONTHLY_CAP_USD=`) is a parse error and the app refuses to start. To work without a tight limit, set a large number; the ledger still books every call.
+- **RAGAS** is the optional `eval` extra: `uv sync --extra eval` (ragas 0.4.3, rapidfuzz, and `langchain-community<0.4`, because 0.4.x lacks a module ragas imports). Only the non-LLM context metrics are used; they call no model.
+- **The primary provider's own credit balance** (Anthropic) is separate from the cap. When it runs out the seam serves calls through OpenRouter at the same model and books them; top up Anthropic to restore the primary route.
+
