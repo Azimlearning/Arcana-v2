@@ -204,7 +204,7 @@ async def test_the_set_follows_the_learners_mastery_and_the_learner_store_is_onl
 
 async def test_a_quiz_turn_ends_at_the_composer_with_a_validated_quiz_that_carries_no_answer(tmp_path: Path):
     """V1 (D-43): "quiz me" is the cloze quiz the notes screen has, in the turn, derived from the vault and validated against it."""
-    ctx, vault = _world(tmp_path)
+    ctx, _ = _world(tmp_path)
     state = await GRAPH.ainvoke({"question": "Quiz me"}, context=ctx)
     composition = state["composition"]
     assert ctx.intent == "study" and composition.blocks[0].type == "CitedSummary"
