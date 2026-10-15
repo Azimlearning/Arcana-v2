@@ -27,7 +27,7 @@
 
 | Limit | Effect | Source |
 |---|---|---|
-| RAGAS is not installed; its metrics are `null` everywhere; it runs last, as a secondary metric only, never primary | No model-judged score exists yet; none is claimed | `refdocs/execution/2026-10-14-p5-final-evidence.md` F5; constraint 9 |
+| RAGAS 0.4.3 is installed and its non-LLM context metrics are 0.0 for every arm (the passage is much shorter than the chunk; default threshold, not tuned); LLM-judged RAGAS metrics were not run (they must go through the LLM seam so spend is booked) | No model-judged score exists; none is claimed; the frozen relevance rule is the only retrieval metric | `20261015-ragas-context-metrics.md`; constraint 8 and 9 |
 | The one trained-tool experiment (a pretrained cross-encoder) was negative and costs about 5 s per query on CPU; no router or mastery model was built | Objective 03 is met by a documented negative result under the supervisor's rule (relayed, not quoted) | D-37 (Resolved) |
 
 ## 4. Threats to the product claims

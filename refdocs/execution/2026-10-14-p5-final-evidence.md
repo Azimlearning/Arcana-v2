@@ -28,7 +28,7 @@ Azim reads `eval/results/20261007T060948Z-m2-audit-sample.md`, `20261007T140924Z
 
 **Verify:** chunk and vector hashes identical across arms; the frozen arms reproduce the earlier numbers; the spend is within the ceiling and in the ledger.
 
-### Task F5: RAGAS at the end (paid, waiting)
+### Task F5: RAGAS at the end (**done 2026-10-15**: `refdocs/evidence/20261015-ragas-context-metrics.md`; installed, run, 0.0 for every arm, secondary and uninformative at chunk granularity)
 
 Install RAGAS as a library; run the secondary metrics on the bounded subset; report as secondary. **Verify:** the metrics are filled in the benchmark schema; the cost is in the ledger; no model-judged number is called primary.
 

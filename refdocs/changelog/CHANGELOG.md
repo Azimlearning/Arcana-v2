@@ -28,6 +28,14 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-15: RAGAS installed and run (P5 F5); the non-LLM context metrics are uninformative here
+- **Changed:** `pyproject.toml` and `uv.lock` (`ragas` 0.4.3, `rapidfuzz` and `langchain-community<0.4` as the optional `eval` extra), two result files, `refdocs/evidence/20261015-ragas-context-metrics.md`, the ledger, `limits.md`, the P5 execution doc.
+- **Decided:** report the metrics as measured (0.0 for every arm) and do not tune the threshold afterwards; do not run LLM-judged RAGAS outside the seam.
+- **Deviations:** none from the plan's secondary-metric rule.
+- **Verified:** `uv run python eval/run_ablation.py` over both question sets at a clean commit with the baseline store hashes equal: hybrid Recall@10 0.2123 and 0.5158 reproduce; RAGAS fields filled; `uv run pytest eval/tests`: 179 passed, 1 skipped (the null-path test, which does not apply once RAGAS is installed). Measured similarity of three chunks containing a gold passage: 0.22 to 0.36 against the 0.5 threshold.
+- **Spend:** question embeddings only, under $0.001.
+- **Known issues / next steps:** none for F5. `LLM_MONTHLY_CAP_USD` was emptied in `.env`, which makes the app refuse to start in live mode (a positive cap is required, constraint 8); runs this session set it per command.
+
 ### 2026-10-15: P4b-lite, the governed lifecycle for verified labs (D-41)
 - **Changed:** `api/labs/lifecycle.py` (states, closed transition table), `api/labs/audit.py` (re-verify and re-check evidence), `api/labs/store.py` (lifecycle columns added to an older `labs.db`, servable-only `get`, `find_servable`, `transition`, `flag`, `record_delivery`, `mark_stale`, `counts`, `crystallisation_candidates`, revalidation of a stale row), `api/labs/generator.py` (`generator_id`), `api/agents/compose.py` (the cache path; re-verifies the stored source), `api/container.py` (stale marking at build), `api/labs/test_lifecycle.py` (12 tests); plan, execution doc, D-41, PRD row.
 - **Decided:** D-41. Crystallisation is reported only and not built (no repeated pattern; constraint 7).
