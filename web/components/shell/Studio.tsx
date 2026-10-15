@@ -22,6 +22,7 @@ export const STARTERS: readonly StudioStarter[] = [
   { id: "socratic", label: "Socratic questions", hint: "Name a topic", request: "Guide me with socratic questions about ", submit: false },
   { id: "review", label: "Review schedule", hint: "What is due", request: "What should I review today?", submit: true },
   { id: "brief", label: "Document brief", hint: "Key points, next steps", request: "Brief me on ", submit: false },
+  { id: "sheet", label: "Cheat sheet", hint: "One page, with a diagram", request: "Make a cheat sheet for ", submit: false },
   { id: "write", label: "Write an outline", hint: "Name a topic", request: "Write an outline on ", submit: false },
   { id: "litreview", label: "Literature review", hint: "Cited, by theme", request: "Write a literature review of ", submit: false },
   { id: "abstract", label: "Abstract", hint: "Cited, short", request: "Write an abstract on ", submit: false },

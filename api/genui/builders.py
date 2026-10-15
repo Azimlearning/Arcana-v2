@@ -232,6 +232,21 @@ def doc_brief(
     }
 
 
+def cheat_sheet(
+    block_id: str,
+    status: str,
+    *,
+    data: dict[str, Any] | None = None,
+    error: ErrorEnvelope | None = None,
+) -> dict[str, Any]:
+    return {
+        "type": "CheatSheet",
+        "id": block_id,
+        "meta": {"status": status, "error": error.model_dump() if error is not None else None},
+        "data": data if data is not None else {"focusId": None, "entries": [], "edges": [], "citations": [], "skipped": 0},
+    }
+
+
 def verified_lab(
     block_id: str,
     status: str,
@@ -302,5 +317,6 @@ BUILDERS: dict[str, Callable[..., dict[str, Any]]] = {
     "StudySet": study_set,
     "StudyPlan": study_plan,
     "DocBrief": doc_brief,
+    "CheatSheet": cheat_sheet,
 }
 """One builder per catalog component, keyed by block type. A test keeps this in step with the catalog and the schema."""

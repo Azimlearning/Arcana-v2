@@ -301,6 +301,19 @@ Status: **built** (D-43, V3, 2026-10-15). A notes-family component (see ConceptP
 - **Validator invariants:** `loading` and `error` carry nothing; the data equals the brief derived again from the document, the vault and the mastery, exactly; a `ready` block has a key point or a term; an `empty` block is refused when the vault holds material for the document; no block is checked without the vault.
 - **Limit, stated on the screen:** a brief is the vault's own sentences, not a model's summary, so it is only as complete as the vault.
 
+## CheatSheet
+
+Status: **built** (D-43, V4, 2026-10-15). A notes-family component (see ConceptPage), made by the Studio for the `study` intent when the request is for a cheat sheet or one-pager ("make a cheat sheet for", "a one-pager on"); no model call and no image generation. The VERA "Visual" function as a learning tool.
+
+- **Precondition:** the vault holds the focus page and at least one stored sentence (a definition or a claim) for it or for a page linked to it. Every sentence shown is a verbatim span of a stored passage and is cited; the diagram is drawn from the same entries and edges.
+- **Supplied by:** the vault (pages, definitions, claims, links), the document store (titles, pages). No model.
+- **Payload:** `focusId`, `entries: {pageId, pageLabel, kind, citationId}[]`, `edges: {src, dst, relation}[]`, `citations`, `skipped`.
+- **Rules:** the focus is the page the request names, else the best connected page that has a citable sentence; the entries are the focus then the pages linked to it, strongest link first, each with its first definition (else first claim); a neighbour with no citable sentence is passed over and counted; edges are the links between entries, an asserted relation preferred over a co-mention.
+- **Caps:** 8 entries, 16 edges, 8 citations, label at most 120 characters.
+- **Fences:** caps `entries=8 edges=16 citations=8 label_chars=120`; grounding `vault_rederived`; a11y `region:Concepts | region:Connections | img:Concept diagram`. Template version 1; reusable without Research: no.
+- **Validator invariants:** `loading` and `error` carry nothing; the data equals the sheet derived again from the focus page, the vault and the stored passages, exactly; a `ready` block has at least one entry; an `empty` block is refused when the vault can make entries; no block is checked without the vault.
+- **The diagram** is drawn by the web from the entries and edges (the focus in the middle, the others round it); the entries and connections are listed beside it as the text alternative, so the picture adds nothing the lists do not say.
+
 ## VerifiedLab
 
 Status: **built** (P4 first slice, D-36, 2026-10-08, four labs by 2026-10-14; fakes only, no live generator yet). New in v2. `GET /labs` lists every lab the server can make and whether the stored passages state its formula (a lab is offered only where one does); `POST /labs {contractId}` makes one. The only block that carries code, and only code that the verifier minted. A **lab component**, not a turn component: the Composer never offers it to a question and the trace never lists it. It is made on request (`POST /labs`) and has its own small registry (`api/genui/lab_catalog.py`).

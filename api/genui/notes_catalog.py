@@ -16,6 +16,7 @@ from api.genui.catalog import A11yRequirement, Fences, PlacementHint
 from api.vault.brief import brief_caps
 from api.vault.quiz import MAX_ITEMS, OPTION_COUNT
 from api.vault.review import MAX_ITEMS as PLAN_ITEMS
+from api.vault.sheet import sheet_caps
 from api.vault.study import MAX_ITEMS as STUDY_ITEMS
 from api.vault.study import MAX_NOTES as STUDY_NOTES
 from api.vault.view import CAPS
@@ -140,6 +141,25 @@ DOC_BRIEF = NotesSpec(
     placement=PlacementHint(panel="chat", priority=17),
 )
 
+CHEAT_SHEET = NotesSpec(
+    name="CheatSheet",
+    precondition=(
+        "The vault holds the focus page and at least one stored sentence (a definition or a claim) for it or for a page linked to it. "
+        "Every sentence shown is a verbatim span of a stored passage and is cited; the diagram is drawn from the same entries and edges."
+    ),
+    supplied_by=("vault",),
+    fences=Fences(
+        caps=sheet_caps(),
+        grounding="vault_rederived",
+        a11y=(
+            A11yRequirement("region", "Concepts"),
+            A11yRequirement("region", "Connections"),
+            A11yRequirement("img", "Concept diagram"),
+        ),
+    ),
+    placement=PlacementHint(panel="chat", priority=16),
+)
+
 NOTES_CATALOG: dict[str, NotesSpec] = {
-    s.name: s for s in (CONCEPT_PAGE, NOTES_GRAPH, QUIZ_CARD, STUDY_SET, STUDY_PLAN, DOC_BRIEF)
+    s.name: s for s in (CONCEPT_PAGE, NOTES_GRAPH, QUIZ_CARD, STUDY_SET, STUDY_PLAN, DOC_BRIEF, CHEAT_SHEET)
 }

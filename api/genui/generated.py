@@ -75,6 +75,23 @@ class ChatRequest(BaseModel):
     history: list[ChatMessage]
 
 
+class CheatSheet(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    type: Literal['CheatSheet']
+    id: str
+    meta: BlockMeta
+    data: CheatSheetData
+
+
+class CheatSheetData(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    focusId: str | None
+    entries: list[SheetEntry]
+    edges: list[SheetEdge]
+    citations: list[Citation]
+    skipped: int
+
+
 class Citation(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
     id: str
@@ -550,6 +567,21 @@ class SavedPattern(BaseModel):
     lastUsedAt: str | None
 
 
+class SheetEdge(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    src: str
+    dst: str
+    relation: str | None
+
+
+class SheetEntry(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    pageId: str
+    pageLabel: str
+    kind: str | None
+    citationId: str
+
+
 class SourceItem(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
     docId: str
@@ -785,7 +817,7 @@ StudyKind = Literal['flashcard', 'blurt', 'cornell', 'socratic']
 
 TurnOutcome = Literal['answered', 'empty', 'error']
 
-UIBlock = Annotated[CitedSummary | SourceList | GraphView | ComparisonGrid | ConceptMap | TraversalView | ConceptPage | NotesGraph | QuizCard | VerifiedLab | WritingDraft | StudySet | StudyPlan | DocBrief, Field(discriminator='type')]
+UIBlock = Annotated[CitedSummary | SourceList | GraphView | ComparisonGrid | ConceptMap | TraversalView | ConceptPage | NotesGraph | QuizCard | VerifiedLab | WritingDraft | StudySet | StudyPlan | DocBrief | CheatSheet, Field(discriminator='type')]
 
 AgentStep.model_rebuild()
 BibliographyEntry.model_rebuild()
@@ -796,6 +828,8 @@ BriefPoint.model_rebuild()
 BriefTerm.model_rebuild()
 ChatMessage.model_rebuild()
 ChatRequest.model_rebuild()
+CheatSheet.model_rebuild()
+CheatSheetData.model_rebuild()
 Citation.model_rebuild()
 CitedSummary.model_rebuild()
 CitedSummaryData.model_rebuild()
@@ -858,6 +892,8 @@ ReachedPassage.model_rebuild()
 RegionSpec.model_rebuild()
 SavePatternRequest.model_rebuild()
 SavedPattern.model_rebuild()
+SheetEdge.model_rebuild()
+SheetEntry.model_rebuild()
 SourceItem.model_rebuild()
 SourceList.model_rebuild()
 SourceListData.model_rebuild()

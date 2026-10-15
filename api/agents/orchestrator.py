@@ -66,7 +66,9 @@ _PATTERNS: dict[Intent, re.Pattern[str]] = {
         r"(show me|give me|make me|what is|what's) (my |a |the )?(study plan|review (plan|schedule)|revision (plan|schedule))|"
         r"(study plan|review (plan|schedule)|revision (plan|schedule))\b|"
         r"brief me\b|(give me|make|write|create)(\s+me)?\s+(an?\s+|the\s+)?(document\s+|paper\s+)?(brief|action items)\b|"
-        r"action items (for|from|on)\b)",
+        r"action items (for|from|on)\b|"
+        r"(give me|make|create|build|generate)(\s+me)?\s+(an?\s+|the\s+)?(cheat ?sheet|one[- ]pager|study sheet|infographic)\b|"
+        r"cheat ?sheet\b)",
         re.IGNORECASE,
     ),
     "write": re.compile(

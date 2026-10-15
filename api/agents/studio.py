@@ -113,6 +113,7 @@ _KIND_WORDS: tuple[tuple[str, str], ...] = (
     ("socratic", r"\b(socratic|guide me|question me|ask me questions)"),
     ("cornell", r"\bcornell"),
     ("blurt", r"\b(blurt\w*|recall)"),
+    ("sheet", r"\b(cheat ?sheet|one[- ]pager|study sheet|infographic|summary sheet)\b"),
     ("brief", r"\b(brief|action items|key points|executive summary)\b"),
     ("quiz", r"\b(quiz\w*|test me|drill me|practice questions|multiple choice)"),
     ("flashcard", r"\b(flash ?cards?|cards?|flashcard)"),

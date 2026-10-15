@@ -40,6 +40,7 @@ from api.core.errors import ValidationFailed
 from api.genui.bibliography import reference_for
 from api.genui.catalog import CATALOG
 from api.genui.generated import (
+    CheatSheet,
     Citation,
     CitedSummary,
     ComparisonGrid,
@@ -73,6 +74,7 @@ from api.stores.graph_store import GraphStore
 from api.vault.brief import derive_doc_brief
 from api.vault.quiz import derive_quiz
 from api.vault.review import derive_study_plan
+from api.vault.sheet import derive_cheat_sheet
 from api.vault.study import derive_study_set
 from api.vault.types import Vault
 from api.vault.view import derive_concept_page, derive_notes_graph
@@ -165,6 +167,8 @@ def _content_issues(
         issues += _study_plan_issues(block, vault, mastery, last_rated)
     elif isinstance(block, DocBrief):
         issues += _doc_brief_issues(block, docs, vault, mastery)
+    elif isinstance(block, CheatSheet):
+        issues += _cheat_sheet_issues(block, docs, vault, mastery)
     else:
         issues.append(FieldIssue(path="type", message="no content rules exist for this block type"))
     return issues
@@ -896,6 +900,34 @@ def _doc_brief_issues(
         issues.append(FieldIssue(path="data.keyPoints", message="a ready brief needs a key point or a term"))
     if status == "empty" and (derived["keyPoints"] or derived["terms"]):
         issues.append(FieldIssue(path="data.keyPoints", message="the vault holds material for this document: this block must not be empty"))
+    _differences(data, derived, "data", issues)
+    return issues
+
+
+def _cheat_sheet_issues(
+    block: CheatSheet, docs: DocStore, vault: Vault | None, mastery: Mapping[str, MasteryScore] | None = None
+) -> list[FieldIssue]:
+    """A cheat sheet is a function of its focus page, the vault and the stored passages, so it is checked by deriving it again: every
+    entry, edge, citation and the count passed over must equal the derived ones."""
+    data, status = block.data.model_dump(), block.meta.status
+    blank = {"focusId": None, "entries": [], "edges": [], "citations": [], "skipped": 0}
+    if status in {"loading", "error"} or (status == "empty" and vault is None):
+        if any(data.get(k) != v for k, v in blank.items()):
+            return [FieldIssue(path="data", message=f"a '{status}' block must carry nothing")]
+        return []
+    if vault is None:
+        return [FieldIssue(path="data", message="a cheat sheet can only be checked against the vault")]
+    try:
+        derived = derive_cheat_sheet(vault, docs, data["focusId"], mastery)
+    except Exception:  # a store that cannot be read is a block that cannot be checked: refuse, never crash
+        return [FieldIssue(path="data", message="the sheet could not be re-derived from the vault")]
+    if derived is None:
+        return [FieldIssue(path="data.focusId", message="the vault has no page with this id")]
+    issues: list[FieldIssue] = []
+    if status == "ready" and not data["entries"]:
+        issues.append(FieldIssue(path="data.entries", message="a ready sheet needs at least one entry"))
+    if status == "empty" and derived["entries"]:
+        issues.append(FieldIssue(path="data.entries", message="the vault can make entries here: this block must not be empty"))
     _differences(data, derived, "data", issues)
     return issues
 

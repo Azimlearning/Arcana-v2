@@ -7,6 +7,7 @@ import type { ComponentType } from "react";
 
 import { ErrorState } from "./BlockStates";
 import { CitedSummary } from "./CitedSummary";
+import { CheatSheet } from "./CheatSheet";
 import { ComparisonGrid } from "./ComparisonGrid";
 import { ConceptMap } from "./ConceptMap";
 import { ConceptPage } from "./ConceptPage";
@@ -41,6 +42,7 @@ export const registry: Registry<UIBlock> = {
   StudySet,
   StudyPlan,
   DocBrief,
+  CheatSheet,
 };
 
 export function UnknownBlock({ type }: { type: string }) {

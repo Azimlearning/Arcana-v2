@@ -60,6 +60,7 @@ from api.stores.doc_store import DocStore, Document
 from api.vault.brief import default_doc_id, derive_doc_brief
 from api.vault.quiz import derive_quiz
 from api.vault.review import derive_study_plan
+from api.vault.sheet import default_focus, derive_cheat_sheet
 from api.vault.study import STUDY_KINDS, derive_study_set
 from api.vault.types import Vault
 from api.vault.view import derive_concept_page, derive_notes_graph
@@ -458,6 +459,31 @@ def _brief_block(ctx: TurnContext, doc_id: object) -> tuple[UIBlock | None, Comp
     return block, ComponentRecord("DocBrief", "admitted", (), block.id)
 
 
+def _sheet_block(ctx: TurnContext, focus: object) -> tuple[UIBlock | None, ComponentRecord]:
+    """The cheat sheet the Studio asked for (D-43, V4): for the page the request names, else the best connected page; derived from the
+    vault and validated against it. Never raises; nothing citable is no sheet."""
+    block_id = f"{ctx.block_id}-cheat-sheet"
+    if ctx.vault is None or not ctx.vault.pages:
+        return None, ComponentRecord("CheatSheet", "refused", ("no_study_material",))
+    try:
+        chosen = focus if isinstance(focus, str) else default_focus(ctx.vault)
+        if chosen is None:
+            return None, ComponentRecord("CheatSheet", "refused", ("no_study_material",))
+        mastery = _mastery_snapshot(ctx.vault, ctx.learner)
+        ctx.mastery_snapshot = mastery
+        data = derive_cheat_sheet(ctx.vault, ctx.docs, chosen, mastery)
+        if data is None or not data["entries"]:
+            return None, ComponentRecord("CheatSheet", "refused", ("no_study_material",))
+        block = validate_block(BUILDERS["CheatSheet"](block_id, "ready", data=data), ctx.docs, ctx.graph, ctx.vault, mastery)
+    except ValidationFailed as exc:
+        log.warning("sheet_block_rejected", issues=[i.path for i in exc.issues])
+        return None, ComponentRecord("CheatSheet", "error", ("block_failed_validation",), block_id)
+    except Exception as exc:  # a store that cannot be read: no sheet, and the turn goes on
+        log.warning("sheet_failed", error=type(exc).__name__)
+        return None, ComponentRecord("CheatSheet", "error", ("block_failed_validation",), block_id)
+    return block, ComponentRecord("CheatSheet", "admitted", (), block.id)
+
+
 def _study_block(ctx: TurnContext) -> tuple[UIBlock | None, ComponentRecord]:
     """The StudySet the Studio asked for, derived by the Composer from the vault and validated against it (the notes family: it is
     re-derived, so nothing the agent said is trusted). (None, a record saying why) when there is no request, no vault or nothing
@@ -473,6 +499,8 @@ def _study_block(ctx: TurnContext) -> tuple[UIBlock | None, ComponentRecord]:
         return _quiz_block(ctx, focus)
     if kind == "brief":
         return _brief_block(ctx, request.get("doc_id"))
+    if kind == "sheet":
+        return _sheet_block(ctx, focus)
     if kind not in STUDY_KINDS or ctx.vault is None or not ctx.vault.pages:
         return None, ComponentRecord("StudySet", "refused", ("no_study_material",))
     block_id = f"{ctx.block_id}-study-set"

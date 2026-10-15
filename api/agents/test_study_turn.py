@@ -39,6 +39,8 @@ from api.vault.types import Definition
         "Brief me on the dense retrieval survey",
         "Give me a brief of this paper",
         "Action items for BM25",
+        "Make a cheat sheet for reciprocal rank fusion",
+        "Give me a one-pager on dense retrieval",
     ],
 )
 def test_a_request_to_study_is_recognised(question: str):
@@ -72,6 +74,8 @@ def test_no_frozen_benchmark_question_is_rerouted_to_study():
         ("Test me on BM25 with practice questions", "quiz"),
         ("Brief me on the retrieval survey", "brief"),
         ("Give me action items for BM25", "brief"),
+        ("Make a cheat sheet for BM25", "sheet"),
+        ("Make an infographic of dense retrieval", "sheet"),
         ("Give me cornell notes on reranking", "cornell"),
         ("Help me recall what BM25 is", "blurt"),
         ("Guide me through RRF with socratic questions", "socratic"),
@@ -259,3 +263,25 @@ async def test_a_brief_names_the_document_the_request_names(tmp_path: Path):
     doc_id, title = next(iter(titles.items()))
     assert study_document(f"Brief me on {title}", ctx) == doc_id
     assert study_document("Brief me on something else entirely", ctx) is None
+
+
+async def test_a_cheat_sheet_turn_ends_at_the_composer_with_a_validated_sheet_for_the_named_page(tmp_path: Path):
+    """V4 (D-43): "make a cheat sheet for X" is the one-page sheet the vault derives for X, validated against the vault."""
+    ctx, _ = _world(tmp_path)
+    state = await GRAPH.ainvoke({"question": "Make a cheat sheet for dense retrieval"}, context=ctx)
+    composition = state["composition"]
+    assert ctx.intent == "study" and composition.blocks[0].type == "CitedSummary"
+    sheet = next(b for b in composition.blocks if b.type == "CheatSheet")
+    assert sheet.meta.status == "ready" and sheet.data.focusId == "dense_retrieval"  # type: ignore[union-attr]
+    assert sheet.data.entries[0].pageId == "dense_retrieval"  # type: ignore[union-attr]
+    assert any(r.component == "CheatSheet" and r.outcome == "admitted" for r in composition.records)
+
+
+async def test_a_cheat_sheet_turn_streams_through_the_last_gate_without_an_error(tmp_path: Path):
+    from api.agents.graph import run_turn
+    from api.genui.generated import BlockEvent, StreamErrorEvent
+
+    ctx, _ = _world(tmp_path)
+    events = [e async for e in run_turn(GRAPH, "Make a cheat sheet", ctx)]
+    assert not any(isinstance(e, StreamErrorEvent) for e in events)
+    assert "CheatSheet" in [e.block.type for e in events if isinstance(e, BlockEvent)]

@@ -13,6 +13,7 @@ import type {
   CitedSummaryData,
   StudyPlanData,
   DocBriefData,
+  CheatSheetData,
   StudySetData,
   WritingDraftData,
   ComparisonGridData,
@@ -168,6 +169,15 @@ export interface DocBrief {
   data: DocBriefData;
 }
 
+/** A one-page sheet for a concept and its neighbours (D-43, V4). No model call. */
+export interface CheatSheet {
+  type: "CheatSheet";
+  /** Non-empty. Stable across updates: a later block with the same id replaces this one. */
+  id: string;
+  meta: BlockMeta;
+  data: CheatSheetData;
+}
+
 export type UIBlock =
   | CitedSummary
   | SourceList
@@ -182,4 +192,5 @@ export type UIBlock =
   | WritingDraft
   | StudySet
   | StudyPlan
-  | DocBrief;
+  | DocBrief
+  | CheatSheet;

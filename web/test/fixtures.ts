@@ -1,4 +1,4 @@
-import type { CitedSummary, ComparisonGrid, ConceptMap, ConceptPage, ErrorEnvelope, GraphView, LayoutSpec, NotesGraph, QuizAnswerResponse, QuizCard, DocBrief, StudyPlan, StudySet, VerifiedLab, WritingDraft, SavedPattern, SourceList, TraversalView, WorkspaceResponse, StreamEvent, TurnTrace } from "@arcana/schema";
+import type { CitedSummary, ComparisonGrid, ConceptMap, ConceptPage, ErrorEnvelope, GraphView, LayoutSpec, NotesGraph, QuizAnswerResponse, QuizCard, DocBrief, CheatSheet, StudyPlan, StudySet, VerifiedLab, WritingDraft, SavedPattern, SourceList, TraversalView, WorkspaceResponse, StreamEvent, TurnTrace } from "@arcana/schema";
 
 export const TITLE = "Hybrid Retrieval over Knowledge Graphs";
 
@@ -687,6 +687,44 @@ export function docBrief(
         : [],
       claimsInDocument: content ? 9 : 0,
       leftOut: content ? 3 : 0,
+      ...overrides,
+    },
+  };
+}
+
+export function cheatSheet(
+  status: CheatSheet["meta"]["status"],
+  overrides: Partial<CheatSheet["data"]> = {},
+  error: ErrorEnvelope | null = null,
+): CheatSheet {
+  const content = status === "ready" || status === "partial";
+  return {
+    type: "CheatSheet",
+    id: "turn-1-cheat-sheet",
+    meta: { status, error },
+    data: {
+      focusId: content ? "rrf" : null,
+      entries: content
+        ? [
+            { pageId: "rrf", pageLabel: "reciprocal rank fusion", kind: "method", citationId: "c1" },
+            { pageId: "dense_retrieval", pageLabel: "dense retrieval", kind: "method", citationId: "c2" },
+            { pageId: "bm25", pageLabel: "BM25", kind: null, citationId: "c3" },
+          ]
+        : [],
+      edges: content
+        ? [
+            { src: "dense_retrieval", dst: "rrf", relation: "combines" },
+            { src: "bm25", dst: "rrf", relation: null },
+          ]
+        : [],
+      citations: content
+        ? [
+            { id: "c1", chunkId: "d_c_2", docId: "d", docTitle: TITLE, page: 5, quote: "Reciprocal rank fusion combines the rankings of dense retrieval and BM25." },
+            { id: "c2", chunkId: "d_c_1", docId: "d", docTitle: TITLE, page: 3, quote: "Dense retrieval finds passages by comparing embedding vectors." },
+            { id: "c3", chunkId: "d_c_1", docId: "d", docTitle: TITLE, page: null, quote: "BM25 scores terms by their frequency in a passage." },
+          ]
+        : [],
+      skipped: content ? 1 : 0,
       ...overrides,
     },
   };

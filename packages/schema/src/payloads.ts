@@ -580,3 +580,34 @@ export interface DocBriefData {
   /** Key points the vault holds that the brief does not show. @int */
   leftOut: number;
 }
+
+// ── Studio: the cheat sheet (D-43, V4) ─────────────────────────────────────────
+
+/** One concept on a sheet: its name, its kind (when the vault knows it) and the stored sentence that defines or states it. */
+export interface SheetEntry {
+  pageId: string;
+  pageLabel: string;
+  kind: string | null;
+  citationId: string;
+}
+
+/** A link between two entries (ids of pages on the sheet): the relation a source stated, or null for a co-mention. */
+export interface SheetEdge {
+  src: string;
+  dst: string;
+  relation: string | null;
+}
+
+/**
+ * A one-page sheet for a concept and its neighbours (D-43, the VERA "Visual" function as a learning tool): each concept with one
+ * stored sentence, and the links among them. Derived from the vault with no model call and no image generation; the web draws the
+ * diagram from these entries and edges and lists them beside it. The server validator derives it again and requires this data.
+ */
+export interface CheatSheetData {
+  focusId: string | null;
+  entries: SheetEntry[];
+  edges: SheetEdge[];
+  citations: Citation[];
+  /** Neighbours passed over because the vault holds no citable sentence for them. @int */
+  skipped: number;
+}
