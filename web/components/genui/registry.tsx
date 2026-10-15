@@ -10,6 +10,7 @@ import { CitedSummary } from "./CitedSummary";
 import { ComparisonGrid } from "./ComparisonGrid";
 import { ConceptMap } from "./ConceptMap";
 import { ConceptPage } from "./ConceptPage";
+import { DocBrief } from "./DocBrief";
 import { GraphView } from "./GraphView";
 import { NotesGraph } from "./NotesGraph";
 import { QuizCard } from "./QuizCard";
@@ -39,6 +40,7 @@ export const registry: Registry<UIBlock> = {
   WritingDraft,
   StudySet,
   StudyPlan,
+  DocBrief,
 };
 
 export function UnknownBlock({ type }: { type: string }) {

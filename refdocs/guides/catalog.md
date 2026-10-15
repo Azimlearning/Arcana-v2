@@ -288,6 +288,19 @@ Status: **built** (P5 S3, D-42, 2026-10-15). A notes-family component (see Conce
 - **Validator invariants:** `loading` and `error` carry nothing; the data equals the schedule derived again from the vault, the mastery and the rating dates for the day the block states, exactly; a `ready` block has at least one item; an `empty` block is refused when pages are rated; no block is checked without the vault.
 - **Limit, stated on the screen:** a fixed interval over a belief the learner set by hand; it is not a model of forgetting.
 
+## DocBrief
+
+Status: **built** (D-43, V3, 2026-10-15). A notes-family component (see ConceptPage), made by the Studio for the `study` intent when the request is for a brief of a document ("brief me on", "action items for", "give me a brief"); no model call. The VERA "Meetings" function as a learning tool: a document in, a brief with next steps out.
+
+- **Precondition:** the store holds the document, and the vault holds at least one claim or definition from it that is a verbatim span of a stored passage of that document. Every sentence shown is cited; the next steps follow a fixed rule over the learner's mastery.
+- **Supplied by:** the vault (claims and definitions, through the concept pages), the document store (title), the learner store (mastery). No model.
+- **Payload:** `docId`, `docTitle`, `keyPoints: {citationId, pageLabels}[]`, `terms: {pageId, pageLabel, citationId}[]`, `actions: {kind, pageId, pageLabel, reason}[]`, `citations`, `claimsInDocument`, `leftOut`.
+- **Rules:** key points are the document's claims, those naming the most concepts first, then by passage; key terms are the concept pages the document defines (the first stored definition from it); next steps: a page rated under 0.5 is "review", a page never rated is "learn", and one "quiz" on the first term; each with its fixed reason.
+- **Caps:** 6 key points, 6 terms, 4 next steps, 12 citations, label at most 120 characters.
+- **Fences:** caps `key_points=6 terms=6 actions=4 citations=12 label_chars=120`; grounding `vault_rederived`; a11y `region:Key points | region:Key terms | region:Next steps`. Template version 1; reusable without Research: no.
+- **Validator invariants:** `loading` and `error` carry nothing; the data equals the brief derived again from the document, the vault and the mastery, exactly; a `ready` block has a key point or a term; an `empty` block is refused when the vault holds material for the document; no block is checked without the vault.
+- **Limit, stated on the screen:** a brief is the vault's own sentences, not a model's summary, so it is only as complete as the vault.
+
 ## VerifiedLab
 
 Status: **built** (P4 first slice, D-36, 2026-10-08, four labs by 2026-10-14; fakes only, no live generator yet). New in v2. `GET /labs` lists every lab the server can make and whether the stored passages state its formula (a lab is offered only where one does); `POST /labs {contractId}` makes one. The only block that carries code, and only code that the verifier minted. A **lab component**, not a turn component: the Composer never offers it to a question and the trace never lists it. It is made on request (`POST /labs`) and has its own small registry (`api/genui/lab_catalog.py`).

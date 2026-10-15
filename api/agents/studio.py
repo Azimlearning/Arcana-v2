@@ -113,6 +113,7 @@ _KIND_WORDS: tuple[tuple[str, str], ...] = (
     ("socratic", r"\b(socratic|guide me|question me|ask me questions)"),
     ("cornell", r"\bcornell"),
     ("blurt", r"\b(blurt\w*|recall)"),
+    ("brief", r"\b(brief|action items|key points|executive summary)\b"),
     ("quiz", r"\b(quiz\w*|test me|drill me|practice questions|multiple choice)"),
     ("flashcard", r"\b(flash ?cards?|cards?|flashcard)"),
 )
@@ -150,10 +151,32 @@ def study_focus(request: str, vault: Vault | None) -> str | None:
     return best[1] if best else None
 
 
+def study_document(request: str, ctx: TurnContext) -> str | None:
+    """The stored document a request names: the one whose title (at least 3 characters, folded) occurs in it, the longest title winning,
+    or None (the Composer then takes the document with the most claims). A store that cannot list documents names none."""
+    lowered = " " + " ".join(re.sub(r"[^a-z0-9]+", " ", request.lower()).split()) + " "
+    best: tuple[int, str] | None = None
+    try:
+        documents = ctx.docs.list_documents()
+    except Exception:
+        return None
+    for document in documents:
+        if document.status != "ready":
+            continue
+        folded = " ".join(re.sub(r"[^a-z0-9]+", " ", document.title.lower()).split())
+        if len(folded) >= 3 and f" {folded} " in lowered and (best is None or len(folded) > best[0]):
+            best = (len(folded), document.id)
+    return best[1] if best else None
+
+
 def make_study(request: str, ctx: TurnContext) -> dict[str, Any]:
     """What the Composer should derive for a study request: the activity and the page. The set itself is derived by the Composer from
     the vault (and checked by the validator against it), so this returns a request, never content."""
-    return {"kind": study_kind(request), "focus_id": study_focus(request, ctx.vault)}
+    kind = study_kind(request)
+    made: dict[str, Any] = {"kind": kind, "focus_id": study_focus(request, ctx.vault)}
+    if kind == "brief":
+        made["doc_id"] = study_document(request, ctx)
+    return made
 
 
 def _title(docs: DocStore, doc_id: str) -> str:

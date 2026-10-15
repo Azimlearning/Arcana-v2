@@ -61,6 +61,7 @@ const COMPONENT_WORDS: Record<string, string> = {
   WritingDraft: "Cited draft",
   StudySet: "Study set",
   StudyPlan: "Review schedule",
+  DocBrief: "Document brief",
 };
 
 const OUTCOME_WORDS: Record<TurnOutcome, string> = {

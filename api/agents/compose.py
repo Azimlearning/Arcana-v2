@@ -57,6 +57,7 @@ from api.labs.verifier import LabToolError, VerificationFailed, verify
 from api.learner.mastery import MasteryScore
 from api.learner.store import LearnerStore
 from api.stores.doc_store import DocStore, Document
+from api.vault.brief import default_doc_id, derive_doc_brief
 from api.vault.quiz import derive_quiz
 from api.vault.review import derive_study_plan
 from api.vault.study import STUDY_KINDS, derive_study_set
@@ -432,6 +433,31 @@ def _quiz_block(ctx: TurnContext, focus: object) -> tuple[UIBlock | None, Compon
     return block, ComponentRecord("QuizCard", "admitted", (), block.id)
 
 
+def _brief_block(ctx: TurnContext, doc_id: object) -> tuple[UIBlock | None, ComponentRecord]:
+    """The brief of one document the Studio asked for (D-43, V3): the document the request names, else the one with most claims; derived
+    from the vault and validated against it and the learner's mastery. Never raises; nothing citable is no brief."""
+    block_id = f"{ctx.block_id}-doc-brief"
+    if ctx.vault is None or not ctx.vault.pages:
+        return None, ComponentRecord("DocBrief", "refused", ("no_study_material",))
+    try:
+        chosen = doc_id if isinstance(doc_id, str) else default_doc_id(ctx.vault)
+        if chosen is None:
+            return None, ComponentRecord("DocBrief", "refused", ("no_study_material",))
+        mastery = _mastery_snapshot(ctx.vault, ctx.learner)
+        ctx.mastery_snapshot = mastery
+        data = derive_doc_brief(ctx.vault, ctx.docs, chosen, mastery)
+        if data is None or not (data["keyPoints"] or data["terms"]):
+            return None, ComponentRecord("DocBrief", "refused", ("no_study_material",))
+        block = validate_block(BUILDERS["DocBrief"](block_id, "ready", data=data), ctx.docs, ctx.graph, ctx.vault, mastery)
+    except ValidationFailed as exc:
+        log.warning("brief_block_rejected", issues=[i.path for i in exc.issues])
+        return None, ComponentRecord("DocBrief", "error", ("block_failed_validation",), block_id)
+    except Exception as exc:  # a store that cannot be read: no brief, and the turn goes on
+        log.warning("brief_failed", error=type(exc).__name__)
+        return None, ComponentRecord("DocBrief", "error", ("block_failed_validation",), block_id)
+    return block, ComponentRecord("DocBrief", "admitted", (), block.id)
+
+
 def _study_block(ctx: TurnContext) -> tuple[UIBlock | None, ComponentRecord]:
     """The StudySet the Studio asked for, derived by the Composer from the vault and validated against it (the notes family: it is
     re-derived, so nothing the agent said is trusted). (None, a record saying why) when there is no request, no vault or nothing
@@ -445,6 +471,8 @@ def _study_block(ctx: TurnContext) -> tuple[UIBlock | None, ComponentRecord]:
         return _plan_block(ctx)
     if kind == "quiz":
         return _quiz_block(ctx, focus)
+    if kind == "brief":
+        return _brief_block(ctx, request.get("doc_id"))
     if kind not in STUDY_KINDS or ctx.vault is None or not ctx.vault.pages:
         return None, ComponentRecord("StudySet", "refused", ("no_study_material",))
     block_id = f"{ctx.block_id}-study-set"

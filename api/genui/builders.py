@@ -207,6 +207,31 @@ def study_plan(
     }
 
 
+def doc_brief(
+    block_id: str,
+    status: str,
+    *,
+    data: dict[str, Any] | None = None,
+    error: ErrorEnvelope | None = None,
+) -> dict[str, Any]:
+    blank = {
+        "docId": "",
+        "docTitle": "",
+        "keyPoints": [],
+        "terms": [],
+        "actions": [],
+        "citations": [],
+        "claimsInDocument": 0,
+        "leftOut": 0,
+    }
+    return {
+        "type": "DocBrief",
+        "id": block_id,
+        "meta": {"status": status, "error": error.model_dump() if error is not None else None},
+        "data": data if data is not None else blank,
+    }
+
+
 def verified_lab(
     block_id: str,
     status: str,
@@ -276,5 +301,6 @@ BUILDERS: dict[str, Callable[..., dict[str, Any]]] = {
     "WritingDraft": writing_draft,
     "StudySet": study_set,
     "StudyPlan": study_plan,
+    "DocBrief": doc_brief,
 }
 """One builder per catalog component, keyed by block type. A test keeps this in step with the catalog and the schema."""

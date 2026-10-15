@@ -13,6 +13,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from api.genui.catalog import A11yRequirement, Fences, PlacementHint
+from api.vault.brief import brief_caps
 from api.vault.quiz import MAX_ITEMS, OPTION_COUNT
 from api.vault.review import MAX_ITEMS as PLAN_ITEMS
 from api.vault.study import MAX_ITEMS as STUDY_ITEMS
@@ -120,6 +121,25 @@ STUDY_PLAN = NotesSpec(
     placement=PlacementHint(panel="chat", priority=19),
 )
 
+DOC_BRIEF = NotesSpec(
+    name="DocBrief",
+    precondition=(
+        "The store holds the document, and the vault holds at least one claim or definition from it that is a verbatim span of a stored "
+        "passage of that document. Every sentence shown is cited; the next steps follow a fixed rule over the learner's mastery."
+    ),
+    supplied_by=("vault",),
+    fences=Fences(
+        caps=brief_caps(),
+        grounding="vault_rederived",
+        a11y=(
+            A11yRequirement("region", "Key points"),
+            A11yRequirement("region", "Key terms"),
+            A11yRequirement("region", "Next steps"),
+        ),
+    ),
+    placement=PlacementHint(panel="chat", priority=17),
+)
+
 NOTES_CATALOG: dict[str, NotesSpec] = {
-    s.name: s for s in (CONCEPT_PAGE, NOTES_GRAPH, QUIZ_CARD, STUDY_SET, STUDY_PLAN)
+    s.name: s for s in (CONCEPT_PAGE, NOTES_GRAPH, QUIZ_CARD, STUDY_SET, STUDY_PLAN, DOC_BRIEF)
 }

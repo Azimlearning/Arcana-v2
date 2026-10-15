@@ -64,7 +64,9 @@ _PATTERNS: dict[Intent, re.Pattern[str]] = {
         r"(flash ?cards?|cornell|socratic|blurting|study set)\b|"
         r"what (should|do) i (review|revise|study|revisit)|what('s| is) due( for review)?\b|"
         r"(show me|give me|make me|what is|what's) (my |a |the )?(study plan|review (plan|schedule)|revision (plan|schedule))|"
-        r"(study plan|review (plan|schedule)|revision (plan|schedule))\b)",
+        r"(study plan|review (plan|schedule)|revision (plan|schedule))\b|"
+        r"brief me\b|(give me|make|write|create)(\s+me)?\s+(an?\s+|the\s+)?(document\s+|paper\s+)?(brief|action items)\b|"
+        r"action items (for|from|on)\b)",
         re.IGNORECASE,
     ),
     "write": re.compile(

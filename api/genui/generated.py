@@ -42,6 +42,27 @@ class BlockMeta(BaseModel):
     error: ErrorEnvelope | None
 
 
+class BriefAction(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    kind: BriefActionKind
+    pageId: str
+    pageLabel: str
+    reason: str
+
+
+class BriefPoint(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    citationId: str
+    pageLabels: list[str]
+
+
+class BriefTerm(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    pageId: str
+    pageLabel: str
+    citationId: str
+
+
 class ChatMessage(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
     role: ChatRole
@@ -137,6 +158,26 @@ class ConceptPageData(BaseModel):
     mentionsLeftOut: int
     citations: list[Citation]
     mastery: Mastery | None
+
+
+class DocBrief(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    type: Literal['DocBrief']
+    id: str
+    meta: BlockMeta
+    data: DocBriefData
+
+
+class DocBriefData(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    docId: str
+    docTitle: str
+    keyPoints: list[BriefPoint]
+    terms: list[BriefTerm]
+    actions: list[BriefAction]
+    citations: list[Citation]
+    claimsInDocument: int
+    leftOut: int
 
 
 class DoneEvent(BaseModel):
@@ -696,6 +737,8 @@ AgentName = Literal['orchestrator', 'research', 'graph', 'fact_checker', 'compos
 
 BlockStatus = Literal['empty', 'loading', 'partial', 'ready', 'error']
 
+BriefActionKind = Literal['review', 'learn', 'quiz']
+
 ChatRole = Literal['user', 'assistant']
 
 DecisionReason = Literal['no_grounded_answer', 'no_ready_document', 'no_graph_result', 'no_grounded_edge', 'no_shared_entities', 'not_a_path', 'single_hop', 'path_too_long', 'broken_path', 'ungrounded_hop', 'repeated_concept', 'nothing_resolved', 'no_edge_followed', 'too_many_seeds', 'no_grounded_draft', 'no_study_material', 'block_failed_validation', 'answer_unavailable', 'not_considered', 'unspecified']
@@ -742,12 +785,15 @@ StudyKind = Literal['flashcard', 'blurt', 'cornell', 'socratic']
 
 TurnOutcome = Literal['answered', 'empty', 'error']
 
-UIBlock = Annotated[CitedSummary | SourceList | GraphView | ComparisonGrid | ConceptMap | TraversalView | ConceptPage | NotesGraph | QuizCard | VerifiedLab | WritingDraft | StudySet | StudyPlan, Field(discriminator='type')]
+UIBlock = Annotated[CitedSummary | SourceList | GraphView | ComparisonGrid | ConceptMap | TraversalView | ConceptPage | NotesGraph | QuizCard | VerifiedLab | WritingDraft | StudySet | StudyPlan | DocBrief, Field(discriminator='type')]
 
 AgentStep.model_rebuild()
 BibliographyEntry.model_rebuild()
 BlockEvent.model_rebuild()
 BlockMeta.model_rebuild()
+BriefAction.model_rebuild()
+BriefPoint.model_rebuild()
+BriefTerm.model_rebuild()
 ChatMessage.model_rebuild()
 ChatRequest.model_rebuild()
 Citation.model_rebuild()
@@ -760,6 +806,8 @@ ConceptMap.model_rebuild()
 ConceptMapData.model_rebuild()
 ConceptPage.model_rebuild()
 ConceptPageData.model_rebuild()
+DocBrief.model_rebuild()
+DocBriefData.model_rebuild()
 DoneEvent.model_rebuild()
 DraftSection.model_rebuild()
 DraftSegment.model_rebuild()

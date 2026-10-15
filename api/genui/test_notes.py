@@ -357,7 +357,7 @@ def test_the_notes_specs_state_their_precondition_fences_and_placement_and_the_g
     guide = (Path(__file__).resolve().parents[2] / "refdocs" / "guides" / "catalog.md").read_text(
         encoding="utf-8"
     )
-    assert set(NOTES_CATALOG) == {"ConceptPage", "NotesGraph", "QuizCard", "StudySet", "StudyPlan"}
+    assert set(NOTES_CATALOG) == {"ConceptPage", "NotesGraph", "QuizCard", "StudySet", "StudyPlan", "DocBrief"}
     for spec in NOTES_CATALOG.values():
         assert (
             spec.precondition.strip()

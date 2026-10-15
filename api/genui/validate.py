@@ -45,6 +45,7 @@ from api.genui.generated import (
     ComparisonGrid,
     ConceptMap,
     ConceptPage,
+    DocBrief,
     FieldIssue,
     GraphView,
     LayoutSpec,
@@ -69,6 +70,7 @@ from api.learner.mastery import MasteryScore
 from api.retrieval.traversal import SeedNode, seed_weight, steps_for_display, traverse
 from api.stores.doc_store import DocStore
 from api.stores.graph_store import GraphStore
+from api.vault.brief import derive_doc_brief
 from api.vault.quiz import derive_quiz
 from api.vault.review import derive_study_plan
 from api.vault.study import derive_study_set
@@ -161,6 +163,8 @@ def _content_issues(
         issues += _study_set_issues(block, docs, vault, mastery)
     elif isinstance(block, StudyPlan):
         issues += _study_plan_issues(block, vault, mastery, last_rated)
+    elif isinstance(block, DocBrief):
+        issues += _doc_brief_issues(block, docs, vault, mastery)
     else:
         issues.append(FieldIssue(path="type", message="no content rules exist for this block type"))
     return issues
@@ -864,6 +868,34 @@ def _study_set_issues(
         issues.append(FieldIssue(path="data.items", message="a ready study set needs at least one item"))
     if status == "empty" and derived["items"]:
         issues.append(FieldIssue(path="data.items", message="the vault can make items here: this block must not be empty"))
+    _differences(data, derived, "data", issues)
+    return issues
+
+
+def _doc_brief_issues(
+    block: DocBrief, docs: DocStore, vault: Vault | None, mastery: Mapping[str, MasteryScore] | None = None
+) -> list[FieldIssue]:
+    """A document brief is a function of the document, the vault, the stored passages and the learner's mastery, so it is checked by
+    deriving it again: every key point, term, next step, citation and count must equal the derived ones."""
+    data, status = block.data.model_dump(), block.meta.status
+    blank = {"docId": "", "docTitle": "", "keyPoints": [], "terms": [], "actions": [], "citations": [], "claimsInDocument": 0, "leftOut": 0}
+    if status in {"loading", "error"} or (status == "empty" and vault is None):
+        if any(data.get(k) != v for k, v in blank.items()):
+            return [FieldIssue(path="data", message=f"a '{status}' block must carry nothing")]
+        return []
+    if vault is None:
+        return [FieldIssue(path="data", message="a document brief can only be checked against the vault")]
+    try:
+        derived = derive_doc_brief(vault, docs, data["docId"], mastery)
+    except Exception:  # a store that cannot be read is a block that cannot be checked: refuse, never crash
+        return [FieldIssue(path="data", message="the brief could not be re-derived from the vault")]
+    if derived is None:
+        return [FieldIssue(path="data.docId", message="no stored document has this id")]
+    issues: list[FieldIssue] = []
+    if status == "ready" and not (data["keyPoints"] or data["terms"]):
+        issues.append(FieldIssue(path="data.keyPoints", message="a ready brief needs a key point or a term"))
+    if status == "empty" and (derived["keyPoints"] or derived["terms"]):
+        issues.append(FieldIssue(path="data.keyPoints", message="the vault holds material for this document: this block must not be empty"))
     _differences(data, derived, "data", issues)
     return issues
 

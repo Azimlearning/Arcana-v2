@@ -12,6 +12,7 @@ import type { ErrorEnvelope } from "./errors";
 import type {
   CitedSummaryData,
   StudyPlanData,
+  DocBriefData,
   StudySetData,
   WritingDraftData,
   ComparisonGridData,
@@ -158,6 +159,15 @@ export interface StudyPlan {
   data: StudyPlanData;
 }
 
+/** A brief of one stored document: key points, key terms and next steps (D-43, V3). No model call. */
+export interface DocBrief {
+  type: "DocBrief";
+  /** Non-empty. Stable across updates: a later block with the same id replaces this one. */
+  id: string;
+  meta: BlockMeta;
+  data: DocBriefData;
+}
+
 export type UIBlock =
   | CitedSummary
   | SourceList
@@ -171,4 +181,5 @@ export type UIBlock =
   | VerifiedLab
   | WritingDraft
   | StudySet
-  | StudyPlan;
+  | StudyPlan
+  | DocBrief;

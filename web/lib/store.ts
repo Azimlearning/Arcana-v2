@@ -84,6 +84,12 @@ export function toErrorBlock(block: UIBlock, error: ErrorEnvelope): UIBlock {
       return { ...block, meta, data: { kind: block.data.kind, focusId: null, items: [], summary: null, citations: [], skipped: 0 } };
     case "StudyPlan":
       return { ...block, meta, data: { asOf: block.data.asOf, items: [], ratedPages: 0, leftOut: 0 } };
+    case "DocBrief":
+      return {
+        ...block,
+        meta,
+        data: { docId: "", docTitle: "", keyPoints: [], terms: [], actions: [], citations: [], claimsInDocument: 0, leftOut: 0 },
+      };
   }
 }
 

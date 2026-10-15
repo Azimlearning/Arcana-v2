@@ -14,6 +14,7 @@ describe("Studio", () => {
       "Cornell notesName a topic",
       "Socratic questionsName a topic",
       "Review scheduleWhat is due",
+      "Document briefKey points, next steps",
       "Write an outlineName a topic",
       "Literature reviewCited, by theme",
       "AbstractCited, short",
@@ -43,7 +44,7 @@ describe("Studio", () => {
 
   it("every starter opens with words the server's rules recognise, so none is a plain question", () => {
     const writes = /^(write|draft|compose|outline|make an audio overview)/i;
-    const studies = /^(quiz me|make flashcards|make a blurting|give me cornell|guide me|what should i review)/i;
+    const studies = /^(quiz me|brief me|make flashcards|make a blurting|give me cornell|guide me|what should i review)/i;
     for (const s of STARTERS) expect(writes.test(s.request) || studies.test(s.request)).toBe(true);
   });
 });

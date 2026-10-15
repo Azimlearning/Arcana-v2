@@ -1,4 +1,4 @@
-import type { CitedSummary, ComparisonGrid, ConceptMap, ConceptPage, ErrorEnvelope, GraphView, LayoutSpec, NotesGraph, QuizAnswerResponse, QuizCard, StudyPlan, StudySet, VerifiedLab, WritingDraft, SavedPattern, SourceList, TraversalView, WorkspaceResponse, StreamEvent, TurnTrace } from "@arcana/schema";
+import type { CitedSummary, ComparisonGrid, ConceptMap, ConceptPage, ErrorEnvelope, GraphView, LayoutSpec, NotesGraph, QuizAnswerResponse, QuizCard, DocBrief, StudyPlan, StudySet, VerifiedLab, WritingDraft, SavedPattern, SourceList, TraversalView, WorkspaceResponse, StreamEvent, TurnTrace } from "@arcana/schema";
 
 export const TITLE = "Hybrid Retrieval over Knowledge Graphs";
 
@@ -646,6 +646,47 @@ export function studyPlan(
         : [],
       ratedPages: content ? 5 : 0,
       leftOut: content ? 2 : 0,
+      ...overrides,
+    },
+  };
+}
+
+export function docBrief(
+  status: DocBrief["meta"]["status"],
+  overrides: Partial<DocBrief["data"]> = {},
+  error: ErrorEnvelope | null = null,
+): DocBrief {
+  const content = status === "ready" || status === "partial";
+  return {
+    type: "DocBrief",
+    id: "turn-1-doc-brief",
+    meta: { status, error },
+    data: {
+      docId: content ? "d" : "",
+      docTitle: content ? TITLE : "",
+      keyPoints: content
+        ? [
+            { citationId: "c1", pageLabels: ["dense retrieval", "BM25"] },
+            { citationId: "c2", pageLabels: ["reciprocal rank fusion"] },
+          ]
+        : [],
+      terms: content ? [{ pageId: "dense_retrieval", pageLabel: "dense retrieval", citationId: "c3" }] : [],
+      actions: content
+        ? [
+            { kind: "review", pageId: "bm25", pageLabel: "BM25", reason: "Your mastery is 20 percent: revisit it." },
+            { kind: "learn", pageId: "dense_retrieval", pageLabel: "dense retrieval", reason: "You have not rated it yet: start with its definition." },
+            { kind: "quiz", pageId: "dense_retrieval", pageLabel: "dense retrieval", reason: "Test yourself: ask for a quiz on it." },
+          ]
+        : [],
+      citations: content
+        ? [
+            { id: "c1", chunkId: "d_c_1", docId: "d", docTitle: TITLE, page: 1, quote: "Dense retrieval embeds passages and BM25 scores exact terms." },
+            { id: "c2", chunkId: "d_c_2", docId: "d", docTitle: TITLE, page: 2, quote: "Reciprocal rank fusion merges two ranked lists." },
+            { id: "c3", chunkId: "d_c_1", docId: "d", docTitle: TITLE, page: 1, quote: "Dense retrieval is a method that embeds text into vectors." },
+          ]
+        : [],
+      claimsInDocument: content ? 9 : 0,
+      leftOut: content ? 3 : 0,
       ...overrides,
     },
   };

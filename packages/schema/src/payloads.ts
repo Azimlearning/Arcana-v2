@@ -536,3 +536,47 @@ export interface StudyPlanData {
   /** @int */
   leftOut: number;
 }
+
+// ── Studio: the document brief (D-43, V3) ──────────────────────────────────────
+
+/** What a brief suggests doing about a page: revisit one rated low, learn one never rated, or be quizzed on one. */
+export type BriefActionKind = "review" | "learn" | "quiz";
+
+/** One key point: a stored sentence of the document (a citation of the block) and the concept pages it names. */
+export interface BriefPoint {
+  citationId: string;
+  pageLabels: string[];
+}
+
+/** One key term: a concept page the document defines, and the stored sentence that defines it. */
+export interface BriefTerm {
+  pageId: string;
+  pageLabel: string;
+  citationId: string;
+}
+
+/** One next step, with the fixed reason it is there (a rule over the learner's mastery, never a model's opinion). */
+export interface BriefAction {
+  kind: BriefActionKind;
+  pageId: string;
+  pageLabel: string;
+  reason: string;
+}
+
+/**
+ * A brief of one stored document: its key points, key terms and next steps (D-43, the VERA "Meetings" function as a learning tool).
+ * Derived from the vault and the learner's mastery with no model call; every sentence is a verbatim, cited span of a stored passage
+ * of this document. The server validator derives it again and requires exactly this data.
+ */
+export interface DocBriefData {
+  docId: string;
+  docTitle: string;
+  keyPoints: BriefPoint[];
+  terms: BriefTerm[];
+  actions: BriefAction[];
+  citations: Citation[];
+  /** How many claims the vault holds for the document (the brief shows the most connected). @int */
+  claimsInDocument: number;
+  /** Key points the vault holds that the brief does not show. @int */
+  leftOut: number;
+}

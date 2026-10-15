@@ -36,6 +36,9 @@ from api.vault.types import Definition
         "Can you give me cornell notes on reranking?",
         "Guide me through how dense retrieval relates to BM25",
         "Flashcards on query expansion",
+        "Brief me on the dense retrieval survey",
+        "Give me a brief of this paper",
+        "Action items for BM25",
     ],
 )
 def test_a_request_to_study_is_recognised(question: str):
@@ -67,6 +70,8 @@ def test_no_frozen_benchmark_question_is_rerouted_to_study():
         ("Make flashcards for BM25", "flashcard"),
         ("Quiz me on dense retrieval", "quiz"),
         ("Test me on BM25 with practice questions", "quiz"),
+        ("Brief me on the retrieval survey", "brief"),
+        ("Give me action items for BM25", "brief"),
         ("Give me cornell notes on reranking", "cornell"),
         ("Help me recall what BM25 is", "blurt"),
         ("Guide me through RRF with socratic questions", "socratic"),
@@ -222,3 +227,35 @@ async def test_a_quiz_turn_streams_through_the_last_gate_without_an_error(tmp_pa
     events = [e async for e in run_turn(GRAPH, "Quiz me", ctx)]
     assert not any(isinstance(e, StreamErrorEvent) for e in events)
     assert "QuizCard" in [e.block.type for e in events if isinstance(e, BlockEvent)]
+
+
+async def test_a_brief_turn_ends_at_the_composer_with_a_validated_brief(tmp_path: Path):
+    """V3 (D-43): "brief me" is the document brief the vault derives, validated against the vault and the learner's mastery."""
+    ctx, _ = _world(tmp_path)
+    state = await GRAPH.ainvoke({"question": "Brief me on this document"}, context=ctx)
+    composition = state["composition"]
+    assert ctx.intent == "study" and composition.blocks[0].type == "CitedSummary"
+    brief = next(b for b in composition.blocks if b.type == "DocBrief")
+    assert brief.meta.status == "ready" and brief.data.docId and brief.data.keyPoints  # type: ignore[union-attr]
+    assert any(r.component == "DocBrief" and r.outcome == "admitted" for r in composition.records)
+
+
+async def test_a_brief_turn_streams_through_the_last_gate_without_an_error(tmp_path: Path):
+    from api.agents.graph import run_turn
+    from api.genui.generated import BlockEvent, StreamErrorEvent
+
+    ctx, _ = _world(tmp_path)
+    events = [e async for e in run_turn(GRAPH, "Brief me on this document", ctx)]
+    assert not any(isinstance(e, StreamErrorEvent) for e in events)
+    assert "DocBrief" in [e.block.type for e in events if isinstance(e, BlockEvent)]
+
+
+async def test_a_brief_names_the_document_the_request_names(tmp_path: Path):
+    from api.agents.studio import study_document
+
+    ctx, _ = _world(tmp_path)
+    titles = {d.id: d.title for d in ctx.docs.list_documents()}
+    assert titles, "the fixture stores documents"
+    doc_id, title = next(iter(titles.items()))
+    assert study_document(f"Brief me on {title}", ctx) == doc_id
+    assert study_document("Brief me on something else entirely", ctx) is None
