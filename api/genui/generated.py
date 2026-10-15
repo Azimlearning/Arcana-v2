@@ -154,6 +154,7 @@ class DraftSegment(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
     text: str
     citationIds: list[str]
+    speaker: DraftSpeaker | None = None
 
 
 class ErrorEnvelope(BaseModel):
@@ -684,6 +685,7 @@ class WritingDraft(BaseModel):
 
 class WritingDraftData(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, allow_inf_nan=False)
+    kind: DraftKind | None = None
     title: str
     sections: list[DraftSection]
     citations: list[Citation]
@@ -697,6 +699,10 @@ BlockStatus = Literal['empty', 'loading', 'partial', 'ready', 'error']
 ChatRole = Literal['user', 'assistant']
 
 DecisionReason = Literal['no_grounded_answer', 'no_ready_document', 'no_graph_result', 'no_grounded_edge', 'no_shared_entities', 'not_a_path', 'single_hop', 'path_too_long', 'broken_path', 'ungrounded_hop', 'repeated_concept', 'nothing_resolved', 'no_edge_followed', 'too_many_seeds', 'no_grounded_draft', 'no_study_material', 'block_failed_validation', 'answer_unavailable', 'not_considered', 'unspecified']
+
+DraftKind = Literal['outline', 'literature_review', 'abstract', 'script']
+
+DraftSpeaker = Literal['host', 'guest']
 
 ErrorCode = Literal['validation_failed', 'bad_request', 'not_found', 'budget_exhausted', 'spend_cap_exceeded', 'provider_unavailable', 'pattern_refused', 'internal']
 

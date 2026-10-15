@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { TITLE, envelope, writingDraft } from "@/test/fixtures";
 
@@ -78,5 +78,80 @@ describe("WritingDraft: references", () => {
     block.data.sections[0]!.segments[0]!.citationIds = ["c9"];
     render(<WritingDraft block={block} />);
     expect(screen.queryByRole("link", { name: /Source c9/ })).not.toBeInTheDocument();
+  });
+});
+
+describe("WritingDraft: kinds and the audio-overview script (D-43)", () => {
+  const script = () =>
+    writingDraft("ready", {
+      kind: "script",
+      title: "An overview of hybrid retrieval",
+      sections: [
+        {
+          heading: "Opening",
+          segments: [
+            { speaker: "host", text: "What does dense retrieval do?", citationIds: ["c1"] },
+            { speaker: "guest", text: "It embeds passages and queries.", citationIds: ["c1"] },
+          ],
+        },
+      ],
+    });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("names the kind above the title, and an outline by default", () => {
+    const { unmount } = render(<WritingDraft block={writingDraft("ready")} />);
+    expect(screen.getByText("Outline")).toBeInTheDocument();
+    unmount();
+    render(<WritingDraft block={writingDraft("ready", { kind: "literature_review" })} />);
+    expect(screen.getByText("Literature review")).toBeInTheDocument();
+  });
+
+  it("shows a script as turns, each with its speaker in words, and the citation pills", () => {
+    render(<WritingDraft block={script()} />);
+    expect(screen.getByText("Audio overview")).toBeInTheDocument();
+    expect(screen.getByText("Host:")).toBeInTheDocument();
+    expect(screen.getByText("Guest:")).toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: /Source c1/ }).length).toBeGreaterThan(0);
+  });
+
+  it("reads the lines aloud in order with the browser's voice, and stops", () => {
+    const spoken: string[] = [];
+    const cancel = vi.fn();
+    vi.stubGlobal("speechSynthesis", { speak: (u: { text: string }) => spoken.push(u.text), cancel });
+    vi.stubGlobal(
+      "SpeechSynthesisUtterance",
+      class {
+        pitch = 1;
+        onend: (() => void) | null = null;
+        constructor(public text: string) {}
+      },
+    );
+    render(<WritingDraft block={script()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Listen" }));
+    expect(spoken).toEqual(["What does dense retrieval do?", "It embeds passages and queries."]);
+    expect(screen.getByRole("status")).toHaveTextContent("Reading aloud");
+    fireEvent.click(screen.getByRole("button", { name: "Stop" }));
+    expect(cancel).toHaveBeenCalled();
+    expect(screen.getByRole("status")).toHaveTextContent("Nothing is sent anywhere");
+  });
+
+  it("says so, and draws no Listen button, when the browser cannot speak", () => {
+    render(<WritingDraft block={script()} />);
+    expect(screen.queryByRole("button", { name: "Listen" })).not.toBeInTheDocument();
+    expect(screen.getByText(/cannot read aloud/)).toBeInTheDocument();
+  });
+
+  it("an outline has no read-aloud control", () => {
+    render(<WritingDraft block={writingDraft("ready")} />);
+    expect(screen.queryByRole("group", { name: "Read aloud" })).not.toBeInTheDocument();
+  });
+
+  it("the Markdown of a script keeps who said each line", () => {
+    const md = draftMarkdown(script().data, "apa");
+    expect(md).toContain("**Host:** What does dense retrieval do?");
+    expect(md).toContain("**Guest:** It embeds passages and queries.");
   });
 });

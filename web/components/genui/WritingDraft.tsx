@@ -7,8 +7,8 @@
 
 "use client";
 
-import type { WritingDraft as WritingDraftBlock } from "@arcana/schema";
-import { useState } from "react";
+import type { DraftKind, DraftSpeaker, WritingDraft as WritingDraftBlock } from "@arcana/schema";
+import { useEffect, useState } from "react";
 
 import { EmptyState, ErrorState, Frame, LoadingState, PartialState } from "./BlockStates";
 import { safeId } from "./ids";
@@ -19,6 +19,80 @@ const STYLES: { id: Style; label: string }[] = [
   { id: "ieee", label: "IEEE" },
   { id: "bibtex", label: "BibTeX" },
 ];
+
+const KIND_WORDS: Record<DraftKind, string> = {
+  outline: "Outline",
+  literature_review: "Literature review",
+  abstract: "Abstract",
+  script: "Audio overview",
+};
+const SPEAKER_WORDS: Record<DraftSpeaker, string> = { host: "Host", guest: "Guest" };
+
+/** The lines of a script in order, as (speaker, text). Empty for any other kind. */
+export function scriptLines(data: WritingDraftBlock["data"]): { speaker: DraftSpeaker; text: string }[] {
+  if (data.kind !== "script") return [];
+  return data.sections.flatMap((s) => s.segments.flatMap((g) => (g.speaker ? [{ speaker: g.speaker, text: g.text }] : [])));
+}
+
+/** The browser's own speech, if it has any. Nothing is sent anywhere: the text is read on this device. */
+function speech(): SpeechSynthesis | null {
+  return typeof window !== "undefined" && "speechSynthesis" in window && typeof SpeechSynthesisUtterance !== "undefined"
+    ? window.speechSynthesis
+    : null;
+}
+
+type Listening = "idle" | "playing";
+
+function ReadAloud({ lines }: { lines: { speaker: DraftSpeaker; text: string }[] }) {
+  const [state, setState] = useState<Listening>("idle");
+  const synth = speech();
+  useEffect(() => () => speech()?.cancel(), []); // leaving the block stops the voice
+
+  if (synth === null) {
+    return (
+      <p className="text-xs text-stone-500">
+        This browser cannot read aloud; the script above is the text of the overview.
+      </p>
+    );
+  }
+  const play = () => {
+    synth.cancel();
+    setState("playing");
+    lines.forEach((line, i) => {
+      const u = new SpeechSynthesisUtterance(line.text);
+      u.pitch = line.speaker === "host" ? 1 : 0.8; // two voices from one: a different pitch for each speaker
+      if (i === lines.length - 1) u.onend = () => setState("idle");
+      synth.speak(u);
+    });
+  };
+  const stop = () => {
+    synth.cancel();
+    setState("idle");
+  };
+  return (
+    <div role="group" aria-label="Read aloud" className="flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        onClick={play}
+        disabled={state === "playing" || lines.length === 0}
+        className="rounded border border-stone-300 px-2 py-1 text-xs text-stone-700 hover:bg-stone-50 disabled:opacity-50"
+      >
+        Listen
+      </button>
+      <button
+        type="button"
+        onClick={stop}
+        disabled={state !== "playing"}
+        className="rounded border border-stone-300 px-2 py-1 text-xs text-stone-700 hover:bg-stone-50 disabled:opacity-50"
+      >
+        Stop
+      </button>
+      <span role="status" className="text-xs text-stone-500">
+        {state === "playing" ? "Reading aloud…" : "Read by your browser's own voice, on this device. Nothing is sent anywhere."}
+      </span>
+    </div>
+  );
+}
 
 export function WritingDraft({ block }: { block: WritingDraftBlock }) {
   const { meta } = block;
@@ -60,7 +134,8 @@ export function draftMarkdown(data: WritingDraftBlock["data"], style: Style): st
   for (const section of data.sections) {
     lines.push(`## ${section.heading}`, "");
     for (const segment of section.segments) {
-      lines.push(`${segment.text} ${segment.citationIds.map((id) => `[${id}]`).join("")}`, "");
+      const who = segment.speaker ? `**${SPEAKER_WORDS[segment.speaker]}:** ` : "";
+      lines.push(`${who}${segment.text} ${segment.citationIds.map((id) => `[${id}]`).join("")}`, "");
     }
   }
   lines.push("## Sources", "");
@@ -73,6 +148,8 @@ export function draftMarkdown(data: WritingDraftBlock["data"], style: Style): st
 
 function Body({ block }: { block: WritingDraftBlock }) {
   const { title, sections, citations, bibliography } = block.data;
+  const kind: DraftKind = block.data.kind ?? "outline";
+  const script = scriptLines(block.data);
   const [style, setStyle] = useState<Style>("apa");
   const [copied, setCopied] = useState(false);
   const byId = new Map(citations.map((c) => [c.id, c]));
@@ -101,7 +178,11 @@ function Body({ block }: { block: WritingDraftBlock }) {
 
   return (
     <div className="space-y-5">
-      <h2 className="font-serif text-xl font-semibold text-stone-900">{title}</h2>
+      <div>
+        <p className="text-xs font-medium uppercase tracking-wide text-stone-500">{KIND_WORDS[kind]}</p>
+        <h2 className="font-serif text-xl font-semibold text-stone-900">{title}</h2>
+      </div>
+      {kind === "script" && <ReadAloud lines={script} />}
 
       <section aria-label="Draft" className="space-y-5">
         {sections.map((section, i) => (
@@ -109,7 +190,12 @@ function Body({ block }: { block: WritingDraftBlock }) {
             <h3 className="mb-1 text-sm font-semibold uppercase tracking-wide text-stone-600">{section.heading}</h3>
             <p className="font-serif text-base leading-relaxed text-stone-900">
               {section.segments.map((segment, j) => (
-                <span key={j}>
+                <span key={j} className={segment.speaker ? "mb-2 block" : undefined}>
+                  {segment.speaker && (
+                    <span className="mr-1 text-xs font-sans font-semibold uppercase tracking-wide text-stone-500">
+                      {SPEAKER_WORDS[segment.speaker]}:
+                    </span>
+                  )}
                   {segment.text}{" "}
                   {segment.citationIds.map((id) => {
                     const citation = byId.get(id);

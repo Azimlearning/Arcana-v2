@@ -966,6 +966,7 @@ def _writing_draft_issues(block: WritingDraft, docs: DocStore) -> list[FieldIssu
         return issues
 
     caps = _caps("WritingDraft")
+    kind = data.kind or "outline"
     if not data.title.strip():
         issues.append(FieldIssue(path="data.title", message="a draft needs a title"))
     elif len(data.title) > caps["title_chars"]:
@@ -1005,6 +1006,10 @@ def _writing_draft_issues(block: WritingDraft, docs: DocStore) -> list[FieldIssu
             where = f"data.sections.{i}.segments.{j}"
             if not segment.text.strip():
                 issues.append(FieldIssue(path=f"{where}.text", message="a passage needs text"))
+            if kind == "script" and segment.speaker is None:
+                issues.append(FieldIssue(path=f"{where}.speaker", message="every line of a script needs a speaker"))
+            if kind != "script" and segment.speaker is not None:
+                issues.append(FieldIssue(path=f"{where}.speaker", message="only a script has speakers"))
             if not segment.citationIds:
                 issues.append(FieldIssue(path=f"{where}.citationIds", message="a passage must cite evidence"))
             seen_here: set[str] = set()

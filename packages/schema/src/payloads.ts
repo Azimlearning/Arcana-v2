@@ -412,10 +412,21 @@ export interface Mastery {
 
 // ── Studio: writing (P5 S1, D-42) ──────────────────────────────────────────────
 
+/**
+ * What a draft is (D-43): an outline (the default), a literature review, an abstract, or a two-voice audio-overview script. The kind
+ * changes the instruction the model is given and how the block is shown; every kind goes through the same checks.
+ */
+export type DraftKind = "outline" | "literature_review" | "abstract" | "script";
+
+/** Who says a line of a script. The server produces no audio: the browser may read the text aloud on the learner's device. */
+export type DraftSpeaker = "host" | "guest";
+
 /** One drafted passage of a section: the text and the citations it stands on (ids into the draft's `citations`). */
 export interface DraftSegment {
   text: string;
   citationIds: string[];
+  /** Only in a `script`, and then on every passage. */
+  speaker?: DraftSpeaker;
 }
 
 /** One section of a draft: a heading and the passages under it, in order. */
@@ -443,6 +454,8 @@ export interface BibliographyEntry {
  * all of it; the schema cannot.
  */
 export interface WritingDraftData {
+  /** Absent means an outline (a draft made before kinds existed). The server always sets it. */
+  kind?: DraftKind;
   title: string;
   sections: DraftSection[];
   citations: Citation[];

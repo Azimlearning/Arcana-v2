@@ -391,3 +391,146 @@ async def test_without_a_checker_result_the_draft_is_not_shown(ingested, tmp_pat
 
     assert ctx.results["studio"].payload["draft"] is not None
     assert _studio_draft(ctx) is None
+
+
+# ── V2 (D-43): the kinds of writing, and a script's speakers ─────────────────
+
+
+DOCS_NS: Any = SimpleNamespace(
+    get_document=lambda d: DOCS.get(d),
+    get_chunks=lambda ids: {i: CHUNKS[i] for i in ids if i in CHUNKS},
+)
+
+
+@pytest.mark.parametrize(
+    ("request_text", "kind"),
+    [
+        ("Write an outline on dense retrieval", "outline"),
+        ("Draft an essay on hybrid search", "outline"),
+        ("Write an abstract on dense retrieval", "abstract"),
+        ("Draft a literature review of graph retrieval", "literature_review"),
+        ("Make an audio overview of dense retrieval", "script"),
+        ("Write a podcast script about BM25", "script"),
+    ],
+)
+def test_the_kind_of_writing_is_chosen_by_keyword_and_defaults_to_an_outline(request_text: str, kind: str):
+    from api.agents.studio import write_kind
+
+    assert write_kind(request_text) == kind
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Write an abstract on dense retrieval",
+        "Make an audio overview of dense retrieval",
+        "Create a podcast script about BM25",
+        "Give me a literature review of hybrid search",
+    ],
+)
+def test_the_new_kinds_are_write_requests(question: str):
+    assert classify(question) == ("write", True)
+
+
+@pytest.mark.parametrize(
+    ("request_text", "topic"),
+    [
+        ("Write an abstract on dense retrieval", "dense retrieval"),
+        ("Make an audio overview of dense retrieval", "dense retrieval"),
+        ("Write a podcast script about BM25", "BM25"),
+    ],
+)
+def test_the_topic_of_the_new_kinds_is_what_retrieval_is_searched_with(request_text: str, topic: str):
+    from api.agents.studio import topic_of
+
+    assert topic_of(request_text) == topic
+
+
+def _script_reply(speakers: list[Any]) -> str:
+    segs = [
+        {"text": f"Turn {i}.", "cites": [{"passage": 1 if i % 2 == 0 else 2, "quote": "It ranks by cosine similarity." if i % 2 == 0 else "It needs no training."}]}
+        | ({"speaker": s} if s is not None else {})
+        for i, s in enumerate(speakers)
+    ]
+    return json.dumps({"title": "Overview", "sections": [{"heading": "Opening", "segments": segs}]})
+
+
+async def test_a_script_gives_every_line_a_known_speaker_and_a_kind(tmp_path: Path):
+    ctx = make_ctx(tmp_path, _script_reply(["host", "guest", "narrator", None]))
+    draft, stats = await draft_section("retrieval", ctx, "script")
+    assert draft is not None and stats["kind"] == "script"
+    assert draft.data["kind"] == "script"
+    # a named speaker is kept; an unknown or missing one becomes the voice whose turn it is (the host opens, the voices alternate)
+    assert [s["speaker"] for s in draft.data["sections"][0]["segments"]] == ["host", "guest", "host", "guest"]
+
+
+async def test_an_outline_has_a_kind_and_no_speakers(tmp_path: Path):
+    ctx = make_ctx(tmp_path, GOOD)
+    draft, _ = await draft_section("retrieval", ctx)
+    assert draft is not None and draft.data["kind"] == "outline"
+    assert all("speaker" not in seg for sec in draft.data["sections"] for seg in sec["segments"])
+
+
+async def test_the_checker_keeps_a_scripts_speakers_and_kind(tmp_path: Path):
+    from api.agents.fact_checker import regroup_draft, screen_draft
+
+    data = _draft_data(kind="script")
+    for i, segment in enumerate(s for sec in data["sections"] for s in sec["segments"]):
+        segment["speaker"] = ("host", "guest")[i % 2]
+    screened, where = screen_draft(data, {c["chunkId"]: CHUNKS[c["chunkId"]] for c in data["citations"]})
+    checked, _, _ = regroup_draft(data, screened.finalize({}), where, DOCS_NS)
+    assert checked is not None and checked["kind"] == "script"
+    assert [s["speaker"] for sec in checked["sections"] for s in sec["segments"]] == ["host", "guest"]
+
+
+def _valid_script(tmp_path: Path) -> dict[str, Any]:
+    """A script the server's own builder made: valid in every respect, so a test that plants one defect is rejected for that defect."""
+    passages = [(_chunk("k1"), DOCS["d1"].title), (_chunk("k2"), DOCS["d2"].title)]
+    stats = {"quotes_model": 0, "quotes_server": 0}
+    draft = build_draft(json.loads(_script_reply(["host", "guest"])), passages, make_ctx(tmp_path), stats, "script")
+    assert draft is not None
+    return draft.data
+
+
+def _validate_draft(data: dict[str, Any]):
+    from api.genui.builders import BUILDERS
+    from api.genui.validate import validate_block
+
+    return validate_block(BUILDERS["WritingDraft"]("b", "ready", data=data), DOCS_NS)
+
+
+def _lines(data: dict[str, Any]) -> list[dict[str, Any]]:
+    return [seg for sec in data["sections"] for seg in sec["segments"]]
+
+
+def test_a_well_formed_script_and_a_legacy_draft_without_a_kind_both_validate(tmp_path: Path):
+    data = _valid_script(tmp_path)
+    assert _validate_draft(data).data.kind == "script"  # type: ignore[union-attr]
+    legacy = {k: v for k, v in data.items() if k != "kind"}
+    for seg in _lines(legacy):
+        seg.pop("speaker")
+    assert _validate_draft(legacy).data.kind is None  # type: ignore[union-attr]
+
+
+@pytest.mark.parametrize("defect", ["script_line_without_speaker", "speaker_on_an_outline", "speaker_on_an_abstract"])
+def test_the_validator_refuses_a_speaker_where_there_should_be_none_and_none_where_one_is_needed(tmp_path: Path, defect: str):
+    from api.core.errors import ValidationFailed
+
+    data = _valid_script(tmp_path)
+    if defect == "script_line_without_speaker":
+        _lines(data)[1].pop("speaker")
+    else:
+        data["kind"] = "outline" if defect == "speaker_on_an_outline" else "abstract"
+    with pytest.raises(ValidationFailed) as caught:
+        _validate_draft(data)
+    assert [i.path for i in caught.value.issues if "speaker" in i.path]
+
+
+async def test_a_script_turn_ends_at_the_composer_with_a_validated_script(ingested, tmp_path: Path):
+    deps, _ = ingested
+    ctx = graph_ctx(deps, tmp_path)
+    state = await GRAPH.ainvoke({"question": "Make an audio overview of dense retrieval"}, context=ctx)
+    draft = next(b for b in state["composition"].blocks if b.type == "WritingDraft")
+    assert draft.data.kind == "script"  # type: ignore[union-attr]
+    lines = [s for sec in draft.data.sections for s in sec.segments]  # type: ignore[union-attr]
+    assert lines and all(s.speaker in ("host", "guest") for s in lines)

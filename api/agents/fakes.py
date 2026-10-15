@@ -37,12 +37,18 @@ def fake_draft_responder(request: LLMRequest) -> str:
     """A two-section draft over the numbered passages, quoting each passage's first sentence (as the research fake does), so the whole
     Studio path runs without a key. It does not understand the topic."""
     passages = [(int(n), _WS.sub(" ", body).strip()) for n, _, body in _PASSAGE.findall(request.prompt)]
+    script = "Kind: script" in request.prompt
     sections = []
+    turn = 0
     for heading, chosen in (("Overview", passages[:1]), ("Further evidence", passages[1:2])):
         segments = []
         for number, body in chosen:
             first = _SENTENCE.split(body)[0][:160]
-            segments.append({"text": f"The document states: {first}", "cites": [{"passage": number, "quote": first}]})
+            segment: dict[str, object] = {"text": f"The document states: {first}", "cites": [{"passage": number, "quote": first}]}
+            if script:
+                segment["speaker"] = ("host", "guest")[turn % 2]
+                turn += 1
+            segments.append(segment)
         if segments:
             sections.append({"heading": heading, "segments": segments})
     return json.dumps({"title": "Draft from your documents", "sections": sections})

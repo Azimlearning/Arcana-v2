@@ -324,7 +324,15 @@ def regroup_draft(
     citations = {c["id"]: c for c in outcome.data["citations"]}
     sections: list[dict[str, Any]] = []
     for s, section in enumerate(data["sections"]):
-        segments = [kept_segments[(s, g)] for g in range(len(section["segments"])) if (s, g) in kept_segments]
+        segments = []
+        for g in range(len(section["segments"])):
+            if (s, g) not in kept_segments:
+                continue
+            segment = dict(kept_segments[(s, g)])
+            speaker = section["segments"][g].get("speaker")  # a script's voices are the draft's own, not the checker's to drop
+            if speaker is not None:
+                segment["speaker"] = speaker
+            segments.append(segment)
         if segments:
             sections.append({"heading": section["heading"], "segments": segments})
     if not sections:
@@ -345,11 +353,10 @@ def regroup_draft(
             rebuilt.append({"docId": doc_id, **reference_for(document)})
     stated = {e.get("docId"): e for e in data.get("bibliography", []) if isinstance(e, dict)}
     fixed = sum(1 for e in rebuilt if stated.get(e["docId"]) != e)
-    return (
-        {"title": data.get("title", ""), "sections": sections, "citations": kept_citations, "bibliography": rebuilt},
-        too_close,
-        fixed,
-    )
+    checked: dict[str, Any] = {"title": data.get("title", ""), "sections": sections, "citations": kept_citations, "bibliography": rebuilt}
+    if data.get("kind") is not None:
+        checked = {"kind": data["kind"], **checked}
+    return checked, too_close, fixed
 
 
 async def check_draft(ctx: TurnContext) -> DraftOutcome | None:
