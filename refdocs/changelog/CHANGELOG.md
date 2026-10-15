@@ -28,6 +28,15 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-15: P4 V9, the live lab generator, built and measured
+- **Changed:** `api/labs/live_generator.py` (new; one call through the seam, hands the call back to the app's event loop), `api/agents/compose.py` (a refused or failed generator call is an error block, not a crash), `api/container.py` (the live generator in live mode), `api/labs/test_live_generator.py` (7 tests), `eval/lab_live.py` (new), two result files, `refdocs/evidence/20261015-lab-live-generator.md`.
+- **Decided:** the generator is untrusted like the fake; it is not given the reference cases; the prompt version is the generator identity, so a prompt change marks stored labs stale (D-41).
+- **Deviations:** the prompt was revised once after reading the first run's replies (`live-lab-1` to `live-lab-2`); both runs are reported. The first live attempt exposed a real bug (the provider's HTTP client was used from a second event loop: "Event loop is closed"), fixed and covered by a test.
+- **Verified:** `uv run pytest -q`: 1360 passed, 1 skipped (the RAGAS null-path test); `api/labs/test_live_generator.py`: 7 passed; `ruff` and `pyright` clean; live: 2 of 8 then 6 of 8 first attempts accepted by the verifier.
+- **Spend:** $0.0458 (15 paid calls, all through OpenRouter; Anthropic's own credit is exhausted). The month is at about $13.98.
+- **Noted, not changed:** F1@k is refused because the model omits the contract's clamp; the contract was not weakened. Anthropic credit still needs topping up for the primary route.
+- **Known issues / next steps:** none blocking; `audit_lab` still has no caller.
+
 ### 2026-10-15: RAGAS installed and run (P5 F5); the non-LLM context metrics are uninformative here
 - **Changed:** `pyproject.toml` and `uv.lock` (`ragas` 0.4.3, `rapidfuzz` and `langchain-community<0.4` as the optional `eval` extra), two result files, `refdocs/evidence/20261015-ragas-context-metrics.md`, the ledger, `limits.md`, the P5 execution doc.
 - **Decided:** report the metrics as measured (0.0 for every arm) and do not tune the threshold afterwards; do not run LLM-judged RAGAS outside the seam.

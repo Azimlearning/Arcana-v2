@@ -1,0 +1,131 @@
+{
+  "run": {
+    "timestamp": "2026-10-15T06:02:40.663542+00:00",
+    "code": {
+      "commit": "46411bab490ddf09be0f48c93bfd24ea4b8dec5e",
+      "dirty": false,
+      "changed_files": []
+    },
+    "prompt_version": "live-lab-2",
+    "mode": {
+      "llm": "live"
+    },
+    "repeats": 2
+  },
+  "attempts": [
+    {
+      "contract": "ranknet_pairwise_loss",
+      "attempt": 1,
+      "status": "ready",
+      "calls": 2,
+      "tokens_in": 1109,
+      "tokens_out": 62,
+      "cost_usd": 0.002838,
+      "models": [
+        "anthropic:claude-sonnet-5-5",
+        "openrouter:anthropic/claude-sonnet-5.5"
+      ]
+    },
+    {
+      "contract": "ranknet_pairwise_loss",
+      "attempt": 2,
+      "status": "ready",
+      "calls": 0,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_usd": 0,
+      "models": []
+    },
+    {
+      "contract": "f1_at_k",
+      "attempt": 1,
+      "status": "error",
+      "calls": 2,
+      "tokens_in": 1062,
+      "tokens_out": 89,
+      "cost_usd": 0.003014,
+      "models": [
+        "anthropic:claude-sonnet-5-5",
+        "openrouter:anthropic/claude-sonnet-5.5"
+      ],
+      "stage": "reference_cases",
+      "reason": "{'hits': 8.0, 'k': 10.0, 'relevant': 4.0} gave 1.142857142857143, the formula gives 0.5714285714285714"
+    },
+    {
+      "contract": "f1_at_k",
+      "attempt": 2,
+      "status": "error",
+      "calls": 2,
+      "tokens_in": 1062,
+      "tokens_out": 89,
+      "cost_usd": 0.003014,
+      "models": [
+        "anthropic:claude-sonnet-5-5",
+        "openrouter:anthropic/claude-sonnet-5.5"
+      ],
+      "stage": "reference_cases",
+      "reason": "{'hits': 8.0, 'k': 10.0, 'relevant': 4.0} gave 1.142857142857143, the formula gives 0.5714285714285714"
+    },
+    {
+      "contract": "infonce_loss",
+      "attempt": 1,
+      "status": "ready",
+      "calls": 2,
+      "tokens_in": 1030,
+      "tokens_out": 64,
+      "cost_usd": 0.0027,
+      "models": [
+        "anthropic:claude-sonnet-5-5",
+        "openrouter:anthropic/claude-sonnet-5.5"
+      ]
+    },
+    {
+      "contract": "infonce_loss",
+      "attempt": 2,
+      "status": "ready",
+      "calls": 0,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_usd": 0,
+      "models": []
+    },
+    {
+      "contract": "cosine_chunk_distance",
+      "attempt": 1,
+      "status": "ready",
+      "calls": 2,
+      "tokens_in": 1037,
+      "tokens_out": 53,
+      "cost_usd": 0.002604,
+      "models": [
+        "anthropic:claude-sonnet-5-5",
+        "openrouter:anthropic/claude-sonnet-5.5"
+      ]
+    },
+    {
+      "contract": "cosine_chunk_distance",
+      "attempt": 2,
+      "status": "ready",
+      "calls": 0,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "cost_usd": 0,
+      "models": []
+    }
+  ],
+  "accepted": 6,
+  "total": 8,
+  "spent_usd": 0.01417,
+  "rejected_records": [
+    {
+      "contract_id": "f1_at_k",
+      "source_sha256": "f31d58df5f7f199f9b8e64577c8cd8af3e85757ce6763017d117575d64960e4b",
+      "reason": "reference_cases: {'hits': 8.0, 'k': 10.0, 'relevant': 4.0} gave 1.142857142857143, the formula gives 0.5714285714285714"
+    },
+    {
+      "contract_id": "f1_at_k",
+      "source_sha256": "67b4f59c45af553ad1aac187167b1e056ca63cb87fbeb2b61bf9a60c8e75815b",
+      "reason": "reference_cases: {'hits': 8.0, 'k': 10.0, 'relevant': 4.0} gave 1.142857142857143, the formula gives 0.5714285714285714"
+    }
+  ]
+}
