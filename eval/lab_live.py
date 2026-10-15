@@ -9,8 +9,8 @@ first attempts the verifier accepts, the stage and reason of each refusal, token
 are built into a throwaway store, not the product's `labs.db`. The result is descriptive (4 contracts, a few attempts): it says whether the gate
 admits what a real model writes, not how good the model is.
 
-Declared history (so the number is not read as one clean trial): run 1 used prompt `live-lab-1` and accepted 2 of 8; the replies 
-showed the model writing a draft and then a correction in one answer and using bare `max(`/`exp(`; the prompt was changed for that (`live-lab-2`: one 
+Declared history (so the number is not read as one clean trial): run 1 used prompt `live-lab-1` and accepted 2 of 8; the replies
+showed the model writing a draft and then a correction in one answer and using bare `max(`/`exp(`; the prompt was changed for that (`live-lab-2`: one
 function, `Math.` prefix) and run 2 is reported beside run 1, never in place of it. No contract, case or property was changed.
 
 Cost: a few cents (about 600 tokens in and 150 out per call at the standard tier); `--max-usd` stops the run when the month's total has grown by
