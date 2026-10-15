@@ -1,6 +1,6 @@
 # Execution: Studio breadth, covering the six functions of VERA AI (D-43)
 
-> Plan: `refdocs/plans/2026-10-15-studio-vera-parity.md`. Status: **In progress (2026-10-15).** Each slice is green end to end before the next starts.
+> Plan: `refdocs/plans/2026-10-15-studio-vera-parity.md`. Status: **Done (2026-10-15).** V1 to V6 built and green; the live check of the writing kinds recorded in `refdocs/evidence/20261015-studio-vera-parity.md`.
 
 ## Order
 

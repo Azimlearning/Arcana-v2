@@ -28,6 +28,14 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-15: Studio breadth to cover VERA AI's six functions, and panes in the centre area (D-43, D-44)
+- **Reported:** Azim: the Studio "is supposed to be more" than VERA AI's six functions; refer to v1's outputs, merge and upgrade rather than rebuild them all; the centre area needs a pane system "like Claude or ChatGPT", such as splitting with a spreadsheet.
+- **Changed:** plan and execution docs `2026-10-15-studio-vera-parity`; D-43, D-44; PRD rows. V1 quiz in the turn (`quiz` study kind, `QuizCard` answers from the chat). V2 writing kinds (`WritingDraft.kind`: outline, literature review, abstract, script; `speaker`; per-kind prompts; the Fact Checker keeps speakers; validator rules; Listen with the browser's voice). V3 `DocBrief`, V4 `CheatSheet`, V5 `LearningInsights` (`api/vault/{brief,sheet,insights}.py`, `LearnerStore.daily_activity`, the activity threaded through the last gate, catalog entries, registration suites, web components, `catalog.md`). Panes: `web/lib/tables.ts`, `Panes.tsx`, `TableView.tsx`, store and workspace; the shelf is thirteen tools. `eval/studio_kinds_live.py`.
+- **Decided:** every new tool is a tool of the one Studio agent (D-05 stands); the deterministic ones are `study` kinds the Composer derives and the validator derives again; panes are the viewer's arrangement of blocks the server composed (never a component choice); the audio non-goal is read as "no generated audio" (`ASSUMED:`, awaiting Azim); Timeline, a shown plagiarism report and a gaps block are not built, with reasons (plan).
+- **Deviations:** the plan named five new components and the writing kinds; the pane system (V6) was added by Azim's request mid-session. The cheat sheet's "visual" is a diagram drawn by the web, not an image.
+- **Verified:** `uv run pytest -q`: 1627 passed, 1 skipped; `pnpm exec vitest run`: 459 passed; `pnpm codegen:check`, typecheck, lint, `ruff check api`, `pyright api` clean; a headless-browser run of 19 checks (desktop and 390 px) passes after one fix (the Studio shelf broke mid-word when a pane took its width); the live check of the writing kinds: 8 of 8 drafts shown, 33 of 33 quotes verbatim, 4 of 50 passages removed by the judge, $0.353.
+- **Known issues / next steps:** insights need 7 active days for a trend; a one-paper topic gives a one-source review; the speech voice was offered but not listened to; Azim to confirm the audio reading; the human reading of the link audit and a release tag remain his.
+
 ### 2026-10-15: P5 S5 phone-width pass: the layout stacks below the md breakpoint
 - **Changed:** `web/components/shell/Shell.tsx` and `Panel.tsx` (panels stack on phones: answer, Studio, sources; each as tall as its content; page scroll), evidence note, screenshots and `p5-phone-check.json`.
 - **Diagnosed:** at 390 px three flex panels shared the width, so the sources and the studio panels were a few characters wide.

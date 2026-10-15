@@ -55,3 +55,7 @@
 | The embeddings price is marked `ASSUMED` in `api/llm/pricing.py` (the OpenAI page states none) | Reported spend is an estimate until reconciled with the provider console | `STATUS.md` working assumptions item 3 |
 | OpenRouter model ids are `ASSUMED` to follow its dotted naming | The fallback route's cost and ids are unconfirmed | `STATUS.md` working assumptions item 2 |
 | Anthropic's own credit balance is separate from the monthly cap and can end a build mid-run | Live runs need credit as well as cap | D-35 A9 addendum |
+
+## Studio breadth and panes (D-43, D-44)
+
+A brief is the vault's own sentences, not a summary, and is only as complete as the vault; insights draw a trend only from 7 active days of 14 and the weekly seasonal fit VERA used is not built; the workload applies the schedule's fixed rule and does not model further forgetting; a literature review of a topic whose passages come from one paper is a review of one source; read-aloud is the browser's own voice, offered but not listened to in the headless run; the live check of the writing kinds is one attempt per turn and measures grounding, not quality; Timeline, a shown plagiarism report and a gaps block are not built.

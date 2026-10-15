@@ -1,0 +1,570 @@
+{
+  "run": {
+    "timestamp": "2026-10-15T15:04:10.524503+00:00",
+    "code": {
+      "commit": "6d1f56d2dd97bfeba9db148dd11f26e4a3085ea1",
+      "dirty": false,
+      "changed_files": []
+    },
+    "mode": {
+      "llm": "live",
+      "embed": "live"
+    }
+  },
+  "stopped": null,
+  "turns": [
+    {
+      "intent": "write",
+      "status": "ready",
+      "latency_s": 22.0,
+      "tokens": 18277,
+      "spent_usd": 0.04661,
+      "blocks": [
+        "CitedSummary",
+        "SourceList",
+        "WritingDraft"
+      ],
+      "steps": [
+        [
+          "orchestrator",
+          "ok",
+          null
+        ],
+        [
+          "research",
+          "ok",
+          null
+        ],
+        [
+          "studio",
+          "ok",
+          null
+        ],
+        [
+          "fact_checker",
+          "ok",
+          null
+        ]
+      ],
+      "topic": "dense retrieval",
+      "asked_kind": "outline",
+      "draft": "ready",
+      "kind": "outline",
+      "sections": 4,
+      "passages": 7,
+      "citations": 5,
+      "verbatim": "5/5",
+      "documents": 1,
+      "references": 1,
+      "research": {
+        "passages": 8,
+        "quotes_model": 4,
+        "quotes_server": 1,
+        "documents_cited": 1,
+        "documents_available": 2
+      },
+      "answer_check": {
+        "segments_in": 6,
+        "segments_kept": 6,
+        "citations_dropped": 0,
+        "unsupported": 0,
+        "judged_by_model": 6,
+        "judged_by_lexical": 0
+      },
+      "draft_check": {
+        "passages_in": 7,
+        "passages_kept": 7,
+        "citations_dropped": 0,
+        "unsupported": 0,
+        "too_close_to_source": 0,
+        "references_rebuilt": 0
+      },
+      "checker_note": null
+    },
+    {
+      "intent": "write",
+      "status": "ready",
+      "latency_s": 19.54,
+      "tokens": 17747,
+      "spent_usd": 0.046139,
+      "blocks": [
+        "CitedSummary",
+        "SourceList",
+        "WritingDraft"
+      ],
+      "steps": [
+        [
+          "orchestrator",
+          "ok",
+          null
+        ],
+        [
+          "research",
+          "ok",
+          null
+        ],
+        [
+          "studio",
+          "ok",
+          null
+        ],
+        [
+          "fact_checker",
+          "partial",
+          "removed 1 of 5 passages"
+        ]
+      ],
+      "topic": "dense retrieval",
+      "asked_kind": "literature_review",
+      "draft": "ready",
+      "kind": "literature_review",
+      "sections": 2,
+      "passages": 4,
+      "citations": 5,
+      "verbatim": "5/5",
+      "documents": 1,
+      "references": 1,
+      "research": {
+        "passages": 8,
+        "quotes_model": 5,
+        "quotes_server": 0,
+        "documents_cited": 1,
+        "documents_available": 2
+      },
+      "answer_check": {
+        "segments_in": 6,
+        "segments_kept": 6,
+        "citations_dropped": 0,
+        "unsupported": 0,
+        "judged_by_model": 6,
+        "judged_by_lexical": 0
+      },
+      "draft_check": {
+        "passages_in": 5,
+        "passages_kept": 4,
+        "citations_dropped": 0,
+        "unsupported": 1,
+        "too_close_to_source": 0,
+        "references_rebuilt": 0
+      },
+      "checker_note": "removed 1 of 5 passages"
+    },
+    {
+      "intent": "write",
+      "status": "ready",
+      "latency_s": 16.84,
+      "tokens": 15237,
+      "spent_usd": 0.038798,
+      "blocks": [
+        "CitedSummary",
+        "SourceList",
+        "WritingDraft"
+      ],
+      "steps": [
+        [
+          "orchestrator",
+          "ok",
+          null
+        ],
+        [
+          "research",
+          "ok",
+          null
+        ],
+        [
+          "studio",
+          "ok",
+          null
+        ],
+        [
+          "fact_checker",
+          "ok",
+          null
+        ]
+      ],
+      "topic": "dense retrieval",
+      "asked_kind": "abstract",
+      "draft": "ready",
+      "kind": "abstract",
+      "sections": 1,
+      "passages": 5,
+      "citations": 4,
+      "verbatim": "4/4",
+      "documents": 1,
+      "references": 1,
+      "research": {
+        "passages": 8,
+        "quotes_model": 2,
+        "quotes_server": 0,
+        "documents_cited": 1,
+        "documents_available": 1
+      },
+      "answer_check": {
+        "segments_in": 5,
+        "segments_kept": 5,
+        "citations_dropped": 0,
+        "unsupported": 0,
+        "judged_by_model": 5,
+        "judged_by_lexical": 0
+      },
+      "draft_check": {
+        "passages_in": 5,
+        "passages_kept": 5,
+        "citations_dropped": 0,
+        "unsupported": 0,
+        "too_close_to_source": 0,
+        "references_rebuilt": 0
+      },
+      "checker_note": null
+    },
+    {
+      "intent": "write",
+      "status": "ready",
+      "latency_s": 19.09,
+      "tokens": 17462,
+      "spent_usd": 0.043586,
+      "blocks": [
+        "CitedSummary",
+        "SourceList",
+        "WritingDraft"
+      ],
+      "steps": [
+        [
+          "orchestrator",
+          "ok",
+          null
+        ],
+        [
+          "research",
+          "ok",
+          null
+        ],
+        [
+          "studio",
+          "ok",
+          null
+        ],
+        [
+          "fact_checker",
+          "ok",
+          null
+        ]
+      ],
+      "topic": "dense retrieval",
+      "asked_kind": "script",
+      "draft": "ready",
+      "kind": "script",
+      "sections": 2,
+      "passages": 9,
+      "citations": 4,
+      "verbatim": "4/4",
+      "documents": 1,
+      "references": 1,
+      "every_line_has_a_speaker": true,
+      "host_lines": 5,
+      "guest_lines": 4,
+      "alternates": true,
+      "research": {
+        "passages": 8,
+        "quotes_model": 4,
+        "quotes_server": 0,
+        "documents_cited": 1,
+        "documents_available": 3
+      },
+      "answer_check": {
+        "segments_in": 6,
+        "segments_kept": 6,
+        "citations_dropped": 0,
+        "unsupported": 0,
+        "judged_by_model": 6,
+        "judged_by_lexical": 0
+      },
+      "draft_check": {
+        "passages_in": 9,
+        "passages_kept": 9,
+        "citations_dropped": 0,
+        "unsupported": 0,
+        "too_close_to_source": 0,
+        "references_rebuilt": 0
+      },
+      "checker_note": null
+    },
+    {
+      "intent": "write",
+      "status": "ready",
+      "latency_s": 18.21,
+      "tokens": 15680,
+      "spent_usd": 0.042291,
+      "blocks": [
+        "CitedSummary",
+        "SourceList",
+        "WritingDraft"
+      ],
+      "steps": [
+        [
+          "orchestrator",
+          "ok",
+          null
+        ],
+        [
+          "research",
+          "ok",
+          null
+        ],
+        [
+          "studio",
+          "ok",
+          null
+        ],
+        [
+          "fact_checker",
+          "partial",
+          "removed 1 of 6 passages"
+        ]
+      ],
+      "topic": "graph-based retrieval augmented generation",
+      "asked_kind": "outline",
+      "draft": "ready",
+      "kind": "outline",
+      "sections": 3,
+      "passages": 5,
+      "citations": 3,
+      "verbatim": "3/3",
+      "documents": 3,
+      "references": 3,
+      "research": {
+        "passages": 8,
+        "quotes_model": 3,
+        "quotes_server": 1,
+        "documents_cited": 2,
+        "documents_available": 4
+      },
+      "answer_check": {
+        "segments_in": 5,
+        "segments_kept": 5,
+        "citations_dropped": 0,
+        "unsupported": 0,
+        "judged_by_model": 5,
+        "judged_by_lexical": 0
+      },
+      "draft_check": {
+        "passages_in": 6,
+        "passages_kept": 5,
+        "citations_dropped": 0,
+        "unsupported": 1,
+        "too_close_to_source": 0,
+        "references_rebuilt": 0
+      },
+      "checker_note": "removed 1 of 6 passages"
+    },
+    {
+      "intent": "write",
+      "status": "ready",
+      "latency_s": 20.77,
+      "tokens": 17138,
+      "spent_usd": 0.049271,
+      "blocks": [
+        "CitedSummary",
+        "SourceList",
+        "WritingDraft"
+      ],
+      "steps": [
+        [
+          "orchestrator",
+          "ok",
+          null
+        ],
+        [
+          "research",
+          "ok",
+          null
+        ],
+        [
+          "studio",
+          "ok",
+          null
+        ],
+        [
+          "fact_checker",
+          "partial",
+          "removed 1 of 5 passages"
+        ]
+      ],
+      "topic": "graph-based retrieval augmented generation",
+      "asked_kind": "literature_review",
+      "draft": "ready",
+      "kind": "literature_review",
+      "sections": 3,
+      "passages": 4,
+      "citations": 4,
+      "verbatim": "4/4",
+      "documents": 3,
+      "references": 3,
+      "research": {
+        "passages": 8,
+        "quotes_model": 4,
+        "quotes_server": 1,
+        "documents_cited": 4,
+        "documents_available": 5
+      },
+      "answer_check": {
+        "segments_in": 7,
+        "segments_kept": 7,
+        "citations_dropped": 0,
+        "unsupported": 0,
+        "judged_by_model": 7,
+        "judged_by_lexical": 0
+      },
+      "draft_check": {
+        "passages_in": 5,
+        "passages_kept": 4,
+        "citations_dropped": 0,
+        "unsupported": 1,
+        "too_close_to_source": 0,
+        "references_rebuilt": 0
+      },
+      "checker_note": "removed 1 of 5 passages"
+    },
+    {
+      "intent": "write",
+      "status": "ready",
+      "latency_s": 18.03,
+      "tokens": 15282,
+      "spent_usd": 0.041203,
+      "blocks": [
+        "CitedSummary",
+        "SourceList",
+        "WritingDraft"
+      ],
+      "steps": [
+        [
+          "orchestrator",
+          "ok",
+          null
+        ],
+        [
+          "research",
+          "ok",
+          null
+        ],
+        [
+          "studio",
+          "ok",
+          null
+        ],
+        [
+          "fact_checker",
+          "ok",
+          null
+        ]
+      ],
+      "topic": "graph-based retrieval augmented generation",
+      "asked_kind": "abstract",
+      "draft": "ready",
+      "kind": "abstract",
+      "sections": 1,
+      "passages": 5,
+      "citations": 4,
+      "verbatim": "4/4",
+      "documents": 3,
+      "references": 3,
+      "research": {
+        "passages": 8,
+        "quotes_model": 4,
+        "quotes_server": 0,
+        "documents_cited": 2,
+        "documents_available": 5
+      },
+      "answer_check": {
+        "segments_in": 6,
+        "segments_kept": 6,
+        "citations_dropped": 0,
+        "unsupported": 0,
+        "judged_by_model": 6,
+        "judged_by_lexical": 0
+      },
+      "draft_check": {
+        "passages_in": 5,
+        "passages_kept": 5,
+        "citations_dropped": 0,
+        "unsupported": 0,
+        "too_close_to_source": 0,
+        "references_rebuilt": 0
+      },
+      "checker_note": null
+    },
+    {
+      "intent": "write",
+      "status": "ready",
+      "latency_s": 18.49,
+      "tokens": 16541,
+      "spent_usd": 0.045119,
+      "blocks": [
+        "CitedSummary",
+        "SourceList",
+        "WritingDraft"
+      ],
+      "steps": [
+        [
+          "orchestrator",
+          "ok",
+          null
+        ],
+        [
+          "research",
+          "ok",
+          null
+        ],
+        [
+          "studio",
+          "ok",
+          null
+        ],
+        [
+          "fact_checker",
+          "partial",
+          "removed 1 of 8 passages"
+        ]
+      ],
+      "topic": "graph-based retrieval augmented generation",
+      "asked_kind": "script",
+      "draft": "ready",
+      "kind": "script",
+      "sections": 2,
+      "passages": 7,
+      "citations": 4,
+      "verbatim": "4/4",
+      "documents": 3,
+      "references": 3,
+      "every_line_has_a_speaker": true,
+      "host_lines": 3,
+      "guest_lines": 4,
+      "alternates": false,
+      "research": {
+        "passages": 8,
+        "quotes_model": 3,
+        "quotes_server": 1,
+        "documents_cited": 2,
+        "documents_available": 5
+      },
+      "answer_check": {
+        "segments_in": 5,
+        "segments_kept": 5,
+        "citations_dropped": 0,
+        "unsupported": 0,
+        "judged_by_model": 5,
+        "judged_by_lexical": 0
+      },
+      "draft_check": {
+        "passages_in": 8,
+        "passages_kept": 7,
+        "citations_dropped": 0,
+        "unsupported": 1,
+        "too_close_to_source": 0,
+        "references_rebuilt": 0
+      },
+      "checker_note": "removed 1 of 8 passages"
+    }
+  ],
+  "spent_usd": 0.353017
+}

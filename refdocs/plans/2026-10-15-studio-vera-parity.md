@@ -1,7 +1,7 @@
 # Plan: Studio breadth, covering the six functions of VERA AI (D-43)
 
 > Execution doc: `refdocs/execution/2026-10-15-studio-vera-parity.md`. ADR: D-43 (extends D-42; narrows one non-goal, flagged `ASSUMED:`). Scope source: Azim, 2026-10-15: "for the studio make sure there will be more functions and outputs cause arcana v1 is successor to the vera ai project that has 6 studio functions so its supposed to be more".
-> Status: **Draft (2026-10-15).** Spend: the build is nil (fakes drive every test); one small live check of the new writing kinds, under a dollar.
+> Status: **Done (2026-10-15).** Spend: the build is nil (fakes drive every test); one small live check of the new writing kinds, under a dollar.
 
 ## Why this exists
 
