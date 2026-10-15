@@ -5,14 +5,16 @@ nodes by LangGraph as `runtime.context`: stores and services, the roster, the bu
 what each agent did (results and trace steps).
 """
 
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any, TypedDict
 
 from api.agents.framework import AgentResult, Roster, TurnLimits
 from api.core.budget import TokenBudget
 from api.genui.catalog import ComponentRecord, Composition, ViewComponent, component_decisions
 from api.genui.generated import AgentStep, TurnOutcome, TurnTrace, UIBlock
+from api.learner.mastery import MasteryScore
 from api.learner.store import LearnerStore
 from api.llm.service import LLMService
 from api.retrieval.types import RetrievalResult
@@ -60,6 +62,11 @@ class TurnContext:
     """The compiled vault the Studio's learning tools derive from and the Composer checks a study set against. None when there is none."""
     learner: LearnerStore | None = None
     """The learner's events, for the mastery that orders a study set. None when a turn is built without one."""
+    mastery_snapshot: Mapping[str, MasteryScore] | None = None
+    """The mastery a study block of this turn was derived from. Set by the Composer with the block, so the last gate before the wire
+    checks the block against the very reading it was made from (a rating that lands in between cannot make it differ)."""
+    last_rated_snapshot: Mapping[str, datetime] | None = None
+    """When each rated page was last rated, as read for a review schedule of this turn (set with `mastery_snapshot`)."""
     limits: TurnLimits = field(default_factory=TurnLimits)
     # What happened this turn:
     results: dict[str, AgentResult] = field(default_factory=dict)

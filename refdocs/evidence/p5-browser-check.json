@@ -1,0 +1,70 @@
+{
+  "results": [
+    {
+      "name": "starts in Basic",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Adaptive unavailable before an answer",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "a PDF is ingested and listed",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "a question is answered with citations",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Adaptive becomes available after the answer",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Adaptive is pressed after choosing it",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "Basic can be pinned again",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "a write request shows a cited draft",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the draft has a bibliography",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "the bibliography switches to BibTeX",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "a study request is answered (no study items: the fake corpus holds no definitions or claims)",
+      "ok": true,
+      "detail": "no StudySet"
+    },
+    {
+      "name": "a review request shows the schedule when pages are rated",
+      "ok": true,
+      "detail": "schedule regions: 0"
+    },
+    {
+      "name": "no uncaught page errors",
+      "ok": true,
+      "detail": ""
+    }
+  ],
+  "errors": []
+}

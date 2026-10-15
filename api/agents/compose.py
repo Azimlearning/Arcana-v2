@@ -387,6 +387,7 @@ def _plan_block(ctx: TurnContext) -> tuple[UIBlock | None, ComponentRecord]:
         mastery = _mastery_snapshot(ctx.vault, ctx.learner)
         rated = {p: m for p, m in (mastery or {}).items() if p in ctx.vault.pages}
         last_rated = ctx.learner.last_rated(rated)
+        ctx.mastery_snapshot, ctx.last_rated_snapshot = rated, last_rated
         data = derive_study_plan(ctx.vault, rated, last_rated, datetime.now(UTC))
         if not data["items"]:
             return None, ComponentRecord("StudyPlan", "refused", ("no_study_material",))
@@ -424,6 +425,7 @@ def _study_block(ctx: TurnContext) -> tuple[UIBlock | None, ComponentRecord]:
     block_id = f"{ctx.block_id}-study-set"
     try:
         mastery = _mastery_snapshot(ctx.vault, ctx.learner)
+        ctx.mastery_snapshot = mastery  # the last gate before the wire checks the block against this very reading
         data = derive_study_set(ctx.vault, ctx.docs, kind, focus if isinstance(focus, str) else None, mastery)
         if data is None or not data["items"]:
             return None, ComponentRecord("StudySet", "refused", ("no_study_material",))

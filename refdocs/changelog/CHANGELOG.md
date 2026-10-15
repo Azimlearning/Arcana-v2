@@ -28,6 +28,15 @@ Rules that make this file worth keeping:
 
 ## [Unreleased]
 
+### 2026-10-15: P5 S5, the adaptive dashboard and the Studio blocks checked in a real browser; two defects found and fixed
+- **Changed:** `api/agents/graph.py` (the last gate re-validates notes-family blocks against the vault and the reading they were derived from), `api/agents/state.py` and `api/agents/compose.py` (`mastery_snapshot`, `last_rated_snapshot`), `web/components/shell/Studio.tsx` (the shelf is the launcher: starters that put a request in the question box), `web/app/Workspace.tsx` (`ask` takes an override), tests; `refdocs/evidence/20261015-p5-studio-browser.md` and the screenshots.
+- **Decided:** none new (D-42 stands).
+- **Deviations:** none.
+- **Diagnosed:** every `study` turn ended in an error in the browser. `_checked`, the last gate before the wire, validated blocks with no vault, so a vault-derived block was refused. The unit tests used the graph directly. Proved by two tests that stream a study turn through `run_turn`, one with a learner that answers a different mastery each time it is read.
+- **Verified:** `uv run pytest api/agents`: 201 passed; `pnpm --filter web test`: 393 passed; typecheck and lint clean; a headless-browser run of the dashboard, writing, study, Socratic, rating and schedule paths (all pass).
+- **Noted, not changed:** the phone-width pass is still open; fake text only (S6 is the live run).
+- **Known issues / next steps:** S6, the live grounding run.
+
 ### 2026-10-15: P5 Studio agent, slices S1 (writing), S2 (learning) and S3 (review schedule) built (D-42)
 - **Changed:** schema first (`packages/schema`: `AgentName` gains `studio` and loses `tutor`/`writer`; `WritingDraft` and `StudySet` blocks and their payloads; reasons `no_grounded_draft` and `no_study_material`; `pnpm codegen`); `api/agents/studio.py` (draft_section, format_bibliography, make_study), `api/genui/bibliography.py` (references derived from the stored record), `api/vault/study.py` (flashcards, blurting, Cornell, Socratic: pure functions of the vault), the Fact Checker's `check_draft` and `check_citation_accuracy` (screen and judge over a draft, regroup, rebuild references, report close copies), the Orchestrator's `write` and `study` intents (anchored imperatives), the Composer (draft admitted from the checker's output only; study set derived and validated against the vault and mastery), validator rules for both blocks, the `WritingDraft` catalog entry with a 33-defect registration suite, `StudySet` in the notes catalog with 21 planted defects, web components `WritingDraft.tsx` and `StudySet.tsx`, `TurnContext` carries the vault and learner store, `eval/bound.py` leaves the Studio's component out of the frozen bound study; plan, execution doc, D-42, guides.
 - **Decided:** D-42 (Studio is one agent with tool groups; the Composer, not the agent, builds every block; references are derived, never generated; a study set is re-derived by the validator, so withholding is checked). The first review found the unanchored `write` rule re-routing a frozen benchmark question: anchored, and a test now runs every frozen question through `classify`.

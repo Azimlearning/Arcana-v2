@@ -123,6 +123,49 @@ async def test_a_study_turn_ends_at_the_composer_with_a_validated_set_beside_the
     assert make_study("Make flashcards for dense retrieval", ctx) == {"kind": "flashcard", "focus_id": "dense_retrieval"}
 
 
+async def test_a_study_turn_streams_through_the_last_gate_without_an_error(tmp_path: Path):
+    """The path a browser takes: `run_turn` re-validates every block before it is sent. A notes-family block must pass that gate too
+    (found in a real browser: the gate had no vault and refused every study set, ending the turn in an error)."""
+    from api.agents.graph import run_turn
+    from api.genui.generated import BlockEvent, StreamErrorEvent
+
+    ctx, _ = _world(tmp_path)
+    events = [e async for e in run_turn(GRAPH, "Make flashcards for dense retrieval", ctx)]
+    assert not any(isinstance(e, StreamErrorEvent) for e in events)
+    types = [e.block.type for e in events if isinstance(e, BlockEvent)]
+    assert "StudySet" in types and "CitedSummary" in types
+
+
+async def test_a_rating_between_the_block_and_the_gate_cannot_make_the_block_differ(tmp_path: Path):
+    from api.agents.graph import run_turn
+    from api.genui.generated import BlockEvent, StreamErrorEvent
+
+    class DriftingLearner(LearnerStore):
+        """Answers a different mastery each time it is asked: the turn must use the reading the block was made from."""
+
+        def __init__(self) -> None:
+            self.reads = 0
+
+        def record(self, event):  # pragma: no cover
+            raise AssertionError("a turn never writes")
+
+        def events(self, page_id):
+            return []
+
+        def mastery(self, page_ids, now=None):
+            self.reads += 1
+            return {"bm25": MasteryScore(0.1 if self.reads == 1 else 0.99, 4)}
+
+        def delete_all(self):
+            return 0
+
+    ctx, _ = _world(tmp_path)
+    ctx.learner = DriftingLearner()
+    events = [e async for e in run_turn(GRAPH, "Make flashcards", ctx)]
+    assert not any(isinstance(e, StreamErrorEvent) for e in events)
+    assert any(isinstance(e, BlockEvent) and e.block.type == "StudySet" for e in events)
+
+
 async def test_without_a_vault_the_turn_still_answers_and_says_why_there_is_no_set(tmp_path: Path):
     ctx, _ = _world(tmp_path, vault_present=False)
     state = await GRAPH.ainvoke({"question": "Quiz me on dense retrieval"}, context=ctx)

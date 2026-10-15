@@ -115,8 +115,8 @@ export function Workspace() {
     [loadWorkspace],
   );
 
-  const ask = useCallback(async () => {
-    const message = question.trim();
+  const ask = useCallback(async (override?: string) => {
+    const message = (override ?? question).trim();
     if (!message || useWorkspace.getState().turn === "streaming") return;
     abort.current?.abort();
     abort.current = new AbortController();
@@ -185,12 +185,18 @@ export function Workspace() {
     </div>
   );
 
-  // The studio shelf: the generators (inert until the Studio agent, P5), the saved views, and any block the layout places
+  // The studio shelf: the Studio's starters (they put a request in the question box), the saved views, and any block the layout places
   // there. A layout with no shelf region (a version 1 layout, or one from an older server) would leave these nowhere to
   // go, so they are shown after the graph area instead and the saved views stay reachable.
   const shelf = (
     <div className="space-y-4 p-1">
-      <Studio />
+      <Studio
+        onStart={(request, submit) => {
+          setQuestion(request);
+          if (submit) void ask(request);
+          else requestAnimationFrame(() => document.querySelector<HTMLInputElement>('input[aria-label="Question"]')?.focus());
+        }}
+      />
       <SavedViews
         patterns={patterns}
         busy={turn === "streaming"}

@@ -1,0 +1,35 @@
+{
+  "results": [
+    {
+      "name": "a flashcard request shows a study set from the real vault",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "revealing shows a cited sentence",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "a self-rating is saved",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "a Socratic request shows items with hints behind a button",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "after rating a page, the review schedule lists it",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "name": "no uncaught page errors",
+      "ok": true,
+      "detail": ""
+    }
+  ],
+  "errors": []
+}

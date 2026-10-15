@@ -444,7 +444,7 @@ describe("Workspace", () => {
   });
 
   describe("the Studio shelf", () => {
-    it("keeps the generators and the saved views in the studio's shelf, and none of it in the header", async () => {
+    it("keeps the Studio's tools and the saved views in the studio's shelf, and none of it in the header", async () => {
       routes["/workspace"] = () => jsonResponse(workspace());
       routes["/patterns"] = () => jsonResponse({ patterns: [savedPattern()] });
       render(<Workspace />);
@@ -452,7 +452,7 @@ describe("Workspace", () => {
       expect(within(shelf).getByRole("list", { name: "Saved views" })).toBeInTheDocument();
       const studio = document.querySelector('[data-panel="studio"]') as HTMLElement;
       expect(studio).toContainElement(shelf);
-      expect(within(studio).getByText("Slides")).toBeInTheDocument();
+      expect(within(studio).getByRole("button", { name: /Flashcards/ })).toBeInTheDocument();
       expect(within(screen.getByRole("banner")).queryByText(/Saved views/)).not.toBeInTheDocument();
     });
 

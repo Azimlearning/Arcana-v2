@@ -64,7 +64,17 @@ def _checked_layout(layout: LayoutSpec | None, block_ids: set[str]) -> LayoutEve
 def _checked(block: UIBlock, ctx: TurnContext) -> BlockEvent:
     """The last gate before the wire. Re-validates from plain data, so a block that was built with
     model_construct, or mutated after it was validated, cannot be streamed (constraint 2)."""
-    return BlockEvent(type="block", block=validate_block(block.model_dump(), ctx.docs, ctx.graph))
+    # A notes-family block (a study set or a review schedule) is checked against the vault and the reading it was derived from.
+    checked = validate_block(
+        block.model_dump(),
+        ctx.docs,
+        ctx.graph,
+        ctx.vault,
+        ctx.mastery_snapshot,
+        None,
+        ctx.last_rated_snapshot,
+    )
+    return BlockEvent(type="block", block=checked)
 
 
 async def stream_composition(
