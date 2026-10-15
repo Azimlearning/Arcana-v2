@@ -91,3 +91,23 @@ def test_every_contract_can_be_prompted():
     for make in CONTRACTS.values():
         contract = make()
         assert contract.title in lab_prompt(contract, "a passage")
+
+
+@pytest.mark.asyncio
+async def test_called_from_an_anyio_worker_the_call_runs_on_the_apps_own_loop(world):
+    """Under FastAPI a sync route runs in an AnyIO worker; the model call must go back to the app's loop, where the provider clients live."""
+    import asyncio
+
+    from anyio import to_thread
+
+    docs, _ = world
+    seen: list[asyncio.AbstractEventLoop] = []
+
+    class LoopRecordingLLM:
+        async def complete(self, request):
+            seen.append(asyncio.get_running_loop())
+            return SimpleNamespace(text=RANKNET_SOURCE)
+
+    generator = LiveLabGenerator(LoopRecordingLLM(), docs)  # type: ignore[arg-type]
+    source = await to_thread.run_sync(generator.generate, ranknet_contract())
+    assert source == RANKNET_SOURCE and seen == [asyncio.get_running_loop()]

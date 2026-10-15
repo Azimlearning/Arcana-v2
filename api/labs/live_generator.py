@@ -13,6 +13,8 @@ from __future__ import annotations
 import asyncio
 import re
 
+from anyio import from_thread
+
 from api.core.errors import ProviderUnavailable
 from api.genui.text import normalise
 from api.labs.contract import LabContract
@@ -86,6 +88,11 @@ class LiveLabGenerator(LabGenerator):
             tier=self._tier,  # type: ignore[arg-type]
             max_tokens=MAX_TOKENS,
         )
-        # compose_lab is synchronous (a threadpool worker under FastAPI), so there is no running loop here
-        result = asyncio.run(self._llm.complete(request))
+        # compose_lab is synchronous, so this runs in a worker thread. Under FastAPI that is an AnyIO worker: the call is handed back to the
+        # app's own event loop, where the providers' HTTP clients live (a client used from a second loop fails with "Event loop is closed").
+        # With no app loop (a script or a test calling it directly) it runs on a loop of its own.
+        try:
+            result = from_thread.run(self._llm.complete, request)
+        except RuntimeError:  # not an AnyIO worker thread
+            result = asyncio.run(self._llm.complete(request))
         return strip_fence(result.text)

@@ -26,6 +26,8 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from anyio import to_thread
+
 from api.agents.compose import compose_lab
 from api.container import build_container
 from api.core.logging import configure_logging
@@ -61,7 +63,7 @@ async def run(args: argparse.Namespace) -> dict[str, Any]:
                 generator = LiveLabGenerator(container.llm, container.docs)
                 ledger_before = container.ledger.rows()
                 n_before = len(ledger_before)
-                _, blocks = await asyncio.to_thread(compose_lab, container.docs, labs, generator, contract_id)
+                _, blocks = await to_thread.run_sync(compose_lab, container.docs, labs, generator, contract_id)
                 block = blocks[0]
                 new = container.ledger.rows()[n_before:]
                 row: dict[str, Any] = {
