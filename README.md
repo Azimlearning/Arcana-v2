@@ -13,6 +13,10 @@ retrieval with the graph signal is **not shown to beat dense retrieval alone** o
 pair significant), the grounding constraint holds with a real model (every quote verbatim, an unanswerable
 question refused), and a trained re-ranker was built, measured and not shown to help.
 
+## MCAIT 2026
+
+This is the practical form of the paper *Graph-Grounded Generative User Interfaces for Learning: Retrieval Structure Determines Interface Expressiveness*, accepted at the 6th International Multi-Conference on Artificial Intelligence Technology (MCAIT 2026) and presented on 5 November 2026. The paper stands on its own; this repository is where its ideas run and can be measured. The findings marked "after the paper" in the talk (full-corpus retrieval comparison, component admission, live grounding) come from the evidence indexed in `refdocs/evidence/`, and were not peer reviewed. The accepted manuscript and talk materials are in the [FYP showcase repository](https://github.com/Azimlearning/Arcana-Final-Year-Project-UTP).
+
 ## Relationship to v1
 
 v2 is a ground-up rebuild, not a continuation. Arcana v1
